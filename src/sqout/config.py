@@ -91,6 +91,14 @@ class Config:
         return self.root / '.local' / 'sqout' / 'papers.db'
 
     @property
+    def store_target(self) -> str:
+        """Where the store lives: the Postgres URL in $SUPABASE_DB_URL when set,
+        otherwise the local SQLite file. This is the single switch between the
+        hosted shared DB and a local/offline run — no other code decides."""
+        url = os.environ.get('SUPABASE_DB_URL', '').strip()
+        return url or str(self.db_path)
+
+    @property
     def corpus_dir(self) -> Path:
         return self.root / '.local' / 'corpus'
 
