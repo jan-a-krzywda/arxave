@@ -220,6 +220,39 @@ def also_evaluated(conn: sqlite3.Connection, exclude: set[str]) -> list[sqlite3.
     return [r for r in rows if r['cite_key'] not in exclude]
 
 
+def prune_old(conn: sqlite3.Connection, before: str) -> dict[str, int]:
+    """Delete papers published before `before` (ISO date), and their children.
+
+    The rolling window that keeps the store small. Pruning is by `published`,
+    not `first_seen`: it is the paper's age that matters, so a paper scouted
+    today but published two weeks ago is still old. Rows with an empty
+    `published` are never pruned — an unknown date must not be read as ancient.
+
+    sqlite has no cascade here (foreign_keys is off by default), so children are
+    deleted explicitly first, then the papers. Returns per-table delete counts.
+    """
+    doomed = [
+        r['cite_key'] for r in conn.execute(
+            "SELECT cite_key FROM papers WHERE published != '' AND published < ?",
+            (before,),
+        )
+    ]
+    if not doomed:
+        return {'papers': 0, 'refs': 0, 'embeddings': 0}
+
+    placeholders = ','.join('?' for _ in doomed)
+    n_refs = conn.execute(
+        f'DELETE FROM refs WHERE cite_key IN ({placeholders})', doomed
+    ).rowcount
+    n_emb = conn.execute(
+        f'DELETE FROM embeddings WHERE cite_key IN ({placeholders})', doomed
+    ).rowcount
+    n_papers = conn.execute(
+        f'DELETE FROM papers WHERE cite_key IN ({placeholders})', doomed
+    ).rowcount
+    return {'papers': n_papers, 'refs': n_refs, 'embeddings': n_emb}
+
+
 def status_counts(conn: sqlite3.Connection) -> dict[str, int]:
     return {
         row['status']: row['n']

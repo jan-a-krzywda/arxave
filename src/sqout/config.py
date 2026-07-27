@@ -66,6 +66,15 @@ class ConnectConfig:
 
 
 @dataclass(frozen=True)
+class RetentionConfig:
+    """Rolling-window pruning. sqout prioritizes recent papers, and connections
+    now come from each paper's own bibliography rather than stored history, so
+    the store never needs to grow past a short window."""
+    enabled: bool = True
+    days: int = 7
+
+
+@dataclass(frozen=True)
 class Config:
     root: Path
     topics: list[str]
@@ -73,6 +82,7 @@ class Config:
     corpus: CorpusConfig
     ranking: RankingConfig
     connect: ConnectConfig
+    retention: RetentionConfig = field(default_factory=RetentionConfig)
     llm: dict[str, LLMRoleConfig] = field(default_factory=dict)
 
     # Paths sqout owns. Created on demand by whoever writes to them.
@@ -169,6 +179,17 @@ def load(path: Path | str = DEFAULT_CONFIG, *, root: Path | None = None) -> Conf
             f"OpenAlex's polite pool needs a contact address."
         )
 
+    retention_raw = raw.get('retention') or {}
+    retention = RetentionConfig(
+        enabled=bool(retention_raw.get('enabled', True)),
+        days=int(retention_raw.get('days', 7)),
+    )
+    if retention.days < 1:
+        raise ConfigError(
+            f'{path}: retention.days must be >= 1 (got {retention.days}); '
+            f'set retention.enabled: false to keep everything.'
+        )
+
     llm_raw = _require(raw, 'llm', str(path))
     llm = {}
     for role, cfg in llm_raw.items():
@@ -190,5 +211,6 @@ def load(path: Path | str = DEFAULT_CONFIG, *, root: Path | None = None) -> Conf
         corpus=corpus,
         ranking=ranking,
         connect=connect,
+        retention=retention,
         llm=llm,
     )

@@ -84,6 +84,19 @@ def cmd_run(args, cfg: config.Config) -> int:
             path = brief.render(cfg, conn, on_date)
             print(f'\n{path}')
 
+        # Rolling-window prune — full runs only, so `--stage` stays a pure,
+        # non-destructive way to re-run one step while iterating.
+        if not args.stage and cfg.retention.enabled:
+            from datetime import timedelta
+            before = (on_date - timedelta(days=cfg.retention.days)).isoformat()
+            pruned = store.prune_old(conn, before)
+            if pruned['papers']:
+                log.info(
+                    'prune: dropped %d papers published before %s '
+                    '(+%d refs, +%d embeddings)',
+                    pruned['papers'], before, pruned['refs'], pruned['embeddings'],
+                )
+
         store.finish_run(conn, run_id, **counts)
         log.info('store: %s', store.status_counts(conn))
 
