@@ -12,11 +12,11 @@ import sys
 from datetime import date
 
 from . import brief, config, connect, corpus, filter as filter_stage
-from . import rank, scout, serve, store, summarize
+from . import rank, refs, scout, serve, store, summarize
 
 log = logging.getLogger('sqout')
 
-STAGES = ('scout', 'summarize', 'filter', 'connect', 'rank', 'brief')
+STAGES = ('scout', 'summarize', 'filter', 'refs', 'connect', 'rank', 'brief')
 
 
 def _setup_logging(verbose: bool) -> None:
@@ -73,6 +73,8 @@ def cmd_run(args, cfg: config.Config) -> int:
             summarize.run(cfg, conn)
         if 'filter' in stages:
             counts['n_relevant'] = filter_stage.run(cfg, conn)
+        if 'refs' in stages:
+            refs.run(cfg, conn, snap)
         if 'connect' in stages:
             connect.run(cfg, conn, snap)
         if 'rank' in stages:

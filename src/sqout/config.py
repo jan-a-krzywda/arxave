@@ -62,6 +62,7 @@ class RankingConfig:
 class ConnectConfig:
     enabled: bool = True
     openalex_mailto: str = ''
+    arxiv_bib: bool = True  # read each paper's own .bbl/.bib for day-one connections
 
 
 @dataclass(frozen=True)
@@ -160,6 +161,7 @@ def load(path: Path | str = DEFAULT_CONFIG, *, root: Path | None = None) -> Conf
     connect = ConnectConfig(
         enabled=bool(connect_raw.get('enabled', True)),
         openalex_mailto=str(connect_raw.get('openalex_mailto', '') or ''),
+        arxiv_bib=bool(connect_raw.get('arxiv_bib', True)),
     )
     if connect.enabled and not connect.openalex_mailto:
         raise ConfigError(
