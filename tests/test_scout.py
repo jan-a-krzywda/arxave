@@ -4,7 +4,7 @@ from datetime import date
 
 import pytest
 
-from sqout import scout, store
+from arxave import scout, store
 
 # 2026-07-20 is a Monday; 2026-07-17 the Friday before it.
 MONDAY = date(2026, 7, 20)

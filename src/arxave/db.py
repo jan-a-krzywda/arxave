@@ -9,7 +9,7 @@ Engine selection is by connection string: a `SUPABASE_DB_URL` (or any
 
 What the two engines are made to agree on:
   * placeholders — queries use `?`; the Postgres path rewrites them to `%s`
-    (and escapes literal `%`, of which sqout's queries currently have none);
+    (and escapes literal `%`, of which arxave's queries currently have none);
   * rows — indexable by column name in both (`sqlite3.Row` / psycopg `dict_row`);
   * autoincrement ids — `INSERT ... RETURNING`, supported by SQLite >= 3.35 and
     Postgres alike, so no reliance on SQLite's `lastrowid`;

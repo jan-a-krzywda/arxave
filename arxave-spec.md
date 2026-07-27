@@ -1,4 +1,4 @@
-# Sqout — Specification
+# Arxave — Specification
 
 > A daily arXiv scout for the SpinLib corpus. Each morning it reads the
 > overnight firehose, selects the few papers that matter, and **briefs you** —
@@ -44,7 +44,7 @@ pipeline that resolves each entry to OpenAlex and renders a clustered citation
 graph. Today it's static — the corpus only grows when a human adds a `.bib`
 entry.
 
-**Sqout** is the daily scout that makes it grow itself and reports back. Each run:
+**Arxave** is the daily scout that makes it grow itself and reports back. Each run:
 
 1. **Scout** — pull recent arXiv papers for the user's topics.
 2. **Summarize** — LLM writes a structured 1-paragraph summary (topic, research
@@ -76,14 +76,14 @@ for key, rec in works.items():
 ```
 
 **Consequence:** a new arXiv paper that cites existing SpinLib papers wires
-itself into the graph the moment its OpenAlex record is appended. Sqout never
+itself into the graph the moment its OpenAlex record is appended. Arxave never
 builds edges by hand — it only adds nodes with correct `referenced_works`. The
 connections fall out. This same reference overlap is also what powers the
 "how it connects" line in the brief and the citation-centrality ranking signal.
 
 arXiv papers now receive a DataCite DOI of the form `10.48550/arXiv.<id>`, which
 OpenAlex indexes, so `oa_fetch.py::resolve_by_doi()` resolves preprints with no
-change — Sqout just feeds it the arXiv DOIs.
+change — Arxave just feeds it the arXiv DOIs.
 
 ---
 
@@ -138,7 +138,7 @@ Accumulation is layered, reusing SpinLib conventions where possible.
 |---|---|---|---|
 | **Corpus** | `library.bib` | Canonical BibTeX entries | existing (append) |
 | **Structure** | `.local/graph/works.json` | OpenAlex id, DOI, title, year, `referenced_works` (citation edges) | existing (append) |
-| **Enrichment** | `.local/sqout/papers.db` (SQLite) | LLM summary, research question, contribution, topics, relevance, scites, importance, embedding, brief history | **new** |
+| **Enrichment** | `.local/arxave/papers.db` (SQLite) | LLM summary, research question, contribution, topics, relevance, scites, importance, embedding, brief history | **new** |
 
 - **The graph is the accumulating structure** — don't invent a parallel one.
 - **Accumulation is idempotent** — everything keyed by `cite_key`; re-running
@@ -206,7 +206,7 @@ NumPy cosine is fine to tens of thousands of rows.
 ## 7. Pipeline
 
 ```
-config/sqout.yaml (topics, filters, weights)
+config/arxave.yaml (topics, filters, weights)
         │
         ▼
 ┌──────────────┐  arxiv API
@@ -241,12 +241,12 @@ as `oa_fetch.py`'s resume-from-cache), so a crashed run resumes cleanly.
 
 ## 8. Module layout
 
-New code under `scripts/sqout/`; existing scripts imported, not modified (except
+New code under `scripts/arxave/`; existing scripts imported, not modified (except
 the small additive refactor in §9).
 
 ```
 scripts/
-  sqout/
+  arxave/
     __init__.py
     config.py       # topics, filters, ranking weights, model, paths
     scout.py        # stage 1: arxiv fetch (adapts daily_arxiv.get_daily_papers)
@@ -263,15 +263,15 @@ scripts/
   build_graph.py    # EXISTING — reused for graph rebuild
   bibmeta.py        # EXISTING — reused for bib parsing
 config/
-  sqout.yaml
+  arxave.yaml
 docs/
-  sqout-spec.md     # this file
+  arxave-spec.md     # this file
 ```
 
 ### Provider-agnostic LLM interface
 
 ```python
-# scripts/sqout/llm.py
+# scripts/arxave/llm.py
 from typing import Protocol
 
 class LLM(Protocol):
@@ -291,7 +291,7 @@ Default: Anthropic for `complete`, a config-selectable embedding model for
 deterministic. Summarize returns `{summary, research_question, contribution}`;
 filter returns `{relevant, relevance_score, matched_topics, reason}`; brief
 returns `{claim, stakes, connection, verdict}` per paper. Keys in a gitignored
-`.env`, never in `config/sqout.yaml`.
+`.env`, never in `config/arxave.yaml`.
 
 ---
 

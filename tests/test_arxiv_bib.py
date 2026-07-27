@@ -9,7 +9,7 @@ import gzip
 import io
 import tarfile
 
-from sqout import arxiv_bib
+from arxave import arxiv_bib
 
 SAMPLE_BBL = r"""
 \begin{thebibliography}{99}

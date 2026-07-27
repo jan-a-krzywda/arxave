@@ -1,4 +1,4 @@
-"""The decoupling tests: sqout must run off its own snapshot, never the source."""
+"""The decoupling tests: arxave must run off its own snapshot, never the source."""
 from __future__ import annotations
 
 import json
@@ -6,8 +6,8 @@ from datetime import date, datetime, timedelta
 
 import pytest
 
-from sqout import connect, corpus, store
-from sqout.config import ConfigError
+from arxave import connect, corpus, store
+from arxave.config import ConfigError
 
 WORKS = {
     'Petta2005': {

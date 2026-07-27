@@ -1,4 +1,4 @@
-"""The corpus snapshot — sqout's own copy of the citation structure.
+"""The corpus snapshot — arxave's own copy of the citation structure.
 
 SpinLib is a paper library, not a dependency. Rather than reading its
 `works.json` live, `sync-corpus` copies it here once and every run reads only
@@ -87,12 +87,12 @@ EMPTY = Snapshot(ids={}, titles={})
 def sync(cfg: Config, source: Path | None = None) -> dict:
     """Copy the corpus `works.json` into `.local/corpus/`. Returns the metadata.
 
-    This is the only function in sqout that reads a path outside the project.
+    This is the only function in arxave that reads a path outside the project.
     """
     src = (source or cfg.corpus.source)
     if src is None:
         raise ConfigError(
-            'corpus.source is not set in config/sqout.yaml, and no --from was given.'
+            'corpus.source is not set in config/arxave.yaml, and no --from was given.'
         )
     src = Path(src).expanduser()
     if not src.exists():
@@ -185,12 +185,12 @@ def staleness_warning(cfg: Config, snap: Snapshot) -> str | None:
     if not snap:
         return (
             'no corpus snapshot — connection lines and centrality will be absent. '
-            'Run `sqout sync-corpus` to add them.'
+            'Run `arxave sync-corpus` to add them.'
         )
     age = snap.age_days
     if age is not None and age > cfg.corpus.stale_after_days:
         return (
             f'corpus snapshot is {age} days old '
-            f'(threshold {cfg.corpus.stale_after_days}). Run `sqout sync-corpus`.'
+            f'(threshold {cfg.corpus.stale_after_days}). Run `arxave sync-corpus`.'
         )
     return None

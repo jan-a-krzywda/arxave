@@ -5,7 +5,7 @@ carries no reference list for fresh preprints (measured — see that module's
 docstring). But the paper *ships* its bibliography inside its LaTeX source: the
 compiled `.bbl`, or a `.bib`, is in the e-print tarball at posting time, with
 zero indexing lag. Reading it directly is the only citation source that works on
-the day-one firehose sqout prioritizes.
+the day-one firehose arxave prioritizes.
 
 The tarball is messy: it may be gzipped tar (multi-file source), a single
 gzipped `.tex`, plain text, or a bare PDF (withdrawn / PDF-only — no source to
@@ -49,7 +49,7 @@ class BibError(Exception):
 def fetch_eprint(arxiv_id: str, *, timeout: int = 30) -> bytes:
     """Download the raw e-print archive for a bare arXiv id."""
     url = EPRINT_URL.format(arxiv_id)
-    req = urllib.request.Request(url, headers={'User-Agent': 'sqout'})
+    req = urllib.request.Request(url, headers={'User-Agent': 'arxave'})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return resp.read()

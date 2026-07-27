@@ -3,12 +3,12 @@
 Origin note: the request shapes, the `select` field list, the 50-DOI batch
 size, and the emitted record schema deliberately match SpinLib's
 `scripts/oa_fetch.py`, so records produced here stay interchangeable with the
-corpus's `works.json`. This is a re-implementation, not an import: sqout does
+corpus's `works.json`. This is a re-implementation, not an import: arxave does
 not depend on SpinLib at runtime. If OpenAlex changes its API shape, that file
 is the other place worth looking.
 
 Not carried over from oa_fetch.py: BibTeX parsing, the title-search fallback,
-and its `main()`. Sqout derives DOIs from arXiv IDs directly, so it needs
+and its `main()`. Arxave derives DOIs from arXiv IDs directly, so it needs
 neither — and `main()` carries a resume guard that skips newly added entries
 once its cache is populated.
 """
@@ -65,7 +65,7 @@ def _get_json(url: str, *, tries: int = 5, timeout: int = 60) -> dict:
     """GET with exponential backoff on 429 and 5xx."""
     for attempt in range(tries):
         try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'sqout'})
+            req = urllib.request.Request(url, headers={'User-Agent': 'arxave'})
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 return json.loads(resp.read().decode())
         except urllib.error.HTTPError as exc:

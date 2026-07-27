@@ -1,8 +1,8 @@
-# Sqout configuration. No secrets here — API keys live in .env, looked up by
+# Arxave configuration. No secrets here — API keys live in .env, looked up by
 # the `api_key_env` names below.
 
 corpus:
-  # Read ONLY by `sqout sync-corpus`. No pipeline stage touches this path;
+  # Read ONLY by `arxave sync-corpus`. No pipeline stage touches this path;
   # runs read the snapshot at .local/corpus/works.json instead.
   source: ~/openspin-repos/SpinLib/scripts/.local/graph/works.json
   stale_after_days: 30

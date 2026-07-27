@@ -6,7 +6,7 @@ baseline-vs-override split, and prune cascade to the per-user tables.
 """
 from __future__ import annotations
 
-from sqout import db, store
+from arxave import db, store
 
 
 def test_dialect_detection():

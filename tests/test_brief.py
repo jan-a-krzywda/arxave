@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import date
 
-from sqout import brief, store
-from sqout.llm import Pitch
+from arxave import brief, store
+from arxave.llm import Pitch
 
 from conftest import FakeLLM
 
