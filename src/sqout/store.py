@@ -12,81 +12,17 @@ from __future__ import annotations
 
 import json
 import re
-import sqlite3
+import sqlite3  # noqa: F401 — used only in type annotations (lazy under `annotations`)
 import unicodedata
-from contextlib import contextmanager
 from datetime import date
-from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
+
+from . import db
 
 # Pipeline order. A stage reads rows at status[i] and advances them to status[i+1].
 STATUSES = ('new', 'summarized', 'filtered', 'ranked', 'briefed')
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS papers (
-    cite_key        TEXT PRIMARY KEY,
-    arxiv_id        TEXT UNIQUE,
-    doi             TEXT,
-    openalex_id     TEXT,
-    title           TEXT,
-    authors         TEXT,               -- JSON array
-    published       TEXT,               -- ISO date
-    primary_category TEXT,
-    abstract        TEXT,
-    -- LLM enrichment --
-    summary         TEXT,
-    research_question TEXT,
-    contribution    TEXT,
-    topics          TEXT,               -- JSON array of matched user topics
-    relevance_score REAL,
-    relevant        INTEGER,
-    filter_reason   TEXT,
-    -- ranking --
-    scites          INTEGER,
-    centrality      REAL,
-    cited_in_corpus TEXT,               -- JSON array of matched corpus titles
-    importance      REAL,
-    -- briefing --
-    claim           TEXT,
-    stakes          TEXT,
-    connection      TEXT,
-    verdict         TEXT,
-    briefed_on      TEXT,
-    -- bookkeeping --
-    first_seen      TEXT,
-    llm_model       TEXT,
-    status          TEXT
-);
-
-CREATE INDEX IF NOT EXISTS idx_papers_status ON papers(status);
-
-CREATE TABLE IF NOT EXISTS embeddings (
-    cite_key TEXT PRIMARY KEY REFERENCES papers(cite_key),
-    dim      INTEGER,
-    vector   BLOB
-);
-
-CREATE TABLE IF NOT EXISTS refs (
-    cite_key    TEXT REFERENCES papers(cite_key),  -- the citing arXiv paper
-    raw         TEXT,               -- the bib entry verbatim
-    ref_doi     TEXT,               -- parsed, normalized, nullable
-    ref_arxiv   TEXT,               -- parsed bare arXiv id, nullable
-    ref_title   TEXT,               -- parsed, nullable
-    matched_key TEXT,               -- corpus cite_key if it overlaps, else NULL
-    source      TEXT                -- 'eprint' | 'openalex'
-);
-
-CREATE INDEX IF NOT EXISTS idx_refs_cite_key ON refs(cite_key);
-
-CREATE TABLE IF NOT EXISTS runs (
-    run_id     INTEGER PRIMARY KEY AUTOINCREMENT,
-    started    TEXT,
-    topics     TEXT,
-    n_scraped  INTEGER,
-    n_relevant INTEGER,
-    n_briefed  INTEGER
-);
-"""
+# The authoritative schema — rendered per engine — lives in db.SCHEMA.
 
 # Columns a stage is allowed to write. Guards against a typo silently
 # becoming a no-op UPDATE.
@@ -144,17 +80,10 @@ def make_cite_key(authors: list[str] | None, published: str | None, arxiv_id: st
 # connection
 # --------------------------------------------------------------------------
 
-@contextmanager
-def connect(db_path: Path) -> Iterator[sqlite3.Connection]:
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    try:
-        conn.executescript(SCHEMA)
-        yield conn
-        conn.commit()
-    finally:
-        conn.close()
+def connect(target: Any):
+    """Open the store. `target` is a SQLite path or a postgres:// URL — the
+    engine is chosen by db.connect(). Returned as a context manager."""
+    return db.connect(target)
 
 
 # --------------------------------------------------------------------------
@@ -238,19 +167,20 @@ def prune_old(conn: sqlite3.Connection, before: str) -> dict[str, int]:
         )
     ]
     if not doomed:
-        return {'papers': 0, 'refs': 0, 'embeddings': 0}
+        return {'papers': 0, 'refs': 0, 'embeddings': 0,
+                'summaries': 0, 'user_filters': 0}
 
     placeholders = ','.join('?' for _ in doomed)
-    n_refs = conn.execute(
-        f'DELETE FROM refs WHERE cite_key IN ({placeholders})', doomed
-    ).rowcount
-    n_emb = conn.execute(
-        f'DELETE FROM embeddings WHERE cite_key IN ({placeholders})', doomed
-    ).rowcount
-    n_papers = conn.execute(
-        f'DELETE FROM papers WHERE cite_key IN ({placeholders})', doomed
-    ).rowcount
-    return {'papers': n_papers, 'refs': n_refs, 'embeddings': n_emb}
+
+    def _del(table: str) -> int:
+        return conn.execute(
+            f'DELETE FROM {table} WHERE cite_key IN ({placeholders})', doomed
+        ).rowcount
+
+    # Children first, papers last.
+    counts = {t: _del(t) for t in ('refs', 'embeddings', 'summaries', 'user_filters')}
+    counts['papers'] = _del('papers')
+    return counts
 
 
 def status_counts(conn: sqlite3.Connection) -> dict[str, int]:
@@ -313,16 +243,98 @@ def has_refs(conn: sqlite3.Connection, cite_key: str) -> bool:
 
 
 # --------------------------------------------------------------------------
+# per-user summaries and filters
+#
+# The batch pipeline writes the shared baseline onto `papers` (see upsert_paper)
+# and never touches these tables. They exist for the hosted layer: when a user
+# re-summarizes with a stronger LLM or filters against their own topics, the
+# result lands here keyed by user_id, leaving the baseline intact. The shared
+# baseline is represented as user_id='' — never NULL, which cannot sit in a
+# composite primary key in either engine.
+# --------------------------------------------------------------------------
+
+BASELINE_USER = ''  # the shared, batch-written row
+
+_SUMMARY_FIELDS = (
+    'summary', 'research_question', 'contribution', 'claim', 'stakes',
+    'connection', 'created_at',
+)
+_FILTER_FIELDS = (
+    'topics', 'relevance_score', 'relevant', 'filter_reason', 'importance',
+    'briefed_on', 'created_at',
+)
+
+
+def _upsert(conn: sqlite3.Connection, table: str, key_cols: tuple[str, ...],
+            allowed: tuple[str, ...], key_vals: tuple, fields: dict) -> None:
+    """Composite-key upsert shared by both per-user tables."""
+    unknown = set(fields) - set(allowed)
+    if unknown:
+        raise ValueError(f'unknown column(s) for {table}: {sorted(unknown)}')
+    if 'topics' in fields and isinstance(fields['topics'], (list, tuple)):
+        fields['topics'] = json.dumps(list(fields['topics']))
+
+    cols = [*key_cols, *fields]
+    placeholders = ', '.join('?' for _ in cols)
+    updates = ', '.join(f'{c}=excluded.{c}' for c in fields) or \
+        f'{key_cols[0]}=excluded.{key_cols[0]}'  # no-op update if only keys given
+    conn.execute(
+        f'INSERT INTO {table} ({", ".join(cols)}) VALUES ({placeholders}) '
+        f'ON CONFLICT ({", ".join(key_cols)}) DO UPDATE SET {updates}',
+        [*key_vals, *fields.values()],
+    )
+
+
+def upsert_summary(conn: sqlite3.Connection, cite_key: str, llm_model: str,
+                   *, user_id: str = BASELINE_USER, **fields: Any) -> None:
+    """Insert or update one (paper, user, model) summary."""
+    _upsert(conn, 'summaries', ('cite_key', 'user_id', 'llm_model'),
+            _SUMMARY_FIELDS, (cite_key, user_id, llm_model), fields)
+
+
+def summary_for(conn: sqlite3.Connection, cite_key: str, *,
+                user_id: str = BASELINE_USER, llm_model: str | None = None):
+    """One summary row, or None. Without llm_model, the most recent for the user."""
+    if llm_model is not None:
+        return conn.execute(
+            'SELECT * FROM summaries WHERE cite_key=? AND user_id=? AND llm_model=?',
+            (cite_key, user_id, llm_model),
+        ).fetchone()
+    return conn.execute(
+        'SELECT * FROM summaries WHERE cite_key=? AND user_id=? '
+        'ORDER BY created_at DESC NULLS LAST LIMIT 1',
+        (cite_key, user_id),
+    ).fetchone()
+
+
+def upsert_user_filter(conn: sqlite3.Connection, cite_key: str, user_id: str,
+                       **fields: Any) -> None:
+    """Insert or update one user's filter verdict for a paper."""
+    _upsert(conn, 'user_filters', ('cite_key', 'user_id'),
+            _FILTER_FIELDS, (cite_key, user_id), fields)
+
+
+def user_filter_for(conn: sqlite3.Connection, cite_key: str, user_id: str):
+    return conn.execute(
+        'SELECT * FROM user_filters WHERE cite_key=? AND user_id=?',
+        (cite_key, user_id),
+    ).fetchone()
+
+
+# --------------------------------------------------------------------------
 # runs
 # --------------------------------------------------------------------------
 
 def start_run(conn: sqlite3.Connection, topics: list[str]) -> int:
+    # RETURNING rather than lastrowid: works on both engines (SQLite >= 3.35,
+    # Postgres), so the runs id doesn't depend on a SQLite-only cursor attr.
     cur = conn.execute(
         'INSERT INTO runs (started, topics, n_scraped, n_relevant, n_briefed) '
-        'VALUES (?, ?, 0, 0, 0)',
+        'VALUES (?, ?, 0, 0, 0) RETURNING run_id',
         (date.today().isoformat(), json.dumps(topics)),
     )
-    return int(cur.lastrowid)
+    row = cur.fetchone()
+    return int(row['run_id'])
 
 
 def finish_run(conn: sqlite3.Connection, run_id: int, **counts: int) -> None:

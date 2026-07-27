@@ -13,6 +13,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
+# Postgres runtime backend (Supabase). Tests and offline runs use the stdlib
+# sqlite3 driver and need nothing here.
+postgres = ["psycopg[binary]>=3.1"]
 
 [project.scripts]
 sqout = "sqout.run:main"

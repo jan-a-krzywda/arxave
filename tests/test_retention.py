@@ -32,7 +32,9 @@ def test_prune_drops_old_and_cascades(tmp_path):
         _seed(conn)
         counts = store.prune_old(conn, before='2026-07-20')
 
-        assert counts == {'papers': 1, 'refs': 1, 'embeddings': 1}
+        assert counts['papers'] == 1
+        assert counts['refs'] == 1
+        assert counts['embeddings'] == 1
         keys = {r['cite_key'] for r in conn.execute('SELECT cite_key FROM papers')}
         assert keys == {'New2026', 'NoDate'}
         # the pruned paper's children are gone...
@@ -57,5 +59,6 @@ def test_prune_noop_returns_zero(tmp_path):
     with store.connect(tmp_path / 'p.db') as conn:
         _seed(conn)
         assert store.prune_old(conn, before='2000-01-01') == {
-            'papers': 0, 'refs': 0, 'embeddings': 0
+            'papers': 0, 'refs': 0, 'embeddings': 0,
+            'summaries': 0, 'user_filters': 0,
         }

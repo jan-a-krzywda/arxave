@@ -63,7 +63,7 @@ def cmd_run(args, cfg: config.Config) -> int:
     if warning:
         log.warning('warning: %s', warning)
 
-    with store.connect(cfg.db_path) as conn:
+    with store.connect(cfg.store_target) as conn:
         run_id = store.start_run(conn, cfg.topics)
         counts: dict[str, int] = {}
 
@@ -106,7 +106,7 @@ def cmd_run(args, cfg: config.Config) -> int:
 def cmd_render(args, cfg: config.Config) -> int:
     """Re-render an existing brief from the store — no LLM calls."""
     on_date = _parse_date(args.date)
-    with store.connect(cfg.db_path) as conn:
+    with store.connect(cfg.store_target) as conn:
         print(brief.render(cfg, conn, on_date))
     return 0
 
