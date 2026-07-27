@@ -54,3 +54,10 @@ connect:
   # Sent to OpenAlex as the polite-pool contact.
   openalex_mailto: j.a.krzywda@gmail.com
   arxiv_bib: true
+
+retention:
+  # Rolling window: a full run drops papers published more than `days` ago.
+  # Safe because connections come from each paper's own bibliography, not from
+  # stored history. Set enabled: false to keep everything.
+  enabled: true
+  days: 7
