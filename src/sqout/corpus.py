@@ -9,28 +9,67 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import shutil
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
 
 from .config import Config, ConfigError
+from .openalex import normalize_doi
 
 
 class CorpusError(Exception):
     """Raised only by sync; loading a missing snapshot degrades instead."""
 
 
+def norm_title(title: str | None) -> str:
+    """Fold a title to a match key: lowercase, alphanumerics only.
+
+    Kills the formatting noise that stops a bib title matching a corpus title —
+    braces, punctuation, LaTeX escapes, doubled spaces. 'Spin-Orbit Coupling'
+    and 'spin orbit coupling' collapse to the same key."""
+    return re.sub(r'[^a-z0-9]', '', (title or '').lower())
+
+
 @dataclass(frozen=True)
 class Snapshot:
-    """Loaded corpus. `ids` maps OpenAlex ID -> cite_key; `titles` cite_key -> title."""
+    """Loaded corpus. `ids` maps OpenAlex ID -> cite_key; `titles` cite_key -> title.
+
+    `dois` and `title_index` are the bibliography-match indices: they let the
+    connect stage resolve a reference parsed from a paper's own .bbl (which
+    gives a DOI, an arXiv id, or a title string — never an OpenAlex id) back to
+    a corpus cite_key."""
     ids: dict[str, str]
     titles: dict[str, str]
+    dois: dict[str, str] = field(default_factory=dict)
+    title_index: dict[str, str] = field(default_factory=dict)
     synced_at: str | None = None
     source: str | None = None
 
     def __bool__(self) -> bool:
         return bool(self.ids)
+
+    def match_ref(self, ref_doi: str | None, ref_arxiv: str | None,
+                  ref_title: str | None) -> str | None:
+        """Resolve one parsed reference to a corpus cite_key, or None.
+
+        DOI first (most reliable), then the arXiv id via its DataCite DOI, then
+        a normalized-title fallback for references that carry neither."""
+        from .openalex import arxiv_doi
+        if ref_doi:
+            hit = self.dois.get(normalize_doi(ref_doi))
+            if hit:
+                return hit
+        if ref_arxiv:
+            hit = self.dois.get(arxiv_doi(ref_arxiv))
+            if hit:
+                return hit
+        if ref_title:
+            hit = self.title_index.get(norm_title(ref_title))
+            if hit:
+                return hit
+        return None
 
     @property
     def age_days(self) -> int | None:
@@ -107,13 +146,22 @@ def load(cfg: Config) -> Snapshot:
 
     ids: dict[str, str] = {}
     titles: dict[str, str] = {}
+    dois: dict[str, str] = {}
+    title_index: dict[str, str] = {}
     for cite_key, rec in works.items():
         if not isinstance(rec, dict):
             continue
         oa_id = rec.get('openalex_id')
         if oa_id:
             ids[oa_id] = cite_key
-        titles[cite_key] = rec.get('title') or cite_key
+        title = rec.get('title') or cite_key
+        titles[cite_key] = title
+        doi = normalize_doi(rec.get('doi'))
+        if doi:
+            dois.setdefault(doi, cite_key)
+        key = norm_title(title)
+        if key:
+            title_index.setdefault(key, cite_key)
 
     meta = {}
     if cfg.corpus_meta.exists():
@@ -125,6 +173,8 @@ def load(cfg: Config) -> Snapshot:
     return Snapshot(
         ids=ids,
         titles=titles,
+        dois=dois,
+        title_index=title_index,
         synced_at=meta.get('synced_at'),
         source=meta.get('source'),
     )

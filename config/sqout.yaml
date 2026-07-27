@@ -53,3 +53,4 @@ connect:
   enabled: true
   # Sent to OpenAlex as the polite-pool contact.
   openalex_mailto: j.a.krzywda@gmail.com
+  arxiv_bib: true

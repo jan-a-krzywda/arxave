@@ -66,6 +66,18 @@ CREATE TABLE IF NOT EXISTS embeddings (
     vector   BLOB
 );
 
+CREATE TABLE IF NOT EXISTS refs (
+    cite_key    TEXT REFERENCES papers(cite_key),  -- the citing arXiv paper
+    raw         TEXT,               -- the bib entry verbatim
+    ref_doi     TEXT,               -- parsed, normalized, nullable
+    ref_arxiv   TEXT,               -- parsed bare arXiv id, nullable
+    ref_title   TEXT,               -- parsed, nullable
+    matched_key TEXT,               -- corpus cite_key if it overlaps, else NULL
+    source      TEXT                -- 'eprint' | 'openalex'
+);
+
+CREATE INDEX IF NOT EXISTS idx_refs_cite_key ON refs(cite_key);
+
 CREATE TABLE IF NOT EXISTS runs (
     run_id     INTEGER PRIMARY KEY AUTOINCREMENT,
     started    TEXT,
@@ -226,6 +238,45 @@ def json_list(value: str | None) -> list:
     except (TypeError, ValueError):
         return [value]
     return decoded if isinstance(decoded, list) else [decoded]
+
+
+# --------------------------------------------------------------------------
+# references (the citing paper's own bibliography)
+# --------------------------------------------------------------------------
+
+_REF_FIELDS = ('raw', 'ref_doi', 'ref_arxiv', 'ref_title', 'matched_key', 'source')
+
+
+def replace_refs(conn: sqlite3.Connection, cite_key: str, refs: list[dict]) -> None:
+    """Overwrite the reference list for one paper.
+
+    Delete-then-insert keyed on cite_key, so re-running the refs stage refreshes
+    a paper's bibliography instead of duplicating it — the same idempotence the
+    rest of the pipeline relies on.
+    """
+    conn.execute('DELETE FROM refs WHERE cite_key=?', (cite_key,))
+    if not refs:
+        return
+    rows = [
+        (cite_key, *(r.get(f) for f in _REF_FIELDS))
+        for r in refs
+    ]
+    conn.executemany(
+        f'INSERT INTO refs (cite_key, {", ".join(_REF_FIELDS)}) '
+        f'VALUES (?, {", ".join("?" for _ in _REF_FIELDS)})',
+        rows,
+    )
+
+
+def refs_for(conn: sqlite3.Connection, cite_key: str) -> list[sqlite3.Row]:
+    return list(conn.execute('SELECT * FROM refs WHERE cite_key=?', (cite_key,)))
+
+
+def has_refs(conn: sqlite3.Connection, cite_key: str) -> bool:
+    row = conn.execute(
+        'SELECT 1 FROM refs WHERE cite_key=? LIMIT 1', (cite_key,)
+    ).fetchone()
+    return row is not None
 
 
 # --------------------------------------------------------------------------
