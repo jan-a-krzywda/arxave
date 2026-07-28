@@ -1,5 +1,10 @@
 title: Arxave
 description: A daily arXiv scout that briefs you on the papers that matter.
+
+# Canonical host, used for absolute links (jekyll-feed, sharing). The path
+# prefix is not set here: the Pages workflow passes --baseurl, which is empty
+# once the custom domain is live and /arxave before that.
+url: https://arxave.com
 theme: minima
 plugins:
   - jekyll-feed
