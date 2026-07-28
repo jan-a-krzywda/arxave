@@ -185,9 +185,18 @@ contrast, `api.openalex.org` and `api.semanticscholar.org` both send `*`.)
   relay, not whether. What crosses it is a category list and public paper IDs.
 - **Embeddings default to in-browser**, so the zero-install path is also the
   zero-cost path: `Xenova/bge-small-en-v1.5` (384-dim, MTEB ~62) via
-  transformers.js, WebGPU when present and WASM otherwise. One ~32 MB download,
-  browser-cached; measured 25 s for 130 abstracts on CPU. Nothing is sent
-  anywhere, so there is no key, no bill and no per-visitor exposure.
+  transformers.js on **WASM**. One ~32 MB download, browser-cached; measured
+  **75 s for 130 abstracts** in Chrome. Nothing is sent anywhere, so there is no
+  key, no bill and no per-visitor exposure.
+- **WASM, not WebGPU**, despite WebGPU being much faster. Measured on identical
+  q8 weights and identical text: node 0.801/0.400 (relevant/irrelevant cosine),
+  browser WASM 0.803/0.403, browser WebGPU **0.638/0.461**. WebGPU's
+  reduced-precision kernels halve the margin the ranking depends on. Revisit
+  only with `dtype: 'fp32'` and a fresh measurement.
+- **Import the transformers.js package root, not `dist/transformers.web.js`.**
+  That dist file carries a bare `onnxruntime-common` specifier which no browser
+  can resolve without an import map. Three CDNs are tried in order (jsdelivr,
+  unpkg, esm.sh) so one blocked CDN doesn't take the default path down.
 - **Hosted embeddings are the fallback** for people who want speed over
   independence: [`supabase/functions/embed`](../supabase/functions/embed/index.ts)
   holds the key and answers in OpenAI's response shape, so the two *remote*
