@@ -6,6 +6,7 @@ plugins:
 
 header_pages:
   - index.md
+  - filter.md
   - briefs.md
 
 collections:
