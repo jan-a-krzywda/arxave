@@ -291,7 +291,20 @@
 
     setStatus('Scouting arXiv (' + cats.join(', ') + ')…');
 
-    var resp = await fetchWithProxy(url);
+      var resp;
+    try {
+      resp = await fetchWithProxy(url);
+    } catch (err) {
+      if (err instanceof TypeError && err.message === 'Failed to fetch') {
+        throw new Error(
+          'Cannot reach arXiv API. This is a CORS issue — arXiv does not send ' +
+          'Access-Control-Allow-Origin headers, and the browser blocks the request. ' +
+          'Fix: paste a CORS proxy URL in the "CORS proxy" field above ' +
+          '(e.g. https://corsproxy.io/?) or run arxave serve locally.'
+        );
+      }
+      throw err;
+    }
     if (!resp.ok) {
       throw new Error('arXiv API returned HTTP ' + resp.status + '. ' +
         'Try setting a CORS proxy in the field above.');
@@ -354,14 +367,37 @@
     var headers = { 'Content-Type': 'application/json' };
     if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
 
-    var resp = await fetch(endpoint, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify({
-        model: cfg.model,
-        input: texts,
-      }),
-    });
+    var resp;
+    try {
+      resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+          model: cfg.model,
+          input: texts,
+        }),
+      });
+    } catch (err) {
+      if (err instanceof TypeError && err.message === 'Failed to fetch') {
+        var isMixedContent = cfg.baseUrl.startsWith('http://') &&
+          window.location.protocol === 'https:';
+        if (isMixedContent) {
+          throw new Error(
+            'Cannot reach embedding provider at ' + cfg.baseUrl + '. ' +
+            'This page is served over HTTPS (GitHub Pages), but your embedding ' +
+            'provider is on HTTP — browsers block this as mixed content. ' +
+            'Options: (1) run the page locally with `bundle exec jekyll serve`, ' +
+            '(2) use HTTPS for the provider, or (3) use a CORS proxy.'
+          );
+        }
+        throw new Error(
+          'Cannot reach embedding provider at ' + cfg.baseUrl + '. ' +
+          'Check that the provider is running and the base URL is correct. ' +
+          'If using a remote provider, you may need a CORS proxy.'
+        );
+      }
+      throw err;
+    }
 
     if (!resp.ok) {
       var errBody = '';
