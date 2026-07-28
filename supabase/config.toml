@@ -1,0 +1,10 @@
+project_id = "arxave"
+
+# Both functions are called by the static filter page on GitHub Pages, which
+# has no Supabase session. They must be callable without a JWT; their own
+# allowlist (relay) and caps (embed) are the protection.
+[functions.relay]
+verify_jwt = false
+
+[functions.embed]
+verify_jwt = false

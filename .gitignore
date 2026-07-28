@@ -6,3 +6,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .DS_Store
+
+# Supabase CLI scratch (link state, temp bundles)
+supabase/.temp/
+supabase/.branches/

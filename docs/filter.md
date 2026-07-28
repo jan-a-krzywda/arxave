@@ -12,9 +12,23 @@ permalink: /filter/
 
 <div id="app" style="display:none">
   <div class="safety-banner">
-    <strong>🔒 Everything happens in your browser.</strong>
-    API keys are never sent anywhere except to the embedding provider you
-    configure. No arxave server. <a href="#cors-note">Read about CORS</a>.
+    <strong>🔒 Your topics and library never leave this tab.</strong>
+    By default the embedding model runs in your browser, so scoring is entirely
+    local — no key, no account, nothing billed. The one unavoidable outside
+    request is fetching arXiv itself, which a browser cannot do directly.
+    <a href="#cors-note">Why</a>.
+  </div>
+
+  <div class="status-banner">
+    <strong>What works today:</strong> scouting arXiv, embedding abstracts and
+    topics in your browser, and ranking by topic match — with live re-ranking as
+    you move the sliders.
+    <br>
+    <strong>Work in progress:</strong> the <em>corpus</em> signal (titles only),
+    <em>crowd attention</em> (Scirate blocks automated fetches),
+    <em>citation overlap</em> (needs a backend), and the LLM refine step.
+    Those three sliders are disabled until their signal is real — ranking
+    renormalizes over whatever is present, so scores stay meaningful.
   </div>
 
   <form id="filter-form" autocomplete="off">
@@ -30,9 +44,15 @@ cryogenic control of quantum processors"></textarea>
 
     <!-- ── Corpus (.bib upload) ── -->
     <fieldset>
-      <legend>📚 Corpus <span class="sub">— optional, enables corpus_cos signal</span></legend>
+      <legend>📚 Corpus <span class="wip">WIP</span> <span class="sub">— optional, enables the corpus signal</span></legend>
       <p class="hint">Upload a <code>.bib</code> file of papers you already read. Titles are embedded
-      and compared to each candidate abstract. v1: titles only (offline).</p>
+      and compared to each candidate abstract.</p>
+      <p class="hint wip-note"><strong>Work in progress:</strong> only the
+      <em>titles</em> in your <code>.bib</code> are embedded — not abstracts, not
+      full text — so a match is looser than it should be. The parser is a regex
+      over <code>title = {…}</code> and has not been tested against messy
+      real-world <code>.bib</code> files. Usable, but treat the corpus score as
+      indicative.</p>
       <label class="bib-upload">
         <input type="file" id="bib-file" accept=".bib">
       </label>
@@ -59,16 +79,38 @@ cryogenic control of quantum processors"></textarea>
       </div>
     </fieldset>
 
-    <!-- ── Embedding provider ── -->
+    <!-- ── Embeddings ── -->
     <fieldset>
-      <legend>🧮 Embedding provider</legend>
-      <div class="role-grid">
+      <legend>🧮 Embeddings</legend>
+      <div class="embed-mode">
+        <label class="radio-row">
+          <input type="radio" name="embed-mode" value="local" checked>
+          <span><strong>In-browser</strong> — open-source
+          <code>bge-small-en-v1.5</code> runs in this tab. No key, no account,
+          nothing billed, nothing sent anywhere. Downloads ~32 MB the first time,
+          then the browser caches it. A day of papers takes a few seconds with
+          WebGPU, or roughly half a minute on CPU (measured: 25 s for 130
+          abstracts).</span>
+        </label>
+        <label class="radio-row">
+          <input type="radio" name="embed-mode" value="hosted">
+          <span><strong>Hosted</strong> — arxave's embedding endpoint. No
+          download, ~1 s per run; abstracts are sent to the endpoint.</span>
+        </label>
+        <label class="radio-row">
+          <input type="radio" name="embed-mode" value="own">
+          <span><strong>Own key</strong> — any OpenAI-compatible
+          <code>/v1/embeddings</code>. Your key stays in this form.</span>
+        </label>
+      </div>
+
+      <div class="role-grid" id="embed-own-fields" style="display:none; margin-top:0.75rem">
         <label>
           Provider
           <select id="embed-provider">
-            <option value="openai">OpenAI</option>
+            <option value="openai" selected>OpenAI</option>
             <option value="ollama">Ollama</option>
-            <option value="lm-studio" selected>LM Studio</option>
+            <option value="lm-studio">LM Studio</option>
             <option value="custom">Custom</option>
           </select>
         </label>
@@ -78,7 +120,7 @@ cryogenic control of quantum processors"></textarea>
         </label>
         <label class="base-url-label" id="embed-base-url-label">
           Base URL
-          <input type="text" id="embed-base-url" placeholder="http://127.0.0.1:1234/v1">
+          <input type="text" id="embed-base-url" placeholder="https://api.openai.com/v1">
         </label>
         <label>
           API key
@@ -87,18 +129,20 @@ cryogenic control of quantum processors"></textarea>
       </div>
     </fieldset>
 
-    <!-- ── CORS proxy ── -->
+    <!-- ── Relay ── -->
     <fieldset>
-      <legend>🌐 CORS proxy <span class="sub">— optional</span></legend>
+      <legend>🌐 Relay <span class="sub">— advanced, leave blank</span></legend>
       <p class="hint" id="cors-note">
-        arXiv and Scirate may block cross-origin browser requests. If the scout
-        or scite fetch fails, paste a CORS proxy URL here (e.g.
-        <code>http://127.0.0.1:8765/proxy</code> from <code>arxave serve</code>,
-        or a public one like <code>https://corsproxy.io/?</code>). Leave blank
-        for direct requests — they work with LM Studio / Ollama on localhost.
+        arXiv and Scirate send no <code>Access-Control-Allow-Origin</code> header
+        on any endpoint (checked 2026-07-28), so a browser cannot fetch them at
+        all — not with a key, not on localhost. Those two GETs therefore go
+        through arxave's relay, which only forwards to
+        <code>arxiv.org</code> and <code>scirate.com</code>. Nothing private is
+        in those requests: a category list and public paper IDs.
+        Override only if you want to run your own.
       </p>
       <label>
-        <input type="text" id="cors-proxy" placeholder="http://127.0.0.1:8765/proxy" style="width:100%">
+        <input type="text" id="cors-proxy" placeholder="(blank = arxave relay)" style="width:100%">
       </label>
     </fieldset>
 
@@ -118,13 +162,13 @@ cryogenic control of quantum processors"></textarea>
 
         <div class="weight-row" id="w2-row">
           <label>
-            <span class="weight-label">Corpus fit <code>w2</code></span>
-            <span class="weight-desc">Closeness to your library</span>
+            <span class="weight-label">Corpus fit <code>w2</code> <span class="wip">WIP</span></span>
+            <span class="weight-desc">Closeness to your library — titles only</span>
           </label>
-          <input type="range" id="w2" min="0" max="1" step="0.05" value="0.25">
+          <input type="range" id="w2" min="0" max="1" step="0.05" value="0.25" disabled>
           <span class="weight-val" id="w2-val">0.25</span>
           <span class="weight-pct" id="w2-pct"></span>
-          <span class="weight-unavailable" id="w2-unavailable" style="display:none">— signal unavailable (upload .bib)</span>
+          <span class="weight-unavailable" id="w2-unavailable">— signal unavailable (upload a .bib)</span>
         </div>
 
         <div class="weight-row" id="w3-row">
@@ -140,13 +184,13 @@ cryogenic control of quantum processors"></textarea>
 
         <div class="weight-row" id="w4-row">
           <label>
-            <span class="weight-label">Crowd attention <code>w4</code></span>
-            <span class="weight-desc">Scirate scites</span>
+            <span class="weight-label">Crowd attention <code>w4</code> <span class="wip">WIP</span></span>
+            <span class="weight-desc">Scirate scites — blocked by Cloudflare</span>
           </label>
-          <input type="range" id="w4" min="0" max="1" step="0.05" value="0.10">
+          <input type="range" id="w4" min="0" max="1" step="0.05" value="0.10" disabled>
           <span class="weight-val" id="w4-val">0.10</span>
           <span class="weight-pct" id="w4-pct"></span>
-          <span class="weight-unavailable" id="w4-unavailable" style="display:none">— signal unavailable (scirate fetch failed)</span>
+          <span class="weight-unavailable" id="w4-unavailable">— signal unavailable (Scirate answers 403 to non-browser fetches)</span>
         </div>
       </div>
 
@@ -166,19 +210,19 @@ cryogenic control of quantum processors"></textarea>
         <label>
           LLM provider (optional refine)
           <select id="refine-provider">
-            <option value="openai">OpenAI</option>
+            <option value="openai" selected>OpenAI</option>
             <option value="ollama">Ollama</option>
-            <option value="lm-studio" selected>LM Studio</option>
+            <option value="lm-studio">LM Studio</option>
             <option value="custom">Custom</option>
           </select>
         </label>
         <label style="align-self:end">
           <button type="button" id="refine-btn" disabled style="margin-top:0">
-            Refine top-N with LLM
+            Refine top-N with LLM <span class="wip">WIP</span>
           </button>
         </label>
       </div>
-      <div class="role-grid" id="refine-extra" style="display:none; margin-top:0.75rem">
+      <div class="role-grid" id="refine-extra" style="margin-top:0.75rem">
         <label>
           Refine model
           <input type="text" id="refine-model" value="gpt-4o-mini">
@@ -223,5 +267,6 @@ cryogenic control of quantum processors"></textarea>
   </div>
 </div>
 
+<link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}">
 <link rel="stylesheet" href="{{ '/assets/filter.css' | relative_url }}">
 <script src="{{ '/assets/filter.js' | relative_url }}"></script>
