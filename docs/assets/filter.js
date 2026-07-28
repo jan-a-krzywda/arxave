@@ -2,8 +2,8 @@
  * arxave filter — browser-side pipeline for ranking arXiv papers.
  *
  * Implements the filter-spec.md pipeline:
- *   1. scout  — arXiv API (Atom XML), via CORS proxy if configured
- *   2. embed  — batched /v1/embeddings call (OpenAI-compatible)
+ *   1. scout  — arXiv API (Atom XML), always via the relay (arXiv sends no CORS)
+ *   2. embed  — one batched call: hosted function by default, or the user's key
  *   3. cosine — topic_cos + corpus_cos (pure arithmetic)
  *   4. signals — scirate scite (best-effort), citation_overlap = null
  *   5. rank   — blend() with renormalization over present signals
@@ -14,6 +14,25 @@
  */
 (function () {
   'use strict';
+
+  // ── Hosted endpoints (supabase/functions/) ────────────────────────
+  // arXiv and Scirate send no Access-Control-Allow-Origin header, so a browser
+  // can never fetch them directly — every external GET goes through the relay.
+  // The embed function holds the API key server-side so the page is one click.
+  const FUNCTIONS_BASE = 'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1';
+  // scripts/dev_filter.py sets window.ARXAVE_RELAY so the local preview relays
+  // through itself instead of the deployed function.
+  const RELAY_URL = window.ARXAVE_RELAY || (FUNCTIONS_BASE + '/relay');
+  const HOSTED_EMBED_URL = FUNCTIONS_BASE + '/embed';
+
+  // ── In-browser embeddings (default) ───────────────────────────────
+  // transformers.js runs the model in this tab: no key, no bill, no request
+  // per run. Cost is a one-time ~32 MB model download, cached by the browser.
+  // Pinned: the browser ESM build. `pipeline` and `env` are both named exports.
+  const TRANSFORMERS_URL =
+    'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6/dist/transformers.web.js';
+  const LOCAL_MODEL = 'Xenova/bge-small-en-v1.5';   // 384-dim, MTEB ~62
+  const LOCAL_BATCH = 16;
 
   // ── Constants (match Python rank.py) ──────────────────────────────
   const SCITE_SATURATION = 20.0;   // rank.SCITE_SATURATION
@@ -100,7 +119,7 @@
   }
   updateWeightPct();
 
-  // ── Embedding provider presets ────────────────────────────────────
+  // ── Embedding mode: hosted (default, zero setup) or own key ───────
   var EMBED_PRESETS = {
     openai:      { base_url: 'https://api.openai.com/v1', model: 'text-embedding-3-small' },
     ollama:      { base_url: 'http://localhost:11434/v1', model: 'nomic-embed-text' },
@@ -108,36 +127,45 @@
     custom:      { base_url: '', model: '' },
   };
 
+  function embedMode() {
+    var el = document.querySelector('input[name="embed-mode"]:checked');
+    return el ? el.value : 'local';
+  }
+
+  function onEmbedModeChange() {
+    byId('embed-own-fields').style.display = (embedMode() === 'own') ? '' : 'none';
+  }
+
+  Array.prototype.forEach.call(
+    document.querySelectorAll('input[name="embed-mode"]'),
+    function (el) { el.addEventListener('change', onEmbedModeChange); }
+  );
+
   function onEmbedProviderChange() {
     var prov = byId('embed-provider').value;
     var preset = EMBED_PRESETS[prov];
     byId('embed-model').value = preset.model;
     byId('embed-base-url').value = preset.base_url;
-    var lbl = byId('embed-base-url-label');
-    lbl.style.display = (prov === 'custom' || prov === 'ollama' || prov === 'lm-studio') ? '' : 'none';
   }
   byId('embed-provider').addEventListener('change', onEmbedProviderChange);
   onEmbedProviderChange();
+  onEmbedModeChange();
 
   // ── Refine provider ───────────────────────────────────────────────
+  // Refine stays bring-your-own-key: it is the only stage that spends a large
+  // model, and it is off by default. The fields are always visible — hiding the
+  // key box for OpenAI left no way to enter the key it requires.
+  var REFINE_PRESETS = {
+    openai:      { base_url: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
+    ollama:      { base_url: 'http://localhost:11434/v1', model: 'llama3.2' },
+    'lm-studio': { base_url: 'http://127.0.0.1:1234/v1', model: 'liquid/lfm2.5-1.2b' },
+  };
+
   byId('refine-provider').addEventListener('change', function () {
-    var prov = this.value;
-    var extra = byId('refine-extra');
-    if (prov === 'custom') {
-      extra.style.display = '';
-    } else {
-      // fill in defaults
-      if (prov === 'openai') {
-        byId('refine-model').value = 'gpt-4o-mini';
-        byId('refine-base-url').value = 'https://api.openai.com/v1';
-      } else if (prov === 'ollama') {
-        byId('refine-model').value = 'llama3.2';
-        byId('refine-base-url').value = 'http://localhost:11434/v1';
-      } else if (prov === 'lm-studio') {
-        byId('refine-model').value = 'liquid/lfm2.5-1.2b';
-        byId('refine-base-url').value = 'http://127.0.0.1:1234/v1';
-      }
-      extra.style.display = (prov === 'ollama' || prov === 'lm-studio') ? '' : 'none';
+    var preset = REFINE_PRESETS[this.value];
+    if (preset) {
+      byId('refine-model').value = preset.model;
+      byId('refine-base-url').value = preset.base_url;
     }
   });
 
@@ -180,25 +208,26 @@
     return titles;
   }
 
-  // ── CORS proxy helper ─────────────────────────────────────────────
-  function proxyUrl(url) {
-    var p = byId('cors-proxy').value.trim();
-    if (!p) return url;
-    // If proxy ends with ?, append URL directly; otherwise assume it's a prefix
-    if (p.endsWith('?') || p.endsWith('=')) return p + encodeURIComponent(url);
-    // assume arxave serve style: /proxy?url=...
-    if (p.indexOf('?') === -1) return p + '?url=' + encodeURIComponent(url);
-    return p + encodeURIComponent(url);
+  // ── Relay helper ──────────────────────────────────────────────────
+  // Never try direct first: arXiv and Scirate send no CORS header, so the
+  // direct attempt is a guaranteed failure that costs a round-trip and litters
+  // the console. Always go through a relay; the field just picks which one.
+  function relayBase() {
+    var custom = byId('cors-proxy').value.trim();
+    return custom || RELAY_URL;
   }
 
-  function fetchWithProxy(url, opts) {
-    opts = opts || {};
-    // Try direct first, fall back to proxy if CORS blocks
-    return fetch(url, opts).catch(function (directErr) {
-      var p = byId('cors-proxy').value.trim();
-      if (!p) throw directErr;
-      return fetch(proxyUrl(url), opts);
-    });
+  function relayUrl(url) {
+    var p = relayBase();
+    // Prefix style: "https://corsproxy.io/?" or "…?target="
+    if (p.endsWith('?') || p.endsWith('=')) return p + encodeURIComponent(url);
+    // Query style: the arxave relay and `arxave serve` both take ?url=
+    if (p.indexOf('?') === -1) return p + '?url=' + encodeURIComponent(url);
+    return p + '&url=' + encodeURIComponent(url);
+  }
+
+  function fetchViaRelay(url, opts) {
+    return fetch(relayUrl(url), opts || {});
   }
 
   // ── Status display ────────────────────────────────────────────────
@@ -291,23 +320,25 @@
 
     setStatus('Scouting arXiv (' + cats.join(', ') + ')…');
 
-      var resp;
+    var resp;
     try {
-      resp = await fetchWithProxy(url);
+      resp = await fetchViaRelay(url);
     } catch (err) {
       if (err instanceof TypeError && err.message === 'Failed to fetch') {
         throw new Error(
-          'Cannot reach arXiv API. This is a CORS issue — arXiv does not send ' +
-          'Access-Control-Allow-Origin headers, and the browser blocks the request. ' +
-          'Fix: paste a CORS proxy URL in the "CORS proxy" field above ' +
-          '(e.g. https://corsproxy.io/?) or run arxave serve locally.'
+          'Cannot reach the relay at ' + relayBase() + '. arXiv itself sends no ' +
+          'CORS headers, so the browser can only reach it through a relay. ' +
+          'Check that the relay is deployed and reachable, or paste a different ' +
+          'one in the "Relay" field above.'
         );
       }
       throw err;
     }
     if (!resp.ok) {
-      throw new Error('arXiv API returned HTTP ' + resp.status + '. ' +
-        'Try setting a CORS proxy in the field above.');
+      var relayErr = '';
+      try { relayErr = (await resp.text()).substring(0, 200); } catch (_) {}
+      throw new Error('arXiv scout failed: HTTP ' + resp.status +
+        (relayErr ? ' — ' + relayErr : '') + ' (via ' + relayBase() + ').');
     }
 
     var xmlText = await resp.text();
@@ -324,7 +355,24 @@
   // STAGE 2 — embed (batched /v1/embeddings)
   // ═══════════════════════════════════════════════════════════════════
 
+  /**
+   * Three backends, one return shape (`[[float]]`, parallel to the input texts):
+   *   local  — transformers.js in this tab. No key, no bill, no network after
+   *            the one-time model download. The default.
+   *   hosted — POST to the arxave embed function; key lives server-side.
+   *   own    — POST to any OpenAI-compatible /v1/embeddings with the user's key.
+   * The hosted function answers in OpenAI's {data:[{index,embedding}]} shape
+   * precisely so the two remote backends share one code path.
+   */
   function getEmbedConfig() {
+    var mode = embedMode();
+    if (mode === 'local') {
+      return { mode: 'local', hosted: false };
+    }
+    if (mode === 'hosted') {
+      return { mode: 'hosted', hosted: true, endpoint: HOSTED_EMBED_URL, key: '', model: null };
+    }
+
     var baseUrl = byId('embed-base-url').value.trim();
     var key = byId('embed-key').value.trim();
     var model = byId('embed-model').value.trim();
@@ -332,15 +380,158 @@
     if (!model) throw new Error('Embedding model is required.');
     if (!baseUrl) throw new Error('Embedding base URL is required.');
 
-    // Normalize: strip trailing slash
     baseUrl = baseUrl.replace(/\/+$/, '');
 
-    return { baseUrl: baseUrl, key: key, model: model };
+    return { mode: 'own', hosted: false, endpoint: baseUrl + '/v1/embeddings', key: key, model: model };
+  }
+
+  // ── Local backend (transformers.js, WASM/WebGPU) ──────────────────
+  // Loaded on first use only — nobody pays 32 MB for a page they're reading.
+  var localExtractor = null;
+
+  async function getLocalExtractor() {
+    if (localExtractor) return localExtractor;
+
+    setStatus('Loading the embedding model (' + LOCAL_MODEL + ', ~32 MB, first run only)…');
+
+    var mod;
+    try {
+      mod = await import(TRANSFORMERS_URL);
+    } catch (err) {
+      throw new Error(
+        'Could not load the in-browser embedding runtime from ' + TRANSFORMERS_URL + '. ' +
+        'Check your connection, or switch the embedding mode to "Hosted".'
+      );
+    }
+
+    mod.env.allowLocalModels = false;   // always fetch from the CDN, never guess a local path
+
+    // WebGPU is roughly an order of magnitude faster; WASM is the fallback that
+    // works everywhere. Both run entirely in this tab.
+    var device = ('gpu' in navigator) ? 'webgpu' : 'wasm';
+
+    try {
+      localExtractor = await mod.pipeline('feature-extraction', LOCAL_MODEL, {
+        dtype: 'q8',
+        device: device,
+        progress_callback: function (p) {
+          if (p && p.status === 'progress' && p.file && typeof p.progress === 'number') {
+            setStatus('Downloading model: ' + p.file + ' — ' + p.progress.toFixed(0) + '%' +
+              ' (one time, then cached by the browser)');
+          }
+        },
+      });
+    } catch (err) {
+      if (device === 'webgpu') {
+        // Some browsers advertise navigator.gpu but fail to get an adapter.
+        setStatus('WebGPU unavailable, falling back to WASM…');
+        localExtractor = await mod.pipeline('feature-extraction', LOCAL_MODEL, {
+          dtype: 'q8',
+          device: 'wasm',
+        });
+      } else {
+        throw err;
+      }
+    }
+
+    return localExtractor;
+  }
+
+  async function embedLocal(texts) {
+    var extractor = await getLocalExtractor();
+    var vectors = [];
+
+    // Chunked so the status line moves and peak memory stays modest.
+    for (var i = 0; i < texts.length; i += LOCAL_BATCH) {
+      var chunk = texts.slice(i, i + LOCAL_BATCH);
+      setStatus('Embedding locally: ' + Math.min(i + LOCAL_BATCH, texts.length) +
+        ' / ' + texts.length + ' texts…');
+      // mean pooling + L2 normalize is the standard recipe for these models;
+      // cosine() renormalizes anyway, so this is belt and braces.
+      var out = await extractor(chunk, { pooling: 'mean', normalize: true });
+      var rows = out.tolist();
+      for (var r = 0; r < rows.length; r++) vectors.push(rows[r]);
+      // Yield to the event loop so the status line actually repaints.
+      await new Promise(function (res) { setTimeout(res, 0); });
+    }
+
+    return vectors;
+  }
+
+  // ── Remote backends (hosted function or user's own endpoint) ──────
+  async function embedRemote(texts, cfg) {
+    var endpoint = cfg.endpoint;
+
+    // The hosted function caps a call at 400 texts; say so before spending it.
+    if (cfg.hosted && texts.length > 400) {
+      throw new Error(
+        'Hosted embeddings take at most 400 texts per run; this run needs ' +
+        texts.length + '. Lower "Max results", trim the .bib, or switch to ' +
+        '"In-browser", which has no cap.'
+      );
+    }
+
+    var headers = { 'Content-Type': 'application/json' };
+    if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
+
+    var payload = { input: texts };
+    if (cfg.model) payload.model = cfg.model;   // hosted picks its own model
+
+    var resp;
+    try {
+      resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      if (err instanceof TypeError && err.message === 'Failed to fetch') {
+        if (cfg.hosted) {
+          throw new Error(
+            'Cannot reach the hosted embedding service at ' + endpoint + '. ' +
+            'Check your connection, or switch to "In-browser" — it needs no server.'
+          );
+        }
+        var isMixedContent = endpoint.startsWith('http://') &&
+          window.location.protocol === 'https:';
+        if (isMixedContent) {
+          throw new Error(
+            'Cannot reach embedding provider at ' + endpoint + '. ' +
+            'This page is served over HTTPS (GitHub Pages), but your embedding ' +
+            'provider is on HTTP — browsers block this as mixed content. ' +
+            'Options: (1) switch to "In-browser", (2) run the page locally ' +
+            'with `bundle exec jekyll serve`, or (3) serve the provider over HTTPS.'
+          );
+        }
+        throw new Error(
+          'Cannot reach embedding provider at ' + endpoint + '. ' +
+          'Check that the provider is running, the base URL is correct, and that ' +
+          'it allows browser (CORS) requests — many do not. "In-browser" mode ' +
+          'sidesteps both.'
+        );
+      }
+      throw err;
+    }
+
+    if (!resp.ok) {
+      var errBody = '';
+      try { errBody = await resp.text(); } catch (_) {}
+      throw new Error('Embedding request returned HTTP ' + resp.status +
+        (errBody ? ': ' + errBody.substring(0, 200) : '') +
+        (cfg.hosted ? '' : '. Check provider, model, base URL, and API key.'));
+    }
+
+    var data = await resp.json();
+    var embeddings = data.data; // [{index, embedding: [float]}]
+
+    // Sort by index (API should return ordered, but be safe)
+    embeddings.sort(function (a, b) { return a.index - b.index; });
+
+    return embeddings.map(function (e) { return e.embedding; });
   }
 
   async function runEmbed(candidates, topics, corpusTitles) {
     var cfg = getEmbedConfig();
-    var endpoint = cfg.baseUrl + '/v1/embeddings';
 
     // Collect all texts to embed in ONE batch:
     // - all abstracts
@@ -364,65 +555,23 @@
     setStatus('Embedding ' + candidates.length + ' abstracts + ' +
       topics.length + ' topics + ' + (corpusTitles ? corpusTitles.length : 0) + ' corpus entries…');
 
-    var headers = { 'Content-Type': 'application/json' };
-    if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
+    var vectors = (cfg.mode === 'local')
+      ? await embedLocal(texts)
+      : await embedRemote(texts, cfg);
 
-    var resp;
-    try {
-      resp = await fetch(endpoint, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({
-          model: cfg.model,
-          input: texts,
-        }),
-      });
-    } catch (err) {
-      if (err instanceof TypeError && err.message === 'Failed to fetch') {
-        var isMixedContent = cfg.baseUrl.startsWith('http://') &&
-          window.location.protocol === 'https:';
-        if (isMixedContent) {
-          throw new Error(
-            'Cannot reach embedding provider at ' + cfg.baseUrl + '. ' +
-            'This page is served over HTTPS (GitHub Pages), but your embedding ' +
-            'provider is on HTTP — browsers block this as mixed content. ' +
-            'Options: (1) run the page locally with `bundle exec jekyll serve`, ' +
-            '(2) use HTTPS for the provider, or (3) use a CORS proxy.'
-          );
-        }
-        throw new Error(
-          'Cannot reach embedding provider at ' + cfg.baseUrl + '. ' +
-          'Check that the provider is running and the base URL is correct. ' +
-          'If using a remote provider, you may need a CORS proxy.'
-        );
-      }
-      throw err;
+    if (vectors.length !== texts.length) {
+      throw new Error('Embedding backend returned ' + vectors.length +
+        ' vectors for ' + texts.length + ' texts.');
     }
-
-    if (!resp.ok) {
-      var errBody = '';
-      try { errBody = await resp.text(); } catch (_) {}
-      throw new Error('Embedding API returned HTTP ' + resp.status +
-        (errBody ? ': ' + errBody.substring(0, 200) : '') +
-        '. Check provider, model, base URL, and API key.');
-    }
-
-    var data = await resp.json();
-    var embeddings = data.data; // [{index, embedding: [float]}]
-
-    // Sort by index (API should return ordered, but be safe)
-    embeddings.sort(function (a, b) { return a.index - b.index; });
 
     // Split back into abstract, topic, corpus vectors
     var N = candidates.length;
     var T = topics.length;
     var K = corpusTitles ? corpusTitles.length : 0;
 
-    var abstractVectors = embeddings.slice(0, N).map(function (e) { return e.embedding; });
-    var topicVectors = embeddings.slice(topicIdx, topicIdx + T).map(function (e) { return e.embedding; });
-    var corpusVectors = (K > 0)
-      ? embeddings.slice(corpusIdx, corpusIdx + K).map(function (e) { return e.embedding; })
-      : [];
+    var abstractVectors = vectors.slice(0, N);
+    var topicVectors = vectors.slice(topicIdx, topicIdx + T);
+    var corpusVectors = (K > 0) ? vectors.slice(corpusIdx, corpusIdx + K) : [];
 
     return {
       abstractVectors: abstractVectors,
@@ -518,7 +667,7 @@
   async function fetchSciteCount(arxivId) {
     try {
       var url = 'https://scirate.com/arxiv/' + arxivId;
-      var resp = await fetchWithProxy(url, { signal: AbortSignal.timeout(5000) });
+      var resp = await fetchViaRelay(url, { signal: AbortSignal.timeout(5000) });
       if (!resp.ok) return null;
       var html = await resp.text();
 
@@ -552,12 +701,21 @@
     concurrency = concurrency || 3;
     var results = {};
     var i = 0;
+    var attempted = 0;
+    var gaveUp = false;
 
+    // Scirate sits behind a Cloudflare challenge, so a server-side fetch is
+    // usually 403 (measured 2026-07-28). Probe a few, and if none answer, stop
+    // hammering it — 130 doomed requests help nobody.
     async function worker() {
-      while (i < arxivIds.length) {
+      while (i < arxivIds.length && !gaveUp) {
         var idx = i++;
         var aid = arxivIds[idx];
         results[aid] = await fetchSciteCount(aid);
+        attempted++;
+        if (attempted >= 5 && Object.keys(results).every(function (k) { return results[k] === null; })) {
+          gaveUp = true;
+        }
       }
     }
 
@@ -567,6 +725,12 @@
       workers.push(worker());
     }
     await Promise.all(workers);
+
+    // Anything not reached (because we gave up) is unavailable, i.e. null —
+    // never 0. Same contract as scirate.py.
+    arxivIds.forEach(function (aid) {
+      if (!(aid in results)) results[aid] = null;
+    });
 
     return results;
   }
@@ -941,9 +1105,12 @@
       try {
         var arxivIds = state.candidates.map(function (c) { return c.arxiv_id; });
         scites = await fetchScites(arxivIds, 3);
-        state.sciteAvailable = true;
-        byId('w4-unavailable').style.display = 'none';
-        byId('w4').disabled = false;
+        // "No error thrown" is not the same as "we got counts": Scirate answers
+        // 403 to server-side fetches, which reads as every count being null.
+        // Say so on the slider instead of pretending w4 is doing work.
+        state.sciteAvailable = arxivIds.some(function (aid) { return scites[aid] !== null; });
+        byId('w4-unavailable').style.display = state.sciteAvailable ? 'none' : '';
+        byId('w4').disabled = !state.sciteAvailable;
       } catch (_) {
         // Scirate wholly unreachable
         scites = {};

@@ -156,32 +156,54 @@ spent, and only over the top-N the cheap rank already chose.
 
 ## 4. Everything in the browser — and the honest edges
 
-The page is static (GitHub Pages). No arXave server, no secrets leave the
-machine. Same guarantee the existing config page already makes: keys stay in the
-form, nothing is posted anywhere the user didn't type.
+The page is static (GitHub Pages). **Ranking** is fully local: topics, the
+`.bib`, the vectors, the blend and every re-sort never leave the machine. Two
+fetches genuinely cannot happen in a browser, and the spec names them rather
+than pretending they're free.
 
-Three external fetches are needed, and two have real CORS constraints. The spec
-handles each explicitly rather than pretending they're free:
+Measured 2026-07-28 with `curl -I -H "Origin: …"`: **arXiv sends no
+`Access-Control-Allow-Origin` header on any endpoint** — not `export.arxiv.org/api/query`,
+not `rss.arxiv.org`. Neither does `scirate.com`. There is no key, no localhost
+trick and no header that changes this; a browser simply cannot fetch them. (For
+contrast, `api.openalex.org` and `api.semanticscholar.org` both send `*`.)
 
 | Fetch | Endpoint | CORS reality | Strategy |
 |-------|----------|--------------|----------|
-| Embeddings | user's provider `/v1/embeddings` | OpenAI + local (LM Studio/Ollama on localhost) allow browser CORS | direct |
-| arXiv scout | `export.arxiv.org/api/query` | not guaranteed to send `Access-Control-Allow-Origin` | **optional CORS-proxy field**, direct first, proxy fallback |
-| Scirate scite | `scirate.com/arxiv/<id>` | HTML page, no API, cross-origin blocked | via same proxy; **best-effort**, `null` on any failure |
+| Embeddings | *none — runs in the tab* | n/a | **default: in-browser** (transformers.js), no key, no bill |
+| Embeddings (fallback) | arxave `embed` function | ours, sends `*` | hosted, key server-side, ~1 s/run |
+| Embeddings (opt-out) | user's provider `/v1/embeddings` | OpenAI and localhost providers allow browser CORS | direct, user's key, never leaves the form |
+| arXiv scout | `export.arxiv.org/api/query` | **no ACAO header — always blocked** | **always** via the arxave `relay` function |
+| Scirate scite | `scirate.com/arxiv/<id>` | HTML page, no API, no ACAO | same relay; **best-effort**, `null` on any failure |
 
 **Design rules that follow:**
 
-- A single **"CORS proxy" config field** (blank = direct). External GETs route
-  through it when set. Documented, opt-in, user-controlled — no hidden relay.
+- **Relay, not "optional proxy".** Since direct never works for arXiv/Scirate,
+  trying direct first only buys a wasted round-trip and a console error. The
+  page routes those two GETs through
+  [`supabase/functions/relay`](../supabase/functions/relay/index.ts), which
+  forwards only to `arxiv.org` / `scirate.com`. The config field overrides which
+  relay, not whether. What crosses it is a category list and public paper IDs.
+- **Embeddings default to in-browser**, so the zero-install path is also the
+  zero-cost path: `Xenova/bge-small-en-v1.5` (384-dim, MTEB ~62) via
+  transformers.js, WebGPU when present and WASM otherwise. One ~32 MB download,
+  browser-cached; measured 25 s for 130 abstracts on CPU. Nothing is sent
+  anywhere, so there is no key, no bill and no per-visitor exposure.
+- **Hosted embeddings are the fallback** for people who want speed over
+  independence: [`supabase/functions/embed`](../supabase/functions/embed/index.ts)
+  holds the key and answers in OpenAI's response shape, so the two *remote*
+  backends share one code path. It is public and billed to the deployer, so its
+  caps (400 texts/call, per-IP hourly budget) are load-bearing. The in-browser
+  backend has no cap because it costs the deployer nothing.
 - **Graceful degradation is mandatory.** arXiv unreachable → the run errors
   visibly (no papers = nothing to rank). Scirate unreachable → every `scite` is
   `null`, `w4` renormalizes out, ranking proceeds on the other signals. An
   unavailable scite is `null`, **never 0** — 0 would rank a paper as "nobody
   cared" when the truth is "we couldn't check" (contract from
   [src/arxave/scirate.py](../src/arxave/scirate.py)).
-- Users who don't want a proxy can run the local `arxave serve` backend, which
-  does the same fetches server-side without CORS. The browser page is the
-  zero-install path; the local server is the no-proxy path. Same UI either way.
+- Users who want nobody else's infrastructure in the loop can deploy their own
+  copy of both functions (`supabase/functions/README.md`) and paste the relay URL
+  into the field. `arxave serve` does **not** currently expose a proxy route —
+  don't point users at it until it does.
 
 ---
 
@@ -350,13 +372,16 @@ implementation can be swapped without touching ranking.
 
 ## 9. Open questions
 
-- **Embedding model** — hosted (`text-embedding-3-small`, cheap, needs key +
-  CORS) vs. in-browser (`transformers.js`, zero key, larger download). Affects
-  the "everything in the browser with no proxy" promise. v1: hosted; note
-  `transformers.js` as the fully-offline future path.
-- **arXiv CORS** — confirm whether `export.arxiv.org` sends permissive CORS
-  headers today; if yes, the proxy field is optional-in-practice; if no, decide
-  the default proxy story.
+- ~~**Embedding model**~~ — **settled.** Default is in-browser
+  `bge-small-en-v1.5` via transformers.js: no key, no bill, nothing leaves the
+  tab. Hosted (`gemini-embedding-001`, 768-dim, MTEB ~68) is the fallback when
+  someone wants the extra second back or the extra quality; "Own key" covers any
+  OpenAI-compatible endpoint. Open sub-question: whether ~62-MTEB embeddings
+  measurably change the top-N versus ~68 on real days — worth an A/B once
+  there's a week of runs to compare.
+- ~~**arXiv CORS**~~ — **settled by measurement:** no ACAO header anywhere, so
+  the relay is mandatory, not a fallback. Open sub-question: what the relay does
+  under load (no durable rate limit yet — the per-IP bucket is in-memory).
 - **corpus_cos fidelity** — titles-only (offline) vs. title+abstract (needs a
   fetch per `.bib` entry). Start titles-only; measure the precision gap.
 - **citation_overlap in-browser** — is a WASM/`.bbl` parse ever worth doing

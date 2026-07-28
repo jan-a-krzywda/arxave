@@ -185,3 +185,23 @@
     flex: 0 0 100%;
   }
 }
+/* ── Embedding mode radios ──────────────────────────────────── */
+.embed-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.radio-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.radio-row input[type="radio"] {
+  margin-top: 0.25rem;
+  flex: 0 0 auto;
+}

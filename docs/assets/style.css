@@ -270,3 +270,34 @@ textarea#topics:focus {
     flex-direction: column;
   }
 }
+/* ── WIP markers ────────────────────────────────────────────── */
+.wip {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #fff3cd;
+  color: #7a5b00;
+  border: 1px solid #ffe08a;
+}
+
+.wip-note {
+  border-left: 3px solid #ffe08a;
+  padding-left: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.status-banner {
+  border: 1px solid #d0d7de;
+  border-left: 4px solid #6c757d;
+  background: #f6f8fa;
+  border-radius: 4px;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 1.2rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
