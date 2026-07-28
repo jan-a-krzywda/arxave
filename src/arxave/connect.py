@@ -8,7 +8,7 @@ Two reference sources, tried in order:
 
   1. The paper's own arXiv bibliography, read from its `.bbl`/`.bib` by the
      `refs` stage. This ships inside the e-print at posting time, so it is
-     populated for same-day preprints — the daily firehose sqout prioritizes.
+     populated for same-day preprints — the daily firehose arxave prioritizes.
      It is the primary source.
 
   2. OpenAlex, as a fallback for papers the bibliography couldn't connect.
@@ -84,7 +84,7 @@ def run(cfg: Config, conn: sqlite3.Connection, snap: corpus.Snapshot | None = No
     snap = snap if snap is not None else corpus.load(cfg)
     if not snap:
         log.warning(
-            'connect: no corpus snapshot, skipping. Run `sqout sync-corpus`.'
+            'connect: no corpus snapshot, skipping. Run `arxave sync-corpus`.'
         )
         return 0
 

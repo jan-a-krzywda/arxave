@@ -1,7 +1,7 @@
-"""Configuration: config/sqout.yaml plus API keys from a gitignored .env.
+"""Configuration: config/arxave.yaml plus API keys from a gitignored .env.
 
 Paths are resolved absolutely at load time so no stage depends on the working
-directory. Everything sqout owns lives under `.local/`; the one path pointing
+directory. Everything arxave owns lives under `.local/`; the one path pointing
 outside the project (`corpus.source`) is read only by `sync-corpus`.
 """
 from __future__ import annotations
@@ -13,7 +13,7 @@ from pathlib import Path
 import yaml
 from dotenv import load_dotenv
 
-DEFAULT_CONFIG = Path('config/sqout.yaml')
+DEFAULT_CONFIG = Path('config/arxave.yaml')
 
 
 class ConfigError(Exception):
@@ -67,7 +67,7 @@ class ConnectConfig:
 
 @dataclass(frozen=True)
 class RetentionConfig:
-    """Rolling-window pruning. sqout prioritizes recent papers, and connections
+    """Rolling-window pruning. arxave prioritizes recent papers, and connections
     now come from each paper's own bibliography rather than stored history, so
     the store never needs to grow past a short window."""
     enabled: bool = True
@@ -85,10 +85,10 @@ class Config:
     retention: RetentionConfig = field(default_factory=RetentionConfig)
     llm: dict[str, LLMRoleConfig] = field(default_factory=dict)
 
-    # Paths sqout owns. Created on demand by whoever writes to them.
+    # Paths arxave owns. Created on demand by whoever writes to them.
     @property
     def db_path(self) -> Path:
-        return self.root / '.local' / 'sqout' / 'papers.db'
+        return self.root / '.local' / 'arxave' / 'papers.db'
 
     @property
     def store_target(self) -> str:

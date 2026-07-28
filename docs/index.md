@@ -165,10 +165,10 @@ cryogenic control of quantum processors"></textarea>
       <legend>🚀 How to run</legend>
       <p>
         This page generates <strong>config files only</strong>. To actually run
-        the scout, use the built-in local web UI that ships with sqout:
+        the scout, use the built-in local web UI that ships with arxave:
       </p>
-      <pre><code>cd ~/Documents/sqout
-sqout serve</code></pre>
+      <pre><code>cd ~/Documents/arxave
+arxave serve</code></pre>
       <p>
         Then open <strong>http://127.0.0.1:8765</strong> in your browser.
         Same form, but clicking <em>Run</em> executes the pipeline directly on
@@ -176,13 +176,13 @@ sqout serve</code></pre>
         or any local LLM.
       </p>
       <p class="hint">
-        Already have config files? Skip the web UI and run <code>sqout run</code>
+        Already have config files? Skip the web UI and run <code>arxave run</code>
         directly from your checkout.
       </p>
     </fieldset>
 
     <div class="button-bar">
-      <button type="button" id="download-yaml">⬇ Download sqout.yaml</button>
+      <button type="button" id="download-yaml">⬇ Download arxave.yaml</button>
       <button type="button" id="download-env">⬇ Download .env</button>
     </div>
 

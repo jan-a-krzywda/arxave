@@ -1,7 +1,7 @@
--- Row Level Security for sqout's hosted store.
+-- Row Level Security for arxave's hosted store.
 --
 -- WHEN TO RUN THIS: after the pipeline has connected to the database at least
--- once (the first `sqout run` against $SUPABASE_DB_URL creates the tables via
+-- once (the first `arxave run` against $SUPABASE_DB_URL creates the tables via
 -- CREATE TABLE IF NOT EXISTS). Then paste this file into the Supabase SQL
 -- editor and run it. It is idempotent — safe to re-run.
 --

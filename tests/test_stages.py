@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from sqout import filter as filter_stage
-from sqout import store, summarize
-from sqout.llm import LLMError, Relevance, Summary
+from arxave import filter as filter_stage
+from arxave import store, summarize
+from arxave.llm import LLMError, Relevance, Summary
 
 from conftest import FakeLLM
 

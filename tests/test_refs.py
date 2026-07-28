@@ -3,7 +3,7 @@ connect stage preferring those matches over OpenAlex.
 """
 from __future__ import annotations
 
-from sqout import connect, corpus, refs, store
+from arxave import connect, corpus, refs, store
 
 # A corpus with one paper, reachable by DOI, by arXiv id, and by title.
 SNAP = corpus.Snapshot(

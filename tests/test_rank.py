@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqout import rank, store
+from arxave import rank, store
 
 WEIGHTS = {'llm': 0.6, 'centrality': 0.3, 'scites': 0.1}
 

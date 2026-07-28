@@ -23,7 +23,7 @@ permalink: /briefs/
   </ul>
 {% else %}
   <p class="empty">
-    No briefs yet. Run <code>sqout run</code> and commit the generated
+    No briefs yet. Run <code>arxave run</code> and commit the generated
     <code>briefs/</code> directory, then this page will populate automatically.
   </p>
 {% endif %}

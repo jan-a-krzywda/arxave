@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from sqout import store
+from arxave import store
 
 
 # --------------------------------------------------------------------------

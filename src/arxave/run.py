@@ -1,6 +1,6 @@
 """CLI — orchestrates the pipeline.
 
-Every stage is idempotent and resumable via the `status` column, so `sqout run`
+Every stage is idempotent and resumable via the `status` column, so `arxave run`
 after a crash picks up where it stopped, and `--stage` runs one stage in
 isolation while iterating on prompts.
 """
@@ -14,7 +14,7 @@ from datetime import date
 from . import brief, config, connect, corpus, filter as filter_stage
 from . import rank, refs, scout, serve, store, summarize
 
-log = logging.getLogger('sqout')
+log = logging.getLogger('arxave')
 
 STAGES = ('scout', 'summarize', 'filter', 'refs', 'connect', 'rank', 'brief')
 
@@ -113,7 +113,7 @@ def cmd_render(args, cfg: config.Config) -> int:
 
 def _global_flags(*, suppress: bool) -> argparse.ArgumentParser:
     """Global flags, attachable to the top-level parser and to each subparser
-    so both `sqout -v run` and `sqout run -v` work.
+    so both `arxave -v run` and `arxave run -v` work.
 
     The subparser copies must use SUPPRESS defaults: argparse applies a
     subparser's defaults *after* the main parser has parsed, so a real default
@@ -124,7 +124,7 @@ def _global_flags(*, suppress: bool) -> argparse.ArgumentParser:
     p.add_argument(
         '-c', '--config',
         default=argparse.SUPPRESS if suppress else config.DEFAULT_CONFIG,
-        help='path to sqout.yaml (default: config/sqout.yaml)',
+        help='path to arxave.yaml (default: config/arxave.yaml)',
     )
     p.add_argument(
         '-v', '--verbose', action='store_true',
@@ -138,7 +138,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub_flags = _global_flags(suppress=True)
 
     parser = argparse.ArgumentParser(
-        prog='sqout', description='A daily arXiv scout that briefs you.',
+        prog='arxave', description='A daily arXiv scout that briefs you.',
         parents=[_global_flags(suppress=False)],
     )
     sub = parser.add_subparsers(dest='command', required=True)
@@ -151,7 +151,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_run.set_defaults(func=cmd_run)
 
     p_sync = sub.add_parser(
-        'sync-corpus', help="snapshot the paper library's works.json into sqout",
+        'sync-corpus', help="snapshot the paper library's works.json into arxave",
         parents=[sub_flags],
     )
     p_sync.add_argument('--from', dest='source', help='override corpus.source')

@@ -1,11 +1,11 @@
-# Sqout
+# Arxave
 
 A daily arXiv scout. Each morning it reads the overnight firehose, selects the
 few papers that matter, and briefs you — arguing why each one is worth your
 attention. Everything it evaluates is remembered in `papers.db`, so nothing is
 lost even when it doesn't make the brief.
 
-Status: **M1**. See `sqout-spec.md` for the full design and the M2–M4 roadmap.
+Status: **M1**. See `arxave-spec.md` for the full design and the M2–M4 roadmap.
 
 ## Setup
 
@@ -14,27 +14,27 @@ uv venv --python 3.11
 uv pip install -e ".[dev]"
 
 cp .env.example .env          # then add your ANTHROPIC_API_KEY
-$EDITOR config/sqout.yaml     # then replace the example topics — see below
+$EDITOR config/arxave.yaml     # then replace the example topics — see below
 ```
 
 Two things must be done before the first useful run:
 
-1. **Set your topics.** `config/sqout.yaml` ships with placeholder examples.
+1. **Set your topics.** `config/arxave.yaml` ships with placeholder examples.
    The filter stage gates every paper against this list, so it is the single
    biggest lever on what the brief pitches. Be specific — "quantum computing"
    lets everything through.
 2. **Snapshot the corpus** (optional, enables connection lines):
    ```bash
-   sqout sync-corpus
+   arxave sync-corpus
    ```
 
 ## Use
 
 ```bash
-sqout run                        # full pipeline -> briefs/<today>.md
-sqout run --stage scout --dry-run # see what would be fetched, write nothing
-sqout run --stage summarize      # run one stage while iterating on prompts
-sqout render                     # re-render today's brief, no LLM calls
+arxave run                        # full pipeline -> briefs/<today>.md
+arxave run --stage scout --dry-run # see what would be fetched, write nothing
+arxave run --stage summarize      # run one stage while iterating on prompts
+arxave render                     # re-render today's brief, no LLM calls
 ```
 
 Every stage is idempotent and resumable via the `status` column, so an
@@ -43,8 +43,8 @@ than duplicating them.
 
 ## Design notes
 
-**Relationship to the paper library.** Sqout has no runtime dependency on the
-spin-qubit library repo. The OpenAlex client is sqout's own code
+**Relationship to the paper library.** Arxave has no runtime dependency on the
+spin-qubit library repo. The OpenAlex client is arxave's own code
 (`openalex.py`), and the corpus is a **snapshot** copied in by `sync-corpus`
 and read from `.local/corpus/`. The library stays a library. The cost is
 drift: `.local/corpus/meta.json` records the source and sync time, and runs

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from sqout.run import build_parser
+from arxave.run import build_parser
 
 
 @pytest.mark.parametrize('argv', [
@@ -43,13 +43,13 @@ def test_sync_corpus_accepts_a_source_override():
 
 
 def test_dry_run_is_scout_only():
-    from sqout.run import cmd_run
+    from arxave.run import cmd_run
     args = build_parser().parse_args(['run', '--stage', 'rank', '--dry-run'])
     with pytest.raises(SystemExit, match='only applies to the scout stage'):
         cmd_run(args, None)
 
 
 def test_bad_date_is_rejected_clearly():
-    from sqout.run import _parse_date
+    from arxave.run import _parse_date
     with pytest.raises(SystemExit, match='expected YYYY-MM-DD'):
         _parse_date('20th July')

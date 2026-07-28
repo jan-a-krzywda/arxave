@@ -178,14 +178,14 @@ textarea#topics:focus {
   background: #0b5ed7;
 }
 
-#run-sqout {
+#run-arxave {
   background: #6f42c1;
   color: #fff;
 }
-#run-sqout:hover {
+#run-arxave:hover {
   background: #5a32a3;
 }
-#run-sqout:disabled {
+#run-arxave:disabled {
   background: #a28ad4;
   cursor: not-allowed;
 }

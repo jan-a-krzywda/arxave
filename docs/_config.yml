@@ -1,4 +1,4 @@
-title: Sqout
+title: Arxave
 description: A daily arXiv scout that briefs you on the papers that matter.
 theme: minima
 plugins:
@@ -6,6 +6,7 @@ plugins:
 
 header_pages:
   - index.md
+  - filter.md
   - briefs.md
 
 collections:

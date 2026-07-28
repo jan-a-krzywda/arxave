@@ -12,13 +12,18 @@ from __future__ import annotations
 
 import os
 
-from dotenv import load_dotenv
+from dotenv import find_dotenv, load_dotenv
 
-from sqout import db, store
+from arxave import db, store
 
-load_dotenv('.env')
+# find_dotenv walks up from the cwd, so this works whether run from the repo
+# root or from scripts/.
+load_dotenv(find_dotenv(usecwd=True))
 
-target = os.environ.get('SUPABASE_DB_URL') or '.local/sqout/smoke.db'
+target = os.environ.get('SUPABASE_DB_URL') or '.local/arxave/smoke.db'
+if not os.environ.get('SUPABASE_DB_URL'):
+    print('WARNING: SUPABASE_DB_URL not set — falling back to local SQLite.')
+    print('         Add it to .env at the repo root to test against Postgres.\n')
 print(f'engine: {db.dialect_of(target)}  ->  {target.split("@")[-1] if "@" in target else target}')
 
 with store.connect(target) as conn:

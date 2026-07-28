@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from sqout.config import (
+from arxave.config import (
     Config, ConnectConfig, CorpusConfig, LLMRoleConfig, RankingConfig, ScoutConfig,
 )
 

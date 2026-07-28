@@ -1,4 +1,4 @@
-name: Run Sqout
+name: Run Arxave
 
 on:
   workflow_dispatch:
@@ -34,45 +34,45 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install sqout
+      - name: Install arxave
         run: pip install -e .
 
-      - name: Write sqout.yaml
+      - name: Write arxave.yaml
         run: |
           mkdir -p config
-          cat > config/sqout.yaml << 'SQOUTEOF'
+          cat > config/arxave.yaml << 'ARXAVEEOF'
           corpus:
             source: ~/openspin-repos/SpinLib/scripts/.local/graph/works.json
             stale_after_days: 30
 
           scout:
             categories:
-          SQOUTEOF
+          ARXAVEEOF
           echo "${{ inputs.categories }}" | tr ',' '\n' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//' | grep -v '^$' | while read cat; do
-            echo "    - $cat" >> config/sqout.yaml
+            echo "    - $cat" >> config/arxave.yaml
           done
-          cat >> config/sqout.yaml << SQOUTEOF
+          cat >> config/arxave.yaml << ARXAVEEOF
             lookback_days: ${{ inputs.lookback_days }}
             max_results: ${{ inputs.max_results }}
 
           topics:
-          SQOUTEOF
+          ARXAVEEOF
           echo "${{ inputs.topics }}" | while read topic; do
-            [ -n "$topic" ] && echo "  - \"$topic\"" >> config/sqout.yaml
+            [ -n "$topic" ] && echo "  - \"$topic\"" >> config/arxave.yaml
           done
-          cat >> config/sqout.yaml << SQOUTEOF
+          cat >> config/arxave.yaml << ARXAVEEOF
 
           llm:
             light:
-              provider: ${{ vars.SQOUT_LIGHT_PROVIDER || 'anthropic' }}
-              model: ${{ vars.SQOUT_LIGHT_MODEL || 'claude-haiku-4-5' }}
-              api_key_env: ${{ vars.SQOUT_LIGHT_KEY_ENV || 'ANTHROPIC_API_KEY' }}
-              base_url: ${{ vars.SQOUT_LIGHT_BASE_URL || 'null' }}
+              provider: ${{ vars.ARXAVE_LIGHT_PROVIDER || 'anthropic' }}
+              model: ${{ vars.ARXAVE_LIGHT_MODEL || 'claude-haiku-4-5' }}
+              api_key_env: ${{ vars.ARXAVE_LIGHT_KEY_ENV || 'ANTHROPIC_API_KEY' }}
+              base_url: ${{ vars.ARXAVE_LIGHT_BASE_URL || 'null' }}
             heavy:
-              provider: ${{ vars.SQOUT_HEAVY_PROVIDER || 'anthropic' }}
-              model: ${{ vars.SQOUT_HEAVY_MODEL || 'claude-opus-4-8' }}
-              api_key_env: ${{ vars.SQOUT_HEAVY_KEY_ENV || 'ANTHROPIC_API_KEY' }}
-              base_url: ${{ vars.SQOUT_HEAVY_BASE_URL || 'null' }}
+              provider: ${{ vars.ARXAVE_HEAVY_PROVIDER || 'anthropic' }}
+              model: ${{ vars.ARXAVE_HEAVY_MODEL || 'claude-opus-4-8' }}
+              api_key_env: ${{ vars.ARXAVE_HEAVY_KEY_ENV || 'ANTHROPIC_API_KEY' }}
+              base_url: ${{ vars.ARXAVE_HEAVY_BASE_URL || 'null' }}
 
           ranking:
             weights:
@@ -84,9 +84,9 @@ jobs:
           connect:
             enabled: true
             openalex_mailto: j.a.krzywda@gmail.com
-          SQOUTEOF
+          ARXAVEEOF
 
-      - name: Run sqout
+      - name: Run arxave
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -94,12 +94,12 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
           LM_STUDIO_API_KEY: ${{ secrets.LM_STUDIO_API_KEY }}
-        run: sqout run
+        run: arxave run
 
       - name: Commit and push brief
         run: |
-          git config user.name "Sqout Bot"
-          git config user.email "sqout-bot@users.noreply.github.com"
+          git config user.name "Arxave Bot"
+          git config user.email "arxave-bot@users.noreply.github.com"
           if [ -d briefs ]; then
             cp -r briefs/*.md docs/_briefs/ 2>/dev/null || true
             git add docs/_briefs/

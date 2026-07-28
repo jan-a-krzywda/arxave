@@ -7,7 +7,7 @@ told us nothing", because the two need different follow-up.
 """
 from __future__ import annotations
 
-from sqout import connect, corpus, store
+from arxave import connect, corpus, store
 
 SNAP = corpus.Snapshot(
     ids={'https://openalex.org/W1': 'Petta2005'},
@@ -85,7 +85,7 @@ def test_brief_prompt_does_not_invite_a_disconnection_claim(cfg):
             'SELECT * FROM papers WHERE cite_key="K1"'
         ).fetchone()
 
-    from sqout import brief
+    from arxave import brief
     prompt = brief._prompt(row)
     assert 'carries NO information' in prompt
     assert 'Do not say the paper is' in prompt
