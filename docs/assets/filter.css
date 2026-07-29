@@ -228,6 +228,18 @@
   accent-color: var(--lamp);
 }
 
+/* A mode you cannot pick reads as one you cannot pick. */
+.radio-row.is-dead {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+.radio-row.is-dead strong {
+  color: var(--text-dim);
+}
+.radio-row.is-dead input[type="radio"] {
+  accent-color: var(--pyrite-dim);
+}
+
 /* ── Collapsed advanced block (relay) ───────────────────────── */
 details.advanced {
   border: 1px solid var(--rock-edge);
@@ -259,6 +271,22 @@ details.advanced > summary:hover {
 details.advanced .hint {
   margin-top: 0.6rem;
 }
+/* Nothing inside an advanced block competes with Dig. */
+details.advanced .button-bar {
+  margin: 1rem 0 0.25rem;
+}
+details.advanced .button-bar button {
+  font-size: 0.9rem;
+  padding: 0.5rem 1.1rem;
+  background: var(--rock);
+  color: var(--text-dim);
+  border: 1px solid var(--rock-lit);
+}
+details.advanced .button-bar button:disabled {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
 details.advanced input[type="text"] {
   width: 100%;
   box-sizing: border-box;

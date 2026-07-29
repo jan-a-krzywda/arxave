@@ -1,7 +1,7 @@
 ---
 layout: page
-title: Filter
-permalink: /filter/
+title: Dig
+permalink: /
 ---
 
 <noscript>
@@ -75,18 +75,19 @@ cryogenic control of quantum processors"></textarea>
           <code>bge-small-en-v1.5</code> runs in this tab. No key, no account,
           nothing billed, nothing sent anywhere. Downloads ~32 MB the first time,
           then the browser caches it. Slow but free: measured 75 s for 130
-          abstracts in Chrome. Pick <strong>Hosted</strong> below if you would
-          rather wait a second than a minute.</span>
+          abstracts in Chrome. The only mode that works today.</span>
         </label>
-        <label class="radio-row">
-          <input type="radio" name="embed-mode" value="hosted">
-          <span><strong>Hosted</strong> — arxave's embedding endpoint. No
-          download, ~1 s per run; abstracts are sent to the endpoint.</span>
+        <label class="radio-row is-dead">
+          <input type="radio" name="embed-mode" value="hosted" disabled>
+          <span><strong>Hosted</strong> <span class="wip">WIP</span> — arxave's
+          embedding endpoint: no download, ~1 s per run, abstracts sent out. Not
+          deployed yet.</span>
         </label>
-        <label class="radio-row">
-          <input type="radio" name="embed-mode" value="own">
-          <span><strong>Own key</strong> — any OpenAI-compatible
-          <code>/v1/embeddings</code>. Your key stays in this form.</span>
+        <label class="radio-row is-dead">
+          <input type="radio" name="embed-mode" value="own" disabled>
+          <span><strong>Own key</strong> <span class="wip">WIP</span> — any
+          OpenAI-compatible <code>/v1/embeddings</code>, key kept in this form.
+          Written but untested against a live provider.</span>
         </label>
       </div>
 
