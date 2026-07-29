@@ -28,9 +28,19 @@
   // ── In-browser embeddings (default) ───────────────────────────────
   // transformers.js runs the model in this tab: no key, no bill, no request
   // per run. Cost is a one-time ~32 MB model download, cached by the browser.
-  // Pinned: the browser ESM build. `pipeline` and `env` are both named exports.
-  const TRANSFORMERS_URL =
-    'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6/dist/transformers.web.js';
+  // Pinned version, three CDNs, tried in order — one blocked or down CDN should
+  // not take the default embedding path with it.
+  //
+  // Import the PACKAGE root, not dist/transformers.web.js: that file carries a
+  // bare specifier ("onnxruntime-common") which a browser cannot resolve
+  // without an import map, and fails with "Failed to resolve module specifier".
+  // The package URL resolves to a build whose dependencies are already wired.
+  const TRANSFORMERS_VERSION = '3.7.6';
+  const TRANSFORMERS_URLS = [
+    'https://cdn.jsdelivr.net/npm/@huggingface/transformers@' + TRANSFORMERS_VERSION,
+    'https://unpkg.com/@huggingface/transformers@' + TRANSFORMERS_VERSION,
+    'https://esm.sh/@huggingface/transformers@' + TRANSFORMERS_VERSION,
+  ];
   const LOCAL_MODEL = 'Xenova/bge-small-en-v1.5';   // 384-dim, MTEB ~62
   const LOCAL_BATCH = 16;
 
@@ -394,45 +404,49 @@
 
     setStatus('Loading the embedding model (' + LOCAL_MODEL + ', ~32 MB, first run only)…');
 
-    var mod;
-    try {
-      mod = await import(TRANSFORMERS_URL);
-    } catch (err) {
+    var mod = null;
+    var failures = [];
+    for (var u = 0; u < TRANSFORMERS_URLS.length && !mod; u++) {
+      try {
+        mod = await import(TRANSFORMERS_URLS[u]);
+      } catch (err) {
+        // Keep the real reason: "failed to load" and "loaded but threw" need
+        // different fixes, and hiding the message costs an hour of guessing.
+        failures.push(TRANSFORMERS_URLS[u] + ' → ' + (err && err.message ? err.message : String(err)));
+      }
+    }
+
+    if (!mod) {
       throw new Error(
-        'Could not load the in-browser embedding runtime from ' + TRANSFORMERS_URL + '. ' +
-        'Check your connection, or switch the embedding mode to "Hosted".'
+        'Could not load the in-browser embedding runtime from any CDN. ' +
+        'Switch the embedding mode to "Hosted" to keep going. Details: ' +
+        failures.join(' | ')
       );
     }
 
     mod.env.allowLocalModels = false;   // always fetch from the CDN, never guess a local path
 
-    // WebGPU is roughly an order of magnitude faster; WASM is the fallback that
-    // works everywhere. Both run entirely in this tab.
-    var device = ('gpu' in navigator) ? 'webgpu' : 'wasm';
-
-    try {
-      localExtractor = await mod.pipeline('feature-extraction', LOCAL_MODEL, {
-        dtype: 'q8',
-        device: device,
-        progress_callback: function (p) {
-          if (p && p.status === 'progress' && p.file && typeof p.progress === 'number') {
-            setStatus('Downloading model: ' + p.file + ' — ' + p.progress.toFixed(0) + '%' +
-              ' (one time, then cached by the browser)');
-          }
-        },
-      });
-    } catch (err) {
-      if (device === 'webgpu') {
-        // Some browsers advertise navigator.gpu but fail to get an adapter.
-        setStatus('WebGPU unavailable, falling back to WASM…');
-        localExtractor = await mod.pipeline('feature-extraction', LOCAL_MODEL, {
-          dtype: 'q8',
-          device: 'wasm',
-        });
-      } else {
-        throw err;
-      }
-    }
+    // WASM, deliberately, even where WebGPU exists. Measured in Chrome on the
+    // same three sentences and the same q8 weights:
+    //
+    //   node (reference)   relevant 0.801   irrelevant 0.400
+    //   browser WASM       relevant 0.803   irrelevant 0.403
+    //   browser WebGPU     relevant 0.638   irrelevant 0.461
+    //
+    // WebGPU is faster but its reduced-precision kernels cut the gap between a
+    // relevant and an irrelevant paper by more than half — which is the whole
+    // signal ranking runs on. Speed is not worth a blunter ranking; revisit
+    // only with dtype: 'fp32' and a fresh measurement.
+    localExtractor = await mod.pipeline('feature-extraction', LOCAL_MODEL, {
+      dtype: 'q8',
+      device: 'wasm',
+      progress_callback: function (p) {
+        if (p && p.status === 'progress' && p.file && typeof p.progress === 'number') {
+          setStatus('Downloading model: ' + p.file + ' — ' + p.progress.toFixed(0) + '%' +
+            ' (one time, then cached by the browser)');
+        }
+      },
+    });
 
     return localExtractor;
   }

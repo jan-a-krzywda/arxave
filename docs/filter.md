@@ -88,9 +88,9 @@ cryogenic control of quantum processors"></textarea>
           <span><strong>In-browser</strong> — open-source
           <code>bge-small-en-v1.5</code> runs in this tab. No key, no account,
           nothing billed, nothing sent anywhere. Downloads ~32 MB the first time,
-          then the browser caches it. A day of papers takes a few seconds with
-          WebGPU, or roughly half a minute on CPU (measured: 25 s for 130
-          abstracts).</span>
+          then the browser caches it. Slow but free: measured 75 s for 130
+          abstracts in Chrome. Pick <strong>Hosted</strong> below if you would
+          rather wait a second than a minute.</span>
         </label>
         <label class="radio-row">
           <input type="radio" name="embed-mode" value="hosted">
