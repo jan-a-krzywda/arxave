@@ -1,10 +1,13 @@
 /* ═══════════════════════════════════════════════════════════════════
    Cave — the site palette. Same colours as the logo: rock, lamp, ore.
 
-   Loaded from _includes/custom-head.html on every page, so it lands
-   before minima's stylesheet in the cascade and overrides it by
-   specificity where needed. style.css and filter.css read the tokens
-   defined here, so there is one place to change a colour.
+   Imported by assets/main.scss, after minima, so it compiles into the one
+   stylesheet minima's <head> already links — minima 2.5 has no
+   custom-head.html hook to add a second one. style.css and filter.css read
+   the tokens defined here, so there is one place to change a colour.
+
+   Kept as plain CSS: no SCSS syntax, so scripts/dev_filter.py can serve this
+   same file to the local preview without a Sass build.
    ═══════════════════════════════════════════════════════════════════ */
 
 :root {

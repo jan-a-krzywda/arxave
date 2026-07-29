@@ -106,6 +106,12 @@ class Handler(BaseHTTPRequestHandler):
             self._fail(404, 'Not found.')
 
     def _asset(self, path: str) -> None:
+        # The theme lives in _sass so Jekyll can compile it into minima's one
+        # stylesheet. It is plain CSS, so serve it straight to the preview.
+        if path == '/assets/cave.css':
+            self._send(200, (DOCS / '_sass' / 'cave.scss').read_bytes(), 'text/css')
+            return
+
         # Resolve and confirm the result is still inside docs/assets.
         assets = (DOCS / 'assets').resolve()
         candidate = (assets / path[len('/assets/'):]).resolve()
