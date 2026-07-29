@@ -1,0 +1,23 @@
+---
+# Front matter (even empty) is what makes Jekyll compile this file.
+# This replaces minima's own assets/main.scss, so /assets/main.css — the one
+# stylesheet minima's <head> links — carries the cave theme too. minima 2.5 has
+# no custom-head.html hook, so this is the only way in without forking its head.
+---
+
+// Minima's own variables, overridden before the import so the theme's own rules
+// are built dark rather than repainted afterwards. Values mirror _sass/cave.scss.
+$background-color: #15181d;
+$text-color: #d7dbe0;
+$brand-color: #7aa2f7;
+$grey-color: #99a1ad;
+$grey-color-light: #333a44;
+$grey-color-dark: #21262e;
+$table-text-color: #d7dbe0;
+$table-zebra-color: #1b1f26;
+$table-header-bg-color: #21262e;
+$table-header-border: #333a44;
+$table-border-color: #333a44;
+
+@import "minima";
+@import "cave";

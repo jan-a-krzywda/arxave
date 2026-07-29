@@ -153,7 +153,7 @@ textarea#topics:focus {
 .button-bar {
   display: flex;
   gap: 1rem;
-  margin-top: 1.5rem;
+  margin: 2rem 0 3rem;
   align-items: center;
 }
 .button-bar button {
@@ -163,7 +163,7 @@ textarea#topics:focus {
   border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
-  transition: background 0.15s, transform 0.1s;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
 }
 .button-bar button:active {
   transform: scale(0.97);
@@ -182,7 +182,22 @@ textarea#topics:focus {
 #run-filter:disabled {
   background: var(--pyrite-dim);
   color: var(--text-faint);
+  box-shadow: none;
   cursor: not-allowed;
+}
+
+/* The one button the page exists for. Big, and lit like a lamp so the eye
+   lands on it before the advanced blocks below. */
+#run-filter {
+  font-size: 1.1rem;
+  padding: 0.85rem 2.4rem;
+  letter-spacing: 0.02em;
+  box-shadow: 0 0 0 1px rgba(245, 179, 1, 0.35),
+              0 6px 22px -6px rgba(245, 179, 1, 0.55);
+}
+#run-filter:hover {
+  box-shadow: 0 0 0 1px rgba(255, 199, 48, 0.5),
+              0 8px 26px -6px rgba(245, 179, 1, 0.75);
 }
 
 #download-env {
