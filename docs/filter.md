@@ -11,25 +11,11 @@ permalink: /filter/
 </noscript>
 
 <div id="app" style="display:none">
-  <div class="safety-banner">
-    <strong>🔒 Your topics and library never leave this tab.</strong>
-    By default the embedding model runs in your browser, so scoring is entirely
-    local — no key, no account, nothing billed. The one unavoidable outside
-    request is fetching arXiv itself, which a browser cannot do directly.
-    <a href="#cors-note">Why</a>.
-  </div>
-
-  <div class="status-banner">
-    <strong>What works today:</strong> scouting arXiv, embedding abstracts and
-    topics in your browser, and ranking by topic match — with live re-ranking as
-    you move the sliders.
-    <br>
-    <strong>Work in progress:</strong> the <em>corpus</em> signal (titles only),
-    <em>crowd attention</em> (Scirate blocks automated fetches),
-    <em>citation overlap</em> (needs a backend), and the LLM refine step.
-    Those three sliders are disabled until their signal is real — ranking
-    renormalizes over whatever is present, so scores stay meaningful.
-  </div>
+  <p class="hint">
+    Wash a night of arXiv and keep the few stones worth a careful look.
+    Everything scores in this tab — nothing about your topics leaves it.
+    <a href="#small-print">Small print</a>.
+  </p>
 
   <form id="filter-form" autocomplete="off">
 
@@ -129,26 +115,9 @@ cryogenic control of quantum processors"></textarea>
       </div>
     </fieldset>
 
-    <!-- ── Relay ── -->
-    <fieldset>
-      <legend>🌐 Relay <span class="sub">— advanced, leave blank</span></legend>
-      <p class="hint" id="cors-note">
-        arXiv and Scirate send no <code>Access-Control-Allow-Origin</code> header
-        on any endpoint (checked 2026-07-28), so a browser cannot fetch them at
-        all — not with a key, not on localhost. Those two GETs therefore go
-        through arxave's relay, which only forwards to
-        <code>arxiv.org</code> and <code>scirate.com</code>. Nothing private is
-        in those requests: a category list and public paper IDs.
-        Override only if you want to run your own.
-      </p>
-      <label>
-        <input type="text" id="cors-proxy" placeholder="(blank = arxave relay)" style="width:100%">
-      </label>
-    </fieldset>
-
     <!-- ── Weight sliders (w1–w4) ── -->
     <fieldset id="weights-fieldset">
-      <legend>⚖️ Ranking weights <span class="sub">— move a slider; ranking updates instantly</span></legend>
+      <legend>⚖️ Assay <span class="sub">— how each stone is weighed. Move a slider, ranking updates instantly.</span></legend>
       <div class="weight-sliders">
         <div class="weight-row" id="w1-row">
           <label>
@@ -160,29 +129,29 @@ cryogenic control of quantum processors"></textarea>
           <span class="weight-pct" id="w1-pct"></span>
         </div>
 
-        <div class="weight-row" id="w2-row">
+        <div class="weight-row is-dead" id="w2-row">
           <label>
             <span class="weight-label">Corpus fit <code>w2</code> <span class="wip">WIP</span></span>
-            <span class="weight-desc">Closeness to your library — titles only</span>
+            <span class="weight-desc">Closeness to your own bag — titles only</span>
           </label>
           <input type="range" id="w2" min="0" max="1" step="0.05" value="0.25" disabled>
           <span class="weight-val" id="w2-val">0.25</span>
           <span class="weight-pct" id="w2-pct"></span>
-          <span class="weight-unavailable" id="w2-unavailable">— signal unavailable (upload a .bib)</span>
+          <span class="weight-unavailable" id="w2-unavailable">— no signal (upload a .bib)</span>
         </div>
 
-        <div class="weight-row" id="w3-row">
+        <div class="weight-row is-dead" id="w3-row">
           <label>
-            <span class="weight-label">Citation overlap <code>w3</code></span>
-            <span class="weight-desc">Shared references <em>(deferred)</em></span>
+            <span class="weight-label">Citation overlap <code>w3</code> <span class="wip">WIP</span></span>
+            <span class="weight-desc">Veins shared with your bag</span>
           </label>
           <input type="range" id="w3" min="0" max="1" step="0.05" value="0.15" disabled>
           <span class="weight-val" id="w3-val">0.15</span>
           <span class="weight-pct" id="w3-pct"></span>
-          <span class="weight-unavailable" id="w3-unavailable">— signal unavailable (deferred)</span>
+          <span class="weight-unavailable" id="w3-unavailable">— no signal (needs a backend)</span>
         </div>
 
-        <div class="weight-row" id="w4-row">
+        <div class="weight-row is-dead" id="w4-row">
           <label>
             <span class="weight-label">Crowd attention <code>w4</code> <span class="wip">WIP</span></span>
             <span class="weight-desc">Scirate scites — blocked by Cloudflare</span>
@@ -190,7 +159,7 @@ cryogenic control of quantum processors"></textarea>
           <input type="range" id="w4" min="0" max="1" step="0.05" value="0.10" disabled>
           <span class="weight-val" id="w4-val">0.10</span>
           <span class="weight-pct" id="w4-pct"></span>
-          <span class="weight-unavailable" id="w4-unavailable">— signal unavailable (Scirate answers 403 to non-browser fetches)</span>
+          <span class="weight-unavailable" id="w4-unavailable">— no signal (Scirate answers 403 to non-browser fetches)</span>
         </div>
       </div>
 
@@ -201,53 +170,76 @@ cryogenic control of quantum processors"></textarea>
 
     <!-- ── Top N ── -->
     <fieldset>
-      <legend>📊 Output</legend>
-      <div class="role-grid" style="grid-template-columns: 1fr 1fr auto;">
+      <legend>🪨 Carry up <span class="sub">— the stones you read carefully</span></legend>
+      <p class="hint">Everything below the cut line is still scored and still
+      listed; it just does not come up the shaft with you.</p>
+      <div class="role-grid" style="grid-template-columns: 1fr 2fr;">
         <label>
-          Top N
+          How many
           <input type="number" id="top-n" value="10" min="1" max="50">
         </label>
+      </div>
+    </fieldset>
+
+    <div class="button-bar">
+      <button type="button" id="run-filter">⛏ Dig</button>
+      <span id="run-status" class="run-status" style="display:none"></span>
+    </div>
+
+    <!-- ── Second pass, not built ── -->
+    <details class="advanced">
+      <summary>Second pass with an LLM <span class="wip">WIP</span></summary>
+      <p class="hint">Re-reads what you carried up and argues each one. Not wired
+      yet — the controls are here so the shape is visible, and they stay dead
+      until the step is real.</p>
+      <div class="role-grid">
         <label>
-          LLM provider (optional refine)
-          <select id="refine-provider">
+          Provider
+          <select id="refine-provider" disabled>
             <option value="openai" selected>OpenAI</option>
             <option value="ollama">Ollama</option>
             <option value="lm-studio">LM Studio</option>
             <option value="custom">Custom</option>
           </select>
         </label>
-        <label style="align-self:end">
-          <button type="button" id="refine-btn" disabled style="margin-top:0">
-            Refine top-N with LLM <span class="wip">WIP</span>
-          </button>
+        <label>
+          Model
+          <input type="text" id="refine-model" value="gpt-4o-mini" disabled>
+        </label>
+        <label>
+          Base URL
+          <input type="text" id="refine-base-url" placeholder="https://api.openai.com/v1" disabled>
+        </label>
+        <label>
+          API key
+          <input type="password" id="refine-key" placeholder="sk-..." disabled>
         </label>
       </div>
-      <div class="role-grid" id="refine-extra" style="margin-top:0.75rem">
-        <label>
-          Refine model
-          <input type="text" id="refine-model" value="gpt-4o-mini">
-        </label>
-        <label>
-          Refine base URL
-          <input type="text" id="refine-base-url" placeholder="https://api.openai.com/v1">
-        </label>
-        <label>
-          Refine API key
-          <input type="password" id="refine-key" placeholder="sk-...">
-        </label>
+      <div class="button-bar">
+        <button type="button" id="refine-btn" disabled>Second pass</button>
       </div>
-    </fieldset>
+    </details>
 
-    <div class="button-bar">
-      <button type="button" id="run-filter">🔍 Run filter</button>
-      <span id="run-status" class="run-status" style="display:none"></span>
-    </div>
+    <!-- ── Relay ── -->
+    <details class="advanced">
+      <summary>Relay <span class="sub">— advanced, leave blank</span></summary>
+      <p class="hint" id="cors-note">
+        Browsers refuse to read a response from a site that does not opt in, and
+        arXiv does not opt in (checked 2026-07-28). So the arXiv request is sent
+        for you by <a href="https://github.com/jan-a-krzywda/arxave/blob/main/supabase/functions/relay/index.ts">arxave's relay</a>,
+        which forwards to <code>arxiv.org</code> and <code>scirate.com</code> and
+        nowhere else. It carries a category list and public paper IDs — never
+        your topics, your library, or a key. Put your own relay URL here to skip
+        arxave's.
+      </p>
+      <input type="text" id="cors-proxy" placeholder="(blank = arxave relay)">
+    </details>
 
   </form>
 
   <!-- ── Results ── -->
   <div id="results" style="display:none">
-    <h2>Results</h2>
+    <h2>The haul</h2>
     <p class="hint" id="results-summary"></p>
     <div class="table-wrap">
       <table id="results-table">
@@ -264,6 +256,21 @@ cryogenic control of quantum processors"></textarea>
         <tbody id="results-body"></tbody>
       </table>
     </div>
+  </div>
+
+  <!-- ── Small print ── -->
+  <div class="cave-footnote" id="small-print">
+    <p><strong>Where things go.</strong> Topics, library and keys stay in this
+    tab. With in-browser embeddings nothing is billed and nothing is sent; only
+    the arXiv fetch leaves, through the relay above.</p>
+    <p><strong>What is real today.</strong> Scouting arXiv, embedding abstracts
+    and topics in your browser, and ranking on topic match, re-ranked live as you
+    move a slider. Everything marked <span class="wip">WIP</span> has no signal
+    behind it yet: corpus fit reads titles only, citation overlap needs a
+    backend, Scirate answers 403 to non-browser fetches, and the second pass is
+    not wired. Those sliders stay dead rather than pretending — ranking
+    renormalizes over the signals actually present, so a missing one redistributes
+    its weight instead of scoring a paper as worthless.</p>
   </div>
 </div>
 

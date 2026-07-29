@@ -46,10 +46,12 @@ PAGE_TEMPLATE = """<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>arxave filter — local preview</title>
 <script>window.ARXAVE_RELAY = location.origin + '/relay';</script>
+<link rel="stylesheet" href="/assets/cave.css">
 <style>
   body {{ max-width: 62rem; margin: 2rem auto; padding: 0 1rem;
          font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
-  .dev-note {{ background: #fff3cd; border: 1px solid #ffe08a; border-radius: 4px;
+  .dev-note {{ border: 1px solid var(--rock-lit); border-radius: 4px;
+              color: var(--text-dim); background: var(--rock-deep);
               padding: 0.6rem 0.9rem; margin-bottom: 1.5rem; font-size: 0.85rem; }}
 </style>
 </head><body>

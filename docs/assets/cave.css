@@ -1,0 +1,185 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Cave — the site palette. Same colours as the logo: rock, lamp, ore.
+
+   Loaded from _includes/custom-head.html on every page, so it lands
+   before minima's stylesheet in the cascade and overrides it by
+   specificity where needed. style.css and filter.css read the tokens
+   defined here, so there is one place to change a colour.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Rock */
+  --cave-air: #15181d;      /* page background — unlit cave */
+  --rock-deep: #1b1f26;     /* panels sunk into the wall */
+  --rock: #21262e;          /* raised surfaces: inputs, rows */
+  --rock-edge: #333a44;     /* borders */
+  --rock-lit: #4a525e;      /* borders catching the lamp */
+
+  /* Lamp */
+  --lamp: #7aa2f7;          /* links, primary accent */
+  --lamp-dim: #5b8def;
+  --text: #d7dbe0;
+  --text-dim: #99a1ad;
+  --text-faint: #6d7682;
+
+  /* Ore */
+  --gold: #f5b301;          /* the thing worth carrying up */
+  --gold-dim: #b98a08;
+  --pyrite: #9a8f5c;        /* looks like gold, is not — WIP markers */
+  --pyrite-dim: #6d6540;
+  --ember: #e05a4d;         /* warnings, unavailable signals */
+  --moss: #4aa06a;          /* success */
+}
+
+/* ── Page shell ───────────────────────────────────────────────── */
+html {
+  background: var(--cave-air);
+}
+
+body {
+  background: var(--cave-air);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+.site-header {
+  background: var(--rock-deep);
+  border-top: none;
+  border-bottom: 1px solid var(--rock-edge);
+}
+
+.site-title,
+.site-title:visited,
+.site-header .site-title {
+  color: var(--text);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.site-nav,
+.site-nav .page-link,
+.site-nav .page-link:visited {
+  color: var(--text-dim);
+}
+.site-nav .page-link:hover {
+  color: var(--lamp);
+  text-decoration: none;
+}
+.site-nav .menu-icon > svg path {
+  fill: var(--text-dim);
+}
+@media screen and (max-width: 600px) {
+  .site-nav {
+    background: var(--rock);
+    border-color: var(--rock-edge);
+  }
+}
+
+.site-footer {
+  background: var(--rock-deep);
+  border-top: 1px solid var(--rock-edge);
+  color: var(--text-faint);
+}
+.site-footer .footer-heading,
+.site-footer a {
+  color: var(--text-dim);
+}
+
+.page-content {
+  background: var(--cave-air);
+}
+
+/* ── Type ─────────────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  color: #e8ebef;
+}
+
+a,
+a:visited {
+  color: var(--lamp);
+}
+a:hover {
+  color: var(--gold);
+  text-decoration: underline;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--rock-edge);
+}
+
+blockquote {
+  color: var(--text-dim);
+  border-left-color: var(--rock-lit);
+}
+
+/* ── Code ─────────────────────────────────────────────────────── */
+code,
+pre {
+  background: var(--rock-deep);
+  border: 1px solid var(--rock-edge);
+  color: #c8d3e0;
+}
+pre > code {
+  border: 0;
+  background: transparent;
+}
+.highlight {
+  background: var(--rock-deep);
+}
+
+/* ── Tables (minima's, e.g. in briefs) ────────────────────────── */
+table {
+  color: var(--text);
+  border-color: var(--rock-edge);
+}
+table th {
+  background: var(--rock-deep);
+  border-color: var(--rock-edge);
+  color: var(--text);
+}
+table td {
+  border-color: var(--rock-edge);
+}
+table tr:nth-child(even) {
+  background: var(--rock-deep);
+}
+
+/* ── Form controls, globally ──────────────────────────────────── */
+input,
+select,
+textarea,
+button {
+  color-scheme: dark;
+}
+
+::placeholder {
+  color: var(--text-faint);
+}
+
+::selection {
+  background: rgba(122, 162, 247, 0.3);
+}
+
+/* ── Footnote: the small print, at the bottom where it belongs ── */
+.cave-footnote {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rock-edge);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text-faint);
+}
+.cave-footnote p {
+  margin: 0 0 0.5rem;
+}
+.cave-footnote p:last-child {
+  margin-bottom: 0;
+}
+.cave-footnote strong {
+  color: var(--text-dim);
+}
+.cave-footnote code {
+  font-size: 0.9em;
+  padding: 0.05em 0.3em;
+}
