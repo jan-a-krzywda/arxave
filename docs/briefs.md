@@ -13,7 +13,7 @@ permalink: /briefs/
   Two known limits in the brief itself: the <em>Connection</em> line is usually
   empty on same-day preprints (OpenAlex has not indexed them, and its arXiv
   records carry no reference list), and crowd-attention scores are unavailable.
-  For something you can use right now, see <a href="{{ '/filter/' | relative_url }}">Filter</a>.
+  For something you can use right now, see <a href="{{ '/' | relative_url }}">the filter page</a>.
 </div>
 
 <p>

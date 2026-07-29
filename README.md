@@ -55,7 +55,7 @@ design and M2–M4 plan.
 
 ### Way 1 — browser sieve (fastest look)
 
-Go [here](https://jan-a-krzywda.github.io/arxave/filter/). Type topics. Press go.
+Go [here](https://jan-a-krzywda.github.io/arxave/). Type topics. Hit **Dig**.
 
 Page pull today arXiv, embed abstract and your topics **in your browser**
 (transformers.js, WASM), rank by match. Move slider, ranking move live. Your
@@ -63,8 +63,9 @@ topics never leave the tab. Only outside call is arXiv itself — browser cannot
 fetch arXiv direct (no CORS header), so small Supabase `relay` function pass the
 GET through.
 
-Setup page ([here](https://jan-a-krzywda.github.io/arxave/)) build your `.env` +
-`arxave.yaml` for the CLI. Also all in browser. Key never uploaded.
+For CLI config, edit `config/arxave.yaml` and `.env` by hand — see below. (There
+was a browser form that wrote them for you. It fell behind the CLI and got
+pulled; better no form than a form that lies.)
 
 ### Way 2 — CLI mine (full shaft)
 

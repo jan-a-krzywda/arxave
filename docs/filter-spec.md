@@ -218,21 +218,22 @@ contrast, `api.openalex.org` and `api.semanticscholar.org` both send `*`.)
 
 ## 5. Interface
 
-A single page under the site nav (proposed `/filter/`), sharing the existing
-Jekyll `minima` theme, `safety-banner`, and `role-grid` styling so it reads as
-one product with the current config page.
+The site's front page (`/`), sharing the existing
+Jekyll `minima` theme and `role-grid` styling. (Written when a separate config
+page existed; that page has since been removed and the filter page took its
+place at the root.)
 
 ### 5.1 Controls
 
-- **Topics** — textarea, one topic per line (reuse the existing widget +
-  `.bib`-keyword chip suggester from `assets/main.js`).
+- **Topics** — textarea, one topic per line. (The `.bib`-keyword chip suggester
+  proposed here was never built, and the file it borrowed from is gone.)
 - **Corpus** — optional `.bib` upload; enables `corpus_cos`. Show a chip/count
   confirming N entries loaded.
 - **Scout** — arXiv categories, lookback days, max results (reuse existing
   scout fieldset).
-- **Embedding provider** — provider + model + key + env name (reuse the
-  provider-preset machinery in `main.js`; embeddings only — the heavy LLM box is
-  needed just for the optional refine step).
+- **Embedding provider** — provider + model + key + env name; the preset
+  machinery now lives in `assets/filter.js`. Embeddings only — the heavy LLM box
+  is needed just for the optional refine step.
 - **CORS proxy** — single optional text field (see §4).
 - **Weight sliders** — the headline control, next section.
 

@@ -1,12 +1,12 @@
-title: Arxave
-description: A daily arXiv scout that briefs you on the papers that matter.
+title: arXave
+description: Wash a night of arXiv and keep the few papers worth a careful look.
 theme: minima
 plugins:
   - jekyll-feed
 
+# The filter page is the site root, reached by the title in the header, so it
+# is not repeated here. filter-moved.md only redirects and stays out of the nav.
 header_pages:
-  - index.md
-  - filter.md
   - briefs.md
 
 collections:

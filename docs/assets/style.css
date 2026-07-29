@@ -72,9 +72,6 @@ legend .sub {
 .scout-grid {
   grid-template-columns: 2fr 1fr 1fr;
 }
-.weight-grid {
-  grid-template-columns: repeat(4, 1fr);
-}
 
 /* ── Topics textarea ──────────────────────────────────────────── */
 textarea#topics {
@@ -122,33 +119,6 @@ textarea#topics:focus {
   background: var(--rock-edge);
 }
 
-/* ── Chip list ────────────────────────────────────────────────── */
-.chip-list {
-  margin-top: 0.75rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-.chip {
-  display: inline-block;
-  padding: 0.25rem 0.65rem;
-  background: rgba(122, 162, 247, 0.12);
-  border: 1px solid var(--rock-lit);
-  border-radius: 16px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.15s, opacity 0.3s;
-  color: var(--lamp);
-}
-.chip:hover {
-  background: rgba(122, 162, 247, 0.22);
-}
-.chip.used {
-  opacity: 0;
-  pointer-events: none;
-}
-
 /* ── Button bar ───────────────────────────────────────────────── */
 .button-bar {
   display: flex;
@@ -170,13 +140,11 @@ textarea#topics:focus {
 }
 
 /* Primary action carries the ore colour: this is what you came for. */
-#run-filter,
-#download-yaml {
+#run-filter {
   background: var(--gold);
   color: #221a00;
 }
-#run-filter:hover,
-#download-yaml:hover {
+#run-filter:hover {
   background: #ffc730;
 }
 #run-filter:disabled {
@@ -198,28 +166,6 @@ textarea#topics:focus {
 #run-filter:hover {
   box-shadow: 0 0 0 1px rgba(255, 199, 48, 0.5),
               0 8px 26px -6px rgba(245, 179, 1, 0.75);
-}
-
-#download-env {
-  background: var(--rock);
-  color: var(--text);
-  border: 1px solid var(--rock-lit);
-}
-#download-env:hover {
-  background: var(--rock-edge);
-}
-
-#run-arxave {
-  background: var(--lamp-dim);
-  color: #0d1117;
-}
-#run-arxave:hover {
-  background: var(--lamp);
-}
-#run-arxave:disabled {
-  background: var(--rock-edge);
-  color: var(--text-faint);
-  cursor: not-allowed;
 }
 
 /* ── Run status ────────────────────────────────────────────────── */
