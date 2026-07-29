@@ -11,11 +11,11 @@ permalink: /
 </noscript>
 
 <div id="app" style="display:none">
-  <div class="safety-banner">
-    <strong>🔒 Everything happens in your browser.</strong>
-    API keys are never sent anywhere — the generated files are downloaded
-    directly to your machine. Never commit <code>.env</code> to git.
-  </div>
+  <p class="hint">
+    Fill this in once to get your <code>arxave.yaml</code> and <code>.env</code>.
+    Nothing is sent anywhere — the files are built in this tab and downloaded
+    straight to your machine. <a href="#small-print">Small print</a>.
+  </p>
 
   <form id="config-form" autocomplete="off">
 
@@ -187,6 +187,12 @@ arxave serve</code></pre>
     </div>
 
   </form>
+
+  <div class="cave-footnote" id="small-print">
+    <p><strong>Keys.</strong> Whatever you type here stays in this tab; the
+    generated files are written by your browser, not by a server. Once
+    <code>.env</code> is on your machine, keep it out of git.</p>
+  </div>
 </div>
 
 <script src="{{ '/assets/main.js' | relative_url }}"></script>

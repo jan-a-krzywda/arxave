@@ -1,27 +1,10 @@
-/* ── Safety banner ────────────────────────────────────────────── */
-.safety-banner {
-  background: #fff3cd;
-  border: 1px solid #ffc107;
-  border-radius: 6px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.95rem;
-  line-height: 1.5;
-}
-.safety-banner strong {
-  color: #856404;
-}
-.safety-banner code {
-  background: #e8d5b0;
-  padding: 0.1em 0.3em;
-  border-radius: 3px;
-  font-size: 0.9em;
-}
+/* Shared form styling. Colours come from the tokens in cave.css. */
 
+/* ── Warning banner (noscript only) ───────────────────────────── */
 .warn-banner {
-  background: #f8d7da;
-  border: 1px solid #f5c6cb;
-  color: #721c24;
+  background: rgba(224, 90, 77, 0.12);
+  border: 1px solid var(--ember);
+  color: #f0a49b;
   border-radius: 6px;
   padding: 0.75rem 1rem;
   margin-bottom: 1.5rem;
@@ -30,26 +13,27 @@
 
 /* ── Form layout ──────────────────────────────────────────────── */
 fieldset {
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--rock-edge);
   border-radius: 8px;
   padding: 1.25rem 1.5rem;
   margin-bottom: 1.5rem;
-  background: #fafafa;
+  background: var(--rock-deep);
 }
 
 legend {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 600;
   padding: 0 0.5rem;
+  color: #e8ebef;
 }
 legend .sub {
   font-weight: 400;
   font-size: 0.85rem;
-  color: #6c757d;
+  color: var(--text-faint);
 }
 
 .hint {
-  color: #6c757d;
+  color: var(--text-dim);
   font-size: 0.85rem;
   margin-top: 0;
   margin-bottom: 0.75rem;
@@ -66,22 +50,23 @@ legend .sub {
   gap: 0.25rem;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #495057;
+  color: var(--text-dim);
 }
 .role-grid input,
 .role-grid select {
   font-size: 0.95rem;
   padding: 0.5rem 0.6rem;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--rock-edge);
   border-radius: 4px;
-  background: #fff;
+  background: var(--rock);
+  color: var(--text);
   transition: border-color 0.15s;
 }
 .role-grid input:focus,
 .role-grid select:focus {
-  border-color: #80bdff;
+  border-color: var(--lamp);
   outline: 0;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+  box-shadow: 0 0 0 0.2rem rgba(122, 162, 247, 0.18);
 }
 
 .scout-grid {
@@ -97,15 +82,17 @@ textarea#topics {
   font-family: "SF Mono", "Fira Code", "Consolas", monospace;
   font-size: 0.9rem;
   padding: 0.6rem 0.75rem;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--rock-edge);
   border-radius: 4px;
+  background: var(--rock);
+  color: var(--text);
   resize: vertical;
   box-sizing: border-box;
 }
 textarea#topics:focus {
-  border-color: #80bdff;
+  border-color: var(--lamp);
   outline: 0;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.15);
+  box-shadow: 0 0 0 0.2rem rgba(122, 162, 247, 0.18);
 }
 
 /* ── BibTeX upload ────────────────────────────────────────────── */
@@ -113,12 +100,26 @@ textarea#topics:focus {
   display: block;
   margin-top: 0.75rem;
   font-size: 0.85rem;
-  color: #495057;
+  color: var(--text-dim);
 }
 .bib-upload input[type="file"] {
   display: block;
   margin-top: 0.35rem;
   font-size: 0.9rem;
+  color: var(--text-dim);
+}
+.bib-upload input[type="file"]::file-selector-button {
+  font: inherit;
+  margin-right: 0.6rem;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--rock-lit);
+  border-radius: 4px;
+  background: var(--rock);
+  color: var(--text);
+  cursor: pointer;
+}
+.bib-upload input[type="file"]::file-selector-button:hover {
+  background: var(--rock-edge);
 }
 
 /* ── Chip list ────────────────────────────────────────────────── */
@@ -131,22 +132,19 @@ textarea#topics:focus {
 .chip {
   display: inline-block;
   padding: 0.25rem 0.65rem;
-  background: #e7f1ff;
-  border: 1px solid #b6d4fe;
+  background: rgba(122, 162, 247, 0.12);
+  border: 1px solid var(--rock-lit);
   border-radius: 16px;
   font-size: 0.8rem;
   cursor: pointer;
   user-select: none;
   transition: background 0.15s, opacity 0.3s;
-  color: #084298;
+  color: var(--lamp);
 }
 .chip:hover {
-  background: #cfe2ff;
+  background: rgba(122, 162, 247, 0.22);
 }
 .chip.used {
-  background: #d1e7dd;
-  border-color: #a3cfbb;
-  color: #0f5132;
   opacity: 0;
   pointer-events: none;
 }
@@ -156,6 +154,7 @@ textarea#topics:focus {
   display: flex;
   gap: 1rem;
   margin-top: 1.5rem;
+  align-items: center;
 }
 .button-bar button {
   font-size: 1rem;
@@ -170,23 +169,41 @@ textarea#topics:focus {
   transform: scale(0.97);
 }
 
+/* Primary action carries the ore colour: this is what you came for. */
+#run-filter,
 #download-yaml {
-  background: #0d6efd;
-  color: #fff;
+  background: var(--gold);
+  color: #221a00;
 }
+#run-filter:hover,
 #download-yaml:hover {
-  background: #0b5ed7;
+  background: #ffc730;
+}
+#run-filter:disabled {
+  background: var(--pyrite-dim);
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+#download-env {
+  background: var(--rock);
+  color: var(--text);
+  border: 1px solid var(--rock-lit);
+}
+#download-env:hover {
+  background: var(--rock-edge);
 }
 
 #run-arxave {
-  background: #6f42c1;
-  color: #fff;
+  background: var(--lamp-dim);
+  color: #0d1117;
 }
 #run-arxave:hover {
-  background: #5a32a3;
+  background: var(--lamp);
 }
 #run-arxave:disabled {
-  background: #a28ad4;
+  background: var(--rock-edge);
+  color: var(--text-faint);
   cursor: not-allowed;
 }
 
@@ -198,22 +215,14 @@ textarea#topics:focus {
   font-size: 0.9rem;
 }
 .run-status.info {
-  background: #cff4fc;
-  border: 1px solid #9eeaf9;
-  color: #055160;
+  background: rgba(122, 162, 247, 0.12);
+  border: 1px solid var(--rock-lit);
+  color: var(--text);
 }
 .run-status.error {
-  background: #f8d7da;
-  border: 1px solid #f5c6cb;
-  color: #842029;
-}
-
-#download-env {
-  background: #198754;
-  color: #fff;
-}
-#download-env:hover {
-  background: #157347;
+  background: rgba(224, 90, 77, 0.12);
+  border: 1px solid var(--ember);
+  color: #f0a49b;
 }
 
 /* ── Brief list (briefs.md) ───────────────────────────────────── */
@@ -223,16 +232,16 @@ textarea#topics:focus {
 }
 .brief-list li {
   padding: 0.5rem 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--rock-edge);
   font-size: 1.05rem;
 }
 .brief-subtitle {
-  color: #6c757d;
+  color: var(--text-faint);
   font-size: 0.9rem;
 }
 
 .empty {
-  color: #6c757d;
+  color: var(--text-faint);
   font-style: italic;
 }
 
@@ -240,13 +249,13 @@ textarea#topics:focus {
 .brief-header {
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid #dee2e6;
+  border-bottom: 2px solid var(--rock-edge);
 }
 .brief-header h1 {
   margin-bottom: 0.25rem;
 }
 .brief-title {
-  color: #6c757d;
+  color: var(--text-dim);
   font-size: 1.1rem;
   margin: 0;
 }
@@ -254,9 +263,42 @@ textarea#topics:focus {
 .brief-footer {
   margin-top: 3rem;
   padding-top: 1rem;
-  border-top: 1px solid #dee2e6;
+  border-top: 1px solid var(--rock-edge);
   font-size: 0.85rem;
-  color: #6c757d;
+  color: var(--text-faint);
+}
+
+/* ── WIP markers: pyrite, because the signal only looks like gold ── */
+.wip {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(154, 143, 92, 0.18);
+  color: var(--pyrite);
+  border: 1px solid var(--pyrite-dim);
+}
+
+.wip-note {
+  border-left: 3px solid var(--pyrite-dim);
+  padding-left: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.status-banner {
+  border: 1px solid var(--rock-edge);
+  border-left: 4px solid var(--rock-lit);
+  background: var(--rock-deep);
+  border-radius: 4px;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 1.2rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-dim);
 }
 
 /* ── Responsive ───────────────────────────────────────────────── */
@@ -268,36 +310,6 @@ textarea#topics:focus {
   }
   .button-bar {
     flex-direction: column;
+    align-items: stretch;
   }
-}
-/* ── WIP markers ────────────────────────────────────────────── */
-.wip {
-  display: inline-block;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  vertical-align: middle;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: #fff3cd;
-  color: #7a5b00;
-  border: 1px solid #ffe08a;
-}
-
-.wip-note {
-  border-left: 3px solid #ffe08a;
-  padding-left: 0.6rem;
-  margin-top: 0.5rem;
-}
-
-.status-banner {
-  border: 1px solid #d0d7de;
-  border-left: 4px solid #6c757d;
-  background: #f6f8fa;
-  border-radius: 4px;
-  padding: 0.7rem 0.9rem;
-  margin-bottom: 1.2rem;
-  font-size: 0.88rem;
-  line-height: 1.5;
 }

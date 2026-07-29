@@ -265,6 +265,25 @@
   }
 
   /**
+   * Walk back `lookbackDays` *publishing* days, skipping weekends.
+   * Mirrors scout.cutoff_date in src/arxave/scout.py: arXiv doesn't announce
+   * on Sat/Sun, so plain calendar subtraction makes every Monday empty.
+   * Returns a YYYY-MM-DD string, comparable to the Atom <published> prefix.
+   */
+  function cutoffDate(onDate, lookbackDays) {
+    var cursor = new Date(Date.UTC(
+      onDate.getUTCFullYear(), onDate.getUTCMonth(), onDate.getUTCDate()
+    ));
+    var remaining = Math.max(lookbackDays, 1);
+    while (remaining > 0) {
+      cursor.setUTCDate(cursor.getUTCDate() - 1);
+      var dow = cursor.getUTCDay();
+      if (dow >= 1 && dow <= 5) remaining -= 1;
+    }
+    return cursor.toISOString().substring(0, 10);
+  }
+
+  /**
    * Parse arXiv Atom XML into candidate objects.
    * Uses DOMParser — no external XML library needed.
    */
@@ -353,6 +372,17 @@
 
     var xmlText = await resp.text();
     var candidates = parseAtomXML(xmlText);
+
+    // The API has no date filter, so max_results only caps the firehose —
+    // the lookback window is applied here. Results are date-descending, so
+    // the first entry older than the cutoff ends the window.
+    var cutoff = cutoffDate(new Date(), lookback);
+    var windowed = [];
+    for (var i = 0; i < candidates.length; i++) {
+      if (candidates[i].published && candidates[i].published < cutoff) break;
+      windowed.push(candidates[i]);
+    }
+    candidates = windowed;
 
     if (candidates.length === 0) {
       throw new Error('No papers found. Check categories or try a larger lookback.');
@@ -936,8 +966,8 @@
 
     tbody.innerHTML = rows;
 
-    // Enable refine button if we have results
-    byId('refine-btn').disabled = false;
+    // The refine button stays disabled: the second pass is not built yet, so
+    // results are no reason to light it up.
   }
 
   function escapeHtml(str) {

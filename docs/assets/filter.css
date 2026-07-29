@@ -1,8 +1,10 @@
+/* Filter page. Colours come from the tokens in cave.css. */
+
 /* ── Weight sliders ─────────────────────────────────────────── */
 .weight-sliders {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .weight-row {
@@ -10,13 +12,13 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
-  background: #fff;
-  border: 1px solid #dee2e6;
+  background: var(--rock);
+  border: 1px solid var(--rock-edge);
   border-radius: 6px;
 }
 
 .weight-row label {
-  flex: 0 0 220px;
+  flex: 0 0 210px;
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
@@ -25,25 +27,34 @@
 .weight-label {
   font-weight: 600;
   font-size: 0.9rem;
-  color: #212529;
+  color: var(--text);
 }
 
 .weight-label code {
-  font-size: 0.8rem;
-  background: #e9ecef;
+  font-size: 0.78rem;
+  background: var(--rock-deep);
+  border: 1px solid var(--rock-edge);
   padding: 0.05em 0.35em;
   border-radius: 3px;
-  color: #495057;
+  color: var(--text-dim);
 }
 
 .weight-desc {
   font-size: 0.78rem;
-  color: #6c757d;
+  color: var(--text-faint);
 }
 
+/* Short on purpose: a weight is a nudge, not a journey across the page. */
 .weight-row input[type="range"] {
-  flex: 1;
-  accent-color: #0d6efd;
+  flex: 0 0 180px;
+  max-width: 180px;
+  accent-color: var(--gold);
+}
+
+.weight-row input[type="range"]:disabled {
+  accent-color: var(--pyrite-dim);
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .weight-val {
@@ -51,6 +62,7 @@
   text-align: right;
   font-weight: 600;
   font-size: 0.9rem;
+  color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 
@@ -58,26 +70,30 @@
   flex: 0 0 3rem;
   text-align: right;
   font-size: 0.78rem;
-  color: #6c757d;
+  color: var(--text-faint);
   font-variant-numeric: tabular-nums;
 }
 
 .weight-unavailable {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   font-size: 0.75rem;
-  color: #dc3545;
+  color: var(--ember);
   font-style: italic;
-  white-space: nowrap;
 }
 
-.weight-row input[type="range"]:disabled {
-  opacity: 0.4;
+/* A row whose signal is dead reads as dead. */
+.weight-row.is-dead {
+  background: var(--rock-deep);
+}
+.weight-row.is-dead .weight-label,
+.weight-row.is-dead .weight-val {
+  color: var(--text-dim);
 }
 
 .weight-summary {
-  margin-top: 0.5rem;
+  margin-top: 0.6rem;
   font-size: 0.85rem;
-  color: #495057;
+  color: var(--text-faint);
   text-align: right;
 }
 
@@ -90,31 +106,39 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.88rem;
+  color: var(--text);
 }
 
 #results-table th {
   text-align: left;
   padding: 0.5rem 0.65rem;
-  border-bottom: 2px solid #dee2e6;
-  color: #495057;
-  font-size: 0.8rem;
+  background: transparent;
+  border-bottom: 2px solid var(--rock-lit);
+  color: var(--text-faint);
+  font-size: 0.78rem;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   white-space: nowrap;
 }
 
 #results-table td {
   padding: 0.5rem 0.65rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--rock-edge);
   vertical-align: top;
 }
 
-#results-table tr:hover td {
-  background: #f8f9fa;
+#results-table tr,
+#results-table tr:nth-child(even) {
+  background: transparent;
 }
 
+#results-table tr:hover td {
+  background: var(--rock);
+}
+
+/* The cut line: everything above it is what you carry up. */
 #results-table tr.top-n-cutoff td {
-  border-bottom: 3px solid #0d6efd;
+  border-bottom: 3px solid var(--gold);
 }
 
 /* Score bar */
@@ -124,7 +148,7 @@
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 2px;
-  background: #e9ecef;
+  background: var(--rock-edge);
 }
 
 .score-bar-seg {
@@ -132,30 +156,31 @@
   transition: width 0.2s;
 }
 
-.score-bar-seg.topic { background: #0d6efd; }
-.score-bar-seg.corpus { background: #198754; }
-.score-bar-seg.citation { background: #6f42c1; }
-.score-bar-seg.scite { background: #fd7e14; }
+.score-bar-seg.topic { background: var(--lamp); }
+.score-bar-seg.corpus { background: var(--moss); }
+.score-bar-seg.citation { background: #8f7ad4; }
+.score-bar-seg.scite { background: var(--gold-dim); }
 
 .score-num {
   font-weight: 600;
+  color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 
 /* Signal badges */
 .signal-badges {
   font-size: 0.78rem;
-  color: #6c757d;
+  color: var(--text-faint);
   line-height: 1.5;
 }
 
 .signal-badges .sig-val {
   font-weight: 600;
-  color: #212529;
+  color: var(--text);
 }
 
 .signal-badges .sig-null {
-  color: #adb5bd;
+  color: var(--rock-lit);
 }
 
 /* Refine annotation */
@@ -167,24 +192,15 @@
 }
 
 .llm-annotation.relevant {
-  background: #d1e7dd;
-  color: #0f5132;
+  background: rgba(74, 160, 106, 0.16);
+  color: #7fd3a0;
 }
 
 .llm-annotation.irrelevant {
-  background: #f8d7da;
-  color: #842029;
+  background: rgba(224, 90, 77, 0.14);
+  color: #f0a49b;
 }
 
-/* ── Responsive ─────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .weight-row {
-    flex-wrap: wrap;
-  }
-  .weight-row label {
-    flex: 0 0 100%;
-  }
-}
 /* ── Embedding mode radios ──────────────────────────────────── */
 .embed-mode {
   display: flex;
@@ -198,10 +214,75 @@
   gap: 0.5rem;
   font-size: 0.9rem;
   line-height: 1.4;
+  color: var(--text-dim);
   cursor: pointer;
+}
+
+.radio-row strong {
+  color: var(--text);
 }
 
 .radio-row input[type="radio"] {
   margin-top: 0.25rem;
   flex: 0 0 auto;
+  accent-color: var(--lamp);
+}
+
+/* ── Collapsed advanced block (relay) ───────────────────────── */
+details.advanced {
+  border: 1px solid var(--rock-edge);
+  border-radius: 8px;
+  background: var(--rock-deep);
+  padding: 0.6rem 1rem;
+  margin-bottom: 1.5rem;
+}
+details.advanced > summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--text-dim);
+  list-style: none;
+}
+details.advanced > summary::-webkit-details-marker {
+  display: none;
+}
+details.advanced > summary::before {
+  content: "▸ ";
+  color: var(--text-faint);
+}
+details.advanced[open] > summary::before {
+  content: "▾ ";
+}
+details.advanced > summary:hover {
+  color: var(--lamp);
+}
+details.advanced .hint {
+  margin-top: 0.6rem;
+}
+details.advanced input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  background: var(--rock);
+  color: var(--text);
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .weight-row {
+    flex-wrap: wrap;
+  }
+  .weight-row label {
+    flex: 0 0 100%;
+  }
+  .weight-row input[type="range"] {
+    flex: 1 1 auto;
+    max-width: none;
+  }
+  .weight-unavailable {
+    flex: 0 0 100%;
+  }
 }
