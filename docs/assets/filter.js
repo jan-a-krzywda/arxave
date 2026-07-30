@@ -391,9 +391,11 @@
   }
 
   function oreColor(cosVal) {
-    // Map [0,1] to ore ramp steps 0..7
-    var idx = Math.round(cosVal * 7);
-    if (idx < 0) idx = 0; if (idx > 7) idx = 7;
+    // Map [0.5, 1] to ore ramp steps 0..7. Values below 0.5 are all step 0
+    // — near-zero cells must sink into the rock, per the method.
+    var norm = (cosVal - 0.5) / 0.5;   // 0.5→0, 1.0→1
+    if (norm < 0) norm = 0; if (norm > 1) norm = 1;
+    var idx = Math.round(norm * 7);
     return 'var(--ore-' + idx + ')';
   }
 
@@ -857,14 +859,18 @@
   }
 
   function getOreColor(val) {
-    var idx = Math.round(val * 7);
-    if (idx < 0) idx = 0; if (idx > 7) idx = 7;
+    // Map [0.5, 1] to ore ramp steps 0..7. Below 0.5 = step 0.
+    var norm = (val - 0.5) / 0.5;
+    if (norm < 0) norm = 0; if (norm > 1) norm = 1;
+    var idx = Math.round(norm * 7);
     return 'var(--ore-' + idx + ')';
   }
 
   function getLampColor(val) {
-    var idx = Math.round(val * 6);
-    if (idx < 0) idx = 0; if (idx > 6) idx = 6;
+    // Map [0.5, 1] to lamp ramp steps 0..6. Below 0.5 = step 0.
+    var norm = (val - 0.5) / 0.5;
+    if (norm < 0) norm = 0; if (norm > 1) norm = 1;
+    var idx = Math.round(norm * 6);
     return 'var(--lamp-' + idx + ')';
   }
 
@@ -888,8 +894,8 @@
     var rail = byId('assay-rail');
     var colTitles = byId('assay-column-titles');
 
-    // Column titles
-    var cellW = 16;
+    // Cell size shrinks as N grows: 16px at N≤90, down to 10px at N≥200
+    var cellW = N <= 90 ? 16 : N <= 120 ? 14 : N <= 160 ? 12 : 10;
     var colTitleHTML = '';
     for (var c = 0; c < N; c++) {
       var si = order[c];
@@ -1060,7 +1066,8 @@
 
         tooltip.innerHTML =
           '<div class="tt-value">' + (val === 'null' ? '—' : parseFloat(val).toFixed(2)) + '</div>' +
-          '<div class="tt-row">' + escapeHtml(rowLabel) + ' \\ ' + escapeHtml(stone.title) + '</div>';
+          '<div class="tt-title">' + escapeHtml(stone.title) + '</div>' +
+          '<div class="tt-row"><a href="' + stone.abs_url + '" target="_blank" rel="noopener">open on arXiv →</a></div>';
         tooltip.style.display = 'block';
         positionTooltip(e, tooltip);
       });
@@ -1204,6 +1211,40 @@
   byId('cores-weight').addEventListener('input', function () {
     onWeightChanged();
   });
+
+  // .bib upload → extract DOIs and add as core samples
+  byId('bib-file').addEventListener('change', function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var text = reader.result;
+      var dois = extractBibDois(text);
+      if (dois.length === 0) {
+        byId('bib-status').textContent = 'No DOI entries found in .bib file.';
+        byId('bib-status').style.display = '';
+        return;
+      }
+      byId('bib-status').textContent = 'Found ' + dois.length + ' entries. Adding as core samples...';
+      byId('bib-status').style.display = '';
+      for (var d = 0; d < dois.length; d++) {
+        addCoreRow(dois[d]);
+      }
+      byId('bib-status').textContent = '✓ Added ' + dois.length + ' core samples from .bib.';
+    };
+    reader.readAsText(file);
+  });
+
+  function extractBibDois(text) {
+    var dois = [];
+    var re = /doi\s*=\s*\{([^}]+)\}/gi;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      var d = m[1].replace(/\s+/g, '').trim();
+      if (d.length > 5) dois.push(d);
+    }
+    return dois;
+  }
 
   // ═══════════════════════════════════════════════════════════════════
   // Event bindings — Stage 3

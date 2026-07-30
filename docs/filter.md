@@ -106,6 +106,11 @@ permalink: /
       <p class="hint">Enter a DOI or arXiv ID per row, or upload a <code>.bib</code> and pick a few entries. Abstracts are fetched from OpenAlex (no key needed).</p>
       <div id="cores-list"></div>
       <button type="button" id="add-core" class="add-row-btn" disabled>+ Add core sample</button>
+      <label class="bib-upload" style="margin-top: 0.4rem; display: block;">
+        <input type="file" id="bib-file" accept=".bib" style="display:none">
+        <span class="add-row-btn" style="display:inline-block; cursor:pointer" onclick="document.getElementById('bib-file').click()">Upload .bib (select entries)</span>
+      </label>
+      <div id="bib-status" class="hint" style="margin-top:0.25rem; display:none"></div>
       <div class="group-weight">
         <label>Group weight <input type="number" id="cores-weight" value="0.40" min="0" max="1" step="0.05" disabled></label>
       </div>
