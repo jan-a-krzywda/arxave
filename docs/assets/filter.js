@@ -396,11 +396,13 @@
     '#94760f', '#b18f08', '#d0a504', '#f5b301'
   ];
 
-  /** Map cosine value to ore ramp hex. Normalized by max off-diagonal,
-   *  then clamped to the yellowish half (steps 3..7). */
-  function seamColor(val, maxOff) {
-    if (maxOff <= 0.001) return '#1b1f26';
-    var norm = val / maxOff;   // 0→0, max→1
+  /** Map cosine value to ore ramp hex. Normalized by [minOff, maxOff]
+   *  so the weakest correlation gets the dimmest yellowish step
+   *  and the strongest gets the brightest. */
+  function seamColor(val, minOff, maxOff) {
+    var span = maxOff - minOff;
+    if (span <= 0.001) return ORE_HEX[3];
+    var norm = (val - minOff) / span;   // minOff→0, maxOff→1
     if (norm < 0) norm = 0; if (norm > 1) norm = 1;
     var idx = 3 + Math.round(norm * 4);
     if (idx > 7) idx = 7;
@@ -422,14 +424,16 @@
     ctx.fillStyle = getComputedStyle(canvas).getPropertyValue('--rock').trim() || '#21262e';
     ctx.fillRect(0, 0, width, height);
 
-    // Find max off-diagonal — skip the 1.0 diagonal entries
-    var maxOff = 0;
+    // Find min/max off-diagonal — skip the 1.0 diagonal entries
+    var minOff = Infinity, maxOff = 0;
     for (var oi = 0; oi < N; oi++) {
       for (var oj = oi + 1; oj < N; oj++) {
         var v = S[order[oi]][order[oj]];
+        if (v < minOff) minOff = v;
         if (v > maxOff) maxOff = v;
       }
     }
+    if (!isFinite(minOff)) minOff = 0;
 
     // Draw upper triangle in clustered order
     for (var oi = 0; oi < N; oi++) {
@@ -437,7 +441,7 @@
         var i = order[oi];
         var j = order[oj];
         var val = S[i][j];
-        ctx.fillStyle = seamColor(val, maxOff);
+        ctx.fillStyle = seamColor(val, minOff, maxOff);
         ctx.fillRect(oi * cellSize, oj * cellSize, cellSize, cellSize);
       }
     }
