@@ -324,7 +324,7 @@
    */
   function clusterOrder(stones, S) {
     var N = stones.length;
-    var THRESH = 0.80;
+    var THRESH = 0.70;
     var MIN_SIZE = 3;
 
     // Build adjacency for values >= THRESH
@@ -390,16 +390,21 @@
     return { order: clustered.concat(remainder), components: compInfo };
   }
 
-  /** Map cosine value to ore ramp. Normalized by the day's max off-diagonal,
-   *  then clamped to the yellowish half of the ramp so even weak pairs show. */
+  // Pre-resolved ramp hexes — canvas can't resolve CSS var() strings.
+  var ORE_HEX = [
+    '#2b2620', '#45371c', '#5d4a1a', '#785f16',
+    '#94760f', '#b18f08', '#d0a504', '#f5b301'
+  ];
+
+  /** Map cosine value to ore ramp hex. Normalized by max off-diagonal,
+   *  then clamped to the yellowish half (steps 3..7). */
   function seamColor(val, maxOff) {
-    if (maxOff <= 0.001) return 'var(--ore-0)';
+    if (maxOff <= 0.001) return '#1b1f26';
     var norm = val / maxOff;   // 0→0, max→1
     if (norm < 0) norm = 0; if (norm > 1) norm = 1;
-    /* skip ore-0/1/2 — always use the yellowish part (steps 3..7) */
     var idx = 3 + Math.round(norm * 4);
     if (idx > 7) idx = 7;
-    return 'var(--ore-' + idx + ')';
+    return ORE_HEX[idx];
   }
 
   function drawSeamMap(canvas, S, order, stones, components, readoutFn) {
@@ -437,8 +442,8 @@
       }
     }
 
-    // Diagonal in rock-edge
-    ctx.fillStyle = getComputedStyle(canvas).getPropertyValue('--rock-edge').trim() || '#333a44';
+    // Diagonal — same as background so it disappears
+    ctx.fillStyle = getComputedStyle(canvas).getPropertyValue('--rock').trim() || '#21262e';
     for (var d = 0; d < N; d++) {
       ctx.fillRect(d * cellSize, d * cellSize, cellSize, cellSize);
     }
