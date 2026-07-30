@@ -390,10 +390,13 @@
     return { order: clustered.concat(remainder), components: compInfo };
   }
 
-  function oreColor(cosVal) {
-    // Map [0.5, 1] to ore ramp steps 0..7. Values below 0.5 are all step 0
-    // — near-zero cells must sink into the rock, per the method.
-    var norm = (cosVal - 0.5) / 0.5;   // 0.5→0, 1.0→1
+  /**
+   * Normalize by the maximum off-diagonal value so the strongest pair in
+   * the day always gets the ramp's top step, regardless of absolute magnitude.
+   */
+  function seamColor(val, maxOffDiag) {
+    if (maxOffDiag <= 0) return 'var(--ore-0)';
+    var norm = val / maxOffDiag;   // 0→0, max→1
     if (norm < 0) norm = 0; if (norm > 1) norm = 1;
     var idx = Math.round(norm * 7);
     return 'var(--ore-' + idx + ')';
@@ -414,13 +417,22 @@
     ctx.fillStyle = getComputedStyle(canvas).getPropertyValue('--rock').trim() || '#21262e';
     ctx.fillRect(0, 0, width, height);
 
+    // Find the maximum off-diagonal similarity — this is the day's ceiling.
+    var maxOff = 0;
+    for (var oi = 0; oi < N; oi++) {
+      for (var oj = oi + 1; oj < N; oj++) {
+        var sv = S[order[oi]][order[oj]];
+        if (sv > maxOff) maxOff = sv;
+      }
+    }
+
     // Draw upper triangle in clustered order
     for (var oi = 0; oi < N; oi++) {
       for (var oj = oi + 1; oj < N; oj++) {
         var i = order[oi];
         var j = order[oj];
         var val = S[i][j];
-        ctx.fillStyle = oreColor(val);
+        ctx.fillStyle = seamColor(val, maxOff);
         ctx.fillRect(oi * cellSize, oj * cellSize, cellSize, cellSize);
       }
     }

@@ -358,11 +358,13 @@ progress::-moz-progress-bar {
 }
 
 .seam-canvas-wrap {
-  position: relative;
+  display: inline-block;
+  max-width: 100%;
   overflow-x: auto;
   border: 1px solid var(--rock-edge);
   border-radius: 4px;
   background: var(--rock);
+  vertical-align: top;
 }
 
 .seam-canvas-wrap canvas {
