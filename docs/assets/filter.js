@@ -390,13 +390,15 @@
     return { order: clustered.concat(remainder), components: compInfo };
   }
 
-  /** Map cosine value to ore ramp, normalized by the day's max off-diagonal.
-   *  The strongest paper pair always gets the ramp's top step. */
+  /** Map cosine value to ore ramp. Normalized by the day's max off-diagonal,
+   *  then clamped to the yellowish half of the ramp so even weak pairs show. */
   function seamColor(val, maxOff) {
     if (maxOff <= 0.001) return 'var(--ore-0)';
     var norm = val / maxOff;   // 0→0, max→1
     if (norm < 0) norm = 0; if (norm > 1) norm = 1;
-    var idx = Math.round(norm * 7);
+    /* skip ore-0/1/2 — always use the yellowish part (steps 3..7) */
+    var idx = 3 + Math.round(norm * 4);
+    if (idx > 7) idx = 7;
     return 'var(--ore-' + idx + ')';
   }
 
@@ -944,7 +946,7 @@
       rowIdx++;
     }
 
-    // Core samples group header
+    // Core samples group header (skip if empty)
     if (kp > 0) {
       railHTML += '<div class="rail-row group-header">Core samples</div>';
     }
@@ -960,15 +962,14 @@
       rowIdx++;
     }
 
-    // The rush
-    railHTML += '<div class="rail-row group-header">The rush</div>';
-    railHTML += '<div class="rail-row" style="opacity:0.4">' +
-      '<span class="rail-label">Scirate scites</span>' +
+    // The rush — sits right before GRADE, no separate header
+    railHTML += '<div class="rail-row" style="opacity:0.4; border-bottom:none">' +
+      '<span class="rail-label">Scirate scites (inactive)</span>' +
       '<span class="rail-weight">—</span>' +
       '</div>';
     rowIdx++;
 
-    // Grade row
+    // Grade row — right after rush
     railHTML += '<div class="rail-row grade-row">' +
       '<span class="rail-label">GRADE</span>' +
       '</div>';
@@ -1050,49 +1051,53 @@
     var F = state.featureVectors;
     var grades = state.grades;
 
+    var pinnedCell = null;
+
+    function showTooltip(e, cell) {
+      var row = cell.dataset.row;
+      var col = parseInt(cell.dataset.col, 10);
+      var si = order[col];
+      var stone = state.stones[si];
+      var val = cell.dataset.val;
+      var isGrade = row === 'grade';
+
+      tooltip.innerHTML =
+        '<div class="tt-value">' + (val === 'null' ? '—' : parseFloat(val).toFixed(2)) + '</div>' +
+        '<div class="tt-title">' + escapeHtml(stone.title) + '</div>' +
+        '<div class="tt-row"><a href="' + stone.abs_url + '" target="_blank" rel="noopener">open on arXiv →</a></div>';
+      tooltip.style.display = 'block';
+      positionTooltip(e, tooltip);
+    }
+
     grid.querySelectorAll('.matrix-cell').forEach(function (cell) {
       cell.addEventListener('mouseenter', function (e) {
-        var row = cell.dataset.row;
-        var col = parseInt(cell.dataset.col, 10);
-        var si = order[col];
-        var stone = state.stones[si];
-        var val = cell.dataset.val;
-        var isGrade = row === 'grade';
-        row = isGrade ? row : parseInt(row, 10);
+        if (pinnedCell) return; // locked on a cell until click elsewhere
+        showTooltip(e, cell);
+      });
 
-        var rowLabel;
-        if (isGrade) {
-          rowLabel = 'Grade';
-        } else if (row >= kk + kp) {
-          rowLabel = 'The rush (inactive)';
-        } else if (row >= kk) {
-          var ci = row - kk;
-          rowLabel = state.cores[ci] ? (state.cores[ci].title || state.cores[ci].doi || 'Core ' + (ci + 1)) : 'Core';
+      cell.addEventListener('click', function (e) {
+        if (pinnedCell === cell) {
+          // unpin
+          pinnedCell = null;
+          tooltip.style.display = 'none';
         } else {
-          var ti = row;
-          var t = state.touchstones[ti];
-          rowLabel = t ? (t.text || 'Touchstone ' + (ti + 1)) : 'Touchstone ' + (ti + 1);
+          pinnedCell = cell;
+          showTooltip(e, cell);
         }
-
-        tooltip.innerHTML =
-          '<div class="tt-value">' + (val === 'null' ? '—' : parseFloat(val).toFixed(2)) + '</div>' +
-          '<div class="tt-title">' + escapeHtml(stone.title) + '</div>' +
-          '<div class="tt-row"><a href="' + stone.abs_url + '" target="_blank" rel="noopener">open on arXiv →</a></div>';
-        tooltip.style.display = 'block';
-        positionTooltip(e, tooltip);
+        e.stopPropagation();
       });
+    });
 
-      cell.addEventListener('mouseleave', function () {
+    // Click anywhere outside the grid dismisses the pinned tooltip
+    document.addEventListener('click', function (e) {
+      if (!grid.contains(e.target)) {
+        pinnedCell = null;
         tooltip.style.display = 'none';
-      });
+      }
+    });
 
-      cell.addEventListener('focus', function (e) {
-        cell.dispatchEvent(new MouseEvent('mouseenter', { clientX: cell.getBoundingClientRect().left + 8, clientY: cell.getBoundingClientRect().top }));
-      });
-
-      cell.addEventListener('blur', function () {
-        tooltip.style.display = 'none';
-      });
+    grid.addEventListener('mouseleave', function () {
+      if (!pinnedCell) tooltip.style.display = 'none';
     });
   }
 
