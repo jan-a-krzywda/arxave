@@ -78,8 +78,8 @@ permalink: /
       </div>
       <div class="seam-canvas-wrap">
         <canvas id="seam-canvas"></canvas>
-        <div class="seam-readout" id="seam-readout"></div>
       </div>
+      <div class="seam-readout" id="seam-readout"></div>
     </div>
   </fieldset>
 

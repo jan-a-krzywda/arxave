@@ -390,13 +390,11 @@
     return { order: clustered.concat(remainder), components: compInfo };
   }
 
-  /**
-   * Normalize by the maximum off-diagonal value so the strongest pair in
-   * the day always gets the ramp's top step, regardless of absolute magnitude.
-   */
-  function seamColor(val, maxOffDiag) {
-    if (maxOffDiag <= 0) return 'var(--ore-0)';
-    var norm = val / maxOffDiag;   // 0→0, max→1
+  /** Map cosine value to ore ramp, normalized by the day's max off-diagonal.
+   *  The strongest paper pair always gets the ramp's top step. */
+  function seamColor(val, maxOff) {
+    if (maxOff <= 0.001) return 'var(--ore-0)';
+    var norm = val / maxOff;   // 0→0, max→1
     if (norm < 0) norm = 0; if (norm > 1) norm = 1;
     var idx = Math.round(norm * 7);
     return 'var(--ore-' + idx + ')';
@@ -417,12 +415,12 @@
     ctx.fillStyle = getComputedStyle(canvas).getPropertyValue('--rock').trim() || '#21262e';
     ctx.fillRect(0, 0, width, height);
 
-    // Find the maximum off-diagonal similarity — this is the day's ceiling.
+    // Find max off-diagonal — skip the 1.0 diagonal entries
     var maxOff = 0;
     for (var oi = 0; oi < N; oi++) {
       for (var oj = oi + 1; oj < N; oj++) {
-        var sv = S[order[oi]][order[oj]];
-        if (sv > maxOff) maxOff = sv;
+        var v = S[order[oi]][order[oj]];
+        if (v > maxOff) maxOff = v;
       }
     }
 

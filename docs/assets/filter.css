@@ -374,12 +374,10 @@ progress::-moz-progress-bar {
 }
 
 .seam-readout {
-  padding: 0.4rem 0.6rem;
+  padding: 0.3rem 0;
   font-size: 0.78rem;
   color: var(--text-dim);
   min-height: 1.3em;
-  border-top: 1px solid var(--rock-edge);
-  background: var(--rock-deep);
 }
 
 /* ── Seam modal ───────────────────────────────────────────────── */
