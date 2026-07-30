@@ -452,35 +452,68 @@
       ctx.fillRect(d * cellSize, d * cellSize, cellSize, cellSize);
     }
 
-    // Mouse tracking
-    canvas.onmousemove = function (e) {
+    // Mouse tracking. Hover previews; a click pins the readout so its two
+    // links can actually be clicked (hover-only readouts vanish on the way there).
+    var pinned = null;   // {row, col} or null
+
+    function cellAt(e) {
       var rect = canvas.getBoundingClientRect();
-      var mx = e.clientX - rect.left;
-      var my = e.clientY - rect.top;
-      var col = Math.floor(mx / cellSize);
-      var row = Math.floor(my / cellSize);
-      if (col < 0 || col >= N || row < 0 || row >= N) {
-        if (readoutFn) readoutFn('', '');
-        return;
-      }
-      var si = order[row];
-      var sj = order[col];
-      var val = row === col ? 1.0 : S[si][sj];
+      var col = Math.floor((e.clientX - rect.left) / cellSize);
+      var row = Math.floor((e.clientY - rect.top) / cellSize);
+      if (col < 0 || col >= N || row < 0 || row >= N) return null;
+      return { row: row, col: col };
+    }
+
+    function emit(cell, isPinned) {
+      if (!readoutFn) return;
+      if (!cell) { readoutFn('', '', false); return; }
+      var si = order[cell.row];
+      var sj = order[cell.col];
+      var val = cell.row === cell.col ? 1.0 : S[si][sj];
       var same = false;
       for (var c = 0; c < components.length; c++) {
         var members = new Set(components[c].indices);
         if (members.has(si) && members.has(sj)) { same = true; break; }
       }
-      if (readoutFn) readoutFn(
+      readoutFn(
         '<a href="' + stones[si].abs_url + '" target="_blank" rel="noopener">' +
           escapeHtml(stones[si].title) + '</a> — ' +
         '<a href="' + stones[sj].abs_url + '" target="_blank" rel="noopener">' +
           escapeHtml(stones[sj].title) + '</a>',
-        val.toFixed(2) + (same ? ' · same seam' : '')
+        val.toFixed(2) + (same ? ' · same seam' : '') +
+          (isPinned ? '  ·  <span class="seam-pin-hint">pinned — click cell again to release</span>'
+                    : '  ·  <span class="seam-pin-hint">click to pin</span>'),
+        !!isPinned
       );
+    }
+
+    canvas.onmousemove = function (e) {
+      if (pinned) return;              // locked until the cell is clicked again
+      emit(cellAt(e), false);
     };
     canvas.onmouseleave = function () {
-      if (readoutFn) readoutFn('', '');
+      if (!pinned) emit(null, false);
+    };
+    canvas.onclick = function (e) {
+      var cell = cellAt(e);
+      if (!cell) return;
+      if (pinned && pinned.row === cell.row && pinned.col === cell.col) {
+        pinned = null;
+        emit(cell, false);
+      } else {
+        pinned = cell;
+        emit(cell, true);
+      }
+    };
+    canvas.style.cursor = 'pointer';
+  }
+
+  /** Wire a readout element to drawSeamMap's readoutFn contract. */
+  function seamReadoutSink(elId) {
+    return function (full, detail, isPinned) {
+      var el = byId(elId);
+      el.innerHTML = full ? full + '  ·  ' + detail : '';
+      el.classList.toggle('pinned', !!isPinned);
     };
   }
 
@@ -525,9 +558,7 @@
 
       // Draw seam map
       var canvas = byId('seam-canvas');
-      drawSeamMap(canvas, S, cluster.order, stones, cluster.components, function (full, detail) {
-        byId('seam-readout').innerHTML = full ? full + '  ·  ' + detail : '';
-      });
+      drawSeamMap(canvas, S, cluster.order, stones, cluster.components, seamReadoutSink('seam-readout'));
 
       // Stats
       var compText = cluster.components.map(function (c) {
@@ -938,8 +969,9 @@
     grid.style.setProperty('--assay-cols', N);
     grid.style.gridTemplateColumns = 'repeat(' + N + ', ' + cellW + 'px)';
 
-    // Rail
-    var railHTML = '';
+    // Rail. First row is a spacer for the column-number bar that sits above
+    // the grid — without it every rail row is off by one against its cells.
+    var railHTML = '<div class="rail-row rail-head-spacer"></div>';
     var rowIdx = 0;
     var kk = state.touchstones.length;
     var kp = state.cores.length;
@@ -1075,12 +1107,45 @@
 
     grid.innerHTML = gridHTML;
 
+    // Rail rows and grid rows are separate DOM trees, so alignment can only be
+    // guaranteed by measuring: spacer takes the column-bar height, then every
+    // grid row is forced to its rail row's measured height.
+    syncRailToGrid(rail, grid, colTitles, rowH);
+
     // Attach hover/focus handlers
     attachCellHandlers(order, kk, kp, topN);
 
     // ── Table view (update if visible) ──
     if (byId('table-view-toggle').checked) {
       renderTable(order, kk, kp, topN);
+    }
+  }
+
+  /** Make rail row i line up with grid row i.
+   *  rail children: [head-spacer, ...rows]   grid children: [...rows]  */
+  function syncRailToGrid(rail, grid, colTitles, rowH) {
+    var spacer = rail.querySelector('.rail-head-spacer');
+    if (spacer) spacer.style.height = colTitles.getBoundingClientRect().height + 'px';
+
+    var railRows = rail.querySelectorAll('.rail-row');
+    var gridRows = grid.querySelectorAll('.matrix-row');
+
+    // Data rows get the cell height; header rows keep their natural (text) height
+    for (var i = 1; i < railRows.length; i++) {
+      if (!railRows[i].classList.contains('group-header')) {
+        railRows[i].style.height = rowH + 'px';
+      }
+    }
+
+    // Then push each measured rail height onto the matching grid row's cells
+    for (var r = 0; r < gridRows.length; r++) {
+      var railRow = railRows[r + 1];
+      if (!railRow) break;
+      var h = railRow.getBoundingClientRect().height;
+      var cells = gridRows[r].children;
+      for (var c = 0; c < cells.length; c++) {
+        cells[c].style.height = h + 'px';
+      }
     }
   }
 
@@ -1098,27 +1163,31 @@
     return Math.min(1, spread);
   }
 
+  // Pin survives re-renders' worth of listeners: document-level wiring happens once
+  var pinnedCell = null;
+  var cellDismissWired = false;
+
   function attachCellHandlers(order, kk, kp, topN) {
     var grid = byId('assay-grid');
     var tooltip = byId('cell-tooltip');
-    var N = state.stones.length;
-    var F = state.featureVectors;
-    var grades = state.grades;
 
-    var pinnedCell = null;
+    pinnedCell = null;
+    tooltip.classList.remove('pinned');
+    tooltip.style.display = 'none';
 
-    function showTooltip(e, cell) {
-      var row = cell.dataset.row;
+    function showTooltip(e, cell, isPinned) {
       var col = parseInt(cell.dataset.col, 10);
       var si = order[col];
       var stone = state.stones[si];
       var val = cell.dataset.val;
-      var isGrade = row === 'grade';
 
       tooltip.innerHTML =
         '<div class="tt-value">' + (val === 'null' ? '—' : parseFloat(val).toFixed(2)) + '</div>' +
         '<div class="tt-title">' + escapeHtml(stone.title) + '</div>' +
-        '<div class="tt-row"><a href="' + stone.abs_url + '" target="_blank" rel="noopener">open on arXiv →</a></div>';
+        '<div class="tt-row"><a href="' + stone.abs_url + '" target="_blank" rel="noopener">open on arXiv →</a></div>' +
+        '<div class="tt-pin-hint">' + (isPinned ? 'pinned — click the cell again to release' : 'click to pin') + '</div>';
+      // pointer-events only while pinned, so an unpinned tooltip never eats hovers
+      tooltip.classList.toggle('pinned', !!isPinned);
       tooltip.style.display = 'block';
       positionTooltip(e, tooltip);
     }
@@ -1126,33 +1195,48 @@
     grid.querySelectorAll('.matrix-cell').forEach(function (cell) {
       cell.addEventListener('mouseenter', function (e) {
         if (pinnedCell) return; // locked on a cell until click elsewhere
-        showTooltip(e, cell);
+        showTooltip(e, cell, false);
       });
 
       cell.addEventListener('click', function (e) {
         if (pinnedCell === cell) {
           // unpin
           pinnedCell = null;
+          tooltip.classList.remove('pinned');
           tooltip.style.display = 'none';
         } else {
           pinnedCell = cell;
-          showTooltip(e, cell);
+          showTooltip(e, cell, true);
         }
         e.stopPropagation();
       });
     });
 
-    // Click anywhere outside the grid dismisses the pinned tooltip
-    document.addEventListener('click', function (e) {
-      if (!grid.contains(e.target)) {
-        pinnedCell = null;
-        tooltip.style.display = 'none';
-      }
-    });
+    if (!cellDismissWired) {
+      cellDismissWired = true;
 
-    grid.addEventListener('mouseleave', function () {
-      if (!pinnedCell) tooltip.style.display = 'none';
-    });
+      // Click outside grid and tooltip dismisses the pin — clicks *inside* the
+      // tooltip must survive or its arXiv link never fires
+      document.addEventListener('click', function (e) {
+        if (!grid.contains(e.target) && !tooltip.contains(e.target)) {
+          pinnedCell = null;
+          tooltip.classList.remove('pinned');
+          tooltip.style.display = 'none';
+        }
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && pinnedCell) {
+          pinnedCell = null;
+          tooltip.classList.remove('pinned');
+          tooltip.style.display = 'none';
+        }
+      });
+
+      grid.addEventListener('mouseleave', function () {
+        if (!pinnedCell) tooltip.style.display = 'none';
+      });
+    }
   }
 
   function positionTooltip(e, tooltip) {
@@ -1235,9 +1319,8 @@
     if (!state.seamMap || !state.stones.length) return;
     var clustered = this.checked;
     var order = clustered ? state.seamOrder : state.stones.map(function (_, i) { return i; });
-    drawSeamMap(byId('seam-canvas'), state.seamMap, order, state.stones, state.seamComponents, function (full, detail) {
-      byId('seam-readout').textContent = full ? full + '  ·  ' + detail : '';
-    });
+    drawSeamMap(byId('seam-canvas'), state.seamMap, order, state.stones, state.seamComponents,
+      seamReadoutSink('seam-readout'));
   });
 
   // Seam expand
@@ -1246,9 +1329,8 @@
     var modal = byId('seam-modal');
     var canvas = byId('seam-modal-canvas');
     var order = byId('seam-sort-toggle').checked ? state.seamOrder : state.stones.map(function (_, i) { return i; });
-    drawSeamMap(canvas, state.seamMap, order, state.stones, state.seamComponents, function (full, detail) {
-      byId('seam-modal-readout').textContent = full ? full + '  ·  ' + detail : '';
-    });
+    drawSeamMap(canvas, state.seamMap, order, state.stones, state.seamComponents,
+      seamReadoutSink('seam-modal-readout'));
     modal.style.display = 'flex';
   });
 

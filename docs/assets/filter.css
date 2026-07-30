@@ -379,6 +379,19 @@ progress::-moz-progress-bar {
   color: var(--text-dim);
   min-height: 1.3em;
 }
+.seam-readout a,
+.seam-modal-readout a {
+  color: var(--lamp);
+}
+.seam-readout.pinned,
+.seam-modal-readout.pinned {
+  border-left: 2px solid var(--gold);
+  padding-left: 0.5rem;
+}
+.seam-pin-hint {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+}
 
 /* ── Seam modal ───────────────────────────────────────────────── */
 .seam-modal {
@@ -493,12 +506,16 @@ progress::-moz-progress-bar {
 
 .assay-scroll {
   flex: 1 1 auto;
+  /* min-width:0 or the grid's intrinsic width blows the flex item past the
+     fieldset instead of scrolling inside it */
+  min-width: 0;
   overflow-x: auto;
   position: relative;
 }
 
 #assay-column-titles {
   display: flex;
+  width: max-content;
   border-bottom: 1px solid var(--rock-edge);
   background: var(--rock-deep);
 }
@@ -521,6 +538,7 @@ progress::-moz-progress-bar {
   --assay-cols: 1;
   display: grid;
   grid-template-columns: repeat(var(--assay-cols), 1fr);
+  width: max-content;
 }
 
 /* Rail rows */
@@ -529,8 +547,19 @@ progress::-moz-progress-bar {
   align-items: center;
   padding: 0 0.5rem;
   font-size: 0.78rem;
+  /* tight so a row still fits the forced cell height without clipping */
+  line-height: 1;
   color: var(--text-dim);
   border-bottom: 1px solid var(--rock-edge);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+/* Corner cell above the rail — mirrors the column-number bar */
+.rail-row.rail-head-spacer {
+  padding: 0;
+  background: var(--rock-deep);
+  border-bottom: 1px solid var(--rock-edge);
+  box-sizing: border-box;
 }
 .rail-row.group-header {
   font-size: 0.68rem;
@@ -630,6 +659,19 @@ progress::-moz-progress-bar {
   color: var(--text-dim);
   pointer-events: none;
   max-width: 320px;
+}
+/* Pinned by a click — must take pointer events so the arXiv link is clickable */
+.cell-tooltip.pinned {
+  pointer-events: auto;
+  border-color: var(--gold);
+}
+.cell-tooltip a {
+  color: var(--lamp);
+}
+.cell-tooltip .tt-pin-hint {
+  font-size: 0.68rem;
+  color: var(--text-faint);
+  margin-top: 0.2rem;
 }
 .cell-tooltip .tt-value {
   font-weight: 700;
