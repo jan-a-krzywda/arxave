@@ -472,7 +472,10 @@
         if (members.has(si) && members.has(sj)) { same = true; break; }
       }
       if (readoutFn) readoutFn(
-        escapeHtml(stones[si].title) + ' — ' + escapeHtml(stones[sj].title),
+        '<a href="' + stones[si].abs_url + '" target="_blank" rel="noopener">' +
+          escapeHtml(stones[si].title) + '</a> — ' +
+        '<a href="' + stones[sj].abs_url + '" target="_blank" rel="noopener">' +
+          escapeHtml(stones[sj].title) + '</a>',
         val.toFixed(2) + (same ? ' · same seam' : '')
       );
     };
@@ -523,7 +526,7 @@
       // Draw seam map
       var canvas = byId('seam-canvas');
       drawSeamMap(canvas, S, cluster.order, stones, cluster.components, function (full, detail) {
-        byId('seam-readout').textContent = full ? full + '  ·  ' + detail : '';
+        byId('seam-readout').innerHTML = full ? full + '  ·  ' + detail : '';
       });
 
       // Stats
