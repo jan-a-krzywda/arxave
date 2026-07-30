@@ -917,6 +917,8 @@
 
     // Cell size shrinks as N grows: 16px at N≤90, down to 10px at N≥200
     var cellW = N <= 90 ? 16 : N <= 120 ? 14 : N <= 160 ? 12 : 10;
+    // Rail row height must match grid cell height so rows align
+    var rowH = cellW; // matrix-cell has aspect-ratio: 1
     var colTitleHTML = '';
     for (var c = 0; c < N; c++) {
       var si = order[c];
