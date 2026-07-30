@@ -1,279 +1,184 @@
 /**
- * arxave filter — browser-side pipeline for ranking arXiv papers.
+ * arxave filter — staged Dig pipeline.
  *
- * Implements the filter-spec.md pipeline:
- *   1. scout  — arXiv API (Atom XML), always via the relay (arXiv sends no CORS)
- *   2. embed  — one batched call: hosted function by default, or the user's key
- *   3. cosine — topic_cos + corpus_cos (pure arithmetic)
- *   4. signals — scirate scite (best-effort), citation_overlap = null
- *   5. rank   — blend() with renormalization over present signals
- *   6. present — ranked table with per-signal breakdown
- *   7. refine — optional LLM call over top-N
+ * Four stages, each with its own button, output, and resumable state:
+ *   0. Sharpen the pick  — load the in-browser embedding model
+ *   1. Haul the stones   — scout arXiv + embed abstracts + seam map
+ *   2. Set the touchstones — free text + core samples (OpenAlex)
+ *   3. Assay             — (k+1)×N matrix with live re-blend
  *
- * Dependencies: none.  Runs in the browser, no bundler.
+ * Dependencies: none. Runs in the browser, no bundler.
  */
 (function () {
   'use strict';
 
-  // ── Hosted endpoints (supabase/functions/) ────────────────────────
-  // arXiv and Scirate send no Access-Control-Allow-Origin header, so a browser
-  // can never fetch them directly — every external GET goes through the relay.
-  // The embed function holds the API key server-side so the page is one click.
+  // ── Constants ────────────────────────────────────────────────────
   const FUNCTIONS_BASE = 'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1';
-  // scripts/dev_filter.py sets window.ARXAVE_RELAY so the local preview relays
-  // through itself instead of the deployed function.
   const RELAY_URL = window.ARXAVE_RELAY || (FUNCTIONS_BASE + '/relay');
-  const HOSTED_EMBED_URL = FUNCTIONS_BASE + '/embed';
-
-  // ── In-browser embeddings (default) ───────────────────────────────
-  // transformers.js runs the model in this tab: no key, no bill, no request
-  // per run. Cost is a one-time ~32 MB model download, cached by the browser.
-  // Pinned version, three CDNs, tried in order — one blocked or down CDN should
-  // not take the default embedding path with it.
-  //
-  // Import the PACKAGE root, not dist/transformers.web.js: that file carries a
-  // bare specifier ("onnxruntime-common") which a browser cannot resolve
-  // without an import map, and fails with "Failed to resolve module specifier".
-  // The package URL resolves to a build whose dependencies are already wired.
   const TRANSFORMERS_VERSION = '3.7.6';
   const TRANSFORMERS_URLS = [
     'https://cdn.jsdelivr.net/npm/@huggingface/transformers@' + TRANSFORMERS_VERSION,
     'https://unpkg.com/@huggingface/transformers@' + TRANSFORMERS_VERSION,
     'https://esm.sh/@huggingface/transformers@' + TRANSFORMERS_VERSION,
   ];
-  const LOCAL_MODEL = 'Xenova/bge-small-en-v1.5';   // 384-dim, MTEB ~62
+  const LOCAL_MODEL = 'Xenova/bge-small-en-v1.5';
+  const LOCAL_DIM = 384;
   const LOCAL_BATCH = 16;
+  const OPENALEX_MAILTO = 'arxiv-filter@example.com';
 
-  // ── Constants (match Python rank.py) ──────────────────────────────
-  const SCITE_SATURATION = 20.0;   // rank.SCITE_SATURATION
-  const DEFAULT_WEIGHTS = { w1: 0.50, w2: 0.25, w3: 0.15, w4: 0.10 };
-  const DEFAULT_TOP_N = 10;
-
-  // ── DOM refs ──────────────────────────────────────────────────────
+  // ── DOM helpers ──────────────────────────────────────────────────
   function byId(id) { return document.getElementById(id); }
-
-  const app = byId('app');
-  if (app) app.style.display = '';
 
   // ── State ─────────────────────────────────────────────────────────
   const state = {
-    candidates: [],      // [{arxiv_id, title, abstract, authors, primary_category, published, abs_url, pdf_url}]
-    topicVectors: null,  // [d] × num_topics  (column vectors)
-    corpusVectors: null, // [d] × num_corpus   (column vectors)
-    abstractVectors: null, // [N × d]  row-major
-    ranked: [],           // [{...candidate, signals:{topic_cos, corpus_cos, citation_overlap, scite}, scite_count, importance, matched_topic}]
-    corpusTitles: [],     // parsed .bib titles
-    sciteAvailable: true,  // becomes false if scirate fetch fails
-    bibLoaded: false,
+    extractor: null,        // transformers.js pipeline
+    modelLoaded: false,
+    stones: [],             // [{arxiv_id, title, abstract, authors, primary_category, published, abs_url, pdf_url}]
+    A: null,                // [N × d] abstract vectors, row-major, L2-normalized
+    touchstones: [],        // [{id, text, vector}]  free text
+    cores: [],              // [{id, doi, title, abstract, vector, status, weak}]
+    featureVectors: null,   // [k × d] row-major, unit vectors
+    /* featureVectors rows are: touchstones[0..kk-1], then cores[0..kp-1], then rush (null) */
+    grades: null,           // [N] blended scores
+    order: null,            // [N] indices into stones, sorted by grade desc
+    seamOrder: null,        // [N] indices into stones, sorted by cluster
+    seamMap: null,          // [N×N] cosine matrix (upper triangle populated)
+    seamComponents: null,   // [{indices: [int], centralTitle: string}]
   };
 
   // ── Persistence ───────────────────────────────────────────────────
-  function loadWeights() {
+  function lsKey(base) { return 'arxave-dig-' + base; }
+
+  function loadState() {
+    function j(k) {
+      try { var r = localStorage.getItem(lsKey(k)); return r ? JSON.parse(r) : null; }
+      catch (_) { return null; }
+    }
+    var ts = j('touchstones');
+    if (ts) state.touchstones = ts;
+    var cs = j('cores');
+    if (cs) state.cores = cs;
+    // cached core vectors
     try {
-      var raw = localStorage.getItem('arxave-filter-weights');
-      if (raw) return JSON.parse(raw);
-    } catch (_) { /* ignore */ }
-    return { w1: DEFAULT_WEIGHTS.w1, w2: DEFAULT_WEIGHTS.w2, w3: DEFAULT_WEIGHTS.w3, w4: DEFAULT_WEIGHTS.w4 };
+      var cv = localStorage.getItem(lsKey('core-cache'));
+      if (cv) { var parsed = JSON.parse(cv); state._coreCache = parsed; }
+    } catch (_) { state._coreCache = {}; }
+    if (!state._coreCache) state._coreCache = {};
   }
 
-  function saveWeights(w) {
-    try {
-      localStorage.setItem('arxave-filter-weights', JSON.stringify(w));
-    } catch (_) { /* ignore */ }
+  function saveTouchstones() {
+    // Don't persist vectors — they get re-embedded from text
+    var slim = state.touchstones.map(function (t) { return { id: t.id, text: t.text }; });
+    try { localStorage.setItem(lsKey('touchstones'), JSON.stringify(slim)); } catch (_) {}
   }
 
-  // ── Weight slider init ────────────────────────────────────────────
-  var weights = loadWeights();
-
-  function setSlider(id, val) {
-    var el = byId(id);
-    el.value = val;
-    byId(id + '-val').textContent = val.toFixed(2);
-  }
-
-  function initSlider(id, key) {
-    setSlider(id, weights[key]);
-    byId(id).addEventListener('input', function () {
-      var v = parseFloat(this.value);
-      weights[key] = v;
-      byId(id + '-val').textContent = v.toFixed(2);
-      updateWeightPct();
-      saveWeights(weights);
-      if (state.ranked.length > 0) {
-        reRank();
-        renderResults();
-      }
+  function saveCores() {
+    var slim = state.cores.map(function (c) {
+      return { id: c.id, doi: c.doi, title: c.title, abstract: c.abstract, status: c.status, weak: c.weak };
     });
+    try { localStorage.setItem(lsKey('cores'), JSON.stringify(slim)); } catch (_) {}
   }
 
-  ['w1', 'w2', 'w4'].forEach(function (id) {
-    initSlider(id, id);
-  });
-
-  // w3 is disabled (deferred); keep the value for localStorage but slider is frozen
-  setSlider('w3', weights.w3);
-  // w3 slider stays disabled in HTML
-
-  function updateWeightPct() {
-    var w = weights;
-    var total = w.w1 + w.w2 + w.w3 + w.w4;
-    if (total <= 0) total = 1;
-    function pct(k) { return ((w[k] / total) * 100).toFixed(0) + '%'; }
-    byId('w1-pct').textContent = pct('w1');
-    byId('w2-pct').textContent = pct('w2');
-    byId('w3-pct').textContent = pct('w3');
-    byId('w4-pct').textContent = pct('w4');
-    byId('weight-pct-readout').textContent =
-      'topic ' + pct('w1') + ' · corpus ' + pct('w2') +
-      ' · citation ' + pct('w3') + ' · scite ' + pct('w4');
-  }
-  updateWeightPct();
-
-  // ── Embedding mode: hosted (default, zero setup) or own key ───────
-  var EMBED_PRESETS = {
-    openai:      { base_url: 'https://api.openai.com/v1', model: 'text-embedding-3-small' },
-    ollama:      { base_url: 'http://localhost:11434/v1', model: 'nomic-embed-text' },
-    'lm-studio': { base_url: 'http://127.0.0.1:1234/v1', model: 'text-embedding-nomic-embed-text-v1.5' },
-    custom:      { base_url: '', model: '' },
-  };
-
-  function embedMode() {
-    var el = document.querySelector('input[name="embed-mode"]:checked');
-    return el ? el.value : 'local';
-  }
-
-  function onEmbedModeChange() {
-    byId('embed-own-fields').style.display = (embedMode() === 'own') ? '' : 'none';
-  }
-
-  Array.prototype.forEach.call(
-    document.querySelectorAll('input[name="embed-mode"]'),
-    function (el) { el.addEventListener('change', onEmbedModeChange); }
-  );
-
-  function onEmbedProviderChange() {
-    var prov = byId('embed-provider').value;
-    var preset = EMBED_PRESETS[prov];
-    byId('embed-model').value = preset.model;
-    byId('embed-base-url').value = preset.base_url;
-  }
-  byId('embed-provider').addEventListener('change', onEmbedProviderChange);
-  onEmbedProviderChange();
-  onEmbedModeChange();
-
-  // ── Refine provider ───────────────────────────────────────────────
-  // Refine stays bring-your-own-key: it is the only stage that spends a large
-  // model, and it is off by default. The fields are always visible — hiding the
-  // key box for OpenAI left no way to enter the key it requires.
-  var REFINE_PRESETS = {
-    openai:      { base_url: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
-    ollama:      { base_url: 'http://localhost:11434/v1', model: 'llama3.2' },
-    'lm-studio': { base_url: 'http://127.0.0.1:1234/v1', model: 'liquid/lfm2.5-1.2b' },
-  };
-
-  byId('refine-provider').addEventListener('change', function () {
-    var preset = REFINE_PRESETS[this.value];
-    if (preset) {
-      byId('refine-model').value = preset.model;
-      byId('refine-base-url').value = preset.base_url;
-    }
-  });
-
-  // ── .bib upload → extract titles ──────────────────────────────────
-  byId('bib-file').addEventListener('change', function (e) {
-    var file = e.target.files[0];
-    if (!file) return;
-
-    var reader = new FileReader();
-    reader.onload = function () {
-      var text = reader.result;
-      var titles = extractBibTitles(text);
-      state.corpusTitles = titles;
-      state.bibLoaded = titles.length > 0;
-
-      var status = byId('corpus-status');
-      if (titles.length === 0) {
-        status.textContent = 'No titles found in .bib file.';
-        byId('w2-unavailable').style.display = '';
-        byId('w2').disabled = true;
-      } else {
-        status.textContent = '✓ ' + titles.length + ' entries loaded (titles only, v1).';
-        byId('w2-unavailable').style.display = 'none';
-        byId('w2').disabled = false;
-      }
-      updateWeightPct();
-    };
-    reader.readAsText(file);
-  });
-
-  function extractBibTitles(text) {
-    var titles = [];
-    // Match @article{...} blocks and extract title fields
-    var re = /title\s*=\s*\{([^}]+)\}/gi;
-    var m;
-    while ((m = re.exec(text)) !== null) {
-      var t = m[1].replace(/\{[^}]*\}/g, '').replace(/\s+/g, ' ').trim();
-      if (t.length > 5) titles.push(t);
-    }
-    return titles;
+  function saveCoreCache() {
+    try { localStorage.setItem(lsKey('core-cache'), JSON.stringify(state._coreCache || {})); } catch (_) {}
   }
 
   // ── Relay helper ──────────────────────────────────────────────────
-  // Never try direct first: arXiv and Scirate send no CORS header, so the
-  // direct attempt is a guaranteed failure that costs a round-trip and litters
-  // the console. Always go through a relay; the field just picks which one.
   function relayBase() {
     var custom = byId('cors-proxy').value.trim();
     return custom || RELAY_URL;
   }
-
   function relayUrl(url) {
     var p = relayBase();
-    // Prefix style: "https://corsproxy.io/?" or "…?target="
     if (p.endsWith('?') || p.endsWith('=')) return p + encodeURIComponent(url);
-    // Query style: the arxave relay and `arxave serve` both take ?url=
     if (p.indexOf('?') === -1) return p + '?url=' + encodeURIComponent(url);
     return p + '&url=' + encodeURIComponent(url);
   }
-
   function fetchViaRelay(url, opts) {
     return fetch(relayUrl(url), opts || {});
   }
 
-  // ── Status display ────────────────────────────────────────────────
-  function setStatus(msg, isError) {
-    var el = byId('run-status');
-    el.style.display = '';
-    el.textContent = msg;
-    el.className = 'run-status ' + (isError ? 'error' : 'info');
-  }
-
-  function clearStatus() {
-    var el = byId('run-status');
-    el.style.display = 'none';
+  // ── escapeHtml ────────────────────────────────────────────────────
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>')
+      .replace(/"/g, '"').replace(/'/g, '&#39;');
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  // STAGE 1 — scout (arXiv API → candidates)
+  // STAGE 0 — Sharpen the pick
   // ═══════════════════════════════════════════════════════════════════
 
-  function scoutCategories() {
-    var raw = byId('categories').value;
-    var cats = raw.split(',').map(function (c) { return c.trim(); }).filter(Boolean);
-    if (cats.length === 0) throw new Error('No arXiv categories configured.');
-    return cats;
+  async function runSharpen() {
+    var btn = byId('sharpen-btn');
+    var statusEl = byId('sharpen-status');
+    var progWrap = byId('sharpen-progress-wrap');
+    var progBar = byId('sharpen-progress');
+    var progLabel = byId('sharpen-label');
+    var doneEl = byId('sharpen-done');
+
+    btn.disabled = true;
+    statusEl.textContent = '';
+    progWrap.style.display = 'flex';
+    progBar.value = 0;
+    progLabel.textContent = 'Starting...';
+
+    var mod = null;
+    var failures = [];
+    for (var u = 0; u < TRANSFORMERS_URLS.length && !mod; u++) {
+      try {
+        mod = await import(TRANSFORMERS_URLS[u]);
+      } catch (err) {
+        failures.push(TRANSFORMERS_URLS[u] + ' → ' + (err && err.message ? err.message : String(err)));
+      }
+    }
+
+    if (!mod) {
+      statusEl.textContent = 'Failed to load from any CDN.';
+      statusEl.style.color = 'var(--ember)';
+      progWrap.style.display = 'none';
+      btn.disabled = false;
+      throw new Error('Could not load transformers.js from any CDN: ' + failures.join(' | '));
+    }
+
+    mod.env.allowLocalModels = false;
+
+    var lastFile = '';
+    state.extractor = await mod.pipeline('feature-extraction', LOCAL_MODEL, {
+      dtype: 'q8',
+      device: 'wasm',
+      progress_callback: function (p) {
+        if (p && p.status === 'progress' && p.file && typeof p.progress === 'number') {
+          var pct = Math.round(p.progress);
+          progBar.value = pct;
+          if (p.file !== lastFile) {
+            progLabel.textContent = p.file + ' — ' + pct + '%';
+            lastFile = p.file;
+          } else {
+            progLabel.textContent = p.file + ' — ' + pct + '%';
+          }
+        }
+      },
+    });
+
+    state.modelLoaded = true;
+    progWrap.style.display = 'none';
+    doneEl.style.display = '';
+    btn.style.display = 'none';
+    statusEl.textContent = '';
+
+    // Enable next stage
+    byId('haul-btn').disabled = false;
+    byId('add-touchstone').disabled = false;
+    byId('add-core').disabled = false;
   }
 
-  /**
-   * Walk back `lookbackDays` *publishing* days, skipping weekends.
-   * Mirrors scout.cutoff_date in src/arxave/scout.py: arXiv doesn't announce
-   * on Sat/Sun, so plain calendar subtraction makes every Monday empty.
-   * Returns a YYYY-MM-DD string, comparable to the Atom <published> prefix.
-   */
+  // ═══════════════════════════════════════════════════════════════════
+  // Scout (shared between stages)
+  // ═══════════════════════════════════════════════════════════════════
+
   function cutoffDate(onDate, lookbackDays) {
-    var cursor = new Date(Date.UTC(
-      onDate.getUTCFullYear(), onDate.getUTCMonth(), onDate.getUTCDate()
-    ));
+    var cursor = new Date(Date.UTC(onDate.getUTCFullYear(), onDate.getUTCMonth(), onDate.getUTCDate()));
     var remaining = Math.max(lookbackDays, 1);
     while (remaining > 0) {
       cursor.setUTCDate(cursor.getUTCDate() - 1);
@@ -283,63 +188,41 @@
     return cursor.toISOString().substring(0, 10);
   }
 
-  /**
-   * Parse arXiv Atom XML into candidate objects.
-   * Uses DOMParser — no external XML library needed.
-   */
   function parseAtomXML(xmlText) {
     var parser = new DOMParser();
     var doc = parser.parseFromString(xmlText, 'application/xml');
     var entries = doc.querySelectorAll('entry');
     var candidates = [];
-
     entries.forEach(function (entry) {
       var idEl = entry.querySelector('id');
       if (!idEl) return;
-      var fullId = idEl.textContent.trim();
-      // Strip http://arxiv.org/abs/ prefix to get bare ID
-      var arxivId = fullId.replace(/^.*\/abs\//, '');
-
+      var arxivId = idEl.textContent.trim().replace(/^.*\/abs\//, '');
       var titleEl = entry.querySelector('title');
       var title = titleEl ? titleEl.textContent.replace(/\s+/g, ' ').trim() : '';
-
       var summaryEl = entry.querySelector('summary');
       var abstract = summaryEl ? summaryEl.textContent.replace(/\s+/g, ' ').trim() : '';
-
       var authorEls = entry.querySelectorAll('author name');
       var authors = [];
-      authorEls.forEach(function (a) {
-        var n = a.textContent.trim();
-        if (n) authors.push(n);
-      });
-
+      authorEls.forEach(function (a) { var n = a.textContent.trim(); if (n) authors.push(n); });
       var catEl = entry.querySelector('category[term]');
       var primaryCat = catEl ? catEl.getAttribute('term') : '';
-
       var pubEl = entry.querySelector('published');
       var published = pubEl ? pubEl.textContent.trim().substring(0, 10) : '';
-
       candidates.push({
-        arxiv_id: arxivId,
-        title: title,
-        abstract: abstract,
-        authors: authors,
-        primary_category: primaryCat,
-        published: published,
+        arxiv_id: arxivId, title: title, abstract: abstract, authors: authors,
+        primary_category: primaryCat, published: published,
         abs_url: 'https://arxiv.org/abs/' + arxivId,
         pdf_url: 'https://arxiv.org/pdf/' + arxivId,
       });
     });
-
     return candidates;
   }
 
-  async function runScout() {
-    var cats = scoutCategories();
+  async function scoutDay() {
+    var cats = byId('categories').value.split(',').map(function (c) { return c.trim(); }).filter(Boolean);
+    if (cats.length === 0) throw new Error('No arXiv categories configured.');
     var lookback = parseInt(byId('lookback').value, 10) || 1;
     var maxResults = parseInt(byId('max-results').value, 10) || 200;
-
-    // Build arXiv API query
     var query = cats.map(function (c) { return 'cat:' + c; }).join('+OR+');
     var url = 'https://export.arxiv.org/api/query?' +
       'search_query=' + query +
@@ -347,837 +230,1224 @@
       '&max_results=' + maxResults +
       '&start=0';
 
-    setStatus('Scouting arXiv (' + cats.join(', ') + ')…');
-
-    var resp;
-    try {
-      resp = await fetchViaRelay(url);
-    } catch (err) {
-      if (err instanceof TypeError && err.message === 'Failed to fetch') {
-        throw new Error(
-          'Cannot reach the relay at ' + relayBase() + '. arXiv itself sends no ' +
-          'CORS headers, so the browser can only reach it through a relay. ' +
-          'Check that the relay is deployed and reachable, or paste a different ' +
-          'one in the "Relay" field above.'
-        );
-      }
-      throw err;
-    }
+    var resp = await fetchViaRelay(url);
     if (!resp.ok) {
       var relayErr = '';
       try { relayErr = (await resp.text()).substring(0, 200); } catch (_) {}
-      throw new Error('arXiv scout failed: HTTP ' + resp.status +
-        (relayErr ? ' — ' + relayErr : '') + ' (via ' + relayBase() + ').');
+      throw new Error('arXiv scout failed: HTTP ' + resp.status + (relayErr ? ' — ' + relayErr : ''));
     }
-
     var xmlText = await resp.text();
     var candidates = parseAtomXML(xmlText);
-
-    // The API has no date filter, so max_results only caps the firehose —
-    // the lookback window is applied here. Results are date-descending, so
-    // the first entry older than the cutoff ends the window.
     var cutoff = cutoffDate(new Date(), lookback);
     var windowed = [];
     for (var i = 0; i < candidates.length; i++) {
       if (candidates[i].published && candidates[i].published < cutoff) break;
       windowed.push(candidates[i]);
     }
-    candidates = windowed;
-
-    if (candidates.length === 0) {
-      throw new Error('No papers found. Check categories or try a larger lookback.');
-    }
-
-    return candidates;
+    if (windowed.length === 0) throw new Error('No papers found. Check categories or try a larger lookback.');
+    return windowed;
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  // STAGE 2 — embed (batched /v1/embeddings)
+  // Embedding helpers
   // ═══════════════════════════════════════════════════════════════════
 
-  /**
-   * Three backends, one return shape (`[[float]]`, parallel to the input texts):
-   *   local  — transformers.js in this tab. No key, no bill, no network after
-   *            the one-time model download. The default.
-   *   hosted — POST to the arxave embed function; key lives server-side.
-   *   own    — POST to any OpenAI-compatible /v1/embeddings with the user's key.
-   * The hosted function answers in OpenAI's {data:[{index,embedding}]} shape
-   * precisely so the two remote backends share one code path.
-   */
-  function getEmbedConfig() {
-    var mode = embedMode();
-    if (mode === 'local') {
-      return { mode: 'local', hosted: false };
-    }
-    if (mode === 'hosted') {
-      return { mode: 'hosted', hosted: true, endpoint: HOSTED_EMBED_URL, key: '', model: null };
-    }
-
-    var baseUrl = byId('embed-base-url').value.trim();
-    var key = byId('embed-key').value.trim();
-    var model = byId('embed-model').value.trim();
-
-    if (!model) throw new Error('Embedding model is required.');
-    if (!baseUrl) throw new Error('Embedding base URL is required.');
-
-    baseUrl = baseUrl.replace(/\/+$/, '');
-
-    return { mode: 'own', hosted: false, endpoint: baseUrl + '/v1/embeddings', key: key, model: model };
+  function normalize(v) {
+    var sq = 0;
+    for (var i = 0; i < v.length; i++) sq += v[i] * v[i];
+    var len = Math.sqrt(sq);
+    if (len === 0) return v;
+    for (var j = 0; j < v.length; j++) v[j] /= len;
+    return v;
   }
 
-  // ── Local backend (transformers.js, WASM/WebGPU) ──────────────────
-  // Loaded on first use only — nobody pays 32 MB for a page they're reading.
-  var localExtractor = null;
-
-  async function getLocalExtractor() {
-    if (localExtractor) return localExtractor;
-
-    setStatus('Loading the embedding model (' + LOCAL_MODEL + ', ~32 MB, first run only)…');
-
-    var mod = null;
-    var failures = [];
-    for (var u = 0; u < TRANSFORMERS_URLS.length && !mod; u++) {
-      try {
-        mod = await import(TRANSFORMERS_URLS[u]);
-      } catch (err) {
-        // Keep the real reason: "failed to load" and "loaded but threw" need
-        // different fixes, and hiding the message costs an hour of guessing.
-        failures.push(TRANSFORMERS_URLS[u] + ' → ' + (err && err.message ? err.message : String(err)));
-      }
-    }
-
-    if (!mod) {
-      throw new Error(
-        'Could not load the in-browser embedding runtime from any CDN. ' +
-        'Switch the embedding mode to "Hosted" to keep going. Details: ' +
-        failures.join(' | ')
-      );
-    }
-
-    mod.env.allowLocalModels = false;   // always fetch from the CDN, never guess a local path
-
-    // WASM, deliberately, even where WebGPU exists. Measured in Chrome on the
-    // same three sentences and the same q8 weights:
-    //
-    //   node (reference)   relevant 0.801   irrelevant 0.400
-    //   browser WASM       relevant 0.803   irrelevant 0.403
-    //   browser WebGPU     relevant 0.638   irrelevant 0.461
-    //
-    // WebGPU is faster but its reduced-precision kernels cut the gap between a
-    // relevant and an irrelevant paper by more than half — which is the whole
-    // signal ranking runs on. Speed is not worth a blunter ranking; revisit
-    // only with dtype: 'fp32' and a fresh measurement.
-    localExtractor = await mod.pipeline('feature-extraction', LOCAL_MODEL, {
-      dtype: 'q8',
-      device: 'wasm',
-      progress_callback: function (p) {
-        if (p && p.status === 'progress' && p.file && typeof p.progress === 'number') {
-          setStatus('Downloading model: ' + p.file + ' — ' + p.progress.toFixed(0) + '%' +
-            ' (one time, then cached by the browser)');
-        }
-      },
-    });
-
-    return localExtractor;
-  }
-
-  async function embedLocal(texts) {
-    var extractor = await getLocalExtractor();
+  async function embedTexts(texts, statusFn) {
+    var extractor = state.extractor;
     var vectors = [];
-
-    // Chunked so the status line moves and peak memory stays modest.
     for (var i = 0; i < texts.length; i += LOCAL_BATCH) {
       var chunk = texts.slice(i, i + LOCAL_BATCH);
-      setStatus('Embedding locally: ' + Math.min(i + LOCAL_BATCH, texts.length) +
-        ' / ' + texts.length + ' texts…');
-      // mean pooling + L2 normalize is the standard recipe for these models;
-      // cosine() renormalizes anyway, so this is belt and braces.
+      if (statusFn) statusFn(Math.min(i + LOCAL_BATCH, texts.length), texts.length);
       var out = await extractor(chunk, { pooling: 'mean', normalize: true });
       var rows = out.tolist();
-      for (var r = 0; r < rows.length; r++) vectors.push(rows[r]);
-      // Yield to the event loop so the status line actually repaints.
+      for (var r = 0; r < rows.length; r++) {
+        normalize(rows[r]);  // defensive: ensure unit vector
+        vectors.push(rows[r]);
+      }
       await new Promise(function (res) { setTimeout(res, 0); });
     }
-
     return vectors;
   }
 
-  // ── Remote backends (hosted function or user's own endpoint) ──────
-  async function embedRemote(texts, cfg) {
-    var endpoint = cfg.endpoint;
-
-    // The hosted function caps a call at 400 texts; say so before spending it.
-    if (cfg.hosted && texts.length > 400) {
-      throw new Error(
-        'Hosted embeddings take at most 400 texts per run; this run needs ' +
-        texts.length + '. Lower "Max results", trim the .bib, or switch to ' +
-        '"In-browser", which has no cap.'
-      );
-    }
-
-    var headers = { 'Content-Type': 'application/json' };
-    if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
-
-    var payload = { input: texts };
-    if (cfg.model) payload.model = cfg.model;   // hosted picks its own model
-
-    var resp;
-    try {
-      resp = await fetch(endpoint, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(payload),
-      });
-    } catch (err) {
-      if (err instanceof TypeError && err.message === 'Failed to fetch') {
-        if (cfg.hosted) {
-          throw new Error(
-            'Cannot reach the hosted embedding service at ' + endpoint + '. ' +
-            'Check your connection, or switch to "In-browser" — it needs no server.'
-          );
-        }
-        var isMixedContent = endpoint.startsWith('http://') &&
-          window.location.protocol === 'https:';
-        if (isMixedContent) {
-          throw new Error(
-            'Cannot reach embedding provider at ' + endpoint + '. ' +
-            'This page is served over HTTPS (GitHub Pages), but your embedding ' +
-            'provider is on HTTP — browsers block this as mixed content. ' +
-            'Options: (1) switch to "In-browser", (2) run the page locally ' +
-            'with `bundle exec jekyll serve`, or (3) serve the provider over HTTPS.'
-          );
-        }
-        throw new Error(
-          'Cannot reach embedding provider at ' + endpoint + '. ' +
-          'Check that the provider is running, the base URL is correct, and that ' +
-          'it allows browser (CORS) requests — many do not. "In-browser" mode ' +
-          'sidesteps both.'
-        );
-      }
-      throw err;
-    }
-
-    if (!resp.ok) {
-      var errBody = '';
-      try { errBody = await resp.text(); } catch (_) {}
-      throw new Error('Embedding request returned HTTP ' + resp.status +
-        (errBody ? ': ' + errBody.substring(0, 200) : '') +
-        (cfg.hosted ? '' : '. Check provider, model, base URL, and API key.'));
-    }
-
-    var data = await resp.json();
-    var embeddings = data.data; // [{index, embedding: [float]}]
-
-    // Sort by index (API should return ordered, but be safe)
-    embeddings.sort(function (a, b) { return a.index - b.index; });
-
-    return embeddings.map(function (e) { return e.embedding; });
-  }
-
-  async function runEmbed(candidates, topics, corpusTitles) {
-    var cfg = getEmbedConfig();
-
-    // Collect all texts to embed in ONE batch:
-    // - all abstracts
-    // - all topic strings
-    // - all corpus titles (if any)
-    var texts = [];
-
-    // Abstracts
-    candidates.forEach(function (c) { texts.push(c.abstract); });
-
-    // Topics
-    var topicIdx = texts.length;
-    topics.forEach(function (t) { texts.push(t); });
-
-    // Corpus
-    var corpusIdx = texts.length;
-    if (corpusTitles && corpusTitles.length > 0) {
-      corpusTitles.forEach(function (t) { texts.push(t); });
-    }
-
-    setStatus('Embedding ' + candidates.length + ' abstracts + ' +
-      topics.length + ' topics + ' + (corpusTitles ? corpusTitles.length : 0) + ' corpus entries…');
-
-    var vectors = (cfg.mode === 'local')
-      ? await embedLocal(texts)
-      : await embedRemote(texts, cfg);
-
-    if (vectors.length !== texts.length) {
-      throw new Error('Embedding backend returned ' + vectors.length +
-        ' vectors for ' + texts.length + ' texts.');
-    }
-
-    // Split back into abstract, topic, corpus vectors
-    var N = candidates.length;
-    var T = topics.length;
-    var K = corpusTitles ? corpusTitles.length : 0;
-
-    var abstractVectors = vectors.slice(0, N);
-    var topicVectors = vectors.slice(topicIdx, topicIdx + T);
-    var corpusVectors = (K > 0) ? vectors.slice(corpusIdx, corpusIdx + K) : [];
-
-    return {
-      abstractVectors: abstractVectors,
-      topicVectors: topicVectors,
-      corpusVectors: corpusVectors,
-    };
-  }
-
-  // ═══════════════════════════════════════════════════════════════════
-  // STAGE 3 — cosine (vectorized over all papers)
-  // ═══════════════════════════════════════════════════════════════════
-
   function dot(a, b) {
+    if (a.length !== b.length) throw new Error('Dimension mismatch: ' + a.length + ' vs ' + b.length);
     var s = 0;
     for (var i = 0; i < a.length; i++) s += a[i] * b[i];
     return s;
   }
 
-  function norm(v) {
-    var s = 0;
-    for (var i = 0; i < v.length; i++) s += v[i] * v[i];
-    return Math.sqrt(s);
-  }
-
   function cosine(a, b) {
     var d = dot(a, b);
-    var na = norm(a);
-    var nb = norm(b);
+    // Defensive: re-normalize in case of drift
+    var na = 0, nb = 0;
+    for (var i = 0; i < a.length; i++) { na += a[i] * a[i]; nb += b[i] * b[i]; }
+    na = Math.sqrt(na); nb = Math.sqrt(nb);
     if (na === 0 || nb === 0) return 0;
     var cos = d / (na * nb);
-    return cos < 0 ? 0 : cos;  // clamp negatives to 0
+    return cos < 0 ? 0 : cos;
   }
 
-  /**
-   * topic_cos = max over all topic vectors of cosine(abstract, topic).
-   * corpus_cos = max over all corpus vectors of cosine(abstract, corpus_entry).
-   * Returns arrays parallel to candidates.
-   */
-  function computeCosines(abstractVectors, topicVectors, corpusVectors) {
-    var N = abstractVectors.length;
-    var topicCos = new Array(N);
-    var corpusCos = new Array(N);
+  // ═══════════════════════════════════════════════════════════════════
+  // STAGE 1 — Haul the stones
+  // ═══════════════════════════════════════════════════════════════════
 
+  function computeSeamMap(A) {
+    var N = A.length;
+    var S = new Array(N);
     for (var i = 0; i < N; i++) {
-      var av = abstractVectors[i];
-
-      // topic_cos = max_j cos(av, topicVectors[j])
-      var bestTopic = 0;
-      for (var j = 0; j < topicVectors.length; j++) {
-        var c = cosine(av, topicVectors[j]);
-        if (c > bestTopic) bestTopic = c;
+      S[i] = new Float32Array(N);
+      S[i][i] = 1.0;
+    }
+    // Upper triangle only (i < j)
+    for (var i = 0; i < N; i++) {
+      for (var j = i + 1; j < N; j++) {
+        var c = cosine(A[i], A[j]);
+        S[i][j] = c;
+        S[j][i] = c;
       }
-      topicCos[i] = topicVectors.length > 0 ? bestTopic : null;
+    }
+    return S;
+  }
 
-      // corpus_cos = max_k cos(av, corpusVectors[k])
-      if (corpusVectors.length > 0) {
-        var bestCorpus = 0;
-        for (var k = 0; k < corpusVectors.length; k++) {
-          var cc = cosine(av, corpusVectors[k]);
-          if (cc > bestCorpus) bestCorpus = cc;
+  /**
+   * Cluster order: threshold at 0.80, connected components ≥3.
+   * Returns [order: [indices], components: [{indices:[], centralTitle:string}]]
+   */
+  function clusterOrder(stones, S) {
+    var N = stones.length;
+    var THRESH = 0.70;
+    var MIN_SIZE = 3;
+
+    // Build adjacency for values >= THRESH
+    var adj = new Array(N);
+    for (var i = 0; i < N; i++) adj[i] = [];
+    for (var i = 0; i < N; i++) {
+      for (var j = i + 1; j < N; j++) {
+        if (S[i][j] >= THRESH) {
+          adj[i].push(j);
+          adj[j].push(i);
         }
-        corpusCos[i] = bestCorpus;
+      }
+    }
+
+    // Connected components
+    var visited = new Array(N).fill(false);
+    var components = [];
+    for (var i = 0; i < N; i++) {
+      if (visited[i]) continue;
+      var comp = [];
+      var stack = [i];
+      visited[i] = true;
+      while (stack.length > 0) {
+        var v = stack.pop();
+        comp.push(v);
+        for (var a = 0; a < adj[v].length; a++) {
+          var w = adj[v][a];
+          if (!visited[w]) { visited[w] = true; stack.push(w); }
+        }
+      }
+      if (comp.length >= MIN_SIZE) components.push(comp);
+    }
+
+    // Find central member by max sum of within-component similarities
+    var compInfo = [];
+    for (var c = 0; c < components.length; c++) {
+      var members = components[c];
+      var bestIdx = members[0];
+      var bestSum = -1;
+      for (var mi = 0; mi < members.length; mi++) {
+        var sum = 0;
+        for (var mj = 0; mj < members.length; mj++) {
+          if (mi !== mj) sum += S[members[mi]][members[mj]];
+        }
+        if (sum > bestSum) { bestSum = sum; bestIdx = members[mi]; }
+      }
+      compInfo.push({ indices: members, centralTitle: stones[bestIdx].title });
+    }
+
+    // Build order: clustered stones first, then remainder
+    var clustered = [];
+    var seen = new Set();
+    for (var c2 = 0; c2 < components.length; c2++) {
+      for (var mi = 0; mi < components[c2].length; mi++) {
+        var idx = components[c2][mi];
+        if (!seen.has(idx)) { seen.add(idx); clustered.push(idx); }
+      }
+    }
+    var remainder = [];
+    for (var r = 0; r < N; r++) {
+      if (!seen.has(r)) remainder.push(r);
+    }
+    return { order: clustered.concat(remainder), components: compInfo };
+  }
+
+  // Pre-resolved ramp hexes — canvas can't resolve CSS var() strings.
+  var ORE_HEX = [
+    '#2b2620', '#45371c', '#5d4a1a', '#785f16',
+    '#94760f', '#b18f08', '#d0a504', '#f5b301'
+  ];
+
+  /** Map cosine value to ore ramp hex. Normalized by [minOff, maxOff]
+   *  so the weakest correlation gets the dimmest yellowish step
+   *  and the strongest gets the brightest. */
+  function seamColor(val, minOff, maxOff) {
+    var span = maxOff - minOff;
+    if (span <= 0.001) return ORE_HEX[3];
+    var norm = (val - minOff) / span;   // minOff→0, maxOff→1
+    if (norm < 0) norm = 0; if (norm > 1) norm = 1;
+    var idx = 3 + Math.round(norm * 4);
+    if (idx > 7) idx = 7;
+    return ORE_HEX[idx];
+  }
+
+  function drawSeamMap(canvas, S, order, stones, components, readoutFn) {
+    var N = order.length;
+    var cellSize = Math.max(3, Math.floor(240 / N));
+    var width = N * cellSize;
+    var height = N * cellSize;
+
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = getComputedStyle(canvas).getPropertyValue('--rock').trim() || '#21262e';
+    ctx.fillRect(0, 0, width, height);
+
+    // Find min/max off-diagonal — skip the 1.0 diagonal entries
+    var minOff = Infinity, maxOff = 0;
+    for (var oi = 0; oi < N; oi++) {
+      for (var oj = oi + 1; oj < N; oj++) {
+        var v = S[order[oi]][order[oj]];
+        if (v < minOff) minOff = v;
+        if (v > maxOff) maxOff = v;
+      }
+    }
+    if (!isFinite(minOff)) minOff = 0;
+
+    // Draw upper triangle in clustered order
+    for (var oi = 0; oi < N; oi++) {
+      for (var oj = oi + 1; oj < N; oj++) {
+        var i = order[oi];
+        var j = order[oj];
+        var val = S[i][j];
+        ctx.fillStyle = seamColor(val, minOff, maxOff);
+        ctx.fillRect(oi * cellSize, oj * cellSize, cellSize, cellSize);
+      }
+    }
+
+    // Diagonal — same as background so it disappears
+    ctx.fillStyle = getComputedStyle(canvas).getPropertyValue('--rock').trim() || '#21262e';
+    for (var d = 0; d < N; d++) {
+      ctx.fillRect(d * cellSize, d * cellSize, cellSize, cellSize);
+    }
+
+    // Mouse tracking. Hover previews; a click pins the readout so its two
+    // links can actually be clicked (hover-only readouts vanish on the way there).
+    var pinned = null;   // {row, col} or null
+
+    function cellAt(e) {
+      var rect = canvas.getBoundingClientRect();
+      var col = Math.floor((e.clientX - rect.left) / cellSize);
+      var row = Math.floor((e.clientY - rect.top) / cellSize);
+      if (col < 0 || col >= N || row < 0 || row >= N) return null;
+      return { row: row, col: col };
+    }
+
+    function emit(cell, isPinned) {
+      if (!readoutFn) return;
+      if (!cell) { readoutFn('', '', false); return; }
+      var si = order[cell.row];
+      var sj = order[cell.col];
+      var val = cell.row === cell.col ? 1.0 : S[si][sj];
+      var same = false;
+      for (var c = 0; c < components.length; c++) {
+        var members = new Set(components[c].indices);
+        if (members.has(si) && members.has(sj)) { same = true; break; }
+      }
+      readoutFn(
+        '<a href="' + stones[si].abs_url + '" target="_blank" rel="noopener">' +
+          escapeHtml(stones[si].title) + '</a> — ' +
+        '<a href="' + stones[sj].abs_url + '" target="_blank" rel="noopener">' +
+          escapeHtml(stones[sj].title) + '</a>',
+        val.toFixed(2) + (same ? ' · same seam' : '') +
+          (isPinned ? '  ·  <span class="seam-pin-hint">pinned — click cell again to release</span>'
+                    : '  ·  <span class="seam-pin-hint">click to pin</span>'),
+        !!isPinned
+      );
+    }
+
+    canvas.onmousemove = function (e) {
+      if (pinned) return;              // locked until the cell is clicked again
+      emit(cellAt(e), false);
+    };
+    canvas.onmouseleave = function () {
+      if (!pinned) emit(null, false);
+    };
+    canvas.onclick = function (e) {
+      var cell = cellAt(e);
+      if (!cell) return;
+      if (pinned && pinned.row === cell.row && pinned.col === cell.col) {
+        pinned = null;
+        emit(cell, false);
       } else {
-        corpusCos[i] = null;
+        pinned = cell;
+        emit(cell, true);
       }
-    }
-
-    return { topicCos: topicCos, corpusCos: corpusCos };
+    };
+    canvas.style.cursor = 'pointer';
   }
 
-  // Find best-matching topic string for each paper
-  function computeMatchedTopics(abstractVectors, topicVectors, topics) {
-    return abstractVectors.map(function (av) {
-      if (topicVectors.length === 0) return null;
-      var bestJ = 0;
-      var bestCos = -1;
-      for (var j = 0; j < topicVectors.length; j++) {
-        var c = cosine(av, topicVectors[j]);
-        if (c > bestCos) { bestCos = c; bestJ = j; }
-      }
-      return topics[bestJ];
-    });
+  /** Wire a readout element to drawSeamMap's readoutFn contract. */
+  function seamReadoutSink(elId) {
+    return function (full, detail, isPinned) {
+      var el = byId(elId);
+      el.innerHTML = full ? full + '  ·  ' + detail : '';
+      el.classList.toggle('pinned', !!isPinned);
+    };
   }
 
-  // ═══════════════════════════════════════════════════════════════════
-  // STAGE 4 — signals (scirate scite + citation_overlap=null)
-  // ═══════════════════════════════════════════════════════════════════
+  async function runHaul() {
+    var btn = byId('haul-btn');
+    var statusEl = byId('haul-status');
+    var progWrap = byId('haul-progress-wrap');
+    var progBar = byId('haul-progress');
+    var progLabel = byId('haul-label');
+    var seamPanel = byId('seam-panel');
 
-  /**
-   * Scrape scite count from scirate.com HTML.
-   * Matches the Python scirate.py contract: returns int or null.
-   */
-  async function fetchSciteCount(arxivId) {
+    btn.disabled = true;
+    progWrap.style.display = 'flex';
+    progBar.value = 0;
+    progLabel.textContent = 'Scouting...';
+    statusEl.textContent = '';
+    seamPanel.style.display = 'none';
+
     try {
-      var url = 'https://scirate.com/arxiv/' + arxivId;
-      var resp = await fetchViaRelay(url, { signal: AbortSignal.timeout(5000) });
-      if (!resp.ok) return null;
-      var html = await resp.text();
+      // Scout
+      statusEl.textContent = 'Scouting arXiv...';
+      var stones = await scoutDay();
+      state.stones = stones;
 
-      // Look for patterns like "Scited by 7" or "7 scites"
-      // Try multiple regexes to be robust against markup changes
-      var patterns = [
-        /Scited by\s+(\d+)/i,
-        /(\d+)\s+scites?/i,
-        /scited-count[^>]*>\s*(\d+)/i,
-        /class="scited-count"[^>]*>\s*(\d+)/i,
-      ];
+      // Embed abstracts
+      statusEl.textContent = 'Embedding ' + stones.length + ' abstracts...';
+      var texts = stones.map(function (s) { return s.abstract; });
+      var vectors = await embedTexts(texts, function (done, total) {
+        progBar.value = Math.round((done / total) * 100);
+        progLabel.textContent = 'Stones hauled: ' + done + ' / ' + total;
+      });
+      state.A = vectors;
 
-      for (var i = 0; i < patterns.length; i++) {
-        var m = html.match(patterns[i]);
-        if (m) {
-          var count = parseInt(m[1], 10);
-          if (!isNaN(count) && count >= 0) return count;
-        }
+      // Compute seam map
+      statusEl.textContent = 'Computing seam map...';
+      var S = computeSeamMap(vectors);
+      state.seamMap = S;
+
+      var cluster = clusterOrder(stones, S);
+      state.seamOrder = cluster.order;
+      state.seamComponents = cluster.components;
+
+      // Draw seam map
+      var canvas = byId('seam-canvas');
+      drawSeamMap(canvas, S, cluster.order, stones, cluster.components, seamReadoutSink('seam-readout'));
+
+      // Stats
+      var compText = cluster.components.map(function (c) {
+        return c.indices.length + ' stones from one seam';
+      }).join(', ');
+      byId('seam-stats').textContent = compText || 'No large seams detected';
+      byId('seam-sort-toggle').checked = true;
+      seamPanel.style.display = '';
+
+      // Mark done
+      statusEl.textContent = stones.length + ' stones hauled.';
+      statusEl.style.color = 'var(--moss)';
+      progWrap.style.display = 'none';
+      btn.textContent = '✓ Hauled';
+      btn.style.color = 'var(--moss)';
+      btn.style.borderColor = 'var(--moss)';
+
+      // Enable Stage 2 controls
+      byId('touchstones-weight').disabled = false;
+      byId('cores-weight').disabled = false;
+      // If touchstones already exist from localStorage, embed them and show assay
+      if (state.touchstones.length > 0 || state.cores.length > 0) {
+        await maybeEmbedFeatures();
+        computeGrades();
+        renderAssay();
       }
-      return null;
-    } catch (_) {
-      return null;
+
+    } catch (err) {
+      statusEl.textContent = err.message;
+      statusEl.style.color = 'var(--ember)';
+      progWrap.style.display = 'none';
+      btn.disabled = false;
     }
   }
 
-  /**
-   * Fetch scite counts with limited concurrency.
-   * Returns { arxivId: int | null }.
-   */
-  async function fetchScites(arxivIds, concurrency) {
-    concurrency = concurrency || 3;
-    var results = {};
-    var i = 0;
-    var attempted = 0;
-    var gaveUp = false;
+  // ═══════════════════════════════════════════════════════════════════
+  // STAGE 2 — Set the touchstones
+  // ═══════════════════════════════════════════════════════════════════
 
-    // Scirate sits behind a Cloudflare challenge, so a server-side fetch is
-    // usually 403 (measured 2026-07-28). Probe a few, and if none answer, stop
-    // hammering it — 130 doomed requests help nobody.
-    async function worker() {
-      while (i < arxivIds.length && !gaveUp) {
-        var idx = i++;
-        var aid = arxivIds[idx];
-        results[aid] = await fetchSciteCount(aid);
-        attempted++;
-        if (attempted >= 5 && Object.keys(results).every(function (k) { return results[k] === null; })) {
-          gaveUp = true;
-        }
-      }
-    }
+  // Touchstone row management
+  var touchstoneCounter = 0;
+  function addTouchstoneRow(text, id) {
+    if (!id) id = 'ts-' + (++touchstoneCounter);
+    var list = byId('touchstones-list');
+    var div = document.createElement('div');
+    div.className = 'touchstone-row';
+    div.dataset.id = id;
+    div.innerHTML =
+      '<input type="text" class="ts-text" value="' + escapeHtml(text || '') + '" placeholder="silicon spin qubits and exchange gates">' +
+      '<span class="row-weight"><input type="number" class="ts-weight" value="1.0" min="0" max="1" step="0.05"></span>' +
+      '<button type="button" class="row-remove" title="Remove">×</button>';
+    list.appendChild(div);
 
-    // Launch `concurrency` workers
-    var workers = [];
-    for (var w = 0; w < concurrency; w++) {
-      workers.push(worker());
-    }
-    await Promise.all(workers);
-
-    // Anything not reached (because we gave up) is unavailable, i.e. null —
-    // never 0. Same contract as scirate.py.
-    arxivIds.forEach(function (aid) {
-      if (!(aid in results)) results[aid] = null;
+    div.querySelector('.row-remove').addEventListener('click', function () {
+      div.remove();
+      removeTouchstone(id);
     });
-
-    return results;
+    div.querySelector('.ts-text').addEventListener('input', function () {
+      onTouchstoneChanged(id, this.value);
+    });
+    div.querySelector('.ts-weight').addEventListener('input', function () {
+      onWeightChanged();
+    });
   }
 
-  // ═══════════════════════════════════════════════════════════════════
-  // STAGE 5 — rank (blend with renormalization)
-  // ═══════════════════════════════════════════════════════════════════
-
-  /**
-   * blend() — weighted mean over present signals only.
-   *
-   * Matches Python rank.blend() exactly:
-   *   - Missing (null) signals are dropped from numerator AND denominator.
-   *   - Signals with weight <= 0 are also dropped.
-   *   - Returns 0.0 when nothing is present.
-   */
-  function blend(signals, w) {
-    var num = 0;
-    var den = 0;
-
-    var keys = ['topic_cos', 'corpus_cos', 'citation_overlap', 'scite'];
-    var wk = ['w1', 'w2', 'w3', 'w4'];
-
-    for (var i = 0; i < keys.length; i++) {
-      var val = signals[keys[i]];
-      var weight = w[wk[i]] || 0;
-      if (val !== null && val !== undefined && weight > 0) {
-        num += weight * val;
-        den += weight;
-      }
-    }
-
-    return den > 0 ? num / den : 0;
-  }
-
-  function rankPapers(candidates, topicCos, corpusCos, scites, matchedTopics) {
-    var w = weights;
-    var ranked = [];
-
-    for (var i = 0; i < candidates.length; i++) {
-      var rawScites = scites[candidates[i].arxiv_id];
-      var sciteSignal = (rawScites !== null && rawScites !== undefined)
-        ? Math.min(rawScites / SCITE_SATURATION, 1.0)
-        : null;
-
-      var signals = {
-        topic_cos: topicCos[i],
-        corpus_cos: corpusCos[i],
-        citation_overlap: null,  // deferred
-        scite: sciteSignal,
-      };
-
-      var importance = blend(signals, w);
-
-      ranked.push({
-        arxiv_id: candidates[i].arxiv_id,
-        title: candidates[i].title,
-        abstract: candidates[i].abstract,
-        authors: candidates[i].authors,
-        primary_category: candidates[i].primary_category,
-        published: candidates[i].published,
-        abs_url: candidates[i].abs_url,
-        pdf_url: candidates[i].pdf_url,
-        signals: signals,
-        scite_count: rawScites,
-        importance: importance,
-        matched_topic: matchedTopics[i],
-        llm: null,  // filled by refine stage
+  function removeTouchstone(id) {
+    state.touchstones = state.touchstones.filter(function (t) { return t.id !== id; });
+    saveTouchstones();
+    if (state.A && state.A.length > 0) {
+      maybeEmbedFeatures().then(function () {
+        computeGrades();
+        renderAssay();
       });
     }
-
-    // Sort descending by importance
-    ranked.sort(function (a, b) { return b.importance - a.importance; });
-    return ranked;
   }
 
-  /**
-   * Re-rank without re-fetching anything — just re-blend with current weights.
-   * Called on every slider move.
-   */
-  function reRank() {
-    var w = weights;
-    for (var i = 0; i < state.ranked.length; i++) {
-      state.ranked[i].importance = blend(state.ranked[i].signals, w);
-    }
-    state.ranked.sort(function (a, b) { return b.importance - a.importance; });
-  }
-
-  // ═══════════════════════════════════════════════════════════════════
-  // STAGE 6 — present (render ranked table)
-  // ═══════════════════════════════════════════════════════════════════
-
-  function signalBadge(sig, key, sciteCount) {
-    if (key === 'scite') {
-      if (sig === null) return '<span class="sig-null">scite —</span>';
-      return '<span>scite <span class="sig-val">' + sciteCount + '</span></span>';
-    }
-    if (key === 'citation_overlap') {
-      return '<span class="sig-null">cit —</span>';
-    }
-    if (sig === null) {
-      return '<span class="sig-null">—</span>';
-    }
-    return '<span class="sig-val">' + sig.toFixed(2) + '</span>';
-  }
-
-  function scoreBar(signals, w) {
-    // Show each signal's weighted contribution relative to the total weighted sum
-    var keys = ['topic_cos', 'corpus_cos', 'citation_overlap', 'scite'];
-    var wk = ['w1', 'w2', 'w3', 'w4'];
-    var classes = ['topic', 'corpus', 'citation', 'scite'];
-
-    var parts = [];
-    var totalWeighted = 0;
-
-    for (var i = 0; i < keys.length; i++) {
-      var val = signals[keys[i]];
-      var weight = w[wk[i]] || 0;
-      if (val !== null && val !== undefined && weight > 0) {
-        parts.push({ cls: classes[i], wv: weight * val });
-        totalWeighted += weight * val;
+  function onTouchstoneChanged(id, text) {
+    var found = false;
+    for (var i = 0; i < state.touchstones.length; i++) {
+      if (state.touchstones[i].id === id) {
+        state.touchstones[i].text = text;
+        state.touchstones[i].vector = null; // force re-embed
+        found = true; break;
       }
     }
-
-    if (totalWeighted <= 0) return '';
-
-    var html = '<div class="score-bar">';
-    for (var j = 0; j < parts.length; j++) {
-      var pct = (parts[j].wv / totalWeighted * 100).toFixed(1);
-      html += '<div class="score-bar-seg ' + parts[j].cls + '" style="width:' + pct + '%" title="' + parts[j].cls + '"></div>';
+    if (!found) {
+      state.touchstones.push({ id: id, text: text, vector: null });
     }
-    html += '</div>';
-    return html;
+    saveTouchstones();
+    if (state.A && state.A.length > 0) {
+      maybeEmbedFeatures().then(function () {
+        computeGrades();
+        renderAssay();
+      });
+    }
   }
 
-  function renderResults() {
-    var topN = parseInt(byId('top-n').value, 10) || DEFAULT_TOP_N;
-    var w = weights;
-    var ranked = state.ranked;
-
-    byId('results').style.display = '';
-    byId('results-summary').textContent = ranked.length + ' papers ranked. Top ' + Math.min(topN, ranked.length) + ' shown above the line.';
-
-    var tbody = byId('results-body');
-    var rows = '';
-
-    for (var i = 0; i < ranked.length; i++) {
-      var p = ranked[i];
-      var isTopN = i < topN;
-      var rowClass = (i === topN - 1 && ranked.length > topN) ? ' class="top-n-cutoff"' : '';
-
-      rows += '<tr' + rowClass + '>';
-
-      // Rank
-      rows += '<td>' + (i + 1) + '</td>';
-
-      // Title
-      rows += '<td><a href="' + p.abs_url + '" target="_blank" rel="noopener">' +
-        escapeHtml(p.title) + '</a>';
-      if (p.llm) {
-        var annClass = p.llm.relevant ? 'relevant' : 'irrelevant';
-        rows += '<div class="llm-annotation ' + annClass + '">' +
-          (p.llm.relevant ? '✓ ' : '✗ ') + escapeHtml(p.llm.reason || '') + '</div>';
-      }
-      rows += '</td>';
-
-      // Score
-      rows += '<td>' +
-        scoreBar(p.signals, w) +
-        '<span class="score-num">' + p.importance.toFixed(2) + '</span>' +
-        '</td>';
-
-      // Signals
-      rows += '<td class="signal-badges">' +
-        'topic ' + signalBadge(p.signals.topic_cos, 'topic_cos') +
-        ' · corpus ' + signalBadge(p.signals.corpus_cos, 'corpus_cos') +
-        ' · ' + signalBadge(p.signals.scite, 'scite', p.scite_count) +
-        ' · ' + signalBadge(p.signals.citation_overlap, 'citation_overlap') +
-        '</td>';
-
-      // Category
-      rows += '<td>' + escapeHtml(p.primary_category) + '</td>';
-
-      // Date
-      rows += '<td>' + escapeHtml(p.published) + '</td>';
-
-      rows += '</tr>';
+  function onWeightChanged() {
+    if (state.A && state.A.length > 0 && state.featureVectors) {
+      computeGrades();
+      renderAssay();
     }
-
-    tbody.innerHTML = rows;
-
-    // The refine button stays disabled: the second pass is not built yet, so
-    // results are no reason to light it up.
   }
 
-  function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>')
-      .replace(/"/g, '"').replace(/'/g, '&#39;');
-  }
+  // Core sample management
+  var coreCounter = 0;
+  function addCoreRow(doi, id) {
+    if (!id) id = 'core-' + (++coreCounter);
+    var list = byId('cores-list');
+    var div = document.createElement('div');
+    div.className = 'core-row';
+    div.dataset.id = id;
+    div.innerHTML =
+      '<input type="text" class="core-doi" value="' + escapeHtml(doi || '') + '" placeholder="10.1103/RevModPhys.95.025003">' +
+      '<span class="row-weight"><input type="number" class="core-weight" value="1.0" min="0" max="1" step="0.05"></span>' +
+      '<span class="row-status"></span>' +
+      '<button type="button" class="row-remove" title="Remove">×</button>';
+    list.appendChild(div);
 
-  // ═══════════════════════════════════════════════════════════════════
-  // STAGE 7 — refine (optional LLM call over top-N)
-  // ═══════════════════════════════════════════════════════════════════
-
-  async function runRefine() {
-    var topN = parseInt(byId('top-n').value, 10) || DEFAULT_TOP_N;
-    var top = state.ranked.slice(0, topN);
-    if (top.length === 0) return;
-
-    var prov = byId('refine-provider').value;
-    var model = byId('refine-model').value.trim();
-    var baseUrl = byId('refine-base-url').value.trim();
-    var key = byId('refine-key').value.trim();
-
-    if (!model) throw new Error('Refine model is required.');
-
-    // Build defaults for known providers
-    if (prov === 'openai') {
-      if (!baseUrl) baseUrl = 'https://api.openai.com/v1';
-    } else if (prov === 'ollama') {
-      if (!baseUrl) baseUrl = 'http://localhost:11434/v1';
-    } else if (prov === 'lm-studio') {
-      if (!baseUrl) baseUrl = 'http://127.0.0.1:1234/v1';
-    }
-    baseUrl = baseUrl.replace(/\/+$/, '');
-
-    var topics = byId('topics').value.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
-    var topicList = topics.map(function (t) { return '- ' + t; }).join('\n');
-
-    // Build a prompt with all top-N papers
-    var papersText = top.map(function (p, i) {
-      return '[' + (i + 1) + '] arXiv:' + p.arxiv_id + '\n' +
-        'Title: ' + p.title + '\n' +
-        'Abstract: ' + p.abstract + '\n' +
-        'Importance: ' + p.importance.toFixed(2) + '\n';
-    }).join('\n---\n');
-
-    var prompt = 'You are a research filter. Your topics of interest:\n' + topicList + '\n\n' +
-      'Below are ' + top.length + ' papers ranked by a cheap embedding-based score. ' +
-      'For EACH paper, judge whether it is genuinely relevant to the topics above. ' +
-      'Respond with a JSON array, one object per paper, in the SAME order:\n' +
-      '[{"arxiv_id": "...", "relevant": true/false, "reason": "one short sentence why"}]\n\n' +
-      'Papers:\n' + papersText;
-
-    // Use the text only — papers already numbered
-    // We ask for JSON in response
-
-    var headers = { 'Content-Type': 'application/json' };
-    if (key) headers['Authorization'] = 'Bearer ' + key;
-    // Some local providers don't require auth
-    var useAuth = !!(key || prov === 'openai');
-
-    setStatus('Refining top-' + top.length + ' with LLM…');
-
-    // Build messages differently for instruct vs chat models
-    var messages;
-    // For Ollama/LM Studio, use raw prompt as user message
-    messages = [{ role: 'user', content: prompt }];
-
-    var body = {
-      model: model,
-      messages: messages,
-      temperature: 0.1,
-      max_tokens: 2048,
-    };
-
-    var resp = await fetch(baseUrl + '/v1/chat/completions', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(body),
+    div.querySelector('.row-remove').addEventListener('click', function () {
+      div.remove();
+      removeCore(id);
+    });
+    div.querySelector('.core-doi').addEventListener('change', function () {
+      onCoreChanged(id, this.value, div);
+    });
+    div.querySelector('.core-weight').addEventListener('input', function () {
+      onWeightChanged();
     });
 
-    if (!resp.ok) {
-      var errBody = '';
-      try { errBody = await resp.text(); } catch (_) {}
-      throw new Error('LLM refine returned HTTP ' + resp.status +
-        (errBody ? ': ' + errBody.substring(0, 200) : ''));
+    // If doi is provided, fetch it
+    if (doi) onCoreChanged(id, doi, div);
+  }
+
+  function removeCore(id) {
+    state.cores = state.cores.filter(function (c) { return c.id !== id; });
+    saveCores();
+    if (state.A && state.A.length > 0) {
+      maybeEmbedFeatures().then(function () {
+        computeGrades();
+        renderAssay();
+      });
     }
+  }
+
+  async function fetchCoreFromOpenAlex(doi) {
+    var cacheKey = doi + '|' + LOCAL_MODEL + '|' + LOCAL_DIM;
+    if (state._coreCache && state._coreCache[cacheKey]) {
+      return state._coreCache[cacheKey];
+    }
+
+    var url = 'https://api.openalex.org/works/' + encodeURIComponent(doi) + '?mailto=' + encodeURIComponent(OPENALEX_MAILTO);
+    var resp = await fetch(url);
+    if (!resp.ok) throw new Error('OpenAlex returned HTTP ' + resp.status);
 
     var data = await resp.json();
-    var content = data.choices && data.choices[0] && data.choices[0].message
-      ? data.choices[0].message.content
-      : '';
+    var title = data.title || '';
+    var abstract = '';
+    var weak = false;
 
-    // Parse JSON from the response (may be wrapped in ```json fences)
-    var jsonStr = content.trim();
-    var fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (fenceMatch) jsonStr = fenceMatch[1].trim();
-    // Try to find a JSON array
-    var arrMatch = jsonStr.match(/\[[\s\S]*\]/);
-    if (!arrMatch) throw new Error('LLM response did not contain a JSON array.');
-
-    var judgments = JSON.parse(arrMatch[0]);
-
-    // Annotate papers with LLM verdicts
-    var byIdMap = {};
-    judgments.forEach(function (j) { byIdMap[j.arxiv_id] = j; });
-
-    for (var i = 0; i < state.ranked.length; i++) {
-      var pid = state.ranked[i].arxiv_id;
-      if (byIdMap[pid]) {
-        state.ranked[i].llm = { relevant: byIdMap[pid].relevant, reason: byIdMap[pid].reason };
+    var invIdx = data.abstract_inverted_index;
+    if (invIdx) {
+      // Reconstruct abstract from inverted index
+      var posToWord = {};
+      for (var word in invIdx) {
+        if (invIdx.hasOwnProperty(word)) {
+          var positions = invIdx[word];
+          for (var p = 0; p < positions.length; p++) {
+            posToWord[positions[p]] = word;
+          }
+        }
       }
+      var words = [];
+      for (var pos = 0; posToWord[pos] !== undefined; pos++) {
+        words.push(posToWord[pos]);
+      }
+      abstract = words.join(' ');
     }
 
-    // Re-sort: bring relevant papers to top, preserving importance order within each group
-    state.ranked.sort(function (a, b) {
-      var aRel = a.llm ? (a.llm.relevant ? 0 : 1) : 2;
-      var bRel = b.llm ? (b.llm.relevant ? 0 : 1) : 2;
-      if (aRel !== bRel) return aRel - bRel;
-      return b.importance - a.importance;
-    });
+    if (!abstract) {
+      abstract = title; // fallback
+      weak = true;
+    }
 
-    renderResults();
-    setStatus('Refined: LLM annotated top-' + judgments.length + ' papers.');
+    // Embed title + abstract together
+    var embedText = title + ' ' + abstract;
+    var vectors = await embedTexts([embedText.trim()], null);
+    var vector = vectors[0];
+
+    var entry = { doi: doi, title: title, abstract: abstract, vector: vector, weak: weak };
+    if (!state._coreCache) state._coreCache = {};
+    state._coreCache[cacheKey] = entry;
+    saveCoreCache();
+    return entry;
   }
 
-  // ── Refine button ─────────────────────────────────────────────────
-  byId('refine-btn').addEventListener('click', async function () {
-    var btn = this;
-    btn.disabled = true;
-    try {
-      await runRefine();
-    } catch (err) {
-      setStatus('Refine failed: ' + err.message, true);
-    } finally {
-      btn.disabled = false;
+  async function onCoreChanged(id, doi, rowDiv) {
+    var statusEl = rowDiv.querySelector('.row-status');
+    var existing = null;
+    for (var i = 0; i < state.cores.length; i++) {
+      if (state.cores[i].id === id) { existing = state.cores[i]; break; }
     }
-  });
-
-  // ═══════════════════════════════════════════════════════════════════
-  // MAIN — run filter
-  // ═══════════════════════════════════════════════════════════════════
-
-  byId('run-filter').addEventListener('click', async function () {
-    var btn = this;
-    btn.disabled = true;
-    clearStatus();
-    byId('results').style.display = 'none';
+    if (!existing) {
+      existing = { id: id, doi: doi, title: '', abstract: '', vector: null, status: 'loading...', weak: false };
+      state.cores.push(existing);
+    }
+    existing.doi = doi;
+    existing.status = 'loading...';
+    existing.vector = null;
+    statusEl.textContent = 'loading...';
 
     try {
-      // ── Extract inputs ──
-      var topics = byId('topics').value
-        .split('\n')
-        .map(function (l) { return l.trim(); })
-        .filter(Boolean);
+      var fetched = await fetchCoreFromOpenAlex(doi);
+      existing.title = fetched.title;
+      existing.abstract = fetched.abstract;
+      existing.vector = fetched.vector;
+      existing.status = '✓ ' + (existing.title || doi).substring(0, 40);
+      existing.weak = fetched.weak;
+      statusEl.textContent = existing.status + (existing.weak ? ' (title only)' : '');
+    } catch (err) {
+      existing.status = '✗ ' + err.message;
+      existing.weak = true;
+      statusEl.textContent = existing.status;
+    }
 
-      if (topics.length === 0) throw new Error('Add at least one topic.');
+    saveCores();
+    if (state.A && state.A.length > 0) {
+      await maybeEmbedFeatures();
+      computeGrades();
+      renderAssay();
+    }
+  }
 
-      // ── Stage 1: Scout ──
-      state.candidates = await runScout();
+  async function maybeEmbedFeatures() {
+    var kk = state.touchstones.length;
+    var kp = state.cores.length;
 
-      // ── Stage 2: Embed ──
-      var vectors = await runEmbed(state.candidates, topics, state.corpusTitles);
-      state.topicVectors = vectors.topicVectors;
-      state.corpusVectors = vectors.corpusVectors;
-      state.abstractVectors = vectors.abstractVectors;
+    // Collect texts that need embedding
+    var textsToEmbed = [];
+    var embedMap = []; // array of {type: 'touchstone'|'core', idx: number}
 
-      // ── Stage 3: Cosine ──
-      setStatus('Computing cosine similarities…');
-      var cosResults = computeCosines(
-        vectors.abstractVectors,
-        vectors.topicVectors,
-        vectors.corpusVectors
-      );
-      var matchedTopics = computeMatchedTopics(vectors.abstractVectors, vectors.topicVectors, topics);
-
-      // ── Stage 4: Signals (scirate, best-effort) ──
-      setStatus('Fetching scite counts (best-effort)…');
-      var scites;
-      try {
-        var arxivIds = state.candidates.map(function (c) { return c.arxiv_id; });
-        scites = await fetchScites(arxivIds, 3);
-        // "No error thrown" is not the same as "we got counts": Scirate answers
-        // 403 to server-side fetches, which reads as every count being null.
-        // Say so on the slider instead of pretending w4 is doing work.
-        state.sciteAvailable = arxivIds.some(function (aid) { return scites[aid] !== null; });
-        byId('w4-unavailable').style.display = state.sciteAvailable ? 'none' : '';
-        byId('w4').disabled = !state.sciteAvailable;
-      } catch (_) {
-        // Scirate wholly unreachable
-        scites = {};
-        state.candidates.forEach(function (c) { scites[c.arxiv_id] = null; });
-        state.sciteAvailable = false;
-        byId('w4-unavailable').style.display = '';
-        byId('w4').disabled = true;
-        setStatus('Scirate unreachable — scite signal unavailable. Ranking proceeds on other signals.', true);
+    for (var ti = 0; ti < state.touchstones.length; ti++) {
+      var t = state.touchstones[ti];
+      if (!t.vector && t.text.trim()) {
+        t.vector = null; // mark for embedding
+        textsToEmbed.push(t.text.trim());
+        embedMap.push({ type: 'touchstone', idx: ti });
       }
+    }
+    for (var ci = 0; ci < state.cores.length; ci++) {
+      var c = state.cores[ci];
+      if (!c.vector && c.abstract) {
+        textsToEmbed.push(c.abstract);
+        embedMap.push({ type: 'core', idx: ci });
+      }
+    }
+    if (state.cores.length > 0) {
+      // check for cores that have vectors already
+      for (var cj = 0; cj < state.cores.length; cj++) {
+        if (state.cores[cj].vector && !textsToEmbed.length) break; // already embedded
+      }
+    }
 
-      // ── Stage 5: Rank ──
-      state.ranked = rankPapers(state.candidates, cosResults.topicCos, cosResults.corpusCos, scites, matchedTopics);
+    if (textsToEmbed.length === 0) {
+      // Build featureVectors from existing vectors
+      buildFeatureVectors();
+      return;
+    }
 
-      // ── Stage 6: Present ──
-      renderResults();
-      setStatus('Done. ' + state.ranked.length + ' papers ranked. Move sliders to re-rank instantly.');
+    var newVectors = await embedTexts(textsToEmbed, null);
+    for (var e = 0; e < embedMap.length; e++) {
+      var em = embedMap[e];
+      if (em.type === 'touchstone') {
+        state.touchstones[em.idx].vector = newVectors[e];
+      } else {
+        state.cores[em.idx].vector = newVectors[e];
+      }
+    }
+    buildFeatureVectors();
+  }
 
-    } catch (err) {
-      setStatus(err.message, true);
-      console.error(err);
-    } finally {
-      btn.disabled = false;
+  function buildFeatureVectors() {
+    var rows = [];
+    for (var ti = 0; ti < state.touchstones.length; ti++) {
+      /* Always push — null for touchstones with no vector, so row indices stay
+         aligned with getWeights() which reads every DOM row. */
+      rows.push(state.touchstones[ti].vector || null);
+    }
+    for (var ci = 0; ci < state.cores.length; ci++) {
+      rows.push(state.cores[ci].vector || null);
+    }
+    // Rush row: null (inactive)
+    rows.push(null);
+    state.featureVectors = rows;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // STAGE 3 — Assay (compute grades + render matrix)
+  // ═══════════════════════════════════════════════════════════════════
+
+  function getWeights() {
+    var w = [];
+    var groupTsW = parseFloat(byId('touchstones-weight').value) || 0;
+    var groupCoreW = parseFloat(byId('cores-weight').value) || 0;
+
+    // Per-row weights from the DOM
+    var tsRows = byId('touchstones-list').querySelectorAll('.touchstone-row');
+    for (var r = 0; r < tsRows.length; r++) {
+      var rw = parseFloat(tsRows[r].querySelector('.ts-weight').value);
+      if (isNaN(rw)) rw = 1.0;
+      w.push(groupTsW * rw);
+    }
+    var coreRows = byId('cores-list').querySelectorAll('.core-row');
+    for (var c = 0; c < coreRows.length; c++) {
+      var cw = parseFloat(coreRows[c].querySelector('.core-weight').value);
+      if (isNaN(cw)) cw = 1.0;
+      w.push(groupCoreW * cw);
+    }
+    // Rush: null (inactive)
+    w.push(null);
+    return w;
+  }
+
+  function computeGrades() {
+    var N = state.A.length;
+    var F = state.featureVectors;
+    if (!F || F.length === 0) return;
+
+    var weights = getWeights();
+    var grades = new Float32Array(N);
+
+    for (var n = 0; n < N; n++) {
+      var num = 0;
+      var den = 0;
+      for (var r = 0; r < F.length; r++) {
+        var fv = F[r];
+        var w = weights[r];
+        if (fv === null || w === null || w <= 0) continue;
+        var c = cosine(state.A[n], fv);
+        num += w * c;
+        den += w;
+      }
+      grades[n] = den > 0 ? num / den : 0;
+    }
+
+    state.grades = grades;
+
+    // Build order: sorted by grade descending
+    var indices = new Array(N);
+    for (var i = 0; i < N; i++) indices[i] = i;
+    indices.sort(function (a, b) { return grades[b] - grades[a]; });
+    state.order = indices;
+  }
+
+  function getOreColor(val) {
+    // Map [0.5, 1] to ore ramp steps 0..7. Below 0.5 = step 0.
+    var norm = (val - 0.5) / 0.5;
+    if (norm < 0) norm = 0; if (norm > 1) norm = 1;
+    var idx = Math.round(norm * 7);
+    return 'var(--ore-' + idx + ')';
+  }
+
+  function getLampColor(val) {
+    // Map [0.5, 1] to lamp ramp steps 0..6. Below 0.5 = step 0.
+    var norm = (val - 0.5) / 0.5;
+    if (norm < 0) norm = 0; if (norm > 1) norm = 1;
+    var idx = Math.round(norm * 6);
+    return 'var(--lamp-' + idx + ')';
+  }
+
+  function renderAssay() {
+    var F = state.featureVectors;
+    if (!F || state.order === null || state.grades === null) return;
+
+    var N = state.stones.length;
+    var order = state.order;
+    var grades = state.grades;
+    var topN = parseInt(byId('paydirt-n').value, 10) || 10;
+    var weights = getWeights();
+
+    // Show assay section
+    byId('stage-3').style.display = '';
+    byId('assay-stats').textContent =
+      state.stones.length + ' stones · ' + (F.length - 1) + ' features (1 inactive)';
+
+    // ── Matrix view ──
+    var grid = byId('assay-grid');
+    var rail = byId('assay-rail');
+    var colTitles = byId('assay-column-titles');
+
+    // Cell size shrinks as N grows: 16px at N≤90, down to 10px at N≥200
+    var cellW = N <= 90 ? 16 : N <= 120 ? 14 : N <= 160 ? 12 : 10;
+    // Rail row height must match grid cell height so rows align
+    var rowH = cellW; // matrix-cell has aspect-ratio: 1
+    var colTitleHTML = '';
+    for (var c = 0; c < N; c++) {
+      var si = order[c];
+      var cls = c < topN ? ' paydirt' : '';
+      colTitleHTML += '<div class="col-title' + cls + '" style="width:' + cellW + 'px" title="' +
+        escapeHtml(state.stones[si].title) + '">' +
+        ((c % 10 === 0 || c < topN) ? (c + 1) : '') +
+        '</div>';
+    }
+    colTitles.innerHTML = colTitleHTML;
+    colTitles.style.display = 'flex';
+
+    // Set grid columns
+    grid.style.setProperty('--assay-cols', N);
+    grid.style.gridTemplateColumns = 'repeat(' + N + ', ' + cellW + 'px)';
+
+    // Rail. First row is a spacer for the column-number bar that sits above
+    // the grid — without it every rail row is off by one against its cells.
+    var railHTML = '<div class="rail-row rail-head-spacer"></div>';
+    var rowIdx = 0;
+    var kk = state.touchstones.length;
+    var kp = state.cores.length;
+
+    // Touchstones group header
+    if (kk > 0) {
+      railHTML += '<div class="rail-row group-header">Touchstones</div>';
+    }
+    for (var ti = 0; ti < kk; ti++) {
+      var t = state.touchstones[ti];
+      var tLabel = t.text || 'touchstone ' + (ti + 1);
+      var spark = computeSpark(t.vector);
+      railHTML += '<div class="rail-row">' +
+        '<span class="rail-label" title="' + escapeHtml(tLabel) + '">' + escapeHtml(tLabel.substring(0, 20)) + '</span>' +
+        '<span class="rail-weight">' + (weights[rowIdx] || 0).toFixed(2) + '</span>' +
+        '<span class="rail-sparkline"><span class="rail-sparkline-bar" style="width:' + Math.round(spark * 100) + '%"></span></span>' +
+        '</div>';
+      rowIdx++;
+    }
+
+    // Core samples group header (skip if empty)
+    if (kp > 0) {
+      railHTML += '<div class="rail-row group-header">Core samples</div>';
+    }
+    for (var ci = 0; ci < kp; ci++) {
+      var c = state.cores[ci];
+      var cLabel = c.title || c.doi || 'core sample ' + (ci + 1);
+      var cspark = computeSpark(c.vector);
+      railHTML += '<div class="rail-row">' +
+        '<span class="rail-label" title="' + escapeHtml(cLabel) + '">' + escapeHtml(cLabel.substring(0, 20)) + '</span>' +
+        '<span class="rail-weight">' + (weights[rowIdx] || 0).toFixed(2) + '</span>' +
+        '<span class="rail-sparkline"><span class="rail-sparkline-bar" style="width:' + Math.round(cspark * 100) + '%"></span></span>' +
+        '</div>';
+      rowIdx++;
+    }
+
+    // The rush — sits right before GRADE, no separate header
+    railHTML += '<div class="rail-row" style="opacity:0.4; border-bottom:none">' +
+      '<span class="rail-label">Scirate scites (inactive)</span>' +
+      '<span class="rail-weight">—</span>' +
+      '</div>';
+    rowIdx++;
+
+    // Grade row — right after rush
+    railHTML += '<div class="rail-row grade-row">' +
+      '<span class="rail-label">GRADE</span>' +
+      '</div>';
+
+    rail.innerHTML = railHTML;
+
+    // Grid cells — must match rail rows exactly, including group-header spacers
+    var gridHTML = '';
+
+    // Spacer row matching "Touchstones" group header
+    if (kk > 0) {
+      gridHTML += '<div class="matrix-row">';
+      for (var c = 0; c < N; c++) {
+        gridHTML += '<div class="matrix-cell null-cell" style="opacity:0" data-val="null"></div>';
+      }
+      gridHTML += '</div>';
+    }
+
+    // Touchstone rows
+    for (var ti = 0; ti < kk; ti++) {
+      gridHTML += '<div class="matrix-row">';
+      for (var c = 0; c < N; c++) {
+        var si = order[c];
+        var fv = F[ti];
+        var val, isNull = false;
+        if (fv === null) { isNull = true; val = null; }
+        else val = cosine(state.A[si], fv);
+        var cellCls = 'matrix-cell';
+        if (isNull) cellCls += ' null-cell';
+        if (c < topN) cellCls += ' paydirt-col';
+        gridHTML += '<div class="' + cellCls + '" style="background:' + (isNull ? '' : getOreColor(val)) +
+          '" data-row="' + ti + '" data-col="' + c +
+          '" data-val="' + (val !== null ? val.toFixed(3) : 'null') + '" tabindex="0"></div>';
+      }
+      gridHTML += '</div>';
+    }
+
+    // Spacer row matching "Core samples" group header
+    if (kp > 0) {
+      gridHTML += '<div class="matrix-row">';
+      for (var c = 0; c < N; c++) {
+        gridHTML += '<div class="matrix-cell null-cell" style="opacity:0" data-val="null"></div>';
+      }
+      gridHTML += '</div>';
+    }
+
+    // Core sample rows
+    var coreBase = kk;
+    for (var ci = 0; ci < kp; ci++) {
+      gridHTML += '<div class="matrix-row">';
+      for (var c = 0; c < N; c++) {
+        var si = order[c];
+        var fv = F[coreBase + ci];
+        var val, isNull = false;
+        if (fv === null) { isNull = true; val = null; }
+        else val = cosine(state.A[si], fv);
+        var cellCls = 'matrix-cell';
+        if (isNull) cellCls += ' null-cell';
+        if (c < topN) cellCls += ' paydirt-col';
+        gridHTML += '<div class="' + cellCls + '" style="background:' + (isNull ? '' : getOreColor(val)) +
+          '" data-row="' + (coreBase + ci) + '" data-col="' + c +
+          '" data-val="' + (val !== null ? val.toFixed(3) : 'null') + '" tabindex="0"></div>';
+      }
+      gridHTML += '</div>';
+    }
+
+    // Rush row — null cells, right before grade
+    gridHTML += '<div class="matrix-row">';
+    for (var c = 0; c < N; c++) {
+      var cellCls = 'matrix-cell null-cell';
+      if (c < topN) cellCls += ' paydirt-col';
+      gridHTML += '<div class="' + cellCls + '" data-row="rush" data-col="' + c +
+        '" data-val="null" tabindex="0"></div>';
+    }
+    gridHTML += '</div>';
+
+    // Grade row
+    gridHTML += '<div class="matrix-row">';
+    for (var gc = 0; gc < N; gc++) {
+      var gsi = order[gc];
+      var gv = grades[gsi];
+      var gCls = 'matrix-cell grade-cell';
+      if (gc < topN) gCls += ' paydirt-col';
+      gridHTML += '<div class="' + gCls + '" style="background:' + getLampColor(gv) +
+        '" data-row="grade" data-col="' + gc +
+        '" data-val="' + gv.toFixed(3) + '" tabindex="0"></div>';
+    }
+    gridHTML += '</div>';
+
+    grid.innerHTML = gridHTML;
+
+    // Rail rows and grid rows are separate DOM trees, so alignment can only be
+    // guaranteed by measuring: spacer takes the column-bar height, then every
+    // grid row is forced to its rail row's measured height.
+    syncRailToGrid(rail, grid, colTitles, rowH);
+
+    // Attach hover/focus handlers
+    attachCellHandlers(order, kk, kp, topN);
+
+    // ── Table view (update if visible) ──
+    if (byId('table-view-toggle').checked) {
+      renderTable(order, kk, kp, topN);
+    }
+  }
+
+  /** Make rail row i line up with grid row i.
+   *  rail children: [head-spacer, ...rows]   grid children: [...rows]  */
+  function syncRailToGrid(rail, grid, colTitles, rowH) {
+    var spacer = rail.querySelector('.rail-head-spacer');
+    if (spacer) spacer.style.height = colTitles.getBoundingClientRect().height + 'px';
+
+    var railRows = rail.querySelectorAll('.rail-row');
+    var gridRows = grid.querySelectorAll('.matrix-row');
+
+    // Data rows get the cell height; header rows keep their natural (text) height
+    for (var i = 1; i < railRows.length; i++) {
+      if (!railRows[i].classList.contains('group-header')) {
+        railRows[i].style.height = rowH + 'px';
+      }
+    }
+
+    // Then push each measured rail height onto the matching grid row's cells
+    for (var r = 0; r < gridRows.length; r++) {
+      var railRow = railRows[r + 1];
+      if (!railRow) break;
+      var h = railRow.getBoundingClientRect().height;
+      var cells = gridRows[r].children;
+      for (var c = 0; c < cells.length; c++) {
+        cells[c].style.height = h + 'px';
+      }
+    }
+  }
+
+  function computeSpark(vector) {
+    if (!vector || !state.A || state.A.length === 0) return 0;
+    var min = Infinity, max = -Infinity;
+    for (var i = 0; i < state.A.length; i++) {
+      var c = cosine(state.A[i], vector);
+      if (c < min) min = c;
+      if (c > max) max = c;
+    }
+    if (max <= min) return 0;
+    // How wide the top half of the distribution is — rough measure of discrimination
+    var spread = max - min;
+    return Math.min(1, spread);
+  }
+
+  // Pin survives re-renders' worth of listeners: document-level wiring happens once
+  var pinnedCell = null;
+  var cellDismissWired = false;
+
+  function attachCellHandlers(order, kk, kp, topN) {
+    var grid = byId('assay-grid');
+    var tooltip = byId('cell-tooltip');
+
+    pinnedCell = null;
+    tooltip.classList.remove('pinned');
+    tooltip.style.display = 'none';
+
+    function showTooltip(e, cell, isPinned) {
+      var col = parseInt(cell.dataset.col, 10);
+      var si = order[col];
+      var stone = state.stones[si];
+      var val = cell.dataset.val;
+
+      tooltip.innerHTML =
+        '<div class="tt-value">' + (val === 'null' ? '—' : parseFloat(val).toFixed(2)) + '</div>' +
+        '<div class="tt-title">' + escapeHtml(stone.title) + '</div>' +
+        '<div class="tt-row"><a href="' + stone.abs_url + '" target="_blank" rel="noopener">open on arXiv →</a></div>' +
+        '<div class="tt-pin-hint">' + (isPinned ? 'pinned — click the cell again to release' : 'click to pin') + '</div>';
+      // pointer-events only while pinned, so an unpinned tooltip never eats hovers
+      tooltip.classList.toggle('pinned', !!isPinned);
+      tooltip.style.display = 'block';
+      positionTooltip(e, tooltip);
+    }
+
+    grid.querySelectorAll('.matrix-cell').forEach(function (cell) {
+      cell.addEventListener('mouseenter', function (e) {
+        if (pinnedCell) return; // locked on a cell until click elsewhere
+        showTooltip(e, cell, false);
+      });
+
+      cell.addEventListener('click', function (e) {
+        if (pinnedCell === cell) {
+          // unpin
+          pinnedCell = null;
+          tooltip.classList.remove('pinned');
+          tooltip.style.display = 'none';
+        } else {
+          pinnedCell = cell;
+          showTooltip(e, cell, true);
+        }
+        e.stopPropagation();
+      });
+    });
+
+    if (!cellDismissWired) {
+      cellDismissWired = true;
+
+      // Click outside grid and tooltip dismisses the pin — clicks *inside* the
+      // tooltip must survive or its arXiv link never fires
+      document.addEventListener('click', function (e) {
+        if (!grid.contains(e.target) && !tooltip.contains(e.target)) {
+          pinnedCell = null;
+          tooltip.classList.remove('pinned');
+          tooltip.style.display = 'none';
+        }
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && pinnedCell) {
+          pinnedCell = null;
+          tooltip.classList.remove('pinned');
+          tooltip.style.display = 'none';
+        }
+      });
+
+      grid.addEventListener('mouseleave', function () {
+        if (!pinnedCell) tooltip.style.display = 'none';
+      });
+    }
+  }
+
+  function positionTooltip(e, tooltip) {
+    var x = e.clientX + 12;
+    var y = e.clientY - 10;
+    if (x + 330 > window.innerWidth) x = x - 340;
+    if (y + 80 > window.innerHeight) y = y - 80;
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+  }
+
+  function renderTable(order, kk, kp, topN) {
+    var F = state.featureVectors;
+    var grades = state.grades;
+    var N = state.stones.length;
+    var weights = getWeights();
+
+    var head = byId('assay-table-head');
+    var body = byId('assay-table-body');
+
+    // Header
+    var headHTML = '<tr><th>Rank</th><th>Title</th>';
+    for (var f = 0; f < kk + kp + 1; f++) {
+      var flabel;
+      if (f >= kk + kp) flabel = 'Rush';
+      else if (f >= kk) flabel = 'Core ' + (f - kk + 1);
+      else flabel = 'TS ' + (f + 1);
+      headHTML += '<th>' + escapeHtml(flabel) + '</th>';
+    }
+    headHTML += '<th>Grade</th><th>arXiv ID</th></tr>';
+    head.innerHTML = headHTML;
+
+    // Body
+    var bodyHTML = '';
+    for (var n = 0; n < N; n++) {
+      var si = order[n];
+      var stone = state.stones[si];
+      var rowCls = n < topN ? ' class="paydirt-row"' : '';
+      bodyHTML += '<tr' + rowCls + '>';
+      bodyHTML += '<td>' + (n + 1) + '</td>';
+      bodyHTML += '<td>' + escapeHtml(stone.title) + '</td>';
+      for (var fr = 0; fr < kk + kp + 1; fr++) {
+        var fv = F[fr];
+        if (fv === null) {
+          bodyHTML += '<td>—</td>';
+        } else {
+          var cv = cosine(state.A[si], fv);
+          bodyHTML += '<td>' + cv.toFixed(2) + '</td>';
+        }
+      }
+      bodyHTML += '<td>' + grades[si].toFixed(2) + '</td>';
+      bodyHTML += '<td>' + escapeHtml(stone.arxiv_id) + '</td>';
+      bodyHTML += '</tr>';
+    }
+    body.innerHTML = bodyHTML;
+
+    byId('assay-table-wrap').style.display = '';
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Event bindings — Stage 0
+  // ═══════════════════════════════════════════════════════════════════
+
+  byId('sharpen-btn').addEventListener('click', async function () {
+    try { await runSharpen(); }
+    catch (err) { byId('sharpen-status').textContent = err.message; byId('sharpen-status').style.color = 'var(--ember)'; }
+  });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Event bindings — Stage 1
+  // ═══════════════════════════════════════════════════════════════════
+
+  byId('haul-btn').addEventListener('click', async function () {
+    try { await runHaul(); }
+    catch (err) { /* already handled */ }
+  });
+
+  // Seam sort toggle
+  byId('seam-sort-toggle').addEventListener('change', function () {
+    if (!state.seamMap || !state.stones.length) return;
+    var clustered = this.checked;
+    var order = clustered ? state.seamOrder : state.stones.map(function (_, i) { return i; });
+    drawSeamMap(byId('seam-canvas'), state.seamMap, order, state.stones, state.seamComponents,
+      seamReadoutSink('seam-readout'));
+  });
+
+  // Seam expand
+  byId('seam-expand-btn').addEventListener('click', function () {
+    if (!state.seamMap) return;
+    var modal = byId('seam-modal');
+    var canvas = byId('seam-modal-canvas');
+    var order = byId('seam-sort-toggle').checked ? state.seamOrder : state.stones.map(function (_, i) { return i; });
+    drawSeamMap(canvas, state.seamMap, order, state.stones, state.seamComponents,
+      seamReadoutSink('seam-modal-readout'));
+    modal.style.display = 'flex';
+  });
+
+  byId('seam-modal').addEventListener('click', function (e) {
+    if (e.target === byId('seam-modal-backdrop') || e.target.classList.contains('seam-modal-close')) {
+      byId('seam-modal').style.display = 'none';
     }
   });
+  byId('seam-modal-close').addEventListener('click', function () {
+    byId('seam-modal').style.display = 'none';
+  });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Event bindings — Stage 2
+  // ═══════════════════════════════════════════════════════════════════
+
+  byId('add-touchstone').addEventListener('click', function () {
+    addTouchstoneRow('');
+  });
+
+  byId('add-core').addEventListener('click', function () {
+    addCoreRow('');
+  });
+
+  // Group weights
+  byId('touchstones-weight').addEventListener('input', function () {
+    onWeightChanged();
+  });
+  byId('cores-weight').addEventListener('input', function () {
+    onWeightChanged();
+  });
+
+  // .bib upload → extract DOIs and add as core samples
+  byId('bib-file').addEventListener('change', function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var text = reader.result;
+      var dois = extractBibDois(text);
+      if (dois.length === 0) {
+        byId('bib-status').textContent = 'No DOI entries found in .bib file.';
+        byId('bib-status').style.display = '';
+        return;
+      }
+      byId('bib-status').textContent = 'Found ' + dois.length + ' entries. Adding as core samples...';
+      byId('bib-status').style.display = '';
+      for (var d = 0; d < dois.length; d++) {
+        addCoreRow(dois[d]);
+      }
+      byId('bib-status').textContent = '✓ Added ' + dois.length + ' core samples from .bib.';
+    };
+    reader.readAsText(file);
+  });
+
+  function extractBibDois(text) {
+    var dois = [];
+    var re = /doi\s*=\s*\{([^}]+)\}/gi;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      var d = m[1].replace(/\s+/g, '').trim();
+      if (d.length > 5) dois.push(d);
+    }
+    return dois;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Event bindings — Stage 3
+  // ═══════════════════════════════════════════════════════════════════
+
+  byId('paydirt-n').addEventListener('input', function () {
+    if (state.order !== null) renderAssay();
+  });
+
+  byId('table-view-toggle').addEventListener('change', function () {
+    var show = this.checked;
+    byId('assay-matrix-wrap').style.display = show ? 'none' : '';
+    byId('assay-legends').style.display = show ? 'none' : '';
+    byId('assay-table-wrap').style.display = show ? '' : 'none';
+    if (show && state.order !== null) {
+      var kk = state.touchstones.length;
+      var kp = state.cores.length;
+      var topN = parseInt(byId('paydirt-n').value, 10) || 10;
+      renderTable(state.order, kk, kp, topN);
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Init
+  // ═══════════════════════════════════════════════════════════════════
+
+  // Load persisted touchstones and cores
+  loadState();
+
+  // Restore touchstone rows from localStorage
+  if (state.touchstones.length > 0) {
+    for (var ti = 0; ti < state.touchstones.length; ti++) {
+      addTouchstoneRow(state.touchstones[ti].text, state.touchstones[ti].id);
+    }
+    // Mark vectors as null — they'll be re-embedded
+    for (var tj = 0; tj < state.touchstones.length; tj++) {
+      state.touchstones[tj].vector = null;
+    }
+  }
+
+  // Restore core rows from localStorage
+  if (state.cores.length > 0) {
+    for (var ci = 0; ci < state.cores.length; ci++) {
+      addCoreRow(state.cores[ci].doi, state.cores[ci].id);
+    }
+  }
+
+  // Show the app
+  var app = byId('app');
+  if (app) app.style.display = '';
+
+  // Initially hide Stage 3
+  byId('stage-3').style.display = 'none';
 
 })();

@@ -32,6 +32,27 @@
   --pyrite-dim: #6d6540;
   --ember: #e05a4d;         /* warnings, unavailable signals */
   --moss: #4aa06a;          /* success */
+
+  /* ── ORE ramp (gold, for feature cells) ─────────────────────── */
+  /* 8 steps, sequential, validated against surface #1b1f26 (dark mode) */
+  --ore-0: #2b2620;
+  --ore-1: #45371c;
+  --ore-2: #5d4a1a;
+  --ore-3: #785f16;
+  --ore-4: #94760f;
+  --ore-5: #b18f08;
+  --ore-6: #d0a504;
+  --ore-7: #f5b301;
+
+  /* ── LAMP ramp (blue, for grade row only) ───────────────────── */
+  /* 7 steps, sequential, validated against surface #1b1f26 (dark mode) */
+  --lamp-0: #1e242e;
+  --lamp-1: #2c3b57;
+  --lamp-2: #355184;
+  --lamp-3: #3e66aa;
+  --lamp-4: #5080c8;
+  --lamp-5: #7aa2f7;
+  --lamp-6: #a8c3fb;
 }
 
 /* ── Page shell ───────────────────────────────────────────────── */

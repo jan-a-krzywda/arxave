@@ -17,261 +17,202 @@ permalink: /
     <a href="#small-print">Small print</a>.
   </p>
 
-  <form id="filter-form" autocomplete="off">
-
-    <!-- ── Topics ── -->
-    <fieldset>
-      <legend>📋 Topics</legend>
-      <p class="hint">One per line. Be specific — "quantum computing" lets everything through.</p>
-      <textarea id="topics" rows="6" placeholder="silicon spin qubits and exchange gates
-charge noise and decoherence in quantum dots
-cryogenic control of quantum processors"></textarea>
-    </fieldset>
-
-    <!-- ── Corpus (.bib upload) ── -->
-    <fieldset>
-      <legend>📚 Corpus <span class="wip">WIP</span> <span class="sub">— optional, enables the corpus signal</span></legend>
-      <p class="hint">Upload a <code>.bib</code> file of papers you already read. Titles are embedded
-      and compared to each candidate abstract.</p>
-      <p class="hint wip-note"><strong>Work in progress:</strong> only the
-      <em>titles</em> in your <code>.bib</code> are embedded — not abstracts, not
-      full text — so a match is looser than it should be. The parser is a regex
-      over <code>title = {…}</code> and has not been tested against messy
-      real-world <code>.bib</code> files. Usable, but treat the corpus score as
-      indicative.</p>
-      <label class="bib-upload">
-        <input type="file" id="bib-file" accept=".bib">
-      </label>
-      <div id="corpus-status" class="hint" style="margin-top:0.25rem"></div>
-    </fieldset>
-
-    <!-- ── Scout ── -->
-    <fieldset>
-      <legend>🔭 Scout</legend>
-      <div class="role-grid scout-grid">
-        <label>
-          arXiv categories
-          <input type="text" id="categories" value="cond-mat.mes-hall, quant-ph"
-                 placeholder="cond-mat.mes-hall, quant-ph">
-        </label>
-        <label>
-          Lookback (days)
-          <input type="number" id="lookback" value="1" min="1" max="7">
-        </label>
-        <label>
-          Max results
-          <input type="number" id="max-results" value="200" min="10" max="1000">
-        </label>
-      </div>
-    </fieldset>
-
-    <!-- ── Embeddings ── -->
-    <fieldset>
-      <legend>🧮 Embeddings</legend>
-      <div class="embed-mode">
-        <label class="radio-row">
-          <input type="radio" name="embed-mode" value="local" checked>
-          <span><strong>In-browser</strong> — open-source
-          <code>bge-small-en-v1.5</code> runs in this tab. No key, no account,
-          nothing billed, nothing sent anywhere. Downloads ~32 MB the first time,
-          then the browser caches it. Slow but free: measured 75 s for 130
-          abstracts in Chrome. The only mode that works today.</span>
-        </label>
-        <label class="radio-row is-dead">
-          <input type="radio" name="embed-mode" value="hosted" disabled>
-          <span><strong>Hosted</strong> <span class="wip">WIP</span> — arxave's
-          embedding endpoint: no download, ~1 s per run, abstracts sent out. Not
-          deployed yet.</span>
-        </label>
-        <label class="radio-row is-dead">
-          <input type="radio" name="embed-mode" value="own" disabled>
-          <span><strong>Own key</strong> <span class="wip">WIP</span> — any
-          OpenAI-compatible <code>/v1/embeddings</code>, key kept in this form.
-          Written but untested against a live provider.</span>
-        </label>
-      </div>
-
-      <div class="role-grid" id="embed-own-fields" style="display:none; margin-top:0.75rem">
-        <label>
-          Provider
-          <select id="embed-provider">
-            <option value="openai" selected>OpenAI</option>
-            <option value="ollama">Ollama</option>
-            <option value="lm-studio">LM Studio</option>
-            <option value="custom">Custom</option>
-          </select>
-        </label>
-        <label>
-          Model
-          <input type="text" id="embed-model" value="text-embedding-3-small">
-        </label>
-        <label class="base-url-label" id="embed-base-url-label">
-          Base URL
-          <input type="text" id="embed-base-url" placeholder="https://api.openai.com/v1">
-        </label>
-        <label>
-          API key
-          <input type="password" id="embed-key" placeholder="sk-...">
-        </label>
-      </div>
-    </fieldset>
-
-    <!-- ── Weight sliders (w1–w4) ── -->
-    <fieldset id="weights-fieldset">
-      <legend>⚖️ Assay <span class="sub">— how each stone is weighed. Move a slider, ranking updates instantly.</span></legend>
-      <div class="weight-sliders">
-        <div class="weight-row" id="w1-row">
-          <label>
-            <span class="weight-label">Topic match <code>w1</code></span>
-            <span class="weight-desc">Semantic fit to your topics</span>
-          </label>
-          <input type="range" id="w1" min="0" max="1" step="0.05" value="0.50">
-          <span class="weight-val" id="w1-val">0.50</span>
-          <span class="weight-pct" id="w1-pct"></span>
-        </div>
-
-        <div class="weight-row is-dead" id="w2-row">
-          <label>
-            <span class="weight-label">Corpus fit <code>w2</code> <span class="wip">WIP</span></span>
-            <span class="weight-desc">Closeness to your own bag — titles only</span>
-          </label>
-          <input type="range" id="w2" min="0" max="1" step="0.05" value="0.25" disabled>
-          <span class="weight-val" id="w2-val">0.25</span>
-          <span class="weight-pct" id="w2-pct"></span>
-          <span class="weight-unavailable" id="w2-unavailable">— no signal (upload a .bib)</span>
-        </div>
-
-        <div class="weight-row is-dead" id="w3-row">
-          <label>
-            <span class="weight-label">Citation overlap <code>w3</code> <span class="wip">WIP</span></span>
-            <span class="weight-desc">Veins shared with your bag</span>
-          </label>
-          <input type="range" id="w3" min="0" max="1" step="0.05" value="0.15" disabled>
-          <span class="weight-val" id="w3-val">0.15</span>
-          <span class="weight-pct" id="w3-pct"></span>
-          <span class="weight-unavailable" id="w3-unavailable">— no signal (needs a backend)</span>
-        </div>
-
-        <div class="weight-row is-dead" id="w4-row">
-          <label>
-            <span class="weight-label">Crowd attention <code>w4</code> <span class="wip">WIP</span></span>
-            <span class="weight-desc">Scirate scites — blocked by Cloudflare</span>
-          </label>
-          <input type="range" id="w4" min="0" max="1" step="0.05" value="0.10" disabled>
-          <span class="weight-val" id="w4-val">0.10</span>
-          <span class="weight-pct" id="w4-pct"></span>
-          <span class="weight-unavailable" id="w4-unavailable">— no signal (Scirate answers 403 to non-browser fetches)</span>
-        </div>
-      </div>
-
-      <div class="weight-summary" id="weight-summary">
-        Normalized influence: <span id="weight-pct-readout"></span>
-      </div>
-    </fieldset>
-
-    <!-- ── Top N ── -->
-    <fieldset>
-      <legend>🪨 Carry up <span class="sub">— the stones you read carefully</span></legend>
-      <p class="hint">Everything below the cut line is still scored and still
-      listed; it just does not come up the shaft with you.</p>
-      <div class="role-grid" style="grid-template-columns: 1fr 2fr;">
-        <label>
-          How many
-          <input type="number" id="top-n" value="10" min="1" max="50">
-        </label>
-      </div>
-    </fieldset>
-
+  <!-- ── Stage 0: Sharpen the pick ── -->
+  <fieldset id="stage-0">
+    <legend>0. Sharpen the pick</legend>
+    <p class="hint">~32 MB, downloaded once, then cached by your browser. Nothing you type leaves this tab.</p>
     <div class="button-bar">
-      <button type="button" id="run-filter">⛏ Dig</button>
-      <span id="run-status" class="run-status" style="display:none"></span>
+      <button type="button" id="sharpen-btn">⛏ Sharpen the pick</button>
+      <span class="stage-status" id="sharpen-status"></span>
+    </div>
+    <div class="progress-wrap" id="sharpen-progress-wrap" style="display:none">
+      <progress id="sharpen-progress" value="0" max="100"></progress>
+      <span class="progress-label" id="sharpen-label"></span>
+    </div>
+    <div class="stage-done" id="sharpen-done" style="display:none">
+      Pick sharpened — <code>bge-small-en-v1.5</code>, 384-dim
+    </div>
+  </fieldset>
+
+  <!-- ── Scout config ── -->
+  <fieldset>
+    <legend>🔭 Scout</legend>
+    <div class="role-grid scout-grid">
+      <label>
+        arXiv categories
+        <input type="text" id="categories" value="cond-mat.mes-hall, quant-ph"
+               placeholder="cond-mat.mes-hall, quant-ph">
+      </label>
+      <label>
+        Lookback (days)
+        <input type="number" id="lookback" value="1" min="1" max="7">
+      </label>
+      <label>
+        Max results
+        <input type="number" id="max-results" value="200" min="10" max="1000">
+      </label>
+    </div>
+  </fieldset>
+
+  <!-- ── Stage 1: Haul the stones ── -->
+  <fieldset id="stage-1">
+    <legend>1. Haul the stones</legend>
+    <p class="hint">Fetch the day's papers and embed their abstracts. Shows the seam map — how today's stones cluster — before any topic exists.</p>
+    <div class="button-bar">
+      <button type="button" id="haul-btn" disabled>🪨 Haul the stones</button>
+      <span class="stage-status" id="haul-status"></span>
+    </div>
+    <div class="progress-wrap" id="haul-progress-wrap" style="display:none">
+      <progress id="haul-progress" value="0" max="100"></progress>
+      <span class="progress-label" id="haul-label"></span>
+    </div>
+    <!-- Seam map panel -->
+    <div id="seam-panel" style="display:none">
+      <div class="seam-header">
+        <span class="seam-title">Seam map</span>
+        <span class="seam-stats" id="seam-stats"></span>
+        <label class="toggle-label">
+          <input type="checkbox" id="seam-sort-toggle" checked> Clustered
+        </label>
+        <button type="button" class="seam-expand-btn" id="seam-expand-btn">Expand</button>
+      </div>
+      <div class="seam-canvas-wrap">
+        <canvas id="seam-canvas"></canvas>
+      </div>
+      <div class="seam-readout" id="seam-readout"></div>
+    </div>
+  </fieldset>
+
+  <!-- ── Stage 2: Set the touchstones ── -->
+  <fieldset id="stage-2">
+    <legend>2. Set the touchstones</legend>
+    <p class="hint">Each touchstone can be a word, a phrase, or a whole sentence. Longer ones are more specific — but a one-word touchstone and a paragraph-long one are not directly comparable. The weights are the mitigation.</p>
+
+    <!-- Touchstones (free text) -->
+    <div id="touchstones-group">
+      <div class="group-label">Touchstones <span class="sub">— free text, one per row</span></div>
+      <div id="touchstones-list"></div>
+      <button type="button" id="add-touchstone" class="add-row-btn" disabled>+ Add touchstone</button>
+      <div class="group-weight">
+        <label>Group weight <input type="number" id="touchstones-weight" value="0.40" min="0" max="1" step="0.05" disabled></label>
+      </div>
     </div>
 
-    <!-- ── Second pass, not built ── -->
-    <details class="advanced">
-      <summary>Second pass with an LLM <span class="wip">WIP</span></summary>
-      <p class="hint">Re-reads what you carried up and argues each one. Not wired
-      yet — the controls are here so the shape is visible, and they stay dead
-      until the step is real.</p>
-      <div class="role-grid">
-        <label>
-          Provider
-          <select id="refine-provider" disabled>
-            <option value="openai" selected>OpenAI</option>
-            <option value="ollama">Ollama</option>
-            <option value="lm-studio">LM Studio</option>
-            <option value="custom">Custom</option>
-          </select>
-        </label>
-        <label>
-          Model
-          <input type="text" id="refine-model" value="gpt-4o-mini" disabled>
-        </label>
-        <label>
-          Base URL
-          <input type="text" id="refine-base-url" placeholder="https://api.openai.com/v1" disabled>
-        </label>
-        <label>
-          API key
-          <input type="password" id="refine-key" placeholder="sk-..." disabled>
+    <hr class="group-rule">
+
+    <!-- Core samples -->
+    <div id="cores-group">
+      <div class="group-label">Core samples <span class="sub">— a few reference papers</span></div>
+      <p class="hint">Enter a DOI or arXiv ID per row, or upload a <code>.bib</code> and pick a few entries. Abstracts are fetched from OpenAlex (no key needed).</p>
+      <div id="cores-list"></div>
+      <button type="button" id="add-core" class="add-row-btn" disabled>+ Add core sample</button>
+      <label class="bib-upload" style="margin-top: 0.4rem; display: block;">
+        <input type="file" id="bib-file" accept=".bib" style="display:none">
+        <span class="add-row-btn" style="display:inline-block; cursor:pointer" onclick="document.getElementById('bib-file').click()">Upload .bib (select entries)</span>
+      </label>
+      <div id="bib-status" class="hint" style="margin-top:0.25rem; display:none"></div>
+      <div class="group-weight">
+        <label>Group weight <input type="number" id="cores-weight" value="0.40" min="0" max="1" step="0.05" disabled></label>
+      </div>
+    </div>
+
+    <hr class="group-rule">
+
+    <!-- The rush (Scirate, inactive) -->
+    <div id="rush-group" class="inactive-group">
+      <div class="group-label">The rush <span class="wip">WIP</span> <span class="sub">— crowd attention, Scirate scites</span></div>
+      <div class="rush-row">
+        <span class="rush-name">Scirate scites</span>
+        <span class="rush-unavailable">signal unavailable</span>
+        <span class="rush-weight">—</span>
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- ── Stage 3: Assay ── -->
+  <fieldset id="stage-3">
+    <legend>3. Assay</legend>
+    <div class="assay-header">
+      <div class="assay-stats" id="assay-stats"></div>
+      <div class="assay-controls">
+        <label>Pay dirt <input type="number" id="paydirt-n" value="10" min="1" max="50"></label>
+        <label class="toggle-label">
+          <input type="checkbox" id="table-view-toggle"> Table view
         </label>
       </div>
-      <div class="button-bar">
-        <button type="button" id="refine-btn" disabled>Second pass</button>
+    </div>
+
+    <!-- Matrix view -->
+    <div id="assay-matrix-wrap">
+      <div class="assay-rail" id="assay-rail"></div>
+      <div class="assay-scroll">
+        <div id="assay-column-titles"></div>
+        <div class="assay-grid" id="assay-grid"></div>
       </div>
-    </details>
+    </div>
 
-    <!-- ── Relay ── -->
-    <details class="advanced">
-      <summary>Relay <span class="sub">— advanced, leave blank</span></summary>
-      <p class="hint" id="cors-note">
-        Browsers refuse to read a response from a site that does not opt in, and
-        arXiv does not opt in (checked 2026-07-28). So the arXiv request is sent
-        for you by <a href="https://github.com/jan-a-krzywda/arxave/blob/main/supabase/functions/relay/index.ts">arxave's relay</a>,
-        which forwards to <code>arxiv.org</code> and <code>scirate.com</code> and
-        nowhere else. It carries a category list and public paper IDs — never
-        your topics, your library, or a key. Put your own relay URL here to skip
-        arxave's.
-      </p>
-      <input type="text" id="cors-proxy" placeholder="(blank = arxave relay)">
-    </details>
+    <!-- Legend -->
+    <div class="assay-legends" id="assay-legends">
+      <div class="scale-legend" id="ore-legend">
+        <span class="legend-label">Feature cells</span>
+        <div class="scale-bar ore-scale"></div>
+        <span class="legend-end">0</span>
+        <span class="legend-mid">0.5</span>
+        <span class="legend-end">1</span>
+      </div>
+      <div class="scale-legend" id="lamp-legend">
+        <span class="legend-label">Grade</span>
+        <div class="scale-bar lamp-scale"></div>
+        <span class="legend-end">0</span>
+        <span class="legend-mid">0.5</span>
+        <span class="legend-end">1</span>
+      </div>
+    </div>
 
-  </form>
+    <!-- Table view (hidden by default) -->
+    <div id="assay-table-wrap" style="display:none">
+      <div class="table-wrap">
+        <table id="assay-table">
+          <thead id="assay-table-head"></thead>
+          <tbody id="assay-table-body"></tbody>
+        </table>
+      </div>
+    </div>
 
-  <!-- ── Results ── -->
-  <div id="results" style="display:none">
-    <h2>The haul</h2>
-    <p class="hint" id="results-summary"></p>
-    <div class="table-wrap">
-      <table id="results-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Title</th>
-            <th>Score</th>
-            <th>Signals</th>
-            <th>Category</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody id="results-body"></tbody>
-      </table>
+    <!-- Tooltip -->
+    <div id="cell-tooltip" class="cell-tooltip" style="display:none" role="tooltip"></div>
+  </fieldset>
+
+  <!-- ── Seam map modal ── -->
+  <div id="seam-modal" class="seam-modal" style="display:none">
+    <div class="seam-modal-backdrop"></div>
+    <div class="seam-modal-content">
+      <div class="seam-modal-header">
+        <span class="seam-title">Seam map</span>
+        <button type="button" class="seam-modal-close" id="seam-modal-close">×</button>
+      </div>
+      <canvas id="seam-modal-canvas"></canvas>
+      <div class="seam-modal-readout" id="seam-modal-readout"></div>
     </div>
   </div>
 
+  <!-- ── Relay ── -->
+  <details class="advanced">
+    <summary>Relay <span class="sub">— advanced, leave blank</span></summary>
+    <p class="hint">
+      Browsers refuse to read a response from a site that does not opt in, and
+      arXiv does not opt in. So the arXiv request is sent for you by
+      <a href="https://github.com/jan-a-krzywda/arxave/blob/main/supabase/functions/relay/index.ts">arxave's relay</a>.
+      It carries a category list and public paper IDs — never your topics,
+      your library, or a key.
+    </p>
+    <input type="text" id="cors-proxy" placeholder="(blank = arxave relay)">
+  </details>
+
   <!-- ── Small print ── -->
   <div class="cave-footnote" id="small-print">
-    <p><strong>Where things go.</strong> Topics, library and keys stay in this
-    tab. With in-browser embeddings nothing is billed and nothing is sent; only
-    the arXiv fetch leaves, through the relay above.</p>
-    <p><strong>What is real today.</strong> Scouting arXiv, embedding abstracts
-    and topics in your browser, and ranking on topic match, re-ranked live as you
-    move a slider. Everything marked <span class="wip">WIP</span> has no signal
-    behind it yet: corpus fit reads titles only, citation overlap needs a
-    backend, Scirate answers 403 to non-browser fetches, and the second pass is
-    not wired. Those sliders stay dead rather than pretending — ranking
-    renormalizes over the signals actually present, so a missing one redistributes
-    its weight instead of scoring a paper as worthless.</p>
+    <p><strong>Where things go.</strong> Touchstones, core samples, and weights stay in this tab. With in-browser embeddings nothing is billed and nothing is sent; only the arXiv fetch leaves, through the relay above.</p>
+    <p><strong>What is real today.</strong> Scouting arXiv, embedding abstracts in your browser (staged, with the seam map as intermediate output), and ranking on touchstone similarity with live re-blending. The rush (Scirate) is parked behind a Cloudflare challenge and stays inactive until a path exists.</p>
   </div>
 </div>
 

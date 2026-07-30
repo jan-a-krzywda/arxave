@@ -1,246 +1,773 @@
-/* Filter page. Colours come from the tokens in cave.css. */
+/* ═══════════════════════════════════════════════════════════════════
+   Filter page — staged Dig pipeline. Colours come from cave.scss.
+   ═══════════════════════════════════════════════════════════════════ */
 
-/* ── Weight sliders ─────────────────────────────────────────── */
-.weight-sliders {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.weight-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  background: var(--rock);
+/* ── Shared fieldset chrome ──────────────────────────────────── */
+fieldset {
   border: 1px solid var(--rock-edge);
-  border-radius: 6px;
-}
-
-.weight-row label {
-  flex: 0 0 210px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-}
-
-.weight-label {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--text);
-}
-
-.weight-label code {
-  font-size: 0.78rem;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
   background: var(--rock-deep);
+}
+
+fieldset legend {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text);
+  padding: 0 0.4rem;
+}
+
+.hint {
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  line-height: 1.5;
+  margin: 0 0 0.5rem;
+}
+.hint code {
+  font-size: 0.95em;
+  background: var(--rock);
   border: 1px solid var(--rock-edge);
   padding: 0.05em 0.35em;
   border-radius: 3px;
   color: var(--text-dim);
 }
 
-.weight-desc {
+.wip {
+  color: var(--pyrite);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sub {
   font-size: 0.78rem;
   color: var(--text-faint);
+  font-weight: 400;
 }
 
-/* Short on purpose: a weight is a nudge, not a journey across the page. */
-.weight-row input[type="range"] {
-  flex: 0 0 180px;
-  max-width: 180px;
-  accent-color: var(--gold);
+/* ── Button bar ───────────────────────────────────────────────── */
+.button-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.5rem 0;
 }
 
-.weight-row input[type="range"]:disabled {
-  accent-color: var(--pyrite-dim);
+.button-bar button {
+  padding: 0.55rem 1.2rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  background: var(--rock);
+  color: var(--text);
+  border: 1px solid var(--rock-lit);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.button-bar button:hover:not(:disabled) {
+  background: var(--rock-lit);
+}
+
+.button-bar button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
-.weight-val {
-  flex: 0 0 2.5rem;
-  text-align: right;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-.weight-pct {
-  flex: 0 0 3rem;
-  text-align: right;
-  font-size: 0.78rem;
-  color: var(--text-faint);
-  font-variant-numeric: tabular-nums;
-}
-
-.weight-unavailable {
-  flex: 1 1 auto;
-  font-size: 0.75rem;
-  color: var(--ember);
-  font-style: italic;
-}
-
-/* A row whose signal is dead reads as dead. */
-.weight-row.is-dead {
-  background: var(--rock-deep);
-}
-.weight-row.is-dead .weight-label,
-.weight-row.is-dead .weight-val {
-  color: var(--text-dim);
-}
-
-.weight-summary {
-  margin-top: 0.6rem;
-  font-size: 0.85rem;
-  color: var(--text-faint);
-  text-align: right;
-}
-
-/* ── Results table ──────────────────────────────────────────── */
-.table-wrap {
-  overflow-x: auto;
-}
-
-#results-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.88rem;
-  color: var(--text);
-}
-
-#results-table th {
-  text-align: left;
-  padding: 0.5rem 0.65rem;
-  background: transparent;
-  border-bottom: 2px solid var(--rock-lit);
-  color: var(--text-faint);
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
-#results-table td {
-  padding: 0.5rem 0.65rem;
-  border-bottom: 1px solid var(--rock-edge);
-  vertical-align: top;
-}
-
-#results-table tr,
-#results-table tr:nth-child(even) {
-  background: transparent;
-}
-
-#results-table tr:hover td {
-  background: var(--rock);
-}
-
-/* The cut line: everything above it is what you carry up. */
-#results-table tr.top-n-cutoff td {
-  border-bottom: 3px solid var(--gold);
-}
-
-/* Score bar */
-.score-bar {
+/* ── Progress ─────────────────────────────────────────────────── */
+.progress-wrap {
   display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.5rem 0;
+}
+
+progress {
+  flex: 0 0 260px;
   height: 8px;
   border-radius: 4px;
   overflow: hidden;
-  margin-bottom: 2px;
-  background: var(--rock-edge);
+  accent-color: var(--lamp);
+  border: none;
+  background: var(--rock);
 }
-
-.score-bar-seg {
-  height: 100%;
-  transition: width 0.2s;
+progress::-webkit-progress-bar {
+  background: var(--rock);
+  border-radius: 4px;
 }
-
-.score-bar-seg.topic { background: var(--lamp); }
-.score-bar-seg.corpus { background: var(--moss); }
-.score-bar-seg.citation { background: #8f7ad4; }
-.score-bar-seg.scite { background: var(--gold-dim); }
-
-.score-num {
-  font-weight: 600;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
+progress::-webkit-progress-value {
+  background: var(--lamp);
+  border-radius: 4px;
 }
-
-/* Signal badges */
-.signal-badges {
-  font-size: 0.78rem;
-  color: var(--text-faint);
-  line-height: 1.5;
-}
-
-.signal-badges .sig-val {
-  font-weight: 600;
-  color: var(--text);
-}
-
-.signal-badges .sig-null {
-  color: var(--rock-lit);
-}
-
-/* Refine annotation */
-.llm-annotation {
-  font-size: 0.78rem;
-  margin-top: 2px;
-  padding: 2px 6px;
+progress::-moz-progress-bar {
+  background: var(--lamp);
   border-radius: 4px;
 }
 
-.llm-annotation.relevant {
-  background: rgba(74, 160, 106, 0.16);
-  color: #7fd3a0;
+.progress-label {
+  font-size: 0.82rem;
+  color: var(--text-dim);
 }
 
-.llm-annotation.irrelevant {
-  background: rgba(224, 90, 77, 0.14);
-  color: #f0a49b;
+/* ── Stage status ─────────────────────────────────────────────── */
+.stage-status {
+  font-size: 0.85rem;
+  color: var(--text-dim);
 }
 
-/* ── Embedding mode radios ──────────────────────────────────── */
-.embed-mode {
+.stage-done {
+  font-size: 0.85rem;
+  color: var(--moss);
+  padding: 0.4rem 0;
+}
+.stage-done code {
+  font-size: 0.95em;
+  background: var(--rock);
+  border: 1px solid var(--rock-edge);
+  padding: 0.05em 0.35em;
+  border-radius: 3px;
+  color: var(--text-dim);
+}
+
+/* ── Scout grid ───────────────────────────────────────────────── */
+.role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+}
+.role-grid label {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-}
-
-.radio-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  line-height: 1.4;
+  gap: 0.25rem;
+  font-size: 0.82rem;
   color: var(--text-dim);
-  cursor: pointer;
+}
+.role-grid input,
+.role-grid select {
+  padding: 0.45rem 0.6rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  background: var(--rock);
+  color: var(--text);
+}
+.role-grid input[type="number"] {
+  max-width: 8em;
 }
 
-.radio-row strong {
+/* ── Stage 2: Touchstones & core samples ──────────────────────── */
+.group-label {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  margin-bottom: 0.5rem;
+}
+
+.group-rule {
+  border: 0;
+  border-top: 1px solid var(--rock-edge);
+  margin: 1rem 0;
+}
+
+/* Touchstone / core sample row */
+.touchstone-row,
+.core-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+}
+
+.touchstone-row input[type="text"],
+.core-row input[type="text"] {
+  flex: 1 1 auto;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  background: var(--rock);
   color: var(--text);
 }
 
-.radio-row input[type="radio"] {
-  margin-top: 0.25rem;
+.touchstone-row .row-weight,
+.core-row .row-weight {
+  flex: 0 0 5em;
+}
+
+.touchstone-row .row-weight input,
+.core-row .row-weight input {
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  background: var(--rock);
+  color: var(--text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.touchstone-row .row-remove,
+.core-row .row-remove {
   flex: 0 0 auto;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0 0.3rem;
+}
+.touchstone-row .row-remove:hover,
+.core-row .row-remove:hover {
+  color: var(--ember);
+}
+
+.core-row .row-status {
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  font-style: italic;
+  max-width: 12em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.add-row-btn {
+  background: none;
+  border: 1px dashed var(--rock-lit);
+  color: var(--text-dim);
+  padding: 0.3rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  margin-top: 0.25rem;
+}
+.add-row-btn:hover:not(:disabled) {
+  border-color: var(--lamp);
+  color: var(--lamp);
+}
+.add-row-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.group-weight {
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+.group-weight label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.group-weight input[type="number"] {
+  width: 5em;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  background: var(--rock);
+  color: var(--text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The rush (inactive) */
+.inactive-group {
+  opacity: 0.5;
+}
+.inactive-group .group-label {
+  color: var(--pyrite);
+}
+.rush-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--rock);
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+}
+.rush-name {
+  flex: 1 1 auto;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+.rush-unavailable {
+  font-size: 0.78rem;
+  color: var(--pyrite-dim);
+  font-style: italic;
+}
+.rush-weight {
+  font-size: 0.85rem;
+  color: var(--text-faint);
+}
+
+/* ── Seam map ─────────────────────────────────────────────────── */
+#seam-panel {
+  margin-top: 0.75rem;
+}
+
+.seam-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.seam-title {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+}
+
+.seam-stats {
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  flex: 1 1 auto;
+}
+
+.seam-expand-btn {
+  background: none;
+  border: 1px solid var(--rock-edge);
+  color: var(--text-dim);
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.seam-expand-btn:hover {
+  border-color: var(--lamp);
+  color: var(--lamp);
+}
+
+.toggle-label {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+}
+.toggle-label input[type="checkbox"] {
   accent-color: var(--lamp);
 }
 
-/* A mode you cannot pick reads as one you cannot pick. */
-.radio-row.is-dead {
-  color: var(--text-faint);
-  cursor: not-allowed;
-}
-.radio-row.is-dead strong {
-  color: var(--text-dim);
-}
-.radio-row.is-dead input[type="radio"] {
-  accent-color: var(--pyrite-dim);
+.seam-canvas-wrap {
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  background: var(--rock);
+  vertical-align: top;
 }
 
-/* ── Collapsed advanced block (relay) ───────────────────────── */
+.seam-canvas-wrap canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
+}
+
+.seam-readout {
+  padding: 0.3rem 0;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  min-height: 1.3em;
+}
+.seam-readout a,
+.seam-modal-readout a {
+  color: var(--lamp);
+}
+.seam-readout.pinned,
+.seam-modal-readout.pinned {
+  border-left: 2px solid var(--gold);
+  padding-left: 0.5rem;
+}
+.seam-pin-hint {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+}
+
+/* ── Seam modal ───────────────────────────────────────────────── */
+.seam-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.seam-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.seam-modal-content {
+  position: relative;
+  background: var(--rock-deep);
+  border: 1px solid var(--rock-lit);
+  border-radius: 8px;
+  padding: 1rem;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.seam-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.seam-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 0 0.3rem;
+}
+.seam-modal-close:hover {
+  color: var(--ember);
+}
+
+.seam-modal-content canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
+}
+
+.seam-modal-readout {
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  min-height: 1.3em;
+}
+
+/* ── Assay matrix ─────────────────────────────────────────────── */
+.assay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.assay-stats {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.assay-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.assay-controls label {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+.assay-controls input[type="number"] {
+  width: 4em;
+  padding: 0.3rem 0.45rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  background: var(--rock);
+  color: var(--text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  margin-left: 0.25rem;
+}
+
+/* Matrix wrapper: rail + scrollable grid */
+#assay-matrix-wrap {
+  display: flex;
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  background: var(--rock);
+  overflow: hidden;
+}
+
+.assay-rail {
+  flex: 0 0 auto;
+  min-width: 140px;
+  max-width: 180px;
+  border-right: 1px solid var(--rock-edge);
+  background: var(--rock-deep);
+}
+
+.assay-scroll {
+  flex: 1 1 auto;
+  /* min-width:0 or the grid's intrinsic width blows the flex item past the
+     fieldset instead of scrolling inside it */
+  min-width: 0;
+  overflow-x: auto;
+  position: relative;
+}
+
+#assay-column-titles {
+  display: flex;
+  width: max-content;
+  border-bottom: 1px solid var(--rock-edge);
+  background: var(--rock-deep);
+}
+#assay-column-titles .col-title {
+  flex: 0 0 auto;
+  padding: 0.25rem 0;
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#assay-column-titles .col-title.paydirt {
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.assay-grid {
+  --assay-cols: 1;
+  display: grid;
+  grid-template-columns: repeat(var(--assay-cols), 1fr);
+  width: max-content;
+}
+
+/* Rail rows */
+.rail-row {
+  display: flex;
+  align-items: center;
+  padding: 0 0.5rem;
+  font-size: 0.78rem;
+  /* tight so a row still fits the forced cell height without clipping */
+  line-height: 1;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--rock-edge);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+/* Corner cell above the rail — mirrors the column-number bar */
+.rail-row.rail-head-spacer {
+  padding: 0;
+  background: var(--rock-deep);
+  border-bottom: 1px solid var(--rock-edge);
+  box-sizing: border-box;
+}
+.rail-row.group-header {
+  font-size: 0.68rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  padding: 0.3rem 0.5rem;
+  background: var(--rock);
+  border-bottom: 1px solid var(--rock-lit);
+}
+.rail-row .rail-label {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rail-row .rail-weight {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  margin-left: 0.5rem;
+}
+.rail-row .rail-sparkline {
+  flex: 0 0 40px;
+  height: 8px;
+  background: var(--rock-edge);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-left: 0.5rem;
+}
+.rail-row .rail-sparkline-bar {
+  height: 100%;
+  background: var(--lamp);
+}
+.rail-row.grade-row {
+  border-bottom: 3px solid var(--gold);
+}
+.rail-row.grade-row .rail-label {
+  font-weight: 700;
+  color: var(--text);
+}
+.rail-row.grade-row .rail-weight {
+  color: var(--gold);
+}
+
+/* Matrix cells */
+.matrix-row {
+  display: contents;
+}
+
+.matrix-cell {
+  aspect-ratio: 1;
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+  /* cell colour set via style attribute as --ore-N or --lamp-N */
+  background: var(--rock-deep);
+}
+.matrix-cell.null-cell {
+  background: var(--rock-deep);
+  opacity: 0.3;
+  cursor: default;
+}
+.matrix-cell:hover,
+.matrix-cell:focus {
+  box-shadow: inset 0 0 0 1px var(--rock-lit);
+  z-index: 1;
+  position: relative;
+}
+.matrix-cell.null-cell:hover {
+  box-shadow: none;
+}
+
+/* Grade row cells use lamp ramp */
+.matrix-cell.grade-cell {
+  /* override background in JS via style */
+}
+
+/* Pay dirt column highlight — inset ring so inline background isn't overridden */
+.matrix-cell.paydirt-col {
+  box-shadow: inset 0 0 0 2px var(--gold);
+}
+.matrix-cell.paydirt-col:hover,
+.matrix-cell.paydirt-col:focus {
+  box-shadow: inset 0 0 0 1px var(--rock-lit), inset 0 0 0 3px var(--gold);
+}
+
+/* ── Cell tooltip ─────────────────────────────────────────────── */
+.cell-tooltip {
+  position: fixed;
+  z-index: 500;
+  background: var(--rock);
+  border: 1px solid var(--rock-lit);
+  border-radius: 6px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  pointer-events: none;
+  max-width: 320px;
+}
+/* Pinned by a click — must take pointer events so the arXiv link is clickable */
+.cell-tooltip.pinned {
+  pointer-events: auto;
+  border-color: var(--gold);
+}
+.cell-tooltip a {
+  color: var(--lamp);
+}
+.cell-tooltip .tt-pin-hint {
+  font-size: 0.68rem;
+  color: var(--text-faint);
+  margin-top: 0.2rem;
+}
+.cell-tooltip .tt-value {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.cell-tooltip .tt-row {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+}
+.cell-tooltip .tt-title {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-top: 0.25rem;
+  line-height: 1.3;
+}
+
+/* ── Scale legends ────────────────────────────────────────────── */
+.assay-legends {
+  display: flex;
+  gap: 2rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.scale-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+.scale-legend .legend-label {
+  font-weight: 600;
+  color: var(--text-dim);
+  width: 6em;
+}
+
+.scale-bar {
+  width: 120px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.ore-scale {
+  background: linear-gradient(to right,
+    var(--ore-0), var(--ore-1), var(--ore-2), var(--ore-3),
+    var(--ore-4), var(--ore-5), var(--ore-6), var(--ore-7));
+}
+
+.lamp-scale {
+  background: linear-gradient(to right,
+    var(--lamp-0), var(--lamp-1), var(--lamp-2), var(--lamp-3),
+    var(--lamp-4), var(--lamp-5), var(--lamp-6));
+}
+
+/* ── Table view ───────────────────────────────────────────────── */
+#assay-table-wrap {
+  margin-top: 1rem;
+}
+
+#assay-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+#assay-table th,
+#assay-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--rock-edge);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#assay-table th:first-child,
+#assay-table td:first-child {
+  text-align: left;
+}
+
+#assay-table th {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-faint);
+  border-bottom: 2px solid var(--rock-lit);
+}
+
+#assay-table tr.paydirt-row td {
+  background: rgba(245, 179, 1, 0.06);
+}
+
+/* ── Advanced block ───────────────────────────────────────────── */
 details.advanced {
   border: 1px solid var(--rock-edge);
   border-radius: 8px;
@@ -265,28 +792,6 @@ details.advanced > summary::before {
 details.advanced[open] > summary::before {
   content: "▾ ";
 }
-details.advanced > summary:hover {
-  color: var(--lamp);
-}
-details.advanced .hint {
-  margin-top: 0.6rem;
-}
-/* Nothing inside an advanced block competes with Dig. */
-details.advanced .button-bar {
-  margin: 1rem 0 0.25rem;
-}
-details.advanced .button-bar button {
-  font-size: 0.9rem;
-  padding: 0.5rem 1.1rem;
-  background: var(--rock);
-  color: var(--text-dim);
-  border: 1px solid var(--rock-lit);
-}
-details.advanced .button-bar button:disabled {
-  color: var(--text-faint);
-  cursor: not-allowed;
-}
-
 details.advanced input[type="text"] {
   width: 100%;
   box-sizing: border-box;
@@ -296,21 +801,20 @@ details.advanced input[type="text"] {
   border-radius: 4px;
   background: var(--rock);
   color: var(--text);
+  margin-top: 0.3rem;
 }
 
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .weight-row {
-    flex-wrap: wrap;
+  .role-grid {
+    grid-template-columns: 1fr 1fr;
   }
-  .weight-row label {
-    flex: 0 0 100%;
+  .assay-rail {
+    min-width: 100px;
+    max-width: 130px;
   }
-  .weight-row input[type="range"] {
-    flex: 1 1 auto;
-    max-width: none;
-  }
-  .weight-unavailable {
-    flex: 0 0 100%;
+  .assay-legends {
+    flex-direction: column;
+    gap: 0.5rem;
   }
 }
