@@ -990,36 +990,76 @@
 
     rail.innerHTML = railHTML;
 
-    // Grid cells
+    // Grid cells — must match rail rows exactly, including group-header spacers
     var gridHTML = '';
-    // Feature rows (touchstones + cores + rush)
-    var fRow = 0;
-    for (var r = 0; r < kk + kp + 1; r++) {
+
+    // Spacer row matching "Touchstones" group header
+    if (kk > 0) {
+      gridHTML += '<div class="matrix-row">';
+      for (var c = 0; c < N; c++) {
+        gridHTML += '<div class="matrix-cell null-cell" style="opacity:0" data-val="null"></div>';
+      }
+      gridHTML += '</div>';
+    }
+
+    // Touchstone rows
+    for (var ti = 0; ti < kk; ti++) {
       gridHTML += '<div class="matrix-row">';
       for (var c = 0; c < N; c++) {
         var si = order[c];
-        var val;
-        var isNull = false;
-        if (r >= kk + kp) {
-          // Rush row — all null
-          isNull = true;
-          val = null;
-        } else {
-          var fv = F[r];
-          if (fv === null) { isNull = true; val = null; }
-          else val = cosine(state.A[si], fv);
-        }
+        var fv = F[ti];
+        var val, isNull = false;
+        if (fv === null) { isNull = true; val = null; }
+        else val = cosine(state.A[si], fv);
         var cellCls = 'matrix-cell';
         if (isNull) cellCls += ' null-cell';
         if (c < topN) cellCls += ' paydirt-col';
-        var bg = isNull ? '' : getOreColor(val);
-        gridHTML += '<div class="' + cellCls + '" style="background:' + bg +
-          '" data-row="' + r + '" data-col="' + c +
+        gridHTML += '<div class="' + cellCls + '" style="background:' + (isNull ? '' : getOreColor(val)) +
+          '" data-row="' + ti + '" data-col="' + c +
           '" data-val="' + (val !== null ? val.toFixed(3) : 'null') + '" tabindex="0"></div>';
       }
       gridHTML += '</div>';
-      fRow++;
     }
+
+    // Spacer row matching "Core samples" group header
+    if (kp > 0) {
+      gridHTML += '<div class="matrix-row">';
+      for (var c = 0; c < N; c++) {
+        gridHTML += '<div class="matrix-cell null-cell" style="opacity:0" data-val="null"></div>';
+      }
+      gridHTML += '</div>';
+    }
+
+    // Core sample rows
+    var coreBase = kk;
+    for (var ci = 0; ci < kp; ci++) {
+      gridHTML += '<div class="matrix-row">';
+      for (var c = 0; c < N; c++) {
+        var si = order[c];
+        var fv = F[coreBase + ci];
+        var val, isNull = false;
+        if (fv === null) { isNull = true; val = null; }
+        else val = cosine(state.A[si], fv);
+        var cellCls = 'matrix-cell';
+        if (isNull) cellCls += ' null-cell';
+        if (c < topN) cellCls += ' paydirt-col';
+        gridHTML += '<div class="' + cellCls + '" style="background:' + (isNull ? '' : getOreColor(val)) +
+          '" data-row="' + (coreBase + ci) + '" data-col="' + c +
+          '" data-val="' + (val !== null ? val.toFixed(3) : 'null') + '" tabindex="0"></div>';
+      }
+      gridHTML += '</div>';
+    }
+
+    // Rush row — null cells, right before grade
+    gridHTML += '<div class="matrix-row">';
+    for (var c = 0; c < N; c++) {
+      var cellCls = 'matrix-cell null-cell';
+      if (c < topN) cellCls += ' paydirt-col';
+      gridHTML += '<div class="' + cellCls + '" data-row="rush" data-col="' + c +
+        '" data-val="null" tabindex="0"></div>';
+    }
+    gridHTML += '</div>';
+
     // Grade row
     gridHTML += '<div class="matrix-row">';
     for (var gc = 0; gc < N; gc++) {
