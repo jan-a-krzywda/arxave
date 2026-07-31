@@ -247,6 +247,79 @@
     return map;
   }
 
+  function sanitizeClaim(raw, name) {
+    /* Same shape serializeClaim produces, but built from untrusted JSON —
+       every field is re-parsed and defaulted, nothing from the file is
+       trusted as-is. */
+    var sc = (raw && raw.scout) || {};
+    var bl = (raw && raw.blend) || {};
+    return {
+      arxave_claim: CLAIM_VERSION,
+      name: name,
+      saved: new Date().toISOString().substring(0, 10),
+      scout: {
+        categories: sc.categories || '',
+        lookback_days: parseInt(sc.lookback_days, 10) || 1,
+        max_results: parseInt(sc.max_results, 10) || 200,
+      },
+      touchstones: ((raw && raw.touchstones) || []).map(function (t) {
+        return {
+          text: t.text || '',
+          weight: isFinite(parseFloat(t.weight)) ? parseFloat(t.weight) : 1.0,
+        };
+      }),
+      cores: ((raw && raw.cores) || []).map(function (c) {
+        return {
+          doi: c.doi || '',
+          weight: isFinite(parseFloat(c.weight)) ? parseFloat(c.weight) : 1.0,
+        };
+      }),
+      blend: { paydirt_n: parseInt(bl.paydirt_n, 10) || 10 },
+    };
+  }
+
+  function exportClaim() {
+    var map = loadClaims();
+    var claim = map[state.claimSlug] || serializeClaim('Working claim');
+    var blob = new Blob([JSON.stringify(claim, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = slugify(claim.name || 'claim') + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function importClaimFile(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var raw;
+      try { raw = JSON.parse(reader.result); } catch (_) {
+        setClaimStatus('Not valid JSON.');
+        return;
+      }
+      if (!raw || typeof raw !== 'object' || raw.arxave_claim !== CLAIM_VERSION) {
+        setClaimStatus('Not a claim file this version understands.');
+        return;
+      }
+      var name = (raw.name || 'Imported claim').trim() || 'Imported claim';
+      var map = loadClaims();
+      var slug = slugify(name), base = slug, n = 2;
+      while (map[slug]) { slug = base + '-' + (n++); }
+      map[slug] = sanitizeClaim(raw, name);
+      writeClaims(map);
+      state.claimSlug = slug;
+      try { localStorage.setItem(CURRENT_KEY, slug); } catch (_) {}
+      applyClaim(map[slug]);
+      renderClaimPicker();
+      reassay();
+      setClaimStatus('Imported “' + name + '”.');
+    };
+    reader.readAsText(file);
+  }
+
   function renderClaimPicker() {
     var sel = byId('claim-select');
     if (!sel) return;
@@ -2224,6 +2297,20 @@
     renderClaimPicker();
     reassay();
     setClaimStatus('Deleted “' + name + '”.');
+  });
+
+  byId('claim-export').addEventListener('click', function () {
+    exportClaim();
+  });
+
+  byId('claim-import').addEventListener('click', function () {
+    byId('claim-import-input').click();
+  });
+
+  byId('claim-import-input').addEventListener('change', function () {
+    var file = this.files && this.files[0];
+    this.value = '';
+    if (file) importClaimFile(file);
   });
 
   var _claimStatusTimer = null;
