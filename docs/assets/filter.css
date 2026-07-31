@@ -432,6 +432,10 @@ progress::-moz-progress-bar {
   border-left: 2px solid var(--gold);
   padding-left: 0.5rem;
 }
+.seam-paydirt-tag {
+  color: var(--gold);
+  font-weight: 600;
+}
 .seam-pin-hint {
   color: var(--text-faint);
   font-size: 0.72rem;

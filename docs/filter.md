@@ -85,7 +85,7 @@ permalink: /
       </div>
       <div class="seam-graph-wrap" id="seam-graph-wrap" style="display:none">
         <canvas id="seam-graph-canvas"></canvas>
-        <div class="seam-graph-hint">drag a stone to move it · drag the rock to pan · scroll to zoom · click to pin</div>
+        <div class="seam-graph-hint" id="seam-graph-hint">drag a stone to move it · drag the rock to pan · scroll to zoom · click to pin</div>
       </div>
       <div class="seam-readout" id="seam-readout"></div>
     </div>

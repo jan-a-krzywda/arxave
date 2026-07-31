@@ -596,7 +596,7 @@
         x: Math.cos(ang) * r + (c >= 0 ? Math.cos(base) * 130 : 0),
         y: Math.sin(ang) * r + (c >= 0 ? Math.sin(base) * 130 : 0),
         vx: 0, vy: 0,
-        r: 3 + Math.min(5, Math.sqrt(deg[i]))
+        r: 2.5 + Math.min(3.5, Math.sqrt(deg[i]) * 0.7)
       };
     }
 
@@ -607,7 +607,7 @@
 
     function tick() {
       if (alpha < 0.004) return false;
-      var REP = 2400;
+      var REP = 3200;
       var K = 0.045;
 
       // Repulsion — O(N²), fine for a day's haul (a few hundred stones)
@@ -632,7 +632,7 @@
         var ed = edges[e];
         var p = nodes[ed.a], q = nodes[ed.b];
         var t = (ed.w - SEAM_THRESH) / Math.max(0.001, 1 - SEAM_THRESH);
-        var L = 70 - 40 * t;
+        var L = 92 - 46 * t;
         var ddx = q.x - p.x, ddy = q.y - p.y;
         var dd = Math.sqrt(ddx * ddx + ddy * ddy) || 0.01;
         var force = (dd - L) * K * (0.4 + t);
@@ -647,13 +647,19 @@
         nodes[g].vy -= nodes[g].y * 0.012;
       }
 
-      // Integrate
+      // Integrate, with a speed cap — uncapped, a dense seam's summed
+      // repulsion throws nodes across the canvas and the layout flickers
+      // instead of relaxing.
+      var MAX_STEP = 14;
       for (var m = 0; m < N; m++) {
         var nd = nodes[m];
         if (nd === dragNode) { nd.vx = 0; nd.vy = 0; continue; }
         nd.vx *= 0.82; nd.vy *= 0.82;
-        nd.x += nd.vx * alpha;
-        nd.y += nd.vy * alpha;
+        var sx = nd.vx * alpha, sy = nd.vy * alpha;
+        var sp = Math.sqrt(sx * sx + sy * sy);
+        if (sp > MAX_STEP) { sx = sx / sp * MAX_STEP; sy = sy / sp * MAX_STEP; }
+        nd.x += sx;
+        nd.y += sy;
       }
 
       alpha *= 0.985;
@@ -665,9 +671,8 @@
     function toScreen(n) { return { x: n.x * view.k + view.tx, y: n.y * view.k + view.ty }; }
     function toWorld(sx, sy) { return { x: (sx - view.tx) / view.k, y: (sy - view.ty) / view.k }; }
 
-    // Fit once the layout has settled enough to have a shape
-    var fitted = false;
-    function fit() {
+    /** Transform that would frame the whole layout right now. */
+    function fitTarget() {
       var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
       for (var i2 = 0; i2 < N; i2++) {
         if (nodes[i2].x < minX) minX = nodes[i2].x;
@@ -675,11 +680,30 @@
         if (nodes[i2].y < minY) minY = nodes[i2].y;
         if (nodes[i2].y > maxY) maxY = nodes[i2].y;
       }
+      var pad = 34;
       var spanX = Math.max(1, maxX - minX), spanY = Math.max(1, maxY - minY);
-      view.k = Math.min((W - 40) / spanX, (H - 40) / spanY);
-      if (view.k > 2) view.k = 2;
-      view.tx = W / 2 - ((minX + maxX) / 2) * view.k;
-      view.ty = H / 2 - ((minY + maxY) / 2) * view.k;
+      var k = Math.min((W - 2 * pad) / spanX, (H - 2 * pad) / spanY);
+      if (k > 2) k = 2;
+      return {
+        k: k,
+        tx: W / 2 - ((minX + maxX) / 2) * k,
+        ty: H / 2 - ((minY + maxY) / 2) * k
+      };
+    }
+
+    // The view tracks the layout while it relaxes — a one-shot fit snaps and
+    // then lets the graph drift out of frame. Any manual pan/zoom stops it.
+    var autoFit = true;
+    function stepFit(ease) {
+      if (!autoFit) return;
+      var t = fitTarget();
+      view.k += (t.k - view.k) * ease;
+      view.tx += (t.tx - view.tx) * ease;
+      view.ty += (t.ty - view.ty) * ease;
+    }
+    function snapFit() {
+      var t = fitTarget();
+      view.k = t.k; view.tx = t.tx; view.ty = t.ty;
     }
 
     // ── Interaction state ──
@@ -687,6 +711,13 @@
     var pinnedNode = null;
     var dragNode = null;
     var panning = null;
+
+    // Assay overlay — set once stage 3 has graded the stones. The layout never
+    // changes with it: seams come from the stones themselves, grades come from
+    // the touchstones, and you want to see one against the other.
+    var grades = null;      // Float32Array [N] or null
+    var rank = null;        // [N] position in the grade order, 0 = best
+    var payDirt = null;     // Set of indices in the pay-dirt cut
 
     function nodeColor(idx) {
       return cid[idx] >= 0 ? SEAM_COLORS[cid[idx] % SEAM_COLORS.length] : LONE_COLOR;
@@ -723,19 +754,33 @@
         ctx.stroke();
       }
 
-      // Nodes
+      // Nodes. Radius follows the zoom a little, so a tight seam stays a
+      // cloud of dots when zoomed out instead of one solid blob.
+      var rScale = Math.min(1.3, Math.max(0.5, view.k));
       for (var n = 0; n < N; n++) {
         var s = toScreen(nodes[n]);
         var dim = focus !== null && !lit.has(n);
         ctx.globalAlpha = dim ? 0.18 : 1;
         ctx.fillStyle = nodeColor(n);
         ctx.beginPath();
-        ctx.arc(s.x, s.y, nodes[n].r * (n === focus ? 1.8 : 1), 0, Math.PI * 2);
+        var rr = nodes[n].r * rScale * (n === focus ? 1.8 : 1);
+        ctx.arc(s.x, s.y, rr, 0, Math.PI * 2);
         ctx.fill();
+        if (payDirt && payDirt.has(n)) {
+          // Pay dirt: gold ring, so the assay's picks are findable in the seams
+          ctx.globalAlpha = dim ? 0.35 : 1;
+          ctx.strokeStyle = '#f5b301';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, rr + 3, 0, Math.PI * 2);
+          ctx.stroke();
+        }
         if (n === focus) {
           ctx.globalAlpha = 1;
           ctx.strokeStyle = '#f2ede3';
           ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, rr, 0, Math.PI * 2);
           ctx.stroke();
         }
       }
@@ -745,7 +790,7 @@
     function loop() {
       if (stopped) return;
       var moving = tick();
-      if (!fitted && (alpha < 0.35 || !moving)) { fit(); fitted = true; }
+      stepFit(0.12);
       draw();
       if (moving || dragNode !== null) raf = requestAnimationFrame(loop);
       else raf = null;
@@ -770,6 +815,10 @@
       var seamText = cid[idx] >= 0
         ? 'seam of ' + components[cid[idx]].indices.length + ' · ' + deg[idx] + ' links'
         : 'lone stone';
+      if (grades) {
+        seamText += ' · grade ' + grades[idx].toFixed(3) + ' (#' + (rank[idx] + 1) + ')' +
+          (payDirt && payDirt.has(idx) ? ' <span class="seam-paydirt-tag">pay dirt</span>' : '');
+      }
       var nearest = bestJ >= 0
         ? ' · closest: <a href="' + stones[bestJ].abs_url + '" target="_blank" rel="noopener">' +
             escapeHtml(stones[bestJ].title) + '</a> ' + bestV.toFixed(2)
@@ -789,11 +838,13 @@
       var rect = canvas.getBoundingClientRect();
       var mx = e.clientX - rect.left, my = e.clientY - rect.top;
       var best = null, bestD = Infinity;
+      var rScale = Math.min(1.3, Math.max(0.5, view.k));
       for (var n = 0; n < N; n++) {
         var s = toScreen(nodes[n]);
         var dx = s.x - mx, dy = s.y - my;
         var d = dx * dx + dy * dy;
-        var hit = (nodes[n].r + 6) * (nodes[n].r + 6);
+        var hitR = nodes[n].r * rScale + 5;
+        var hit = hitR * hitR;
         if (d < hit && d < bestD) { bestD = d; best = n; }
       }
       return { node: best, mx: mx, my: my };
@@ -806,6 +857,7 @@
         dragNode.moved = false;
       } else {
         panning = { x: p.mx, y: p.my, tx: view.tx, ty: view.ty };
+        autoFit = false;          // hands on the view: stop chasing the layout
       }
       wake(0.3);
     };
@@ -854,6 +906,7 @@
 
     canvas.onwheel = function (e) {
       e.preventDefault();
+      autoFit = false;
       var rect = canvas.getBoundingClientRect();
       var mx = e.clientX - rect.left, my = e.clientY - rect.top;
       var before = toWorld(mx, my);
@@ -866,6 +919,16 @@
     };
 
     canvas.style.cursor = 'grab';
+
+    // Warm up before the first paint. The opening frames are the ones where
+    // seams are still tearing themselves apart; showing them reads as flicker,
+    // so run them silently and start the animation from a rough shape.
+    var WARMUP = 90;
+    for (var wu = 0; wu < WARMUP; wu++) {
+      if (!tick()) break;
+    }
+    snapFit();
+    draw();
     raf = requestAnimationFrame(loop);
 
     return {
@@ -876,7 +939,21 @@
         canvas.onmousedown = canvas.onmousemove = canvas.onmouseup = null;
         canvas.onmouseleave = canvas.onwheel = null;
       },
-      reheat: function () { fitted = false; wake(1); }
+      reheat: function () { autoFit = true; wake(1); },
+      /** Overlay the assay: gold rings on the pay-dirt cut, grades in the
+       *  readout. Redraw only — the layout is left alone. */
+      setAssay: function (g, order, topN) {
+        if (!g || !order) { grades = null; rank = null; payDirt = null; }
+        else {
+          grades = g;
+          rank = new Array(N);
+          for (var o = 0; o < order.length; o++) rank[order[o]] = o;
+          payDirt = new Set(order.slice(0, topN));
+        }
+        draw();
+        var focus = pinnedNode !== null ? pinnedNode : hoverNode;
+        if (focus !== null) emit(focus, pinnedNode !== null);
+      }
     };
   }
 
@@ -894,6 +971,24 @@
     return byId('seam-sort-toggle').checked
       ? state.seamOrder
       : state.stones.map(function (_, i) { return i; });
+  }
+
+  var SEAM_GRAPH_HINT = 'drag a stone to move it · drag the rock to pan · ' +
+    'scroll to zoom · click to pin';
+
+  /** Push the current grades onto any live seam graph. No-op before stage 3. */
+  function applySeamAssay() {
+    var topN = parseInt(byId('paydirt-n').value, 10) || 10;
+    var hint = byId('seam-graph-hint');
+    if (hint) {
+      hint.innerHTML = SEAM_GRAPH_HINT +
+        (state.grades ? ' · <span class="seam-paydirt-tag">gold ring</span> = pay dirt' : '');
+    }
+    var graphs = [state.seamGraph, state.seamModalGraph];
+    for (var i = 0; i < graphs.length; i++) {
+      if (!graphs[i]) continue;
+      graphs[i].setAssay(state.grades, state.order, topN);
+    }
   }
 
   /** Render the inline seam panel in whichever view is selected. */
@@ -915,6 +1010,7 @@
       state.seamGraph = drawSeamGraph(
         byId('seam-graph-canvas'), state.seamMap, state.stones, state.seamComponents,
         seamReadoutSink('seam-readout'), { width: w, height: 420 });
+      applySeamAssay();
     } else {
       drawSeamMap(byId('seam-canvas'), state.seamMap, currentSeamOrder(), state.stones,
         state.seamComponents, seamReadoutSink('seam-readout'));
@@ -1343,6 +1439,10 @@
     var topN = parseInt(byId('paydirt-n').value, 10) || 10;
     var weights = getWeights();
 
+    // Stage 1's graph gains a gold ring per pay-dirt stone, so a re-blend
+    // shows immediately which seams the touchstones are actually picking from
+    applySeamAssay();
+
     // Show assay section
     byId('stage-3').style.display = '';
     byId('assay-stats').textContent =
@@ -1758,6 +1858,7 @@
       var h = Math.min(760, Math.round(window.innerHeight * 0.74));
       state.seamModalGraph = drawSeamGraph(graphCanvas, state.seamMap, state.stones,
         state.seamComponents, seamReadoutSink('seam-modal-readout'), { width: w, height: h });
+      applySeamAssay();
     } else {
       drawSeamMap(matrixCanvas, state.seamMap, currentSeamOrder(), state.stones,
         state.seamComponents, seamReadoutSink('seam-modal-readout'));
