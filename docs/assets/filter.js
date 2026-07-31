@@ -1304,7 +1304,6 @@
     div.dataset.id = t.id;
     div.innerHTML =
       '<input type="text" class="ts-text" value="' + escapeHtml(t.text || '') + '" placeholder="silicon spin qubits and exchange gates">' +
-      '<span class="row-weight"><input type="number" class="ts-weight" value="' + t.weight.toFixed(2) + '" min="0" max="1" step="0.05"></span>' +
       '<button type="button" class="row-remove" title="Remove">×</button>';
     list.appendChild(div);
 
@@ -1314,11 +1313,6 @@
     });
     div.querySelector('.ts-text').addEventListener('input', function () {
       onTouchstoneChanged(t.id, this.value);
-    });
-    div.querySelector('.ts-weight').addEventListener('input', function () {
-      var rec = findTouchstone(t.id);
-      if (rec) rec.weight = parseFloat(this.value);
-      onWeightChanged();
     });
   }
 
@@ -1379,7 +1373,6 @@
     div.dataset.id = c.id;
     div.innerHTML =
       '<input type="text" class="core-doi" value="' + escapeHtml(c.doi || '') + '" placeholder="10.1103/RevModPhys.95.025003">' +
-      '<span class="row-weight"><input type="number" class="core-weight" value="' + c.weight.toFixed(2) + '" min="0" max="1" step="0.05"></span>' +
       '<span class="row-status">' + escapeHtml(c.status || '') + '</span>' +
       '<button type="button" class="row-remove" title="Remove">×</button>';
     list.appendChild(div);
@@ -1395,11 +1388,6 @@
       rec.vector = null;
       autosave();
       resolveCore(c.id);
-    });
-    div.querySelector('.core-weight').addEventListener('input', function () {
-      var rec = findCore(c.id);
-      if (rec) rec.weight = parseFloat(this.value);
-      onWeightChanged();
     });
   }
 
@@ -1671,7 +1659,6 @@
     var order = state.order;
     var grades = state.grades;
     var topN = state.blend.paydirt_n;
-    var weights = getWeights();
 
     // Stage 1's graph gains a gold ring per pay-dirt stone, so a re-blend
     // shows immediately which seams the touchstones are actually picking from
@@ -1721,11 +1708,11 @@
     for (var ti = 0; ti < kk; ti++) {
       var t = state.touchstones[ti];
       var tLabel = t.text || 'touchstone ' + (ti + 1);
-      var spark = computeSpark(t.vector);
       railHTML += '<div class="rail-row">' +
         '<span class="rail-label" title="' + escapeHtml(tLabel) + '">' + escapeHtml(tLabel.substring(0, 20)) + '</span>' +
-        '<span class="rail-weight">' + (weights[rowIdx] || 0).toFixed(2) + '</span>' +
-        '<span class="rail-sparkline"><span class="rail-sparkline-bar" style="width:' + Math.round(spark * 100) + '%"></span></span>' +
+        '<span class="rail-weight">' + t.weight.toFixed(2) + '</span>' +
+        '<input type="range" class="rail-weight-slider" min="0" max="1" step="0.01" value="' + t.weight +
+        '" data-kind="touchstone" data-id="' + t.id + '">' +
         '</div>';
       rowIdx++;
     }
@@ -1737,11 +1724,11 @@
     for (var ci = 0; ci < kp; ci++) {
       var c = state.cores[ci];
       var cLabel = c.title || c.doi || 'core sample ' + (ci + 1);
-      var cspark = computeSpark(c.vector);
       railHTML += '<div class="rail-row">' +
         '<span class="rail-label" title="' + escapeHtml(cLabel) + '">' + escapeHtml(cLabel.substring(0, 20)) + '</span>' +
-        '<span class="rail-weight">' + (weights[rowIdx] || 0).toFixed(2) + '</span>' +
-        '<span class="rail-sparkline"><span class="rail-sparkline-bar" style="width:' + Math.round(cspark * 100) + '%"></span></span>' +
+        '<span class="rail-weight">' + c.weight.toFixed(2) + '</span>' +
+        '<input type="range" class="rail-weight-slider" min="0" max="1" step="0.01" value="' + c.weight +
+        '" data-kind="core" data-id="' + c.id + '">' +
         '</div>';
       rowIdx++;
     }
@@ -1759,6 +1746,7 @@
       '</div>';
 
     rail.innerHTML = railHTML;
+    attachRailWeightSliders(rail);
 
     // Grid cells — must match rail rows exactly, including group-header spacers
     var gridHTML = '';
@@ -1859,6 +1847,26 @@
     }
   }
 
+  /** Wire the per-row weight sliders in the assay rail. `input` just updates
+   *  the live readout (cheap — no rerender, or dragging would lose its own
+   *  DOM node mid-drag); `change` (drag end / arrow key) commits the weight
+   *  and re-blends, which does rerender the rail from scratch. */
+  function attachRailWeightSliders(rail) {
+    rail.querySelectorAll('.rail-weight-slider').forEach(function (slider) {
+      var readout = slider.previousElementSibling;
+      slider.addEventListener('input', function () {
+        if (readout && readout.classList.contains('rail-weight')) {
+          readout.textContent = parseFloat(this.value).toFixed(2);
+        }
+      });
+      slider.addEventListener('change', function () {
+        var rec = this.dataset.kind === 'touchstone' ? findTouchstone(this.dataset.id) : findCore(this.dataset.id);
+        if (rec) rec.weight = parseFloat(this.value);
+        onWeightChanged();
+      });
+    });
+  }
+
   /** Make rail row i line up with grid row i.
    *  rail children: [head-spacer, ...rows]   grid children: [...rows]  */
   function syncRailToGrid(rail, grid, colTitles, rowH) {
@@ -1885,20 +1893,6 @@
         cells[c].style.height = h + 'px';
       }
     }
-  }
-
-  function computeSpark(vector) {
-    if (!vector || !state.A || state.A.length === 0) return 0;
-    var min = Infinity, max = -Infinity;
-    for (var i = 0; i < state.A.length; i++) {
-      var c = cosine(state.A[i], vector);
-      if (c < min) min = c;
-      if (c > max) max = c;
-    }
-    if (max <= min) return 0;
-    // How wide the top half of the distribution is — rough measure of discrimination
-    var spread = max - min;
-    return Math.min(1, spread);
   }
 
   // Pin survives re-renders' worth of listeners: document-level wiring happens once

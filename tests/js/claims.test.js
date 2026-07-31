@@ -66,7 +66,7 @@ console.log('\n1. cold start');
   check('schema version stamped', c['working'] && c['working'].arxave_claim === 1);
 }
 
-console.log('\n2. edits autosave (touchstone text + weight + scout + paydirt)');
+console.log('\n2. edits autosave (touchstone text + scout + paydirt)');
 {
   const env = fresh();
   const d = env.registry;
@@ -76,10 +76,6 @@ console.log('\n2. edits autosave (touchstone text + weight + scout + paydirt)');
   textInput.value = 'charge noise in Si/SiGe double dots';
   textInput.fire('input');
 
-  const wInput = row.querySelector('.ts-weight');
-  wInput.value = '0.7';
-  wInput.fire('input');
-
   d['categories'].value = 'quant-ph';
   d['categories'].fire('input');
   d['paydirt-n'].value = '25';
@@ -88,7 +84,8 @@ console.log('\n2. edits autosave (touchstone text + weight + scout + paydirt)');
   const saved = claims(env)['working'];
   check('touchstone text saved', saved.touchstones[0].text === 'charge noise in Si/SiGe double dots',
     JSON.stringify(saved.touchstones));
-  check('per-row weight saved', saved.touchstones[0].weight === 0.7, JSON.stringify(saved.touchstones));
+  check('per-row weight defaults to 1.0 (no stage-2 control; tuned later in the assay rail)',
+    saved.touchstones[0].weight === 1.0, JSON.stringify(saved.touchstones));
   check('scout categories saved', saved.scout.categories === 'quant-ph');
   check('paydirt_n saved', saved.blend.paydirt_n === 25);
 }

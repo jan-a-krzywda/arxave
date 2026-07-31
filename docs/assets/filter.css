@@ -68,6 +68,10 @@ fieldset {
   padding: 1rem 1.25rem;
   margin-bottom: 1.5rem;
   background: var(--rock-deep);
+  /* Fieldsets default to min-width:auto (min-content), which stretches the
+     box to fit unshrinkable content like the assay grid instead of letting
+     .assay-scroll's overflow-x:auto contain it. */
+  min-width: 0;
 }
 
 fieldset legend {
@@ -248,24 +252,6 @@ progress::-moz-progress-bar {
   border-radius: 4px;
   background: var(--rock);
   color: var(--text);
-}
-
-.touchstone-row .row-weight,
-.core-row .row-weight {
-  flex: 0 0 5em;
-}
-
-.touchstone-row .row-weight input,
-.core-row .row-weight input {
-  width: 100%;
-  padding: 0.4rem 0.55rem;
-  font-size: 0.85rem;
-  border: 1px solid var(--rock-edge);
-  border-radius: 4px;
-  background: var(--rock);
-  color: var(--text);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 
 .touchstone-row .row-remove,
@@ -696,18 +682,44 @@ progress::-moz-progress-bar {
   font-variant-numeric: tabular-nums;
   color: var(--text-faint);
   margin-left: 0.5rem;
+  width: 2em;
+  text-align: right;
 }
-.rail-row .rail-sparkline {
-  flex: 0 0 40px;
+.rail-row .rail-weight-slider {
+  flex: 0 0 48px;
+  margin-left: 0.4rem;
   height: 8px;
-  background: var(--rock-edge);
-  border-radius: 2px;
-  overflow: hidden;
-  margin-left: 0.5rem;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
 }
-.rail-row .rail-sparkline-bar {
-  height: 100%;
+.rail-row .rail-weight-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--rock-edge);
+}
+.rail-row .rail-weight-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  margin-top: -3px;
+  border-radius: 50%;
   background: var(--lamp);
+  border: none;
+}
+.rail-row .rail-weight-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--rock-edge);
+}
+.rail-row .rail-weight-slider::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--lamp);
+  border: none;
 }
 .rail-row.grade-row {
   border-bottom: 3px solid var(--gold);
