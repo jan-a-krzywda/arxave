@@ -47,7 +47,7 @@
     A: null,                // [N × d] abstract vectors, row-major, L2-normalized
     // ── claim-owned (saved, restored, exportable) ──
     scout: { categories: 'cond-mat.mes-hall, quant-ph', lookback: 1, max_results: 200 },
-    blend: { touchstones: 0.40, cores: 0.40, paydirt_n: 10 },
+    blend: { paydirt_n: 10 },
     touchstones: [],        // [{id, text, weight, vector}]  free text
     cores: [],              // [{id, doi, weight, title, abstract, vector, status, weak}]
     claimSlug: 'working',   // key into the saved-claims map
@@ -125,8 +125,6 @@
         return { doi: c.doi, weight: c.weight };
       }),
       blend: {
-        touchstones: state.blend.touchstones,
-        cores: state.blend.cores,
         paydirt_n: state.blend.paydirt_n,
       },
     };
@@ -168,8 +166,6 @@
     };
     var bl = claim.blend || {};
     state.blend = {
-      touchstones: isFinite(parseFloat(bl.touchstones)) ? parseFloat(bl.touchstones) : 0.40,
-      cores: isFinite(parseFloat(bl.cores)) ? parseFloat(bl.cores) : 0.40,
       paydirt_n: parseInt(bl.paydirt_n, 10) || 10,
     };
 
@@ -197,9 +193,6 @@
     byId('categories').value = state.scout.categories;
     byId('lookback').value = state.scout.lookback;
     byId('max-results').value = state.scout.max_results;
-    // Two decimals so a restored weight reads like the one the page ships with
-    byId('touchstones-weight').value = state.blend.touchstones.toFixed(2);
-    byId('cores-weight').value = state.blend.cores.toFixed(2);
     byId('paydirt-n').value = state.blend.paydirt_n;
 
     byId('touchstones-list').innerHTML = '';
@@ -244,7 +237,7 @@
       scout: { categories: state.scout.categories, lookback_days: 1, max_results: 200 },
       touchstones: ts.map(function (t) { return { text: t.text || '', weight: 1.0 }; }),
       cores: cs.map(function (c) { return { doi: c.doi || '', weight: 1.0 }; }),
-      blend: { touchstones: 0.40, cores: 0.40, paydirt_n: 10 },
+      blend: { paydirt_n: 10 },
     };
     writeClaims(map);
     try {
@@ -1264,9 +1257,6 @@
       btn.style.color = 'var(--moss)';
       btn.style.borderColor = 'var(--moss)';
 
-      // Enable Stage 2 controls
-      byId('touchstones-weight').disabled = false;
-      byId('cores-weight').disabled = false;
       // If touchstones already exist from localStorage, embed them and show assay
       if (state.touchstones.length > 0 || state.cores.length > 0) {
         await maybeEmbedFeatures();
@@ -1345,8 +1335,6 @@
   }
 
   function onWeightChanged() {
-    state.blend.touchstones = parseFloat(byId('touchstones-weight').value) || 0;
-    state.blend.cores = parseFloat(byId('cores-weight').value) || 0;
     autosave();
     if (state.A && state.A.length > 0 && state.featureVectors) {
       computeGrades();
@@ -1591,13 +1579,11 @@
     var w = [];
     for (var r = 0; r < state.touchstones.length; r++) {
       var rw = state.touchstones[r].weight;
-      if (!isFinite(rw)) rw = 1.0;
-      w.push(state.blend.touchstones * rw);
+      w.push(isFinite(rw) ? rw : 1.0);
     }
     for (var c = 0; c < state.cores.length; c++) {
       var cw = state.cores[c].weight;
-      if (!isFinite(cw)) cw = 1.0;
-      w.push(state.blend.cores * cw);
+      w.push(isFinite(cw) ? cw : 1.0);
     }
     // Rush: null (inactive)
     w.push(null);
@@ -2118,14 +2104,6 @@
 
   byId('add-core').addEventListener('click', function () {
     addCore('');
-  });
-
-  // Group weights
-  byId('touchstones-weight').addEventListener('input', function () {
-    onWeightChanged();
-  });
-  byId('cores-weight').addEventListener('input', function () {
-    onWeightChanged();
   });
 
   // .bib upload → extract DOIs and add as core samples

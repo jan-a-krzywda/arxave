@@ -117,9 +117,6 @@ permalink: /
       <div class="group-label">Touchstones <span class="sub">— free text, one per row</span></div>
       <div id="touchstones-list"></div>
       <button type="button" id="add-touchstone" class="add-row-btn" disabled>+ Add touchstone</button>
-      <div class="group-weight">
-        <label>Group weight <input type="number" id="touchstones-weight" value="0.40" min="0" max="1" step="0.05" disabled></label>
-      </div>
     </div>
 
     <hr class="group-rule">
@@ -135,9 +132,6 @@ permalink: /
         <span class="add-row-btn" style="display:inline-block; cursor:pointer" onclick="document.getElementById('bib-file').click()">Upload .bib (select entries)</span>
       </label>
       <div id="bib-status" class="hint" style="margin-top:0.25rem; display:none"></div>
-      <div class="group-weight">
-        <label>Group weight <input type="number" id="cores-weight" value="0.40" min="0" max="1" step="0.05" disabled></label>
-      </div>
     </div>
 
     <hr class="group-rule">
