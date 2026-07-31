@@ -197,8 +197,9 @@
     byId('categories').value = state.scout.categories;
     byId('lookback').value = state.scout.lookback;
     byId('max-results').value = state.scout.max_results;
-    byId('touchstones-weight').value = state.blend.touchstones;
-    byId('cores-weight').value = state.blend.cores;
+    // Two decimals so a restored weight reads like the one the page ships with
+    byId('touchstones-weight').value = state.blend.touchstones.toFixed(2);
+    byId('cores-weight').value = state.blend.cores.toFixed(2);
     byId('paydirt-n').value = state.blend.paydirt_n;
 
     byId('touchstones-list').innerHTML = '';
@@ -1303,7 +1304,7 @@
     div.dataset.id = t.id;
     div.innerHTML =
       '<input type="text" class="ts-text" value="' + escapeHtml(t.text || '') + '" placeholder="silicon spin qubits and exchange gates">' +
-      '<span class="row-weight"><input type="number" class="ts-weight" value="' + t.weight + '" min="0" max="1" step="0.05"></span>' +
+      '<span class="row-weight"><input type="number" class="ts-weight" value="' + t.weight.toFixed(2) + '" min="0" max="1" step="0.05"></span>' +
       '<button type="button" class="row-remove" title="Remove">×</button>';
     list.appendChild(div);
 
@@ -1378,7 +1379,7 @@
     div.dataset.id = c.id;
     div.innerHTML =
       '<input type="text" class="core-doi" value="' + escapeHtml(c.doi || '') + '" placeholder="10.1103/RevModPhys.95.025003">' +
-      '<span class="row-weight"><input type="number" class="core-weight" value="' + c.weight + '" min="0" max="1" step="0.05"></span>' +
+      '<span class="row-weight"><input type="number" class="core-weight" value="' + c.weight.toFixed(2) + '" min="0" max="1" step="0.05"></span>' +
       '<span class="row-status">' + escapeHtml(c.status || '') + '</span>' +
       '<button type="button" class="row-remove" title="Remove">×</button>';
     list.appendChild(div);
