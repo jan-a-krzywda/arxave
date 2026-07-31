@@ -175,14 +175,12 @@ permalink: /
         <span class="legend-label">Feature cells</span>
         <div class="scale-bar ore-scale"></div>
         <span class="legend-end">0</span>
-        <span class="legend-mid">0.5</span>
         <span class="legend-end">1</span>
       </div>
       <div class="scale-legend" id="lamp-legend">
         <span class="legend-label">Grade</span>
         <div class="scale-bar lamp-scale"></div>
         <span class="legend-end">0</span>
-        <span class="legend-mid">0.5</span>
         <span class="legend-end">1</span>
       </div>
     </div>
