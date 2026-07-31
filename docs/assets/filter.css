@@ -299,28 +299,6 @@ progress::-moz-progress-bar {
   cursor: not-allowed;
 }
 
-.group-weight {
-  margin-top: 0.5rem;
-  font-size: 0.82rem;
-  color: var(--text-dim);
-}
-.group-weight label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.group-weight input[type="number"] {
-  width: 5em;
-  padding: 0.35rem 0.5rem;
-  font-size: 0.85rem;
-  border: 1px solid var(--rock-edge);
-  border-radius: 4px;
-  background: var(--rock);
-  color: var(--text);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
 /* The rush (inactive) */
 .inactive-group {
   opacity: 0.5;
