@@ -17,6 +17,22 @@ permalink: /
     <a href="#small-print">Small print</a>.
   </p>
 
+  <!-- ── Claim bar ── -->
+  <div class="claim-bar">
+    <label class="claim-pick">
+      Claim
+      <select id="claim-select"></select>
+    </label>
+    <button type="button" id="claim-save-as" class="claim-btn">Save as…</button>
+    <button type="button" id="claim-delete" class="claim-btn claim-btn-danger" disabled>Delete</button>
+    <span class="claim-status" id="claim-status"></span>
+  </div>
+  <p class="hint claim-hint">
+    A claim is one setup — scout window, touchstones, core samples, weights.
+    Edits save themselves as you make them; <strong>Save as…</strong> keeps the
+    current setup under a name you can come back to.
+  </p>
+
   <!-- ── Stage 0: Sharpen the pick ── -->
   <fieldset id="stage-0">
     <legend>0. Sharpen the pick</legend>

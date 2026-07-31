@@ -2,6 +2,65 @@
    Filter page — staged Dig pipeline. Colours come from cave.scss.
    ═══════════════════════════════════════════════════════════════════ */
 
+/* ── Claim bar ───────────────────────────────────────────────── */
+.claim-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.4rem;
+  background: var(--rock-deep);
+  border: 1px solid var(--rock-edge);
+  border-radius: 8px;
+}
+.claim-pick {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+.claim-pick select {
+  min-width: 12rem;
+  max-width: 100%;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  background: var(--rock);
+  color: var(--text);
+}
+.claim-btn {
+  background: none;
+  border: 1px solid var(--rock-lit);
+  color: var(--text-dim);
+  padding: 0.3rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.claim-btn:hover:not(:disabled) {
+  border-color: var(--lamp);
+  color: var(--lamp);
+}
+.claim-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.claim-btn-danger:hover:not(:disabled) {
+  border-color: var(--ember);
+  color: var(--ember);
+}
+.claim-status {
+  font-size: 0.8rem;
+  color: var(--moss);
+  margin-left: auto;
+}
+.claim-hint {
+  margin-bottom: 1.25rem;
+}
+
 /* ── Shared fieldset chrome ──────────────────────────────────── */
 fieldset {
   border: 1px solid var(--rock-edge);

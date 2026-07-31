@@ -29,14 +29,29 @@
   // ── DOM helpers ──────────────────────────────────────────────────
   function byId(id) { return document.getElementById(id); }
 
+  // Row-id counters. Ids are per-session handles that tie a DOM row to its
+  // record; they are never part of a claim, so a loaded claim mints fresh ones.
+  var touchstoneCounter = 0;
+  var coreCounter = 0;
+
   // ── State ─────────────────────────────────────────────────────────
+  /* `state` is the single source of truth for everything the user sets. The
+     DOM renders from it and writes back into it; nothing reads a control's
+     value to decide a number. That is what makes a claim (§ Claims below)
+     serializable at all — before this, weights lived only in the DOM and
+     died on reload. */
   const state = {
     extractor: null,        // transformers.js pipeline
     modelLoaded: false,
     stones: [],             // [{arxiv_id, title, abstract, authors, primary_category, published, abs_url, pdf_url}]
     A: null,                // [N × d] abstract vectors, row-major, L2-normalized
-    touchstones: [],        // [{id, text, vector}]  free text
-    cores: [],              // [{id, doi, title, abstract, vector, status, weak}]
+    // ── claim-owned (saved, restored, exportable) ──
+    scout: { categories: 'cond-mat.mes-hall, quant-ph', lookback: 1, max_results: 200 },
+    blend: { touchstones: 0.40, cores: 0.40, paydirt_n: 10 },
+    touchstones: [],        // [{id, text, weight, vector}]  free text
+    cores: [],              // [{id, doi, weight, title, abstract, vector, status, weak}]
+    claimSlug: 'working',   // key into the saved-claims map
+    // ── derived / runtime (never saved) ──
     featureVectors: null,   // [k × d] row-major, unit vectors
     /* featureVectors rows are: touchstones[0..kk-1], then cores[0..kp-1], then rush (null) */
     grades: null,           // [N] blended scores
@@ -52,38 +67,207 @@
   // ── Persistence ───────────────────────────────────────────────────
   function lsKey(base) { return 'arxave-dig-' + base; }
 
-  function loadState() {
-    function j(k) {
-      try { var r = localStorage.getItem(lsKey(k)); return r ? JSON.parse(r) : null; }
-      catch (_) { return null; }
-    }
-    var ts = j('touchstones');
-    if (ts) state.touchstones = ts;
-    var cs = j('cores');
-    if (cs) state.cores = cs;
-    // cached core vectors
+  function saveCoreCache() {
+    try { localStorage.setItem(lsKey('core-cache'), JSON.stringify(state._coreCache || {})); } catch (_) {}
+  }
+
+  function loadCoreCache() {
+    /* Fetched-and-embedded core samples, keyed by doi|model|dim. Not part of a
+       claim — it is a cache of work, shared across every claim, and it is the
+       reason loading a claim with ten core samples is instant rather than ten
+       OpenAlex round-trips plus ten embeddings. */
     try {
       var cv = localStorage.getItem(lsKey('core-cache'));
-      if (cv) { var parsed = JSON.parse(cv); state._coreCache = parsed; }
+      state._coreCache = cv ? JSON.parse(cv) : {};
     } catch (_) { state._coreCache = {}; }
     if (!state._coreCache) state._coreCache = {};
   }
 
-  function saveTouchstones() {
-    // Don't persist vectors — they get re-embedded from text
-    var slim = state.touchstones.map(function (t) { return { id: t.id, text: t.text }; });
-    try { localStorage.setItem(lsKey('touchstones'), JSON.stringify(slim)); } catch (_) {}
+  // ═══════════════════════════════════════════════════════════════════
+  // Claims — a named, saved setup
+  // ═══════════════════════════════════════════════════════════════════
+  /*
+   * A claim is everything the user chose: scout window, touchstones, core
+   * samples, weights. It is deliberately *slim* — no vectors, no abstracts,
+   * no titles. Those are all re-derivable (vectors by re-embedding, the rest
+   * from OpenAlex via the core cache above), and keeping them out is what
+   * makes a claim small enough to hand to someone as a file or a link.
+   *
+   * `arxave_claim` is a schema version, not decoration: a v2 that changes the
+   * shape can migrate a v1 instead of throwing a stack trace at someone whose
+   * only mistake was saving a setup last month.
+   */
+  const CLAIM_VERSION = 1;
+  const CLAIMS_KEY = lsKey('claims');
+  const CURRENT_KEY = lsKey('current');
+  const WORKING_SLUG = 'working';
+
+  function slugify(name) {
+    var s = String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '').substring(0, 48);
+    return s || 'claim';
   }
 
-  function saveCores() {
-    var slim = state.cores.map(function (c) {
-      return { id: c.id, doi: c.doi, title: c.title, abstract: c.abstract, status: c.status, weak: c.weak };
+  function serializeClaim(name) {
+    return {
+      arxave_claim: CLAIM_VERSION,
+      name: name || 'Working claim',
+      saved: new Date().toISOString().substring(0, 10),
+      scout: {
+        categories: state.scout.categories,
+        lookback_days: state.scout.lookback,
+        max_results: state.scout.max_results,
+      },
+      touchstones: state.touchstones.map(function (t) {
+        return { text: t.text, weight: t.weight };
+      }),
+      cores: state.cores.map(function (c) {
+        return { doi: c.doi, weight: c.weight };
+      }),
+      blend: {
+        touchstones: state.blend.touchstones,
+        cores: state.blend.cores,
+        paydirt_n: state.blend.paydirt_n,
+      },
+    };
+  }
+
+  function loadClaims() {
+    try {
+      var raw = localStorage.getItem(CLAIMS_KEY);
+      return raw ? (JSON.parse(raw) || {}) : {};
+    } catch (_) { return {}; }
+  }
+
+  function writeClaims(map) {
+    try { localStorage.setItem(CLAIMS_KEY, JSON.stringify(map)); } catch (_) {}
+  }
+
+  /* Every edit lands in the current slot immediately. There is no unsaved
+     state to lose and no "did I press save?" — "Save as" only ever *forks* a
+     new slot, it is not the thing that makes an edit durable. */
+  function autosave() {
+    var map = loadClaims();
+    var existing = map[state.claimSlug];
+    map[state.claimSlug] = serializeClaim(existing ? existing.name : 'Working claim');
+    writeClaims(map);
+    try { localStorage.setItem(CURRENT_KEY, state.claimSlug); } catch (_) {}
+  }
+
+  function applyClaim(claim) {
+    /* Claim → state → DOM. Runtime fields (vectors, fetched titles) are reset;
+       Stage 1's hauled stones are untouched, so switching claims re-assays the
+       day you already hauled instead of making you haul it again. */
+    if (!claim || typeof claim !== 'object') return;
+
+    var sc = claim.scout || {};
+    state.scout = {
+      categories: sc.categories || state.scout.categories,
+      lookback: parseInt(sc.lookback_days, 10) || 1,
+      max_results: parseInt(sc.max_results, 10) || 200,
+    };
+    var bl = claim.blend || {};
+    state.blend = {
+      touchstones: isFinite(parseFloat(bl.touchstones)) ? parseFloat(bl.touchstones) : 0.40,
+      cores: isFinite(parseFloat(bl.cores)) ? parseFloat(bl.cores) : 0.40,
+      paydirt_n: parseInt(bl.paydirt_n, 10) || 10,
+    };
+
+    state.touchstones = (claim.touchstones || []).map(function (t) {
+      return {
+        id: 'ts-' + (++touchstoneCounter),
+        text: t.text || '',
+        weight: isFinite(parseFloat(t.weight)) ? parseFloat(t.weight) : 1.0,
+        vector: null,
+      };
     });
-    try { localStorage.setItem(lsKey('cores'), JSON.stringify(slim)); } catch (_) {}
+    state.cores = (claim.cores || []).map(function (c) {
+      return {
+        id: 'core-' + (++coreCounter),
+        doi: c.doi || '',
+        weight: isFinite(parseFloat(c.weight)) ? parseFloat(c.weight) : 1.0,
+        title: '', abstract: '', vector: null, status: '', weak: false,
+      };
+    });
+
+    renderClaimIntoDom();
   }
 
-  function saveCoreCache() {
-    try { localStorage.setItem(lsKey('core-cache'), JSON.stringify(state._coreCache || {})); } catch (_) {}
+  function renderClaimIntoDom() {
+    byId('categories').value = state.scout.categories;
+    byId('lookback').value = state.scout.lookback;
+    byId('max-results').value = state.scout.max_results;
+    byId('touchstones-weight').value = state.blend.touchstones;
+    byId('cores-weight').value = state.blend.cores;
+    byId('paydirt-n').value = state.blend.paydirt_n;
+
+    byId('touchstones-list').innerHTML = '';
+    byId('cores-list').innerHTML = '';
+    for (var i = 0; i < state.touchstones.length; i++) {
+      renderTouchstoneRow(state.touchstones[i]);
+    }
+    for (var j = 0; j < state.cores.length; j++) {
+      renderCoreRow(state.cores[j]);
+      if (state.cores[j].doi) resolveCore(state.cores[j].id);
+    }
+  }
+
+  /* Re-assay after a claim switch, but only if there is something to assay. */
+  function reassay() {
+    if (!state.A || !state.A.length) return Promise.resolve();
+    return maybeEmbedFeatures().then(function () {
+      computeGrades();
+      renderAssay();
+    });
+  }
+
+  function migrateLegacyState() {
+    /* Pre-claims builds kept two flat keys and no weights. Fold them into the
+       working claim once, then drop them, so an existing user's touchstones
+       survive the upgrade instead of silently vanishing. */
+    var map = loadClaims();
+    if (Object.keys(map).length > 0) return map;
+
+    function j(k) {
+      try { var r = localStorage.getItem(lsKey(k)); return r ? JSON.parse(r) : null; }
+      catch (_) { return null; }
+    }
+    var ts = j('touchstones') || [];
+    var cs = j('cores') || [];
+    if (!ts.length && !cs.length) return map;
+
+    map[WORKING_SLUG] = {
+      arxave_claim: CLAIM_VERSION,
+      name: 'Working claim',
+      saved: new Date().toISOString().substring(0, 10),
+      scout: { categories: state.scout.categories, lookback_days: 1, max_results: 200 },
+      touchstones: ts.map(function (t) { return { text: t.text || '', weight: 1.0 }; }),
+      cores: cs.map(function (c) { return { doi: c.doi || '', weight: 1.0 }; }),
+      blend: { touchstones: 0.40, cores: 0.40, paydirt_n: 10 },
+    };
+    writeClaims(map);
+    try {
+      localStorage.removeItem(lsKey('touchstones'));
+      localStorage.removeItem(lsKey('cores'));
+    } catch (_) {}
+    return map;
+  }
+
+  function renderClaimPicker() {
+    var sel = byId('claim-select');
+    if (!sel) return;
+    var map = loadClaims();
+    var slugs = Object.keys(map).sort(function (a, b) {
+      if (a === WORKING_SLUG) return -1;
+      if (b === WORKING_SLUG) return 1;
+      return (map[a].name || a).localeCompare(map[b].name || b);
+    });
+    sel.innerHTML = slugs.map(function (s) {
+      return '<option value="' + escapeHtml(s) + '"' +
+        (s === state.claimSlug ? ' selected' : '') + '>' +
+        escapeHtml(map[s].name || s) + '</option>';
+    }).join('');
+    byId('claim-delete').disabled = (state.claimSlug === WORKING_SLUG);
   }
 
   // ── Relay helper ──────────────────────────────────────────────────
@@ -174,6 +358,9 @@
     byId('haul-btn').disabled = false;
     byId('add-touchstone').disabled = false;
     byId('add-core').disabled = false;
+
+    // Core samples restored from a claim parked themselves until now
+    resolveAllCores();
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -222,10 +409,10 @@
   }
 
   async function scoutDay() {
-    var cats = byId('categories').value.split(',').map(function (c) { return c.trim(); }).filter(Boolean);
+    var cats = state.scout.categories.split(',').map(function (c) { return c.trim(); }).filter(Boolean);
     if (cats.length === 0) throw new Error('No arXiv categories configured.');
-    var lookback = parseInt(byId('lookback').value, 10) || 1;
-    var maxResults = parseInt(byId('max-results').value, 10) || 200;
+    var lookback = state.scout.lookback;
+    var maxResults = state.scout.max_results;
     var query = cats.map(function (c) { return 'cat:' + c; }).join('+OR+');
     var url = 'https://export.arxiv.org/api/query?' +
       'search_query=' + query +
@@ -978,7 +1165,7 @@
 
   /** Push the current grades onto any live seam graph. No-op before stage 3. */
   function applySeamAssay() {
-    var topN = parseInt(byId('paydirt-n').value, 10) || 10;
+    var topN = state.blend.paydirt_n;
     var hint = byId('seam-graph-hint');
     if (hint) {
       hint.innerHTML = SEAM_GRAPH_HINT +
@@ -1099,64 +1286,73 @@
   // ═══════════════════════════════════════════════════════════════════
 
   // Touchstone row management
-  var touchstoneCounter = 0;
-  function addTouchstoneRow(text, id) {
-    if (!id) id = 'ts-' + (++touchstoneCounter);
+  function findTouchstone(id) {
+    for (var i = 0; i < state.touchstones.length; i++) {
+      if (state.touchstones[i].id === id) return state.touchstones[i];
+    }
+    return null;
+  }
+
+  /* Render one existing record. The record already lives in state.touchstones
+     — this only draws it and wires the inputs back to it. Nothing downstream
+     ever reads these inputs; getWeights() reads the records. */
+  function renderTouchstoneRow(t) {
     var list = byId('touchstones-list');
     var div = document.createElement('div');
     div.className = 'touchstone-row';
-    div.dataset.id = id;
+    div.dataset.id = t.id;
     div.innerHTML =
-      '<input type="text" class="ts-text" value="' + escapeHtml(text || '') + '" placeholder="silicon spin qubits and exchange gates">' +
-      '<span class="row-weight"><input type="number" class="ts-weight" value="1.0" min="0" max="1" step="0.05"></span>' +
+      '<input type="text" class="ts-text" value="' + escapeHtml(t.text || '') + '" placeholder="silicon spin qubits and exchange gates">' +
+      '<span class="row-weight"><input type="number" class="ts-weight" value="' + t.weight + '" min="0" max="1" step="0.05"></span>' +
       '<button type="button" class="row-remove" title="Remove">×</button>';
     list.appendChild(div);
 
     div.querySelector('.row-remove').addEventListener('click', function () {
       div.remove();
-      removeTouchstone(id);
+      removeTouchstone(t.id);
     });
     div.querySelector('.ts-text').addEventListener('input', function () {
-      onTouchstoneChanged(id, this.value);
+      onTouchstoneChanged(t.id, this.value);
     });
     div.querySelector('.ts-weight').addEventListener('input', function () {
+      var rec = findTouchstone(t.id);
+      if (rec) rec.weight = parseFloat(this.value);
       onWeightChanged();
     });
   }
 
+  function addTouchstone(text, weight) {
+    var rec = {
+      id: 'ts-' + (++touchstoneCounter),
+      text: text || '',
+      weight: isFinite(weight) ? weight : 1.0,
+      vector: null,
+    };
+    state.touchstones.push(rec);
+    renderTouchstoneRow(rec);
+    autosave();
+    return rec;
+  }
+
   function removeTouchstone(id) {
     state.touchstones = state.touchstones.filter(function (t) { return t.id !== id; });
-    saveTouchstones();
-    if (state.A && state.A.length > 0) {
-      maybeEmbedFeatures().then(function () {
-        computeGrades();
-        renderAssay();
-      });
-    }
+    autosave();
+    reassay();
   }
 
   function onTouchstoneChanged(id, text) {
-    var found = false;
-    for (var i = 0; i < state.touchstones.length; i++) {
-      if (state.touchstones[i].id === id) {
-        state.touchstones[i].text = text;
-        state.touchstones[i].vector = null; // force re-embed
-        found = true; break;
-      }
-    }
-    if (!found) {
-      state.touchstones.push({ id: id, text: text, vector: null });
-    }
-    saveTouchstones();
-    if (state.A && state.A.length > 0) {
-      maybeEmbedFeatures().then(function () {
-        computeGrades();
-        renderAssay();
-      });
-    }
+    var rec = findTouchstone(id);
+    if (!rec) return;
+    rec.text = text;
+    rec.vector = null; // force re-embed
+    autosave();
+    reassay();
   }
 
   function onWeightChanged() {
+    state.blend.touchstones = parseFloat(byId('touchstones-weight').value) || 0;
+    state.blend.cores = parseFloat(byId('cores-weight').value) || 0;
+    autosave();
     if (state.A && state.A.length > 0 && state.featureVectors) {
       computeGrades();
       renderAssay();
@@ -1164,48 +1360,80 @@
   }
 
   // Core sample management
-  var coreCounter = 0;
-  function addCoreRow(doi, id) {
-    if (!id) id = 'core-' + (++coreCounter);
+  function findCore(id) {
+    for (var i = 0; i < state.cores.length; i++) {
+      if (state.cores[i].id === id) return state.cores[i];
+    }
+    return null;
+  }
+
+  function coreRowEl(id) {
+    return byId('cores-list').querySelector('.core-row[data-id="' + id + '"]');
+  }
+
+  function renderCoreRow(c) {
     var list = byId('cores-list');
     var div = document.createElement('div');
     div.className = 'core-row';
-    div.dataset.id = id;
+    div.dataset.id = c.id;
     div.innerHTML =
-      '<input type="text" class="core-doi" value="' + escapeHtml(doi || '') + '" placeholder="10.1103/RevModPhys.95.025003">' +
-      '<span class="row-weight"><input type="number" class="core-weight" value="1.0" min="0" max="1" step="0.05"></span>' +
-      '<span class="row-status"></span>' +
+      '<input type="text" class="core-doi" value="' + escapeHtml(c.doi || '') + '" placeholder="10.1103/RevModPhys.95.025003">' +
+      '<span class="row-weight"><input type="number" class="core-weight" value="' + c.weight + '" min="0" max="1" step="0.05"></span>' +
+      '<span class="row-status">' + escapeHtml(c.status || '') + '</span>' +
       '<button type="button" class="row-remove" title="Remove">×</button>';
     list.appendChild(div);
 
     div.querySelector('.row-remove').addEventListener('click', function () {
       div.remove();
-      removeCore(id);
+      removeCore(c.id);
     });
     div.querySelector('.core-doi').addEventListener('change', function () {
-      onCoreChanged(id, this.value, div);
+      var rec = findCore(c.id);
+      if (!rec) return;
+      rec.doi = this.value.trim();
+      rec.vector = null;
+      autosave();
+      resolveCore(c.id);
     });
     div.querySelector('.core-weight').addEventListener('input', function () {
+      var rec = findCore(c.id);
+      if (rec) rec.weight = parseFloat(this.value);
       onWeightChanged();
     });
+  }
 
-    // If doi is provided, fetch it
-    if (doi) onCoreChanged(id, doi, div);
+  function addCore(doi, weight) {
+    var rec = {
+      id: 'core-' + (++coreCounter),
+      doi: doi || '',
+      weight: isFinite(weight) ? weight : 1.0,
+      title: '', abstract: '', vector: null, status: '', weak: false,
+    };
+    state.cores.push(rec);
+    renderCoreRow(rec);
+    autosave();
+    if (rec.doi) resolveCore(rec.id);
+    return rec;
   }
 
   function removeCore(id) {
     state.cores = state.cores.filter(function (c) { return c.id !== id; });
-    saveCores();
-    if (state.A && state.A.length > 0) {
-      maybeEmbedFeatures().then(function () {
-        computeGrades();
-        renderAssay();
-      });
+    autosave();
+    reassay();
+  }
+
+  /* Every core row that still has no vector — the parked ones from a claim
+     loaded before the pick was sharpened, plus any that errored. */
+  async function resolveAllCores() {
+    for (var i = 0; i < state.cores.length; i++) {
+      if (state.cores[i].doi && !state.cores[i].vector) {
+        await resolveCore(state.cores[i].id);
+      }
     }
   }
 
   async function fetchCoreFromOpenAlex(doi) {
-    var cacheKey = doi + '|' + LOCAL_MODEL + '|' + LOCAL_DIM;
+    var cacheKey = coreCacheKey(doi);
     if (state._coreCache && state._coreCache[cacheKey]) {
       return state._coreCache[cacheKey];
     }
@@ -1255,41 +1483,49 @@
     return entry;
   }
 
-  async function onCoreChanged(id, doi, rowDiv) {
-    var statusEl = rowDiv.querySelector('.row-status');
-    var existing = null;
-    for (var i = 0; i < state.cores.length; i++) {
-      if (state.cores[i].id === id) { existing = state.cores[i]; break; }
+  /* Fill in a core sample's title/abstract/vector from its DOI. Runtime only —
+     none of what this writes is saved in the claim, which is why loading a
+     claim has to call it for every row that carries a DOI. */
+  function coreCacheKey(doi) { return doi + '|' + LOCAL_MODEL + '|' + LOCAL_DIM; }
+
+  async function resolveCore(id) {
+    var rec = findCore(id);
+    if (!rec || !rec.doi) return;
+    var row = coreRowEl(id);
+    var statusEl = row ? row.querySelector('.row-status') : null;
+
+    /* A cache miss ends in embedTexts(), which needs the extractor. On a fresh
+       page load a claim's core samples land here before Stage 0 has run, so
+       park them and let runSharpen() come back for them. */
+    if (!state.modelLoaded && !(state._coreCache || {})[coreCacheKey(rec.doi)]) {
+      rec.status = 'waiting for the pick';
+      if (statusEl) statusEl.textContent = rec.status;
+      return;
     }
-    if (!existing) {
-      existing = { id: id, doi: doi, title: '', abstract: '', vector: null, status: 'loading...', weak: false };
-      state.cores.push(existing);
-    }
-    existing.doi = doi;
-    existing.status = 'loading...';
-    existing.vector = null;
-    statusEl.textContent = 'loading...';
+
+    rec.status = 'loading...';
+    rec.vector = null;
+    if (statusEl) statusEl.textContent = rec.status;
 
     try {
-      var fetched = await fetchCoreFromOpenAlex(doi);
-      existing.title = fetched.title;
-      existing.abstract = fetched.abstract;
-      existing.vector = fetched.vector;
-      existing.status = '✓ ' + (existing.title || doi).substring(0, 40);
-      existing.weak = fetched.weak;
-      statusEl.textContent = existing.status + (existing.weak ? ' (title only)' : '');
+      var fetched = await fetchCoreFromOpenAlex(rec.doi);
+      // The row may have been removed or re-pointed while the fetch was in
+      // flight; drop a stale response rather than reviving a dead record.
+      if (findCore(id) !== rec || rec.doi !== fetched.doi) return;
+      rec.title = fetched.title;
+      rec.abstract = fetched.abstract;
+      rec.vector = fetched.vector;
+      rec.weak = fetched.weak;
+      rec.status = '✓ ' + (rec.title || rec.doi).substring(0, 40);
+      if (statusEl) statusEl.textContent = rec.status + (rec.weak ? ' (title only)' : '');
     } catch (err) {
-      existing.status = '✗ ' + err.message;
-      existing.weak = true;
-      statusEl.textContent = existing.status;
+      if (findCore(id) !== rec) return;
+      rec.status = '✗ ' + err.message;
+      rec.weak = true;
+      if (statusEl) statusEl.textContent = rec.status;
     }
 
-    saveCores();
-    if (state.A && state.A.length > 0) {
-      await maybeEmbedFeatures();
-      computeGrades();
-      renderAssay();
-    }
+    await reassay();
   }
 
   async function maybeEmbedFeatures() {
@@ -1359,23 +1595,20 @@
   // STAGE 3 — Assay (compute grades + render matrix)
   // ═══════════════════════════════════════════════════════════════════
 
+  /* Weights come from the records, in record order — the same order
+     buildFeatureVectors() walks. Reading the DOM here used to make that
+     alignment an accident of render order; now it is the same array twice. */
   function getWeights() {
     var w = [];
-    var groupTsW = parseFloat(byId('touchstones-weight').value) || 0;
-    var groupCoreW = parseFloat(byId('cores-weight').value) || 0;
-
-    // Per-row weights from the DOM
-    var tsRows = byId('touchstones-list').querySelectorAll('.touchstone-row');
-    for (var r = 0; r < tsRows.length; r++) {
-      var rw = parseFloat(tsRows[r].querySelector('.ts-weight').value);
-      if (isNaN(rw)) rw = 1.0;
-      w.push(groupTsW * rw);
+    for (var r = 0; r < state.touchstones.length; r++) {
+      var rw = state.touchstones[r].weight;
+      if (!isFinite(rw)) rw = 1.0;
+      w.push(state.blend.touchstones * rw);
     }
-    var coreRows = byId('cores-list').querySelectorAll('.core-row');
-    for (var c = 0; c < coreRows.length; c++) {
-      var cw = parseFloat(coreRows[c].querySelector('.core-weight').value);
-      if (isNaN(cw)) cw = 1.0;
-      w.push(groupCoreW * cw);
+    for (var c = 0; c < state.cores.length; c++) {
+      var cw = state.cores[c].weight;
+      if (!isFinite(cw)) cw = 1.0;
+      w.push(state.blend.cores * cw);
     }
     // Rush: null (inactive)
     w.push(null);
@@ -1436,7 +1669,7 @@
     var N = state.stones.length;
     var order = state.order;
     var grades = state.grades;
-    var topN = parseInt(byId('paydirt-n').value, 10) || 10;
+    var topN = state.blend.paydirt_n;
     var weights = getWeights();
 
     // Stage 1's graph gains a gold ring per pay-dirt stone, so a re-blend
@@ -1885,11 +2118,11 @@
   // ═══════════════════════════════════════════════════════════════════
 
   byId('add-touchstone').addEventListener('click', function () {
-    addTouchstoneRow('');
+    addTouchstone('');
   });
 
   byId('add-core').addEventListener('click', function () {
-    addCoreRow('');
+    addCore('');
   });
 
   // Group weights
@@ -1916,7 +2149,7 @@
       byId('bib-status').textContent = 'Found ' + dois.length + ' entries. Adding as core samples...';
       byId('bib-status').style.display = '';
       for (var d = 0; d < dois.length; d++) {
-        addCoreRow(dois[d]);
+        addCore(dois[d]);
       }
       byId('bib-status').textContent = '✓ Added ' + dois.length + ' core samples from .bib.';
     };
@@ -1939,6 +2172,8 @@
   // ═══════════════════════════════════════════════════════════════════
 
   byId('paydirt-n').addEventListener('input', function () {
+    state.blend.paydirt_n = parseInt(this.value, 10) || 10;
+    autosave();
     if (state.order !== null) renderAssay();
   });
 
@@ -1950,35 +2185,101 @@
     if (show && state.order !== null) {
       var kk = state.touchstones.length;
       var kp = state.cores.length;
-      var topN = parseInt(byId('paydirt-n').value, 10) || 10;
+      var topN = state.blend.paydirt_n;
       renderTable(state.order, kk, kp, topN);
     }
   });
 
   // ═══════════════════════════════════════════════════════════════════
+  // Event bindings — Scout + claims
+  // ═══════════════════════════════════════════════════════════════════
+
+  byId('categories').addEventListener('input', function () {
+    state.scout.categories = this.value;
+    autosave();
+  });
+  byId('lookback').addEventListener('input', function () {
+    state.scout.lookback = parseInt(this.value, 10) || 1;
+    autosave();
+  });
+  byId('max-results').addEventListener('input', function () {
+    state.scout.max_results = parseInt(this.value, 10) || 200;
+    autosave();
+  });
+
+  byId('claim-select').addEventListener('change', function () {
+    var map = loadClaims();
+    var slug = this.value;
+    if (!map[slug]) return;
+    state.claimSlug = slug;
+    try { localStorage.setItem(CURRENT_KEY, slug); } catch (_) {}
+    applyClaim(map[slug]);
+    renderClaimPicker();
+    reassay();
+  });
+
+  byId('claim-save-as').addEventListener('click', function () {
+    var name = window.prompt('Name this claim', 'Spin qubits');
+    if (name === null) return;
+    name = name.trim();
+    if (!name) return;
+    var map = loadClaims();
+    var slug = slugify(name);
+    // Distinct name, distinct slot: never silently overwrite a claim the user
+    // named earlier just because the slug collides.
+    var base = slug, n = 2;
+    while (map[slug] && map[slug].name !== name) { slug = base + '-' + (n++); }
+    map[slug] = serializeClaim(name);
+    writeClaims(map);
+    state.claimSlug = slug;
+    try { localStorage.setItem(CURRENT_KEY, slug); } catch (_) {}
+    renderClaimPicker();
+    setClaimStatus('Saved as “' + name + '”.');
+  });
+
+  byId('claim-delete').addEventListener('click', function () {
+    if (state.claimSlug === WORKING_SLUG) return;
+    var map = loadClaims();
+    var name = (map[state.claimSlug] || {}).name || state.claimSlug;
+    if (!window.confirm('Delete the claim “' + name + '”? The setup it holds is gone for good.')) return;
+    delete map[state.claimSlug];
+    writeClaims(map);
+    state.claimSlug = WORKING_SLUG;
+    if (!map[WORKING_SLUG]) { map[WORKING_SLUG] = serializeClaim('Working claim'); writeClaims(map); }
+    try { localStorage.setItem(CURRENT_KEY, WORKING_SLUG); } catch (_) {}
+    applyClaim(map[WORKING_SLUG]);
+    renderClaimPicker();
+    reassay();
+    setClaimStatus('Deleted “' + name + '”.');
+  });
+
+  var _claimStatusTimer = null;
+  function setClaimStatus(msg) {
+    var el = byId('claim-status');
+    if (!el) return;
+    el.textContent = msg;
+    if (_claimStatusTimer) clearTimeout(_claimStatusTimer);
+    _claimStatusTimer = setTimeout(function () { el.textContent = ''; }, 4000);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
   // Init
   // ═══════════════════════════════════════════════════════════════════
 
-  // Load persisted touchstones and cores
-  loadState();
+  loadCoreCache();
 
-  // Restore touchstone rows from localStorage
-  if (state.touchstones.length > 0) {
-    for (var ti = 0; ti < state.touchstones.length; ti++) {
-      addTouchstoneRow(state.touchstones[ti].text, state.touchstones[ti].id);
-    }
-    // Mark vectors as null — they'll be re-embedded
-    for (var tj = 0; tj < state.touchstones.length; tj++) {
-      state.touchstones[tj].vector = null;
-    }
+  var claims = migrateLegacyState();
+  var current = null;
+  try { current = localStorage.getItem(CURRENT_KEY); } catch (_) {}
+  if (!current || !claims[current]) current = WORKING_SLUG;
+  if (!claims[current]) {
+    claims[current] = serializeClaim('Working claim');
+    writeClaims(claims);
   }
-
-  // Restore core rows from localStorage
-  if (state.cores.length > 0) {
-    for (var ci = 0; ci < state.cores.length; ci++) {
-      addCoreRow(state.cores[ci].doi, state.cores[ci].id);
-    }
-  }
+  state.claimSlug = current;
+  try { localStorage.setItem(CURRENT_KEY, current); } catch (_) {}
+  applyClaim(claims[current]);
+  renderClaimPicker();
 
   // Show the app
   var app = byId('app');
