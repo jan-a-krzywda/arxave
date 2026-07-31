@@ -44,6 +44,9 @@
     seamOrder: null,        // [N] indices into stones, sorted by cluster
     seamMap: null,          // [N×N] cosine matrix (upper triangle populated)
     seamComponents: null,   // [{indices: [int], centralTitle: string}]
+    seamView: 'matrix',     // 'matrix' | 'graph'
+    seamGraph: null,        // live graph handle for the inline canvas
+    seamModalGraph: null,   // live graph handle for the modal canvas
   };
 
   // ── Persistence ───────────────────────────────────────────────────
@@ -318,14 +321,19 @@
     return S;
   }
 
+  // Edge threshold and minimum seam size — shared by the matrix ordering
+  // and the graph view so both draw the same adjacency.
+  var SEAM_THRESH = 0.70;
+  var SEAM_MIN_SIZE = 3;
+
   /**
-   * Cluster order: threshold at 0.80, connected components ≥3.
+   * Cluster order: threshold at SEAM_THRESH, connected components ≥ SEAM_MIN_SIZE.
    * Returns [order: [indices], components: [{indices:[], centralTitle:string}]]
    */
   function clusterOrder(stones, S) {
     var N = stones.length;
-    var THRESH = 0.70;
-    var MIN_SIZE = 3;
+    var THRESH = SEAM_THRESH;
+    var MIN_SIZE = SEAM_MIN_SIZE;
 
     // Build adjacency for values >= THRESH
     var adj = new Array(N);
@@ -508,6 +516,370 @@
     canvas.style.cursor = 'pointer';
   }
 
+  // ── Seam graph ──────────────────────────────────────────────────
+  // The seam map is an adjacency matrix, so it is also a graph: one node
+  // per stone, an edge wherever cosine ≥ SEAM_THRESH. Same clustering,
+  // drawn as a force-directed layout with one colour per seam.
+
+  // One hue per seam, cycled if there are more seams than colours.
+  var SEAM_COLORS = [
+    '#f5b301', '#5fb3a1', '#c96f4a', '#8f7fd4',
+    '#7fa650', '#d98cb3', '#4f9ad6', '#c9a227',
+    '#a8705a', '#6fbf73'
+  ];
+  var LONE_COLOR = '#6c6355';   // stones that joined no seam
+
+  /** [N] array of cluster ids, -1 for stones outside every seam. */
+  function clusterIds(n, components) {
+    var cid = new Array(n).fill(-1);
+    for (var c = 0; c < components.length; c++) {
+      var members = components[c].indices;
+      for (var m = 0; m < members.length; m++) cid[members[m]] = c;
+    }
+    return cid;
+  }
+
+  /**
+   * Force-directed seam graph on a canvas. Nodes are draggable, the view
+   * pans and zooms, hover previews and click pins the readout.
+   * Returns a handle with .stop() — call it when the canvas goes away.
+   */
+  function drawSeamGraph(canvas, S, stones, components, readoutFn, opts) {
+    opts = opts || {};
+    var N = stones.length;
+    var W = opts.width || 640;
+    var H = opts.height || 420;
+    var dpr = window.devicePixelRatio || 1;
+
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    var ctx = canvas.getContext('2d');
+
+    var cid = clusterIds(N, components);
+
+    // Edges + degrees
+    var edges = [];
+    var deg = new Array(N).fill(0);
+    var nbrs = new Array(N);
+    for (var i = 0; i < N; i++) nbrs[i] = [];
+    for (i = 0; i < N; i++) {
+      for (var j = i + 1; j < N; j++) {
+        var w = S[i][j];
+        if (w >= SEAM_THRESH) {
+          edges.push({ a: i, b: j, w: w });
+          deg[i]++; deg[j]++;
+          nbrs[i].push(j); nbrs[j].push(i);
+        }
+      }
+    }
+
+    // Seed positions: each seam on its own arc, lone stones on an outer ring.
+    var nodes = new Array(N);
+    var nComp = components.length;
+    var seamCount = {};
+    for (i = 0; i < N; i++) {
+      var c = cid[i];
+      var r, ang;
+      if (c >= 0) {
+        seamCount[c] = (seamCount[c] || 0) + 1;
+        var base = (c / Math.max(1, nComp)) * Math.PI * 2;
+        ang = base + (seamCount[c] % 17) * 0.37;
+        r = 60 + (seamCount[c] % 5) * 12;
+      } else {
+        ang = Math.random() * Math.PI * 2;
+        r = 190 + Math.random() * 60;
+      }
+      nodes[i] = {
+        i: i,
+        x: Math.cos(ang) * r + (c >= 0 ? Math.cos(base) * 130 : 0),
+        y: Math.sin(ang) * r + (c >= 0 ? Math.sin(base) * 130 : 0),
+        vx: 0, vy: 0,
+        r: 3 + Math.min(5, Math.sqrt(deg[i]))
+      };
+    }
+
+    // ── Simulation ──
+    var alpha = 1.0;
+    var raf = null;
+    var stopped = false;
+
+    function tick() {
+      if (alpha < 0.004) return false;
+      var REP = 2400;
+      var K = 0.045;
+
+      // Repulsion — O(N²), fine for a day's haul (a few hundred stones)
+      for (var a = 0; a < N; a++) {
+        var na = nodes[a];
+        for (var b = a + 1; b < N; b++) {
+          var nb = nodes[b];
+          var dx = na.x - nb.x, dy = na.y - nb.y;
+          var d2 = dx * dx + dy * dy;
+          if (d2 < 0.01) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d2 = 0.01; }
+          if (d2 > 90000) continue;              // ignore far pairs
+          var f = REP / d2;
+          var d = Math.sqrt(d2);
+          var ux = dx / d, uy = dy / d;
+          na.vx += ux * f; na.vy += uy * f;
+          nb.vx -= ux * f; nb.vy -= uy * f;
+        }
+      }
+
+      // Springs — stronger, shorter for higher cosine
+      for (var e = 0; e < edges.length; e++) {
+        var ed = edges[e];
+        var p = nodes[ed.a], q = nodes[ed.b];
+        var t = (ed.w - SEAM_THRESH) / Math.max(0.001, 1 - SEAM_THRESH);
+        var L = 70 - 40 * t;
+        var ddx = q.x - p.x, ddy = q.y - p.y;
+        var dd = Math.sqrt(ddx * ddx + ddy * ddy) || 0.01;
+        var force = (dd - L) * K * (0.4 + t);
+        var fx = (ddx / dd) * force, fy = (ddy / dd) * force;
+        p.vx += fx; p.vy += fy;
+        q.vx -= fx; q.vy -= fy;
+      }
+
+      // Gravity to centre, so nothing drifts off the rock face
+      for (var g = 0; g < N; g++) {
+        nodes[g].vx -= nodes[g].x * 0.012;
+        nodes[g].vy -= nodes[g].y * 0.012;
+      }
+
+      // Integrate
+      for (var m = 0; m < N; m++) {
+        var nd = nodes[m];
+        if (nd === dragNode) { nd.vx = 0; nd.vy = 0; continue; }
+        nd.vx *= 0.82; nd.vy *= 0.82;
+        nd.x += nd.vx * alpha;
+        nd.y += nd.vy * alpha;
+      }
+
+      alpha *= 0.985;
+      return true;
+    }
+
+    // ── View transform ──
+    var view = { k: 1, tx: W / 2, ty: H / 2 };
+    function toScreen(n) { return { x: n.x * view.k + view.tx, y: n.y * view.k + view.ty }; }
+    function toWorld(sx, sy) { return { x: (sx - view.tx) / view.k, y: (sy - view.ty) / view.k }; }
+
+    // Fit once the layout has settled enough to have a shape
+    var fitted = false;
+    function fit() {
+      var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (var i2 = 0; i2 < N; i2++) {
+        if (nodes[i2].x < minX) minX = nodes[i2].x;
+        if (nodes[i2].x > maxX) maxX = nodes[i2].x;
+        if (nodes[i2].y < minY) minY = nodes[i2].y;
+        if (nodes[i2].y > maxY) maxY = nodes[i2].y;
+      }
+      var spanX = Math.max(1, maxX - minX), spanY = Math.max(1, maxY - minY);
+      view.k = Math.min((W - 40) / spanX, (H - 40) / spanY);
+      if (view.k > 2) view.k = 2;
+      view.tx = W / 2 - ((minX + maxX) / 2) * view.k;
+      view.ty = H / 2 - ((minY + maxY) / 2) * view.k;
+    }
+
+    // ── Interaction state ──
+    var hoverNode = null;
+    var pinnedNode = null;
+    var dragNode = null;
+    var panning = null;
+
+    function nodeColor(idx) {
+      return cid[idx] >= 0 ? SEAM_COLORS[cid[idx] % SEAM_COLORS.length] : LONE_COLOR;
+    }
+
+    function draw() {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = getComputedStyle(canvas).getPropertyValue('--rock').trim() || '#21262e';
+      ctx.fillRect(0, 0, W, H);
+
+      var focus = pinnedNode !== null ? pinnedNode : hoverNode;
+      var lit = null;
+      if (focus !== null) {
+        lit = new Set(nbrs[focus]);
+        lit.add(focus);
+      }
+
+      // Edges
+      for (var e = 0; e < edges.length; e++) {
+        var ed = edges[e];
+        var p = toScreen(nodes[ed.a]), q = toScreen(nodes[ed.b]);
+        var touched = focus !== null && (ed.a === focus || ed.b === focus);
+        var t = (ed.w - SEAM_THRESH) / Math.max(0.001, 1 - SEAM_THRESH);
+        var alphaE = 0.12 + 0.5 * t;
+        if (focus !== null) alphaE = touched ? 0.95 : alphaE * 0.25;
+        ctx.globalAlpha = alphaE;
+        ctx.strokeStyle = cid[ed.a] >= 0 && cid[ed.a] === cid[ed.b]
+          ? nodeColor(ed.a) : '#7c7364';
+        ctx.lineWidth = touched ? 1.6 : 0.8;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(q.x, q.y);
+        ctx.stroke();
+      }
+
+      // Nodes
+      for (var n = 0; n < N; n++) {
+        var s = toScreen(nodes[n]);
+        var dim = focus !== null && !lit.has(n);
+        ctx.globalAlpha = dim ? 0.18 : 1;
+        ctx.fillStyle = nodeColor(n);
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, nodes[n].r * (n === focus ? 1.8 : 1), 0, Math.PI * 2);
+        ctx.fill();
+        if (n === focus) {
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = '#f2ede3';
+          ctx.lineWidth = 1.4;
+          ctx.stroke();
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function loop() {
+      if (stopped) return;
+      var moving = tick();
+      if (!fitted && (alpha < 0.35 || !moving)) { fit(); fitted = true; }
+      draw();
+      if (moving || dragNode !== null) raf = requestAnimationFrame(loop);
+      else raf = null;
+    }
+
+    function wake(a) {
+      if (a > alpha) alpha = a;
+      if (raf === null && !stopped) raf = requestAnimationFrame(loop);
+    }
+
+    // ── Readout ──
+    function emit(idx, isPinned) {
+      if (!readoutFn) return;
+      if (idx === null) { readoutFn('', '', false); return; }
+      var st = stones[idx];
+      // Nearest neighbour by cosine, for context
+      var bestJ = -1, bestV = 0;
+      for (var j2 = 0; j2 < N; j2++) {
+        if (j2 === idx) continue;
+        if (S[idx][j2] > bestV) { bestV = S[idx][j2]; bestJ = j2; }
+      }
+      var seamText = cid[idx] >= 0
+        ? 'seam of ' + components[cid[idx]].indices.length + ' · ' + deg[idx] + ' links'
+        : 'lone stone';
+      var nearest = bestJ >= 0
+        ? ' · closest: <a href="' + stones[bestJ].abs_url + '" target="_blank" rel="noopener">' +
+            escapeHtml(stones[bestJ].title) + '</a> ' + bestV.toFixed(2)
+        : '';
+      readoutFn(
+        '<a href="' + st.abs_url + '" target="_blank" rel="noopener">' +
+          escapeHtml(st.title) + '</a>',
+        seamText + nearest +
+          (isPinned ? '  ·  <span class="seam-pin-hint">pinned — click the node again to release</span>'
+                    : '  ·  <span class="seam-pin-hint">click to pin</span>'),
+        !!isPinned
+      );
+    }
+
+    // ── Mouse ──
+    function pick(e) {
+      var rect = canvas.getBoundingClientRect();
+      var mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      var best = null, bestD = Infinity;
+      for (var n = 0; n < N; n++) {
+        var s = toScreen(nodes[n]);
+        var dx = s.x - mx, dy = s.y - my;
+        var d = dx * dx + dy * dy;
+        var hit = (nodes[n].r + 6) * (nodes[n].r + 6);
+        if (d < hit && d < bestD) { bestD = d; best = n; }
+      }
+      return { node: best, mx: mx, my: my };
+    }
+
+    canvas.onmousedown = function (e) {
+      var p = pick(e);
+      if (p.node !== null) {
+        dragNode = nodes[p.node];
+        dragNode.moved = false;
+      } else {
+        panning = { x: p.mx, y: p.my, tx: view.tx, ty: view.ty };
+      }
+      wake(0.3);
+    };
+
+    canvas.onmousemove = function (e) {
+      var rect = canvas.getBoundingClientRect();
+      var mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      if (dragNode) {
+        var wpt = toWorld(mx, my);
+        dragNode.x = wpt.x; dragNode.y = wpt.y;
+        dragNode.moved = true;
+        wake(0.35);
+        return;
+      }
+      if (panning) {
+        view.tx = panning.tx + (mx - panning.x);
+        view.ty = panning.ty + (my - panning.y);
+        draw();
+        return;
+      }
+      var p = pick(e);
+      canvas.style.cursor = p.node !== null ? 'pointer' : 'grab';
+      if (p.node !== hoverNode) {
+        hoverNode = p.node;
+        if (pinnedNode === null) emit(hoverNode, false);
+        draw();
+      }
+    };
+
+    canvas.onmouseup = function (e) {
+      if (dragNode && !dragNode.moved) {
+        var idx = dragNode.i;
+        if (pinnedNode === idx) { pinnedNode = null; emit(idx, false); }
+        else { pinnedNode = idx; emit(idx, true); }
+        draw();
+      }
+      dragNode = null;
+      panning = null;
+    };
+
+    canvas.onmouseleave = function () {
+      dragNode = null;
+      panning = null;
+      if (pinnedNode === null) { hoverNode = null; emit(null, false); draw(); }
+    };
+
+    canvas.onwheel = function (e) {
+      e.preventDefault();
+      var rect = canvas.getBoundingClientRect();
+      var mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      var before = toWorld(mx, my);
+      var factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+      view.k = Math.max(0.15, Math.min(6, view.k * factor));
+      var after = toWorld(mx, my);
+      view.tx += (after.x - before.x) * view.k;
+      view.ty += (after.y - before.y) * view.k;
+      draw();
+    };
+
+    canvas.style.cursor = 'grab';
+    raf = requestAnimationFrame(loop);
+
+    return {
+      stop: function () {
+        stopped = true;
+        if (raf !== null) cancelAnimationFrame(raf);
+        raf = null;
+        canvas.onmousedown = canvas.onmousemove = canvas.onmouseup = null;
+        canvas.onmouseleave = canvas.onwheel = null;
+      },
+      reheat: function () { fitted = false; wake(1); }
+    };
+  }
+
   /** Wire a readout element to drawSeamMap's readoutFn contract. */
   function seamReadoutSink(elId) {
     return function (full, detail, isPinned) {
@@ -515,6 +887,38 @@
       el.innerHTML = full ? full + '  ·  ' + detail : '';
       el.classList.toggle('pinned', !!isPinned);
     };
+  }
+
+  /** Current matrix order, honouring the Clustered toggle. */
+  function currentSeamOrder() {
+    return byId('seam-sort-toggle').checked
+      ? state.seamOrder
+      : state.stones.map(function (_, i) { return i; });
+  }
+
+  /** Render the inline seam panel in whichever view is selected. */
+  function renderSeamPanel() {
+    if (!state.seamMap || !state.stones.length) return;
+    var isGraph = state.seamView === 'graph';
+
+    byId('seam-matrix-wrap').style.display = isGraph ? 'none' : '';
+    byId('seam-graph-wrap').style.display = isGraph ? '' : 'none';
+    byId('seam-sort-label').style.display = isGraph ? 'none' : '';
+    byId('seam-readout').innerHTML = '';
+    byId('seam-readout').classList.remove('pinned');
+
+    if (state.seamGraph) { state.seamGraph.stop(); state.seamGraph = null; }
+
+    if (isGraph) {
+      var wrap = byId('seam-graph-wrap');
+      var w = Math.max(320, wrap.clientWidth || 640);
+      state.seamGraph = drawSeamGraph(
+        byId('seam-graph-canvas'), state.seamMap, state.stones, state.seamComponents,
+        seamReadoutSink('seam-readout'), { width: w, height: 420 });
+    } else {
+      drawSeamMap(byId('seam-canvas'), state.seamMap, currentSeamOrder(), state.stones,
+        state.seamComponents, seamReadoutSink('seam-readout'));
+    }
   }
 
   async function runHaul() {
@@ -556,10 +960,6 @@
       state.seamOrder = cluster.order;
       state.seamComponents = cluster.components;
 
-      // Draw seam map
-      var canvas = byId('seam-canvas');
-      drawSeamMap(canvas, S, cluster.order, stones, cluster.components, seamReadoutSink('seam-readout'));
-
       // Stats
       var compText = cluster.components.map(function (c) {
         return c.indices.length + ' stones from one seam';
@@ -567,6 +967,10 @@
       byId('seam-stats').textContent = compText || 'No large seams detected';
       byId('seam-sort-toggle').checked = true;
       seamPanel.style.display = '';
+
+      // Draw whichever view is selected (panel must be visible first, so the
+      // graph canvas can measure its own width)
+      renderSeamPanel();
 
       // Mark done
       statusEl.textContent = stones.length + ' stones hauled.';
@@ -1314,33 +1718,65 @@
     catch (err) { /* already handled */ }
   });
 
-  // Seam sort toggle
+  // Seam sort toggle (matrix view only)
   byId('seam-sort-toggle').addEventListener('change', function () {
     if (!state.seamMap || !state.stones.length) return;
-    var clustered = this.checked;
-    var order = clustered ? state.seamOrder : state.stones.map(function (_, i) { return i; });
-    drawSeamMap(byId('seam-canvas'), state.seamMap, order, state.stones, state.seamComponents,
-      seamReadoutSink('seam-readout'));
+    drawSeamMap(byId('seam-canvas'), state.seamMap, currentSeamOrder(), state.stones,
+      state.seamComponents, seamReadoutSink('seam-readout'));
+  });
+
+  // Matrix ↔ graph switch
+  byId('seam-view-switch').addEventListener('click', function (e) {
+    var btn = e.target.closest('.seam-view-btn');
+    if (!btn) return;
+    var view = btn.getAttribute('data-view');
+    if (view === state.seamView) return;
+    state.seamView = view;
+    Array.prototype.forEach.call(this.querySelectorAll('.seam-view-btn'), function (b) {
+      b.classList.toggle('is-active', b.getAttribute('data-view') === view);
+    });
+    byId('seam-modal-header-title').textContent = view === 'graph' ? 'Seam graph' : 'Seam map';
+    renderSeamPanel();
   });
 
   // Seam expand
   byId('seam-expand-btn').addEventListener('click', function () {
     if (!state.seamMap) return;
     var modal = byId('seam-modal');
-    var canvas = byId('seam-modal-canvas');
-    var order = byId('seam-sort-toggle').checked ? state.seamOrder : state.stones.map(function (_, i) { return i; });
-    drawSeamMap(canvas, state.seamMap, order, state.stones, state.seamComponents,
-      seamReadoutSink('seam-modal-readout'));
+    var matrixCanvas = byId('seam-modal-canvas');
+    var graphCanvas = byId('seam-modal-graph-canvas');
+    var isGraph = state.seamView === 'graph';
+
+    matrixCanvas.style.display = isGraph ? 'none' : 'block';
+    graphCanvas.style.display = isGraph ? 'block' : 'none';
+    byId('seam-modal-readout').innerHTML = '';
     modal.style.display = 'flex';
+
+    if (state.seamModalGraph) { state.seamModalGraph.stop(); state.seamModalGraph = null; }
+    if (isGraph) {
+      var w = Math.min(1100, Math.round(window.innerWidth * 0.86));
+      var h = Math.min(760, Math.round(window.innerHeight * 0.74));
+      state.seamModalGraph = drawSeamGraph(graphCanvas, state.seamMap, state.stones,
+        state.seamComponents, seamReadoutSink('seam-modal-readout'), { width: w, height: h });
+    } else {
+      drawSeamMap(matrixCanvas, state.seamMap, currentSeamOrder(), state.stones,
+        state.seamComponents, seamReadoutSink('seam-modal-readout'));
+    }
   });
+
+  function closeSeamModal() {
+    byId('seam-modal').style.display = 'none';
+    if (state.seamModalGraph) { state.seamModalGraph.stop(); state.seamModalGraph = null; }
+  }
 
   byId('seam-modal').addEventListener('click', function (e) {
     if (e.target === byId('seam-modal-backdrop') || e.target.classList.contains('seam-modal-close')) {
-      byId('seam-modal').style.display = 'none';
+      closeSeamModal();
     }
   });
-  byId('seam-modal-close').addEventListener('click', function () {
-    byId('seam-modal').style.display = 'none';
+  byId('seam-modal-close').addEventListener('click', closeSeamModal);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && byId('seam-modal').style.display !== 'none') closeSeamModal();
   });
 
   // ═══════════════════════════════════════════════════════════════════

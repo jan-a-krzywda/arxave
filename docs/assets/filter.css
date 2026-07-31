@@ -373,6 +373,50 @@ progress::-moz-progress-bar {
   display: block;
 }
 
+/* ── Matrix ↔ graph switch ────────────────────────────────────── */
+.seam-view-switch {
+  display: inline-flex;
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.seam-view-btn {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 0.76rem;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+}
+.seam-view-btn:hover {
+  color: var(--lamp);
+}
+.seam-view-btn.is-active {
+  background: var(--rock);
+  color: var(--gold);
+}
+
+/* ── Seam graph ───────────────────────────────────────────────── */
+.seam-graph-wrap {
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  background: var(--rock);
+  overflow: hidden;
+}
+
+.seam-graph-wrap canvas {
+  display: block;
+  touch-action: none;
+}
+
+.seam-graph-hint {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  padding: 0.25rem 0.5rem;
+  border-top: 1px solid var(--rock-edge);
+}
+
 .seam-readout {
   padding: 0.3rem 0;
   font-size: 0.78rem;
@@ -443,6 +487,13 @@ progress::-moz-progress-bar {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   display: block;
+}
+
+/* The graph is drawn with real vectors — keep it smooth */
+#seam-modal-graph-canvas {
+  image-rendering: auto;
+  background: var(--rock);
+  border-radius: 4px;
 }
 
 .seam-modal-readout {
