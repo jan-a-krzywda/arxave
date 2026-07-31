@@ -25,12 +25,16 @@ permalink: /
     </label>
     <button type="button" id="claim-save-as" class="claim-btn">Save as…</button>
     <button type="button" id="claim-delete" class="claim-btn claim-btn-danger" disabled>Delete</button>
+    <button type="button" id="claim-export" class="claim-btn">Export…</button>
+    <button type="button" id="claim-import" class="claim-btn">Import…</button>
+    <input type="file" id="claim-import-input" accept=".json,application/json" style="display:none">
     <span class="claim-status" id="claim-status"></span>
   </div>
   <p class="hint claim-hint">
     A claim is one setup — scout window, touchstones, core samples, weights.
     Edits save themselves as you make them; <strong>Save as…</strong> keeps the
-    current setup under a name you can come back to.
+    current setup under a name you can come back to. <strong>Export…</strong>
+    downloads it as a file; <strong>Import…</strong> loads one someone sent you.
   </p>
 
   <!-- ── Stage 0: Sharpen the pick ── -->
