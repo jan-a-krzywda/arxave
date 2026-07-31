@@ -19,8 +19,8 @@ const IDS = [
   'seam-panel', 'seam-stats', 'seam-view-switch', 'seam-sort-toggle',
   'seam-sort-label', 'seam-expand-btn', 'seam-canvas', 'seam-graph-canvas',
   'seam-matrix-wrap', 'seam-graph-wrap', 'seam-graph-hint', 'seam-readout',
-  'touchstones-list', 'add-touchstone', 'touchstones-weight',
-  'cores-list', 'add-core', 'cores-weight', 'bib-file', 'bib-status',
+  'touchstones-list', 'add-touchstone',
+  'cores-list', 'add-core', 'bib-file', 'bib-status',
   'paydirt-n', 'table-view-toggle', 'assay-stats', 'assay-grid', 'assay-rail',
   'assay-column-titles', 'assay-matrix-wrap', 'assay-legends',
   'assay-table-wrap', 'assay-table-head', 'assay-table-body',
@@ -47,8 +47,6 @@ function fresh(seedStore) {
   d['categories'].value = 'cond-mat.mes-hall, quant-ph';
   d['lookback'].value = '1';
   d['max-results'].value = '200';
-  d['touchstones-weight'].value = '0.40';
-  d['cores-weight'].value = '0.40';
   d['paydirt-n'].value = '10';
   (0, eval)(SRC);
   return env;
@@ -90,18 +88,7 @@ console.log('\n2. edits autosave (touchstone text + scout + paydirt)');
   check('paydirt_n saved', saved.blend.paydirt_n === 25);
 }
 
-console.log('\n3. group weight writes blend');
-{
-  const env = fresh();
-  const d = env.registry;
-  d['add-touchstone'].fire('click');
-  d['touchstones-weight'].value = '0.85';
-  d['touchstones-weight'].fire('input');
-  const saved = claims(env)['working'];
-  check('group weight saved', saved.blend.touchstones === 0.85, JSON.stringify(saved.blend));
-}
-
-console.log('\n4. save as → new named slot, working slot untouched');
+console.log('\n3. save as → new named slot, working slot untouched');
 {
   const env = fresh();
   const d = env.registry;
@@ -128,7 +115,7 @@ console.log('\n4. save as → new named slot, working slot untouched');
   check('name survives autosave', c2['spin-qubits'].name === 'Spin qubits');
 }
 
-console.log('\n5. switching claims swaps the whole setup');
+console.log('\n4. switching claims swaps the whole setup');
 {
   /* Semantics under test: autosave always writes the *current* slot, so
      "Save as" moves you into the new claim and later edits belong to it.
@@ -180,7 +167,7 @@ console.log('\n5. switching claims swaps the whole setup');
   })());
 }
 
-console.log('\n6. delete a claim');
+console.log('\n5. delete a claim');
 {
   const env = fresh();
   const d = env.registry;
@@ -196,7 +183,7 @@ console.log('\n6. delete a claim');
   global.__confirmAnswer = undefined;
 }
 
-console.log('\n7. legacy state migrates');
+console.log('\n6. legacy state migrates');
 {
   const env = fresh({
     'arxave-dig-touchstones': JSON.stringify([{ id: 'ts-1', text: 'legacy topic' }]),
@@ -214,7 +201,7 @@ console.log('\n7. legacy state migrates');
     JSON.stringify(env.registry['cores-list'].children[0].querySelector('.row-status').textContent));
 }
 
-console.log('\n8. remove a row');
+console.log('\n7. remove a row');
 {
   const env = fresh();
   const d = env.registry;
@@ -231,7 +218,7 @@ console.log('\n8. remove a row');
   check('DOM row removed', d['touchstones-list'].children.length === 1);
 }
 
-console.log('\n9. name collision does not overwrite');
+console.log('\n8. name collision does not overwrite');
 {
   const env = fresh();
   const d = env.registry;
