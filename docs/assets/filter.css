@@ -2,6 +2,65 @@
    Filter page — staged Dig pipeline. Colours come from cave.scss.
    ═══════════════════════════════════════════════════════════════════ */
 
+/* ── Claim bar ───────────────────────────────────────────────── */
+.claim-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.4rem;
+  background: var(--rock-deep);
+  border: 1px solid var(--rock-edge);
+  border-radius: 8px;
+}
+.claim-pick {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+.claim-pick select {
+  min-width: 12rem;
+  max-width: 100%;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  background: var(--rock);
+  color: var(--text);
+}
+.claim-btn {
+  background: none;
+  border: 1px solid var(--rock-lit);
+  color: var(--text-dim);
+  padding: 0.3rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.claim-btn:hover:not(:disabled) {
+  border-color: var(--lamp);
+  color: var(--lamp);
+}
+.claim-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.claim-btn-danger:hover:not(:disabled) {
+  border-color: var(--ember);
+  color: var(--ember);
+}
+.claim-status {
+  font-size: 0.8rem;
+  color: var(--moss);
+  margin-left: auto;
+}
+.claim-hint {
+  margin-bottom: 1.25rem;
+}
+
 /* ── Shared fieldset chrome ──────────────────────────────────── */
 fieldset {
   border: 1px solid var(--rock-edge);
@@ -373,6 +432,50 @@ progress::-moz-progress-bar {
   display: block;
 }
 
+/* ── Matrix ↔ graph switch ────────────────────────────────────── */
+.seam-view-switch {
+  display: inline-flex;
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.seam-view-btn {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 0.76rem;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+}
+.seam-view-btn:hover {
+  color: var(--lamp);
+}
+.seam-view-btn.is-active {
+  background: var(--rock);
+  color: var(--gold);
+}
+
+/* ── Seam graph ───────────────────────────────────────────────── */
+.seam-graph-wrap {
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  background: var(--rock);
+  overflow: hidden;
+}
+
+.seam-graph-wrap canvas {
+  display: block;
+  touch-action: none;
+}
+
+.seam-graph-hint {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  padding: 0.25rem 0.5rem;
+  border-top: 1px solid var(--rock-edge);
+}
+
 .seam-readout {
   padding: 0.3rem 0;
   font-size: 0.78rem;
@@ -387,6 +490,10 @@ progress::-moz-progress-bar {
 .seam-modal-readout.pinned {
   border-left: 2px solid var(--gold);
   padding-left: 0.5rem;
+}
+.seam-paydirt-tag {
+  color: var(--gold);
+  font-weight: 600;
 }
 .seam-pin-hint {
   color: var(--text-faint);
@@ -443,6 +550,13 @@ progress::-moz-progress-bar {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   display: block;
+}
+
+/* The graph is drawn with real vectors — keep it smooth */
+#seam-modal-graph-canvas {
+  image-rendering: auto;
+  background: var(--rock);
+  border-radius: 4px;
 }
 
 .seam-modal-readout {

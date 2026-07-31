@@ -17,6 +17,22 @@ permalink: /
     <a href="#small-print">Small print</a>.
   </p>
 
+  <!-- ── Claim bar ── -->
+  <div class="claim-bar">
+    <label class="claim-pick">
+      Claim
+      <select id="claim-select"></select>
+    </label>
+    <button type="button" id="claim-save-as" class="claim-btn">Save as…</button>
+    <button type="button" id="claim-delete" class="claim-btn claim-btn-danger" disabled>Delete</button>
+    <span class="claim-status" id="claim-status"></span>
+  </div>
+  <p class="hint claim-hint">
+    A claim is one setup — scout window, touchstones, core samples, weights.
+    Edits save themselves as you make them; <strong>Save as…</strong> keeps the
+    current setup under a name you can come back to.
+  </p>
+
   <!-- ── Stage 0: Sharpen the pick ── -->
   <fieldset id="stage-0">
     <legend>0. Sharpen the pick</legend>
@@ -57,7 +73,7 @@ permalink: /
   <!-- ── Stage 1: Haul the stones ── -->
   <fieldset id="stage-1">
     <legend>1. Haul the stones</legend>
-    <p class="hint">Fetch the day's papers and embed their abstracts. Shows the seam map — how today's stones cluster — before any topic exists.</p>
+    <p class="hint">Fetch the day's papers and embed their abstracts. Shows the seam map — how today's stones cluster — before any topic exists. Read it as a matrix, or as a graph where each seam gets its own colour.</p>
     <div class="button-bar">
       <button type="button" id="haul-btn" disabled>🪨 Haul the stones</button>
       <span class="stage-status" id="haul-status"></span>
@@ -71,13 +87,21 @@ permalink: /
       <div class="seam-header">
         <span class="seam-title">Seam map</span>
         <span class="seam-stats" id="seam-stats"></span>
-        <label class="toggle-label">
+        <div class="seam-view-switch" id="seam-view-switch">
+          <button type="button" class="seam-view-btn is-active" data-view="matrix">Matrix</button>
+          <button type="button" class="seam-view-btn" data-view="graph">Graph</button>
+        </div>
+        <label class="toggle-label" id="seam-sort-label">
           <input type="checkbox" id="seam-sort-toggle" checked> Clustered
         </label>
         <button type="button" class="seam-expand-btn" id="seam-expand-btn">Expand</button>
       </div>
-      <div class="seam-canvas-wrap">
+      <div class="seam-canvas-wrap" id="seam-matrix-wrap">
         <canvas id="seam-canvas"></canvas>
+      </div>
+      <div class="seam-graph-wrap" id="seam-graph-wrap" style="display:none">
+        <canvas id="seam-graph-canvas"></canvas>
+        <div class="seam-graph-hint" id="seam-graph-hint">drag a stone to move it · drag the rock to pan · scroll to zoom · click to pin</div>
       </div>
       <div class="seam-readout" id="seam-readout"></div>
     </div>
@@ -185,13 +209,14 @@ permalink: /
 
   <!-- ── Seam map modal ── -->
   <div id="seam-modal" class="seam-modal" style="display:none">
-    <div class="seam-modal-backdrop"></div>
+    <div class="seam-modal-backdrop" id="seam-modal-backdrop"></div>
     <div class="seam-modal-content">
       <div class="seam-modal-header">
-        <span class="seam-title">Seam map</span>
+        <span class="seam-title" id="seam-modal-header-title">Seam map</span>
         <button type="button" class="seam-modal-close" id="seam-modal-close">×</button>
       </div>
       <canvas id="seam-modal-canvas"></canvas>
+      <canvas id="seam-modal-graph-canvas" style="display:none"></canvas>
       <div class="seam-modal-readout" id="seam-modal-readout"></div>
     </div>
   </div>
