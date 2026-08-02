@@ -940,13 +940,18 @@ details.advanced input[type="text"] {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 220px;
-  z-index: 0;
+  /* Tracks the real gutter outside minima's 740px wrapper, plus a modest
+     constant bleed onto the panel's own padding/border — never deep enough
+     to cover text. Shrinks smoothly instead of vanishing on narrow
+     viewports; background-position keeps the inner tip (near the content)
+     in view and crops away the outer bulk first. */
+  width: clamp(32px, calc((100vw - 740px) / 2 + 40px), 220px);
+  z-index: 2;
   pointer-events: none;
   background-color: var(--cave-air);
   background-image: url('cave-wall.svg');
   background-repeat: repeat-y;
-  background-position: left top;
+  background-position: right top;
   background-size: 200px 320px;
   image-rendering: pixelated;
 }
@@ -956,16 +961,4 @@ details.advanced input[type="text"] {
 .cave-wall-right {
   right: 0;
   transform: scaleX(-1);
-}
-@media (max-width: 1100px) {
-  .cave-wall {
-    display: none;
-  }
-}
-
-/* Real content stacks above the walls, so the rock reads as bleeding
-   in behind the panels rather than covering their edges. */
-#app {
-  position: relative;
-  z-index: 1;
 }
