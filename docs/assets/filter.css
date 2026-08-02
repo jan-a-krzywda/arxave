@@ -946,7 +946,7 @@ details.advanced input[type="text"] {
      viewports; background-position keeps the inner tip (near the content)
      in view and crops away the outer bulk first. */
   width: clamp(32px, calc((100vw - 740px) / 2 + 40px), 220px);
-  z-index: 2;
+  z-index: 0;
   pointer-events: none;
   background-color: var(--cave-air);
   background-image: url('cave-wall.svg');
@@ -961,4 +961,14 @@ details.advanced input[type="text"] {
 .cave-wall-right {
   right: 0;
   transform: scaleX(-1);
+}
+
+/* Real content stacks above the walls — the rock can bleed into the
+   panel's padding/border but never covers the page's own content.
+   The page title lives outside #app (minima's own header), so it
+   needs the same treatment. */
+#app,
+.post-title {
+  position: relative;
+  z-index: 1;
 }
