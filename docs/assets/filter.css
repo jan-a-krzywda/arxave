@@ -940,12 +940,13 @@ details.advanced input[type="text"] {
   position: absolute;
   top: 0;
   bottom: 0;
-  /* Tracks the real gutter outside minima's 740px wrapper, plus a modest
-     constant bleed onto the panel's own padding/border — never deep enough
-     to cover text. Shrinks smoothly instead of vanishing on narrow
-     viewports; background-position keeps the inner tip (near the content)
-     in view and crops away the outer bulk first. */
-  width: clamp(32px, calc((100vw - 740px) / 2 + 40px), 220px);
+  /* A conservative estimate of the gutter outside minima's wrapper —
+     deliberately undershoots (minima's own max-width shifts at its
+     800px breakpoint) so this never overlaps real content. Shrinks to
+     0 on narrower viewports instead of covering text; background-
+     position keeps the inner tip (near the content) in view and crops
+     the outer bulk first as it shrinks. */
+  width: clamp(0px, calc((100vw - 900px) / 2), 180px);
   z-index: 0;
   pointer-events: none;
   background-color: var(--cave-air);
@@ -961,33 +962,4 @@ details.advanced input[type="text"] {
 .cave-wall-right {
   right: 0;
   transform: scaleX(-1);
-}
-
-/* Real content stacks above the walls — the rock can bleed into the
-   panel's padding/border but never covers the page's own content.
-   The page title lives outside #app (minima's own header), so it
-   needs the same treatment. */
-#app,
-.post-title {
-  position: relative;
-  z-index: 1;
-}
-
-/* The boxed panels (fieldsets, claim-bar) already paint an opaque
-   background, so text inside them stays legible over the walls. The
-   loose text between panels doesn't — give it its own small frame so
-   rock texture behind it doesn't fight with the letters. */
-.post-title {
-  display: inline-block;
-  background: var(--cave-air);
-  border: 1px solid var(--rock-edge);
-  border-radius: 6px;
-  padding: 0.1em 0.5em;
-}
-#app > p.hint {
-  display: inline-block;
-  background: var(--rock-deep);
-  border: 1px solid var(--rock-edge);
-  border-radius: 6px;
-  padding: 0.5em 0.8em;
 }
