@@ -972,3 +972,22 @@ details.advanced input[type="text"] {
   position: relative;
   z-index: 1;
 }
+
+/* The boxed panels (fieldsets, claim-bar) already paint an opaque
+   background, so text inside them stays legible over the walls. The
+   loose text between panels doesn't — give it its own small frame so
+   rock texture behind it doesn't fight with the letters. */
+.post-title {
+  display: inline-block;
+  background: var(--cave-air);
+  border: 1px solid var(--rock-edge);
+  border-radius: 6px;
+  padding: 0.1em 0.5em;
+}
+#app > p.hint {
+  display: inline-block;
+  background: var(--rock-deep);
+  border: 1px solid var(--rock-edge);
+  border-radius: 6px;
+  padding: 0.5em 0.8em;
+}
