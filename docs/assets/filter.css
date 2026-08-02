@@ -929,3 +929,52 @@ details.advanced input[type="text"] {
     gap: 0.5rem;
   }
 }
+
+/* ── Cave walls: pixel-art rock + nuggets in the page gutters ──
+   Scroll down the page like descending a mine shaft. Absolutely
+   positioned against .page-content (see cave.scss) so the strip's
+   height tracks the whole page, not just the viewport. */
+.cave-wall {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 168px;
+  z-index: 0;
+  pointer-events: none;
+  background-color: var(--rock-deep);
+  image-rendering: pixelated;
+  background-repeat:
+    repeat, repeat, repeat,
+    repeat-y, repeat-y, repeat-y, repeat-y;
+  background-size:
+    24px 24px, 24px 24px, 48px 48px,
+    168px 112px, 168px 148px, 168px 176px, 168px 210px;
+  background-position:
+    0 0, 0 0, 0 0,
+    30px 26px, 118px 74px, 60px 132px, 138px 20px;
+  background-image:
+    repeating-linear-gradient(0deg, var(--rock-edge) 0 2px, transparent 2px 24px),
+    repeating-linear-gradient(90deg, var(--rock-edge) 0 2px, transparent 2px 24px),
+    repeating-conic-gradient(from 0deg, rgba(0,0,0,0.12) 0deg 90deg, transparent 90deg 180deg,
+      rgba(0,0,0,0.12) 180deg 270deg, transparent 270deg 360deg),
+    radial-gradient(circle 4px at center, var(--gold) 4px, transparent 4px),
+    radial-gradient(circle 3px at center, var(--pyrite) 3px, transparent 3px),
+    radial-gradient(circle 5px at center, var(--gold-dim) 5px, transparent 5px),
+    radial-gradient(circle 3px at center, var(--pyrite-dim) 3px, transparent 3px);
+}
+.cave-wall-left {
+  left: 0;
+  border-right: 1px solid var(--rock-edge);
+  box-shadow: inset -6px 0 12px -6px rgba(0, 0, 0, 0.5);
+}
+.cave-wall-right {
+  right: 0;
+  border-left: 1px solid var(--rock-edge);
+  box-shadow: inset 6px 0 12px -6px rgba(0, 0, 0, 0.5);
+  transform: scaleX(-1);
+}
+@media (max-width: 1320px) {
+  .cave-wall {
+    display: none;
+  }
+}
