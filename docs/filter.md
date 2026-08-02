@@ -10,6 +10,9 @@ permalink: /
   </div>
 </noscript>
 
+<div class="cave-wall cave-wall-left" aria-hidden="true"></div>
+<div class="cave-wall cave-wall-right" aria-hidden="true"></div>
+
 <div id="app" style="display:none">
   <p class="hint">
     Wash a night of arXiv and keep the few stones worth a careful look.
