@@ -48,19 +48,27 @@ PAGE_TEMPLATE = """<!doctype html>
 <script>window.ARXAVE_RELAY = location.origin + '/relay';</script>
 <link rel="stylesheet" href="/assets/cave.css">
 <style>
-  body {{ max-width: 62rem; margin: 2rem auto; padding: 0 1rem;
-         font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
+  /* minima's page shell, close enough to preview layout against: the same
+     .page-content > .wrapper nesting and the same 800px-minus-padding column,
+     so a width the page overrides (see filter.css) behaves as it will live. */
+  body {{ margin: 0; font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
+  .wrapper {{ max-width: calc(800px - 60px); margin: 0 auto; padding: 0 30px; }}
+  .page-content {{ padding: 2rem 0; }}
   .dev-note {{ border: 1px solid var(--rock-lit); border-radius: 4px;
               color: var(--text-dim); background: var(--rock-deep);
               padding: 0.6rem 0.9rem; margin-bottom: 1.5rem; font-size: 0.85rem; }}
 </style>
 </head><body>
+<main class="page-content">
+<div class="wrapper">
 <div class="dev-note">
   <strong>Local preview.</strong> Served by <code>scripts/dev_filter.py</code>,
-  which also relays arXiv on this port. Jekyll layout and nav are missing; the
-  form and pipeline are the real ones.
+  which also relays arXiv on this port. Jekyll's nav and footer are missing;
+  the content column, the form and the pipeline are the real ones.
 </div>
 {body}
+</div>
+</main>
 </body></html>
 """
 

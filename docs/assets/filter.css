@@ -10,6 +10,16 @@
   display: none;
 }
 
+/* minima's wrapper is 740px inside, which wraps the four stage cards 3 + 1
+   and squeezes the assay matrix. This stylesheet only loads on the dig page,
+   so widening the column here leaves the rest of the site alone. Header and
+   footer wrappers widen with it, so the nav still lines up with the content. */
+@media (min-width: 900px) {
+  .wrapper {
+    max-width: 1140px;
+  }
+}
+
 .dig-hero {
   margin: 0 0 2rem;
 }
@@ -1135,7 +1145,7 @@ details.advanced input[type="text"] {
      background-position keeps the inner tip (near the content) in view
      and crops the outer bulk first as it shrinks. Text still wins if
      the estimate is ever wrong: #app sits a layer above. */
-  width: clamp(0px, calc((100vw - 1060px) / 2), 180px);
+  width: clamp(0px, calc((100vw - 1220px) / 2), 180px);
   z-index: 0;
   pointer-events: none;
   background-color: var(--cave-air);
@@ -1145,6 +1155,14 @@ details.advanced input[type="text"] {
   background-size: 200px 320px;
   image-rendering: pixelated;
 }
+/* Below this the gutter is a sliver, and a 20px strip of rock reads as
+   noise rather than a wall — better none at all. */
+@media (max-width: 1340px) {
+  .cave-wall {
+    display: none;
+  }
+}
+
 .cave-wall-left {
   left: 0;
 }
