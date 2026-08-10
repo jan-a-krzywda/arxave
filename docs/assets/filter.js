@@ -26,6 +26,109 @@
   const LOCAL_BATCH = 16;
   const OPENALEX_MAILTO = 'arxiv-filter@example.com';
 
+  /* arXiv categories, for the picker. Grouped the way arXiv groups them, so
+     the dropdown reads like the listing pages. Not exhaustive on purpose —
+     the dead archives and the long tail would bury the ones people scout —
+     and "Other…" takes any code by hand for whatever is missing. */
+  const ARXIV_CATEGORIES = [
+    /* The four most-reached-for codes, repeated at the top so the common case
+       is one click rather than a scroll into the right archive. Adding one is
+       deduped against the list, so picking it here or below is the same. */
+    ['Popular', [
+      ['quant-ph', 'Quantum physics'],
+      ['cs.AI', 'Artificial intelligence'],
+      ['cs.LG', 'Machine learning'],
+      ['cond-mat.mes-hall', 'Mesoscale and nanoscale physics'],
+    ]],
+    ['Physics — condensed matter', [
+      ['cond-mat.mes-hall', 'Mesoscale and nanoscale physics'],
+      ['cond-mat.mtrl-sci', 'Materials science'],
+      ['cond-mat.str-el', 'Strongly correlated electrons'],
+      ['cond-mat.supr-con', 'Superconductivity'],
+      ['cond-mat.quant-gas', 'Quantum gases'],
+      ['cond-mat.stat-mech', 'Statistical mechanics'],
+      ['cond-mat.soft', 'Soft condensed matter'],
+      ['cond-mat.dis-nn', 'Disordered systems and neural networks'],
+      ['cond-mat.other', 'Other condensed matter'],
+    ]],
+    ['Physics — quantum, optics, atomic', [
+      ['quant-ph', 'Quantum physics'],
+      ['physics.optics', 'Optics'],
+      ['physics.atom-ph', 'Atomic physics'],
+      ['physics.app-ph', 'Applied physics'],
+      ['physics.ins-det', 'Instrumentation and detectors'],
+      ['physics.comp-ph', 'Computational physics'],
+      ['physics.chem-ph', 'Chemical physics'],
+      ['physics.plasm-ph', 'Plasma physics'],
+    ]],
+    ['Physics — high energy, gravity, astro', [
+      ['hep-th', 'High energy physics — theory'],
+      ['hep-ph', 'High energy physics — phenomenology'],
+      ['hep-ex', 'High energy physics — experiment'],
+      ['hep-lat', 'High energy physics — lattice'],
+      ['gr-qc', 'General relativity and quantum cosmology'],
+      ['nucl-th', 'Nuclear theory'],
+      ['nucl-ex', 'Nuclear experiment'],
+      ['astro-ph.CO', 'Cosmology and nongalactic astrophysics'],
+      ['astro-ph.GA', 'Astrophysics of galaxies'],
+      ['astro-ph.HE', 'High energy astrophysical phenomena'],
+      ['astro-ph.IM', 'Instrumentation and methods for astrophysics'],
+      ['astro-ph.SR', 'Solar and stellar astrophysics'],
+      ['nlin.CD', 'Chaotic dynamics'],
+      ['nlin.PS', 'Pattern formation and solitons'],
+    ]],
+    ['Computer science', [
+      ['cs.LG', 'Machine learning'],
+      ['cs.AI', 'Artificial intelligence'],
+      ['cs.CL', 'Computation and language'],
+      ['cs.CV', 'Computer vision and pattern recognition'],
+      ['cs.CR', 'Cryptography and security'],
+      ['cs.DS', 'Data structures and algorithms'],
+      ['cs.CC', 'Computational complexity'],
+      ['cs.DC', 'Distributed and cluster computing'],
+      ['cs.ET', 'Emerging technologies'],
+      ['cs.IT', 'Information theory'],
+      ['cs.NE', 'Neural and evolutionary computing'],
+      ['cs.RO', 'Robotics'],
+      ['cs.SE', 'Software engineering'],
+    ]],
+    ['Mathematics', [
+      ['math.AP', 'Analysis of PDEs'],
+      ['math.CO', 'Combinatorics'],
+      ['math.DS', 'Dynamical systems'],
+      ['math.FA', 'Functional analysis'],
+      ['math.MP', 'Mathematical physics'],
+      ['math.NA', 'Numerical analysis'],
+      ['math.OC', 'Optimization and control'],
+      ['math.PR', 'Probability'],
+      ['math.QA', 'Quantum algebra'],
+      ['math.ST', 'Statistics theory'],
+    ]],
+    ['Statistics, EE, quantitative', [
+      ['stat.ML', 'Machine learning (stats)'],
+      ['stat.ME', 'Methodology'],
+      ['stat.AP', 'Applications'],
+      ['eess.SP', 'Signal processing'],
+      ['eess.SY', 'Systems and control'],
+      ['eess.IV', 'Image and video processing'],
+      ['q-bio.BM', 'Biomolecules'],
+      ['q-bio.NC', 'Neurons and cognition'],
+      ['q-fin.ST', 'Statistical finance'],
+      ['econ.EM', 'Econometrics'],
+    ]],
+  ];
+
+  /** Human name for a code, or '' if it is not one of the listed ones. */
+  function categoryName(code) {
+    for (var g = 0; g < ARXIV_CATEGORIES.length; g++) {
+      var rows = ARXIV_CATEGORIES[g][1];
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i][0] === code) return rows[i][1];
+      }
+    }
+    return '';
+  }
+
   // ── DOM helpers ──────────────────────────────────────────────────
   function byId(id) { return document.getElementById(id); }
 
@@ -160,7 +263,9 @@
 
     var sc = claim.scout || {};
     state.scout = {
-      categories: sc.categories || state.scout.categories,
+      /* typeof, not ||: an empty category list is a real setting now that the
+         picker can clear one, and must not silently fall back to the default. */
+      categories: typeof sc.categories === 'string' ? sc.categories : state.scout.categories,
       lookback: parseInt(sc.lookback_days, 10) || 1,
       max_results: parseInt(sc.max_results, 10) || 200,
     };
@@ -191,6 +296,7 @@
 
   function renderClaimIntoDom() {
     byId('categories').value = state.scout.categories;
+    renderCategoryChips();
     byId('lookback').value = state.scout.lookback;
     byId('max-results').value = state.scout.max_results;
     byId('paydirt-n').value = state.blend.paydirt_n;
@@ -204,6 +310,108 @@
       renderCoreRow(state.cores[j]);
       if (state.cores[j].doi) resolveCore(state.cores[j].id);
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Category picker — chips over a hidden `#categories` field
+  // ═══════════════════════════════════════════════════════════════════
+  /* Codes are still stored as the one comma-separated string a claim carries,
+     so an exported claim from before the picker still loads. The chips are a
+     view of that string; add and remove rewrite it. */
+
+  function categoryList() {
+    return state.scout.categories.split(',')
+      .map(function (c) { return c.trim(); })
+      .filter(function (c) { return c.length > 0; });
+  }
+
+  function setCategoryList(codes) {
+    // Dedupe, keeping first-added order — the scout sends them as one query.
+    var seen = {};
+    var out = [];
+    for (var i = 0; i < codes.length; i++) {
+      var c = codes[i].trim();
+      if (c && !seen[c]) { seen[c] = 1; out.push(c); }
+    }
+    state.scout.categories = out.join(', ');
+    byId('categories').value = state.scout.categories;
+    renderCategoryChips();
+    markHaulStale();
+    autosave();
+  }
+
+  /* A haul is bound to the scout settings it ran with. Change them and the
+     hauled stones are the wrong ones — say so, and offer the button back. */
+  function markHaulStale() {
+    var btn = byId('haul-btn');
+    if (!btn || !state.stones.length) return;
+    btn.disabled = false;
+    btn.classList.remove('is-done');
+    btn.textContent = '🪨 Haul again';
+    var statusEl = byId('haul-status');
+    statusEl.textContent = 'Scout changed — haul again to pick it up.';
+    statusEl.style.color = 'var(--text-dim)';
+  }
+
+  function renderCategoryChips() {
+    var wrap = byId('cat-chips');
+    if (!wrap) return;
+    var codes = categoryList();
+    if (codes.length === 0) {
+      wrap.innerHTML = '<span class="cat-empty">No categories — add one below.</span>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < codes.length; i++) {
+      var name = categoryName(codes[i]);
+      html += '<span class="cat-chip"' + (name ? ' title="' + escapeHtml(name) + '"' : '') + '>' +
+        '<span class="cat-chip-code">' + escapeHtml(codes[i]) + '</span>' +
+        '<button type="button" class="cat-chip-x" data-code="' + escapeHtml(codes[i]) +
+        '" aria-label="Remove ' + escapeHtml(codes[i]) + '">×</button></span>';
+    }
+    wrap.innerHTML = html;
+  }
+
+  function buildCategorySelect() {
+    var sel = byId('cat-add');
+    if (!sel) return;
+    var html = '<option value="">+ Add a category…</option>';
+    for (var g = 0; g < ARXIV_CATEGORIES.length; g++) {
+      html += '<optgroup label="' + escapeHtml(ARXIV_CATEGORIES[g][0]) + '">';
+      var rows = ARXIV_CATEGORIES[g][1];
+      for (var i = 0; i < rows.length; i++) {
+        html += '<option value="' + escapeHtml(rows[i][0]) + '">' +
+          escapeHtml(rows[i][0]) + ' — ' + escapeHtml(rows[i][1]) + '</option>';
+      }
+      html += '</optgroup>';
+    }
+    html += '<option value="__other__">Other — type a code…</option>';
+    sel.innerHTML = html;
+  }
+
+  function wireCategoryPicker() {
+    buildCategorySelect();
+    renderCategoryChips();
+
+    byId('cat-add').addEventListener('change', function () {
+      var v = this.value;
+      this.value = '';
+      if (!v) return;
+      if (v === '__other__') {
+        var typed = window.prompt('arXiv category code (e.g. cond-mat.mes-hall)');
+        if (!typed) return;
+        v = typed.trim();
+        if (!v) return;
+      }
+      setCategoryList(categoryList().concat([v]));
+    });
+
+    byId('cat-chips').addEventListener('click', function (e) {
+      var btn = e.target.closest('.cat-chip-x');
+      if (!btn) return;
+      var code = btn.getAttribute('data-code');
+      setCategoryList(categoryList().filter(function (c) { return c !== code; }));
+    });
   }
 
   /* Re-assay after a claim switch, but only if there is something to assay. */
@@ -475,34 +683,142 @@
     return candidates;
   }
 
+  /* One category's announcement feed → stones.
+     Measured 2026-08-10 on quant-ph: the feed carries 39 new + 16 cross-listed
+     + 48 replacements, and the 55 new+cross are exactly what the listing page
+     shows for the day. The search API cannot reproduce that set: it can only
+     window on *submission* date, and a cross-list is usually submitted days
+     before the archive announces it, so those 16 fall outside any 24-hour
+     window. Hence the feed, not the API, is the source for the day. */
+  function parseAnnouncementRSS(xmlText, wantedCat) {
+    var doc = new DOMParser().parseFromString(xmlText, 'application/xml');
+    var items = doc.querySelectorAll('item');
+    var out = [];
+    items.forEach(function (item) {
+      var typeEl = item.getElementsByTagName('arxiv:announce_type')[0];
+      var announce = typeEl ? typeEl.textContent.trim() : 'new';
+      // Replacements are old papers with a new version — not tonight's haul.
+      if (announce !== 'new' && announce !== 'cross') return;
+
+      var linkEl = item.querySelector('link');
+      if (!linkEl) return;
+      var arxivId = linkEl.textContent.trim().replace(/^.*\/abs\//, '');
+      if (!arxivId) return;
+
+      var titleEl = item.querySelector('title');
+      var title = titleEl ? titleEl.textContent.replace(/\s+/g, ' ').trim() : '';
+
+      /* description is "arXiv:ID vN Announce Type: new \nAbstract: …" — the
+         header is boilerplate and would only add noise to the embedding. */
+      var descEl = item.querySelector('description');
+      var desc = descEl ? descEl.textContent : '';
+      var absMatch = desc.match(/Abstract:\s*([\s\S]*)$/);
+      var abstract = (absMatch ? absMatch[1] : desc).replace(/\s+/g, ' ').trim();
+
+      var authors = [];
+      var creators = item.getElementsByTagName('dc:creator');
+      for (var c = 0; c < creators.length; c++) {
+        creators[c].textContent.split(',').forEach(function (n) {
+          var name = n.trim();
+          if (name) authors.push(name);
+        });
+      }
+
+      var catEls = item.querySelectorAll('category');
+      var primaryCat = catEls.length ? catEls[0].textContent.trim() : wantedCat;
+
+      var dateEl = item.querySelector('pubDate');
+      var announced = '';
+      if (dateEl) {
+        var d = new Date(dateEl.textContent.trim());
+        if (!isNaN(d)) announced = d.toISOString().substring(0, 10);
+      }
+
+      out.push({
+        arxiv_id: arxivId, title: title, abstract: abstract, authors: authors,
+        primary_category: primaryCat, published: announced,
+        announce: announce,
+        abs_url: 'https://arxiv.org/abs/' + arxivId,
+        pdf_url: 'https://arxiv.org/pdf/' + arxivId,
+      });
+    });
+    return out;
+  }
+
+  /** Tonight's announcement across every scouted category, deduped by id. */
+  async function fetchAnnouncement(cats) {
+    var seen = {};
+    var stones = [];
+    var failures = [];
+    for (var i = 0; i < cats.length; i++) {
+      var url = 'https://rss.arxiv.org/rss/' + encodeURIComponent(cats[i]);
+      var resp;
+      try {
+        resp = await fetchViaRelay(url);
+      } catch (err) {
+        failures.push(cats[i] + ' → ' + (err && err.message ? err.message : String(err)));
+        continue;
+      }
+      if (!resp.ok) {
+        failures.push(cats[i] + ' → HTTP ' + resp.status);
+        continue;
+      }
+      var batch = parseAnnouncementRSS(await resp.text(), cats[i]);
+      for (var j = 0; j < batch.length; j++) {
+        // A paper announced in two scouted archives is one stone, not two.
+        if (seen[batch[j].arxiv_id]) continue;
+        seen[batch[j].arxiv_id] = 1;
+        stones.push(batch[j]);
+      }
+    }
+    // Every feed failing is an error; some failing is a warning we can survive.
+    if (stones.length === 0 && failures.length > 0) {
+      throw new Error('arXiv scout failed: ' + failures.join(' | '));
+    }
+    return stones;
+  }
+
   async function scoutDay() {
     var cats = state.scout.categories.split(',').map(function (c) { return c.trim(); }).filter(Boolean);
     if (cats.length === 0) throw new Error('No arXiv categories configured.');
     var lookback = state.scout.lookback;
     var maxResults = state.scout.max_results;
-    var query = cats.map(function (c) { return 'cat:' + c; }).join('+OR+');
-    var url = 'https://export.arxiv.org/api/query?' +
-      'search_query=' + query +
-      '&sortBy=submittedDate&sortOrder=descending' +
-      '&max_results=' + maxResults +
-      '&start=0';
 
-    var resp = await fetchViaRelay(url);
-    if (!resp.ok) {
-      var relayErr = '';
-      try { relayErr = (await resp.text()).substring(0, 200); } catch (_) {}
-      throw new Error('arXiv scout failed: HTTP ' + resp.status + (relayErr ? ' — ' + relayErr : ''));
+    var stones = await fetchAnnouncement(cats);
+    var seen = {};
+    for (var s = 0; s < stones.length; s++) seen[stones[s].arxiv_id] = 1;
+
+    /* Lookback past tonight still goes through the search API — the feed only
+       ever carries the latest announcement. Those older days are therefore
+       windowed on submission date, and miss their cross-lists the same way
+       they always did; tonight, the part people actually read, is exact. */
+    if (lookback > 1) {
+      var query = cats.map(function (c) { return 'cat:' + c; }).join('+OR+');
+      var url = 'https://export.arxiv.org/api/query?' +
+        'search_query=' + query +
+        '&sortBy=submittedDate&sortOrder=descending' +
+        '&max_results=' + maxResults +
+        '&start=0';
+      var resp = await fetchViaRelay(url);
+      if (!resp.ok) {
+        var relayErr = '';
+        try { relayErr = (await resp.text()).substring(0, 200); } catch (_) {}
+        throw new Error('arXiv scout failed: HTTP ' + resp.status + (relayErr ? ' — ' + relayErr : ''));
+      }
+      var candidates = parseAtomXML(await resp.text());
+      var cutoff = cutoffDate(new Date(), lookback);
+      for (var i = 0; i < candidates.length; i++) {
+        if (candidates[i].published && candidates[i].published < cutoff) break;
+        if (seen[candidates[i].arxiv_id]) continue;
+        seen[candidates[i].arxiv_id] = 1;
+        candidates[i].announce = 'earlier';
+        stones.push(candidates[i]);
+      }
     }
-    var xmlText = await resp.text();
-    var candidates = parseAtomXML(xmlText);
-    var cutoff = cutoffDate(new Date(), lookback);
-    var windowed = [];
-    for (var i = 0; i < candidates.length; i++) {
-      if (candidates[i].published && candidates[i].published < cutoff) break;
-      windowed.push(candidates[i]);
-    }
-    if (windowed.length === 0) throw new Error('No papers found. Check categories or try a larger lookback.');
-    return windowed;
+
+    if (stones.length === 0) throw new Error('No papers found. Check categories or try a larger lookback.');
+    if (stones.length > maxResults) stones = stones.slice(0, maxResults);
+    return stones;
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -1280,10 +1596,13 @@
     var seamPanel = byId('seam-panel');
 
     btn.disabled = true;
+    btn.classList.remove('is-done');
+    btn.textContent = '🪨 Haul the stones';
     progWrap.style.display = 'flex';
     progBar.value = 0;
     progLabel.textContent = 'Scouting...';
     statusEl.textContent = '';
+    statusEl.style.color = '';
     seamPanel.style.display = 'none';
 
     try {
@@ -1322,13 +1641,26 @@
       // graph canvas can measure its own width)
       renderSeamPanel();
 
-      // Mark done
-      statusEl.textContent = stones.length + ' stones hauled.';
+      // Mark done. The breakdown is worth showing: "why 55 and not 43" is the
+      // cross-lists, and the number only makes sense next to the listing page
+      // if the split is visible.
+      var nNew = 0, nCross = 0, nEarlier = 0;
+      stones.forEach(function (st) {
+        if (st.announce === 'cross') nCross++;
+        else if (st.announce === 'earlier') nEarlier++;
+        else nNew++;
+      });
+      var parts = [nNew + ' new'];
+      if (nCross) parts.push(nCross + ' cross-listed');
+      if (nEarlier) parts.push(nEarlier + ' from earlier days');
+      statusEl.textContent = stones.length + ' stones hauled — ' + parts.join(', ') + '.';
       statusEl.style.color = 'var(--moss)';
       progWrap.style.display = 'none';
+      /* Stays clickable: a haul is a snapshot of one scout setting, and the
+         scout is editable right above it, so re-hauling has to be possible. */
       btn.textContent = '✓ Hauled';
-      btn.style.color = 'var(--moss)';
-      btn.style.borderColor = 'var(--moss)';
+      btn.classList.add('is-done');
+      btn.disabled = false;
 
       // If touchstones already exist from localStorage, embed them and show assay
       if (state.touchstones.length > 0 || state.cores.length > 0) {
@@ -1733,9 +2065,10 @@
     var rail = byId('assay-rail');
     var colTitles = byId('assay-column-titles');
 
-    // Cell size shrinks as N grows: 16px at N≤90, down to 10px at N≥200
-    var cellW = N <= 90 ? 16 : N <= 120 ? 14 : N <= 160 ? 12 : 10;
-    // Rail row height must match grid cell height so rows align
+    // Cell size shrinks as N grows: 18px at N≤90, down to 12px at N≥200
+    var cellW = N <= 90 ? 18 : N <= 120 ? 16 : N <= 160 ? 14 : 12;
+    // Rail row height floor — rows grow past it if the label needs the room,
+    // and the cells follow, so the labels stay legible at any N
     var rowH = cellW; // matrix-cell has aspect-ratio: 1
     var colTitleHTML = '';
     for (var c = 0; c < N; c++) {
@@ -1935,10 +2268,12 @@
     var railRows = rail.querySelectorAll('.rail-row');
     var gridRows = grid.querySelectorAll('.matrix-row');
 
-    // Data rows get the cell height; header rows keep their natural (text) height
+    // Data rows get the cell height as a floor; header rows and any label that
+    // needs more than rowH keep their natural (text) height. The grid rows are
+    // pushed to whatever the rail actually measures, below, so they stay aligned.
     for (var i = 1; i < railRows.length; i++) {
       if (!railRows[i].classList.contains('group-header')) {
-        railRows[i].style.height = rowH + 'px';
+        railRows[i].style.minHeight = rowH + 'px';
       }
     }
 
@@ -2240,16 +2575,17 @@
   // Event bindings — Scout + claims
   // ═══════════════════════════════════════════════════════════════════
 
-  byId('categories').addEventListener('input', function () {
-    state.scout.categories = this.value;
-    autosave();
-  });
+  /* #categories is hidden and written only by the picker (setCategoryList),
+     which updates state and autosaves itself — so there is no input event to
+     listen for here. */
   byId('lookback').addEventListener('input', function () {
     state.scout.lookback = parseInt(this.value, 10) || 1;
+    markHaulStale();
     autosave();
   });
   byId('max-results').addEventListener('input', function () {
     state.scout.max_results = parseInt(this.value, 10) || 200;
+    markHaulStale();
     autosave();
   });
 
@@ -2327,6 +2663,7 @@
   // ═══════════════════════════════════════════════════════════════════
 
   loadCoreCache();
+  wireCategoryPicker();
 
   var claims = migrateLegacyState();
   var current = null;
