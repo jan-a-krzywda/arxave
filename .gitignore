@@ -7,6 +7,11 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 
+# Jekyll local build (docs/)
+docs/_site/
+docs/.jekyll-cache/
+docs/Gemfile.lock
+
 # Supabase CLI scratch (link state, temp bundles)
 supabase/.temp/
 supabase/.branches/
