@@ -25,18 +25,13 @@ permalink: /
     </p>
     <ol class="dig-steps">
       <li>
-        <span class="dig-step-n">0</span>
-        <span class="dig-step-name">Sharpen the pick</span>
-        <span class="dig-step-say">Load the scoring model — 32 MB, once.</span>
-      </li>
-      <li>
         <span class="dig-step-n">1</span>
         <span class="dig-step-name">Haul the stones</span>
         <span class="dig-step-say">Fetch the night's papers, read them into numbers.</span>
       </li>
       <li>
         <span class="dig-step-n">2</span>
-        <span class="dig-step-name">Set the touchstones</span>
+        <span class="dig-step-name">Filter</span>
         <span class="dig-step-say">Say what interests you — words, or papers you like.</span>
       </li>
       <li>
@@ -67,25 +62,6 @@ permalink: /
   <p class="hint claim-hint">
     A claim is one dig setup. Edits save themselves.
   </p>
-
-  <!-- ── Stage 0: Sharpen the pick ── -->
-  <fieldset id="stage-0">
-    <legend>0. Sharpen the pick</legend>
-    <p class="hint">Optional — the pick sharpens itself when a stone actually needs cutting.
-      Days already in the shared cache need no model at all. ~32 MB, downloaded once,
-      then cached by your browser. Nothing you type leaves this tab.</p>
-    <div class="button-bar">
-      <button type="button" id="sharpen-btn">⛏ Sharpen the pick</button>
-      <span class="stage-status" id="sharpen-status"></span>
-    </div>
-    <div class="progress-wrap" id="sharpen-progress-wrap" style="display:none">
-      <progress id="sharpen-progress" value="0" max="100"></progress>
-      <span class="progress-label" id="sharpen-label"></span>
-    </div>
-    <div class="stage-done" id="sharpen-done" style="display:none">
-      Pick sharpened — <code>bge-small-en-v1.5</code>, 384-dim
-    </div>
-  </fieldset>
 
   <!-- ── Stage 1: Haul the stones (scout settings live here — they are what
        the haul is about, and nothing else reads them) ── -->
@@ -157,10 +133,30 @@ permalink: /
     </div>
   </fieldset>
 
-  <!-- ── Stage 2: Set the touchstones ── -->
+  <!-- ── Stage 2: Filter ── -->
   <fieldset id="stage-2">
-    <legend>2. Set the touchstones</legend>
+    <legend>2. Filter</legend>
     <p class="hint">What you care about: a word, a phrase, a sentence — or papers you already like.</p>
+
+    <!-- The gate: your own words have to be cut in this tab, so the pick is
+         needed here even when the whole night came down already cut. One
+         download, then the browser keeps it. -->
+    <div class="pick-gate" id="pick-gate">
+      <button type="button" id="sharpen-btn" class="pick-gate-btn">⛏ Sharpen the pick</button>
+      <div class="pick-gate-say">
+        <strong>One time only.</strong> ~32 MB, then your browser keeps it — every
+        later dig on this machine skips this. Needed to score your own words;
+        nothing you type leaves this tab.
+      </div>
+      <span class="stage-status" id="sharpen-status"></span>
+      <div class="progress-wrap" id="sharpen-progress-wrap" style="display:none">
+        <progress id="sharpen-progress" value="0" max="100"></progress>
+        <span class="progress-label" id="sharpen-label"></span>
+      </div>
+    </div>
+    <div class="stage-done" id="sharpen-done" style="display:none">
+      Pick sharpened — <code>bge-small-en-v1.5</code>, 384-dim. Done for good on this browser.
+    </div>
 
     <!-- Touchstones (free text) -->
     <div id="touchstones-group">

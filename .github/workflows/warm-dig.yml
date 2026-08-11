@@ -12,7 +12,7 @@ on:
       categories:
         description: 'arXiv categories (comma-separated)'
         type: string
-        default: 'quant-ph, cond-mat.mes-hall'
+        default: 'quant-ph, cond-mat.mes-hall, cs.AI, cs.LG'
       dry_run:
         description: 'Embed but write nothing'
         type: boolean
@@ -58,5 +58,5 @@ jobs:
           DIG_CACHE_URL: ${{ vars.ARXAVE_DIG_CACHE_URL }}
         run: |
           node warm-dig.mjs \
-            --categories "${{ inputs.categories || vars.ARXAVE_WARM_CATEGORIES || 'quant-ph, cond-mat.mes-hall' }}" \
+            --categories "${{ inputs.categories || vars.ARXAVE_WARM_CATEGORIES || 'quant-ph, cond-mat.mes-hall, cs.AI, cs.LG' }}" \
             ${{ inputs.dry_run && '--dry-run' || '' }}
