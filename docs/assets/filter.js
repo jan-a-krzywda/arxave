@@ -594,6 +594,57 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  /* Author names arrive straight out of the .bbl, so a fair number still wear
+     their TeX accents: \'Alvaro, Mois\es, {\o}. Strip the markup down to the
+     bare letter — an unaccented A beats a stray backslash in a column this
+     narrow. */
+  function unTex(name) {
+    return String(name)
+      /* \'{a}, \"o, \v s … the accent command plus its (maybe braced) letter. */
+      .replace(/\\[`'^"~=.uvHrcbdk]\s*\{?([A-Za-z])\}?/g, '$1')
+      .replace(/\\ss\b/g, 'ss')
+      .replace(/\\(aa|AA|o|O|l|L|ae|AE|oe|OE)\b/g, function (_, c) { return c; })
+      .replace(/[{}\\]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /* "Álvaro Navarrete" → "Á. Navarrete", "Duarte, A. H." → "A. H. Duarte".
+     Uniform initials keep the column narrow and scannable; the untouched full
+     list stays in the cell's tooltip. */
+  function shortAuthor(name) {
+    var n = unTex(name);
+    if (!n) return '';
+    var given, last;
+    if (n.indexOf(',') !== -1) {
+      var parts = n.split(',');
+      last = parts.shift().trim();
+      given = parts.join(' ').trim();
+    } else {
+      var words = n.split(' ');
+      last = words.pop();
+      /* Keep the particle with the surname: "van Dijk", not "v. Dijk". */
+      while (words.length &&
+             /^(van|von|der|den|de|del|della|di|da|dos|du|la|le|ter|ten|bin|ibn|al|st\.?)$/i
+               .test(words[words.length - 1])) {
+        last = words.pop() + ' ' + last;
+      }
+      given = words.join(' ');
+    }
+    if (!given) return last;
+    var inits = given.split(' ').map(function (w) {
+      /* Jean-Pierre → J.-P. */
+      return w.split('-').map(function (p) {
+        return p ? p.charAt(0).toUpperCase() + '.' : '';
+      }).filter(Boolean).join('-');
+    }).filter(Boolean).join(' ');
+    return inits ? inits + ' ' + last : last;
+  }
+
+  function shortAuthors(list) {
+    return (list || []).map(shortAuthor).filter(Boolean).join(', ');
+  }
+
   // ═══════════════════════════════════════════════════════════════════
   // The pick — loaded on demand, gated at the top of Stage 2
   // ═══════════════════════════════════════════════════════════════════
@@ -1954,7 +2005,8 @@
     for (var i = 0; i < members.length; i++) {
       var si = members[i];
       var st = stones[si];
-      var authors = (st.authors || []).join(', ');
+      var authors = shortAuthors(st.authors);
+      var authorsFull = (st.authors || []).map(unTex).join(', ');
       out += '<tr>' +
         /* One line, clipped, with the whole title in the native tooltip: a
            wrapped title makes rows of different heights and the table stops
@@ -1962,8 +2014,10 @@
         '<td class="seam-td-title-cell"><a class="seam-td-title" href="' + st.abs_url +
           '" target="_blank" rel="noopener" title="' + escapeHtml(st.title) + '">' +
           escapeHtml(st.title) + '</a></td>' +
-        '<td class="seam-td-authors" title="' + escapeHtml(authors) + '">' +
-          escapeHtml(authors) + '</td>' +
+        /* The scroller has to be a div: a td is a table-cell box and ignores
+           overflow, so the names used to spill over the next column. */
+        '<td class="seam-td-authors" title="' + escapeHtml(authorsFull) + '">' +
+          '<div class="seam-authors-scroll">' + escapeHtml(authors) + '</div></td>' +
         '<td class="seam-td-cat">' + escapeHtml(st.primary_category || '') + '</td>' +
         (central ? '<td class="num">' + central[si].toFixed(3) + '</td>' : '') +
         (grades ? '<td class="num">' + grades[si].toFixed(3) + '</td>' : '') +
