@@ -578,8 +578,42 @@
   // ═══════════════════════════════════════════════════════════════════
   // STAGE 0 — Sharpen the pick
   // ═══════════════════════════════════════════════════════════════════
+  /*
+   * The pick is loaded when something actually needs it, not before.
+   *
+   * It used to be a gate: 32 MB downloaded up front, with Stage 1 disabled
+   * until it finished. Since the shared cache arrived, a day whose vectors are
+   * already cut needs no model at all — the haul is a lookup, and the seam map,
+   * which the spec calls the first thing worth looking at, arrives in about a
+   * second. Making everyone pay 32 MB to reach a screen that no longer needs it
+   * is the wrong default.
+   *
+   * So every path that needs the extractor asks for it here, and only a real
+   * need triggers the download:
+   *   * a haul with cache misses (embedTexts, via embedTextsCached);
+   *   * any touchstone, always — touchstones never go through the cache.
+   *
+   * The Stage 0 button stays for people who would rather fetch it up front,
+   * and as the escape hatch for core samples parked on a fresh page load.
+   */
 
-  async function runSharpen() {
+  var _pickPromise = null;
+
+  /** The extractor, loading it if this is the first caller. */
+  function ensurePick() {
+    if (state.extractor) return Promise.resolve(state.extractor);
+    if (!_pickPromise) {
+      // Memoized so a haul and a touchstone racing each other download once;
+      // cleared on failure so a retry is possible rather than permanently stuck.
+      _pickPromise = loadPick().catch(function (err) {
+        _pickPromise = null;
+        throw err;
+      });
+    }
+    return _pickPromise;
+  }
+
+  async function loadPick() {
     var btn = byId('sharpen-btn');
     var statusEl = byId('sharpen-status');
     var progWrap = byId('sharpen-progress-wrap');
@@ -637,13 +671,9 @@
     btn.style.display = 'none';
     statusEl.textContent = '';
 
-    // Enable next stage
-    byId('haul-btn').disabled = false;
-    byId('add-touchstone').disabled = false;
-    byId('add-core').disabled = false;
-
     // Core samples restored from a claim parked themselves until now
     resolveAllCores();
+    return state.extractor;
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -843,7 +873,11 @@
   }
 
   async function embedTexts(texts, statusFn) {
-    var extractor = state.extractor;
+    /* The one place the pick is genuinely required. Everything that embeds
+       locally funnels through here, so asking for it here means no other call
+       site has to remember to — and a path served entirely from the cache never
+       reaches this line, which is the whole point of loading it lazily. */
+    var extractor = await ensurePick();
     var vectors = [];
     for (var i = 0; i < texts.length; i += LOCAL_BATCH) {
       var chunk = texts.slice(i, i + LOCAL_BATCH);
@@ -951,7 +985,7 @@
    * vector per input text, in order — plus a `cached` count on the returned
    * array for the status line. Only the misses reach the model.
    */
-  async function embedTextsCached(texts, statusFn) {
+  async function embedTextsCached(texts, statusFn, onMisses) {
     var look = await cacheLookup(texts);
     var vectors = new Array(texts.length);
     var missIdx = [];
@@ -962,6 +996,10 @@
     }
     var nCached = texts.length - missIdx.length;
     if (statusFn) statusFn(nCached, texts.length);
+    /* Announced before embedding starts, because this is the moment a 32 MB
+       download may be about to happen. A caller that stalls silently here reads
+       as a hang; one that says "12 stones need cutting" reads as work. */
+    if (onMisses) onMisses(missIdx.length, texts.length, state.modelLoaded);
     if (missIdx.length) {
       var missed = await embedTexts(
         missIdx.map(function (i) { return texts[i]; }),
@@ -2210,6 +2248,17 @@
       var vectors = await embedTextsCached(texts, function (done, total) {
         if (state.haulTrain) state.haulTrain.set(done, total);
         progLabel.textContent = 'Stones hauled: ' + done + ' / ' + total;
+      }, function (misses, total, pickLoaded) {
+        if (misses === 0) {
+          statusEl.textContent = 'All ' + total + ' stones already cut — no cutting needed.';
+        } else if (!pickLoaded) {
+          // The one place a 32 MB download starts without the user asking for
+          // it directly. Say so, with the number that justifies it.
+          statusEl.textContent = misses + ' of ' + total +
+            ' stones need cutting — sharpening the pick (~32 MB, once).';
+        } else {
+          statusEl.textContent = 'Cutting ' + misses + ' of ' + total + ' stones...';
+        }
       });
       state.A = vectors;
       state.hauledFromCache = vectors.cached || 0;
@@ -2484,9 +2533,12 @@
     var row = coreRowEl(id);
     var statusEl = row ? row.querySelector('.row-status') : null;
 
-    /* A cache miss ends in embedTexts(), which needs the extractor. On a fresh
-       page load a claim's core samples land here before Stage 0 has run, so
-       park them and let runSharpen() come back for them. */
+    /* A cache miss ends in embedTexts(), which now loads the pick on demand —
+       and a claim restoring ten core samples on page load must not be what
+       triggers a 32 MB download nobody asked for. So the parking stays: it is
+       about not downloading unprompted, not about the extractor being absent.
+       loadPick() calls resolveAllCores() when the pick does arrive, by any
+       route, including the first touchstone. */
     if (!state.modelLoaded && !(state._coreCache || {})[coreCacheKey(rec.doi)]) {
       rec.status = 'waiting for the pick';
       if (statusEl) statusEl.textContent = rec.status;
@@ -3054,7 +3106,7 @@
   // ═══════════════════════════════════════════════════════════════════
 
   byId('sharpen-btn').addEventListener('click', async function () {
-    try { await runSharpen(); }
+    try { await ensurePick(); }
     catch (err) { byId('sharpen-status').textContent = err.message; byId('sharpen-status').style.color = 'var(--ember)'; }
   });
 
