@@ -12,7 +12,7 @@ const { install } = require('./dom-shim.js');
 
 const IDS = [
   'claim-select', 'claim-save-as', 'claim-delete', 'claim-status',
-  'categories', 'lookback', 'max-results',
+  'categories', 'cat-chips', 'cat-add', 'lookback', 'max-results',
   'pick-gate', 'sharpen-btn', 'sharpen-status', 'sharpen-progress-wrap',
   'sharpen-progress', 'sharpen-label', 'sharpen-done',
   'haul-btn', 'haul-status', 'haul-progress-wrap', 'haul-train', 'haul-label',
@@ -74,8 +74,10 @@ console.log('\n2. edits autosave (touchstone text + scout + paydirt)');
   textInput.value = 'charge noise in Si/SiGe double dots';
   textInput.fire('input');
 
-  d['categories'].value = 'quant-ph';
-  d['categories'].fire('input');
+  /* #categories is a hidden mirror now — the picker writes it. Add a code the
+     way the UI does, through the dropdown. */
+  d['cat-add'].value = 'hep-th';
+  d['cat-add'].fire('change');
   d['paydirt-n'].value = '25';
   d['paydirt-n'].fire('input');
 
@@ -84,7 +86,9 @@ console.log('\n2. edits autosave (touchstone text + scout + paydirt)');
     JSON.stringify(saved.touchstones));
   check('per-row weight defaults to 1.0 (no stage-2 control; tuned later in the assay rail)',
     saved.touchstones[0].weight === 1.0, JSON.stringify(saved.touchstones));
-  check('scout categories saved', saved.scout.categories === 'quant-ph');
+  check('scout categories saved',
+    saved.scout.categories === 'cond-mat.mes-hall, quant-ph, hep-th',
+    saved.scout.categories);
   check('paydirt_n saved', saved.blend.paydirt_n === 25);
 }
 

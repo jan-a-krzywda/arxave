@@ -214,6 +214,11 @@
   const CLAIMS_KEY = lsKey('claims');
   const CURRENT_KEY = lsKey('current');
   const WORKING_SLUG = 'working';
+  /* The unnamed slot everyone starts in. The slug stays 'working' — it is in
+     everyone's localStorage — but the label people read is what the slot is:
+     the dig you are setting up right now. */
+  const WORKING_NAME = 'Dig Setup';
+  const LEGACY_WORKING_NAME = 'Working claim';
 
   function slugify(name) {
     var s = String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')
@@ -224,7 +229,7 @@
   function serializeClaim(name) {
     return {
       arxave_claim: CLAIM_VERSION,
-      name: name || 'Working claim',
+      name: name || WORKING_NAME,
       saved: new Date().toISOString().substring(0, 10),
       scout: {
         categories: state.scout.categories,
@@ -246,7 +251,15 @@
   function loadClaims() {
     try {
       var raw = localStorage.getItem(CLAIMS_KEY);
-      return raw ? (JSON.parse(raw) || {}) : {};
+      var map = raw ? (JSON.parse(raw) || {}) : {};
+      /* Anyone who used the page before the rename has the old label sitting in
+         their storage; the slot is the same slot, so relabel it in passing
+         rather than leaving two names for one thing. A slot the user named
+         themselves is never touched. */
+      if (map[WORKING_SLUG] && map[WORKING_SLUG].name === LEGACY_WORKING_NAME) {
+        map[WORKING_SLUG].name = WORKING_NAME;
+      }
+      return map;
     } catch (_) { return {}; }
   }
 
@@ -260,7 +273,7 @@
   function autosave() {
     var map = loadClaims();
     var existing = map[state.claimSlug];
-    map[state.claimSlug] = serializeClaim(existing ? existing.name : 'Working claim');
+    map[state.claimSlug] = serializeClaim(existing ? existing.name : WORKING_NAME);
     writeClaims(map);
     try { localStorage.setItem(CURRENT_KEY, state.claimSlug); } catch (_) {}
   }
@@ -450,7 +463,7 @@
 
     map[WORKING_SLUG] = {
       arxave_claim: CLAIM_VERSION,
-      name: 'Working claim',
+      name: WORKING_NAME,
       saved: new Date().toISOString().substring(0, 10),
       scout: { categories: state.scout.categories, lookback_days: 1, max_results: 200 },
       touchstones: ts.map(function (t) { return { text: t.text || '', weight: 1.0 }; }),
@@ -498,7 +511,7 @@
 
   function exportClaim() {
     var map = loadClaims();
-    var claim = map[state.claimSlug] || serializeClaim('Working claim');
+    var claim = map[state.claimSlug] || serializeClaim(WORKING_NAME);
     var blob = new Blob([JSON.stringify(claim, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
@@ -573,8 +586,12 @@
   // ── escapeHtml ────────────────────────────────────────────────────
   function escapeHtml(str) {
     if (!str) return '';
-    return str.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>')
-      .replace(/"/g, '"').replace(/'/g, '&#39;');
+    /* Every replacement but the last had lost its entity somewhere and was
+       rewriting a character to itself. Titles and author names go into
+       innerHTML and, since the seam table, into title="…" attributes, so a
+       stray < or " from arXiv would rewrite the markup around it. */
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -1632,8 +1649,12 @@
     // trails the cursor its link can't be clicked, so a pinned stone parks
     // its tooltip on the node instead and lets the pointer reach the link.
     function tipHtml(idx) {
+      var authors = (stones[idx].authors || []).join(', ');
       return '<div class="tt-title"><a href="' + stones[idx].abs_url +
-        '" target="_blank" rel="noopener">' + escapeHtml(stones[idx].title) + '</a></div>';
+        '" target="_blank" rel="noopener">' + escapeHtml(stones[idx].title) + '</a></div>' +
+        /* Smaller than the title: who wrote it is the second question, and a
+           twenty-author collaboration must not push the title off the node. */
+        (authors ? '<div class="tt-authors">' + escapeHtml(authors) + '</div>' : '');
     }
 
     function emit(idx, isPinned, evt) {
@@ -1922,20 +1943,28 @@
   function seamTableRows(members, central) {
     var stones = state.stones;
     var grades = state.grades;
+    /* No arXiv-ID column: the title is the link to the abstract page, so the
+       id was a second copy of the same click eating the width the title and
+       the authors want. */
     var out = '<table class="seam-table"><thead><tr>' +
-      '<th>Title</th><th>Category</th><th>arXiv</th>' +
+      '<th>Title</th><th>Authors</th><th>Category</th>' +
       (central ? '<th>Centrality</th>' : '') +
       (grades ? '<th>Grade</th>' : '') +
       '</tr></thead><tbody>';
     for (var i = 0; i < members.length; i++) {
       var si = members[i];
       var st = stones[si];
+      var authors = (st.authors || []).join(', ');
       out += '<tr>' +
-        '<td><a class="seam-td-title" href="' + st.abs_url +
-          '" target="_blank" rel="noopener">' + escapeHtml(st.title) + '</a></td>' +
+        /* One line, clipped, with the whole title in the native tooltip: a
+           wrapped title makes rows of different heights and the table stops
+           being scannable, which is the only thing it is for. */
+        '<td class="seam-td-title-cell"><a class="seam-td-title" href="' + st.abs_url +
+          '" target="_blank" rel="noopener" title="' + escapeHtml(st.title) + '">' +
+          escapeHtml(st.title) + '</a></td>' +
+        '<td class="seam-td-authors" title="' + escapeHtml(authors) + '">' +
+          escapeHtml(authors) + '</td>' +
         '<td class="seam-td-cat">' + escapeHtml(st.primary_category || '') + '</td>' +
-        '<td><a href="' + st.abs_url + '" target="_blank" rel="noopener">' +
-          escapeHtml(st.arxiv_id) + '</a></td>' +
         (central ? '<td class="num">' + central[si].toFixed(3) + '</td>' : '') +
         (grades ? '<td class="num">' + grades[si].toFixed(3) + '</td>' : '') +
         '</tr>';
@@ -3357,7 +3386,7 @@
     delete map[state.claimSlug];
     writeClaims(map);
     state.claimSlug = WORKING_SLUG;
-    if (!map[WORKING_SLUG]) { map[WORKING_SLUG] = serializeClaim('Working claim'); writeClaims(map); }
+    if (!map[WORKING_SLUG]) { map[WORKING_SLUG] = serializeClaim(WORKING_NAME); writeClaims(map); }
     try { localStorage.setItem(CURRENT_KEY, WORKING_SLUG); } catch (_) {}
     applyClaim(map[WORKING_SLUG]);
     renderClaimPicker();
@@ -3400,7 +3429,7 @@
   try { current = localStorage.getItem(CURRENT_KEY); } catch (_) {}
   if (!current || !claims[current]) current = WORKING_SLUG;
   if (!claims[current]) {
-    claims[current] = serializeClaim('Working claim');
+    claims[current] = serializeClaim(WORKING_NAME);
     writeClaims(claims);
   }
   state.claimSlug = current;
