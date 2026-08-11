@@ -71,7 +71,9 @@ permalink: /
   <!-- ── Stage 0: Sharpen the pick ── -->
   <fieldset id="stage-0">
     <legend>0. Sharpen the pick</legend>
-    <p class="hint">~32 MB, downloaded once, then cached by your browser. Nothing you type leaves this tab.</p>
+    <p class="hint">Optional — the pick sharpens itself when a stone actually needs cutting.
+      Days already in the shared cache need no model at all. ~32 MB, downloaded once,
+      then cached by your browser. Nothing you type leaves this tab.</p>
     <div class="button-bar">
       <button type="button" id="sharpen-btn">⛏ Sharpen the pick</button>
       <span class="stage-status" id="sharpen-status"></span>
@@ -113,7 +115,7 @@ permalink: /
     </div>
 
     <div class="button-bar">
-      <button type="button" id="haul-btn" disabled>🪨 Haul the stones</button>
+      <button type="button" id="haul-btn">🪨 Haul the stones</button>
       <span class="stage-status" id="haul-status"></span>
     </div>
     <!-- The haul's progress is a mine train, not a bar: its length is the
@@ -164,7 +166,7 @@ permalink: /
     <div id="touchstones-group">
       <div class="group-label">Touchstones <span class="sub">— free text, one per row</span></div>
       <div id="touchstones-list"></div>
-      <button type="button" id="add-touchstone" class="add-row-btn" disabled>+ Add touchstone</button>
+      <button type="button" id="add-touchstone" class="add-row-btn">+ Add touchstone</button>
     </div>
 
     <hr class="group-rule">
@@ -174,7 +176,7 @@ permalink: /
       <div class="group-label">Core samples <span class="sub">— a few reference papers</span></div>
       <p class="hint">A DOI or arXiv ID per row, or upload a <code>.bib</code>. Abstracts come from OpenAlex.</p>
       <div id="cores-list"></div>
-      <button type="button" id="add-core" class="add-row-btn" disabled>+ Add core sample</button>
+      <button type="button" id="add-core" class="add-row-btn">+ Add core sample</button>
       <label class="bib-upload" style="margin-top: 0.4rem; display: block;">
         <input type="file" id="bib-file" accept=".bib" style="display:none">
         <span class="add-row-btn" style="display:inline-block; cursor:pointer" onclick="document.getElementById('bib-file').click()">Upload .bib (select entries)</span>
