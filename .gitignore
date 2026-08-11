@@ -10,6 +10,7 @@ __pycache__/
 # The warmer's CI-only dependencies. The site itself has no build step and no
 # node_modules; these are installed in the workflow and never shipped.
 scripts/node_modules/
+scripts/.model-cache/
 
 # Jekyll local build (docs/)
 docs/_site/
