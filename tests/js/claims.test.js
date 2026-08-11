@@ -15,7 +15,7 @@ const IDS = [
   'categories', 'lookback', 'max-results',
   'sharpen-btn', 'sharpen-status', 'sharpen-progress-wrap', 'sharpen-progress',
   'sharpen-label', 'sharpen-done',
-  'haul-btn', 'haul-status', 'haul-progress-wrap', 'haul-progress', 'haul-label',
+  'haul-btn', 'haul-status', 'haul-progress-wrap', 'haul-train', 'haul-label',
   'seam-panel', 'seam-stats', 'seam-view-switch', 'seam-sort-toggle',
   'seam-sort-label', 'seam-expand-btn', 'seam-canvas', 'seam-graph-canvas',
   'seam-matrix-wrap', 'seam-graph-wrap', 'seam-graph-hint', 'seam-readout',

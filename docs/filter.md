@@ -116,9 +116,12 @@ permalink: /
       <button type="button" id="haul-btn" disabled>🪨 Haul the stones</button>
       <span class="stage-status" id="haul-status"></span>
     </div>
-    <div class="progress-wrap" id="haul-progress-wrap" style="display:none">
-      <progress id="haul-progress" value="0" max="100"></progress>
-      <span class="progress-label" id="haul-label"></span>
+    <!-- The haul's progress is a mine train, not a bar: its length is the
+         size of the night's announcement and its load is how far along the
+         embedding is. Drawn in filter.js. -->
+    <div class="progress-wrap train-wrap" id="haul-progress-wrap" style="display:none">
+      <canvas id="haul-train" class="haul-train" aria-hidden="true"></canvas>
+      <span class="progress-label" id="haul-label" role="status"></span>
     </div>
     <!-- Seam map panel -->
     <div id="seam-panel" style="display:none">
