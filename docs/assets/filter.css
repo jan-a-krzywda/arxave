@@ -1207,18 +1207,19 @@ progress::-moz-progress-bar {
   font-size: 0.8rem;
   color: var(--text-faint);
 }
+/* The scrollbar is hidden, not absent: a classic bar takes its 5px out of
+   the cell, so only the rows with a long author list grew and the table lost
+   the even beat that makes it scannable. Wheel, drag and touch still scroll
+   the names, and the full list is one hover away. */
 .seam-table .seam-authors-scroll {
   max-width: 100%;
   white-space: nowrap;
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-.seam-table .seam-authors-scroll::-webkit-scrollbar { height: 5px; }
-.seam-table .seam-authors-scroll::-webkit-scrollbar-thumb {
-  background: var(--rock-lit);
-  border-radius: 3px;
-}
+.seam-table .seam-authors-scroll::-webkit-scrollbar { display: none; }
 .seam-table a.seam-td-title:hover {
   color: var(--lamp);
   text-decoration: underline;
