@@ -55,6 +55,7 @@ const BATCH = 16;
 const DEFAULT_ENDPOINT =
   'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1/dig-cache';
 const PUT_CHUNK = 200;   // stays under the function's MAX_ITEMS
+const READ_CHUNK = 500;  // stays under the function's MAX_SHAS
 
 function arg(name, fallback = null) {
   const i = process.argv.indexOf('--' + name);
@@ -214,17 +215,30 @@ async function main() {
   // Skip what is already cached: on a re-run, or when the browser's own hauls
   // have already covered the day, this makes the job seconds instead of a minute.
   const shas = await Promise.all(stones.map((s) => sha256Hex(s.abstract)));
+  const unique = [...new Set(shas)];
   let known = new Set();
   try {
-    const resp = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: MODEL, dim: DIM, sha: [...new Set(shas)] }),
-    });
-    if (resp.ok) known = new Set(Object.keys((await resp.json()).hits ?? {}));
-    else console.warn(`warm-dig: cache read HTTP ${resp.status} — warming everything`);
+    /* Chunked, because the four popular archives together announce ~870 papers
+       a day and the endpoint caps a read at MAX_SHAS. Sending them all in one
+       request earns a 413, which this code treats as "cache unavailable" — so
+       the whole night's work would be re-embedded rather than skipped, and
+       nothing would look broken. */
+    for (let i = 0; i < unique.length; i += READ_CHUNK) {
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: MODEL, dim: DIM, sha: unique.slice(i, i + READ_CHUNK) }),
+      });
+      if (!resp.ok) {
+        console.warn(`warm-dig: cache read HTTP ${resp.status} — warming everything`);
+        known = new Set();
+        break;
+      }
+      for (const sha of Object.keys((await resp.json()).hits ?? {})) known.add(sha);
+    }
   } catch (err) {
     console.warn(`warm-dig: cache unreachable (${err.message}) — warming everything`);
+    known = new Set();
   }
 
   const todo = [];
