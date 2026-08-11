@@ -1099,6 +1099,13 @@ progress::-moz-progress-bar {
   color: var(--lamp);
   text-decoration: underline;
 }
+.seam-tooltip .tt-authors {
+  margin-top: 0.2rem;
+  font-size: 0.76rem;
+  line-height: 1.3;
+  color: var(--text-faint);
+}
+
 .seam-tooltip .tt-row {
   margin-top: 0.25rem;
   line-height: 1.35;
@@ -1172,11 +1179,39 @@ progress::-moz-progress-bar {
   white-space: nowrap;
 }
 
-/* Titles are the one link that must wrap — they're the widest column. */
+/* Titles take the width that is left, one line each, clipped where they run
+   out. The full title is in the link's tooltip. */
+.seam-table .seam-td-title-cell {
+  width: 55%;
+  max-width: 0;   /* lets the percentage win over the text's own width */
+}
+
 .seam-table a.seam-td-title {
-  white-space: normal;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9rem;
   color: var(--text-dim);
   text-decoration: none;
+}
+
+/* Authors: one line, clipped the same way, scrollable when a collaboration
+   runs past the column. Full list in the cell's tooltip. */
+.seam-table .seam-td-authors {
+  width: 22%;
+  max-width: 0;
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  font-size: 0.8rem;
+  color: var(--text-faint);
+  scrollbar-width: thin;
+}
+.seam-table .seam-td-authors::-webkit-scrollbar { height: 5px; }
+.seam-table .seam-td-authors::-webkit-scrollbar-thumb {
+  background: var(--rock-lit);
+  border-radius: 3px;
 }
 .seam-table a.seam-td-title:hover {
   color: var(--lamp);
