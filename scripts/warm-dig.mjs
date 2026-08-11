@@ -27,14 +27,29 @@
  *   --dry-run     fetch and embed, write nothing
  */
 
-import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { XMLParser } from 'fast-xml-parser';
-import { pipeline } from '@huggingface/transformers';
+import { env, pipeline } from '@huggingface/transformers';
 
 // Must match docs/assets/filter.js exactly — these three strings are the cache key.
 const MODEL = 'Xenova/bge-small-en-v1.5';
 const DIM = 384;
 const DTYPE = 'q8';
+
+/* Park the model outside node_modules. transformers.js defaults its Node cache
+   to `node_modules/@huggingface/transformers/.cache/`, which `npm install`
+   recreates on every CI run — so the download can never be cached there, no
+   matter what path the workflow saves. A stable sibling directory can be. */
+env.cacheDir = process.env.HF_CACHE_DIR ||
+  path.join(path.dirname(fileURLToPath(import.meta.url)), '.model-cache');
+
+/* The model is a 32 MB unauthenticated pull from huggingface.co, and CI egress
+   IPs are shared, so a 429 on a cold cache is ordinary rather than exceptional.
+   Retry a few times before giving up — the alternative is a red job for a
+   condition that clears on its own in seconds. */
+const MODEL_LOAD_ATTEMPTS = 4;
+const MODEL_LOAD_BACKOFF_MS = 5_000;
 
 const BATCH = 16;
 const DEFAULT_ENDPOINT =
@@ -138,6 +153,22 @@ export function resolveEndpoint(flag, env) {
   return endpoint;
 }
 
+async function loadModel() {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await pipeline('feature-extraction', MODEL, { dtype: DTYPE });
+    } catch (err) {
+      if (attempt >= MODEL_LOAD_ATTEMPTS) throw err;
+      const wait = MODEL_LOAD_BACKOFF_MS * attempt;
+      console.warn(
+        `warm-dig: model load failed (${err.message}); ` +
+        `retrying in ${wait / 1000}s (${attempt}/${MODEL_LOAD_ATTEMPTS - 1})`,
+      );
+      await new Promise((r) => setTimeout(r, wait));
+    }
+  }
+}
+
 async function main() {
   const categories = (arg('categories') ?? '')
     .split(',').map((c) => c.trim()).filter(Boolean);
@@ -203,7 +234,7 @@ async function main() {
   console.log(`warm-dig: ${known.size} already cached, ${todo.length} to embed`);
   if (todo.length === 0) return;
 
-  const extractor = await pipeline('feature-extraction', MODEL, { dtype: DTYPE });
+  const extractor = await loadModel();
 
   const items = [];
   for (let i = 0; i < todo.length; i += BATCH) {
