@@ -294,6 +294,24 @@ progress::-moz-progress-bar {
   color: var(--text-dim);
 }
 
+/* ── The haul train ───────────────────────────────────────────────
+   Stage 1 replaces the bar with a pixel-art mine train (drawn in
+   filter.js). It stacks: track above, count below. The canvas is sized
+   by the script in whole art pixels, so it only needs the width of the
+   column to measure against and a promise not to smooth it. */
+.train-wrap {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
+
+.haul-train {
+  width: 100%;      /* measured before the script fixes a pixel-exact width */
+  max-width: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
 /* ── Stage status ─────────────────────────────────────────────── */
 .stage-status {
   font-size: 0.85rem;
