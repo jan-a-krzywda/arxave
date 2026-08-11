@@ -10,10 +10,13 @@ Two invariants hold the pipeline together:
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import sqlite3  # noqa: F401 — used only in type annotations (lazy under `annotations`)
+import sys
 import unicodedata
+from array import array
 from datetime import date
 from typing import Any
 
@@ -319,6 +322,112 @@ def user_filter_for(conn: sqlite3.Connection, cite_key: str, user_id: str):
         'SELECT * FROM user_filters WHERE cite_key=? AND user_id=?',
         (cite_key, user_id),
     ).fetchone()
+
+
+# --------------------------------------------------------------------------
+# the Dig's shared vector cache
+#
+# Embedding a day of abstracts in the browser costs ~60 s; downloading the same
+# vectors costs ~200 kB. This table is what makes the second visitor to a day
+# pay the download instead of the minute.
+#
+# Keyed on the sha256 of the *text*, so one table serves abstracts, touchstones
+# and core samples, and a revised abstract simply misses rather than returning a
+# stale vector. `source` is provenance only — never part of the key.
+# --------------------------------------------------------------------------
+
+# Wire format for `vector`: little-endian float32, `dim * 4` bytes. Chosen over
+# JSON because it is 4x smaller and needs no parse on either side.
+_LITTLE_ENDIAN = sys.byteorder == 'little'
+
+
+def text_sha(text: str) -> str:
+    """The cache key for one text. Whitespace-collapsed first, so a text that
+    differs only in wrapping is one entry — the browser collapses the same way
+    when it parses an abstract out of the arXiv feed."""
+    collapsed = ' '.join((text or '').split())
+    return hashlib.sha256(collapsed.encode('utf-8')).hexdigest()
+
+
+def pack_vector(values: list[float]) -> bytes:
+    arr = array('f', values)
+    if not _LITTLE_ENDIAN:
+        arr.byteswap()
+    return arr.tobytes()
+
+
+def unpack_vector(blob: bytes) -> list[float]:
+    arr = array('f')
+    arr.frombytes(bytes(blob))
+    if not _LITTLE_ENDIAN:
+        arr.byteswap()
+    return list(arr)
+
+
+def upsert_vector(conn: sqlite3.Connection, sha: str, model: str, dim: int,
+                  vector: bytes | list[float], *, source: str | None = None,
+                  seen_at: str | None = None) -> None:
+    """Insert or refresh one cached vector.
+
+    The vector itself is never rewritten on conflict — the same (text, model,
+    dim) must always give the same vector, so a second write is either identical
+    or a bug, and preserving the first keeps the cache reproducible. Only
+    `seen_at` moves, which is what keeps a still-wanted entry out of the prune.
+    """
+    if isinstance(vector, list):
+        if len(vector) != dim:
+            raise ValueError(
+                f'vector for {sha[:8]} has {len(vector)} values, expected dim={dim}'
+            )
+        blob = pack_vector(vector)
+    else:
+        if len(vector) != dim * 4:
+            raise ValueError(
+                f'vector for {sha[:8]} is {len(vector)} bytes, '
+                f'expected {dim * 4} for dim={dim}'
+            )
+        blob = bytes(vector)
+    conn.execute(
+        'INSERT INTO dig_vectors (text_sha, model, dim, vector, source, seen_at) '
+        'VALUES (?, ?, ?, ?, ?, ?) '
+        'ON CONFLICT (text_sha, model, dim) DO UPDATE SET seen_at=excluded.seen_at',
+        (sha, model, dim, blob, source, seen_at or date.today().isoformat()),
+    )
+
+
+def vectors_for(conn: sqlite3.Connection, shas: list[str], model: str,
+                dim: int) -> dict[str, bytes]:
+    """The cached vectors among `shas`, as {sha: packed bytes}. Misses are
+    simply absent — the caller embeds those and may contribute them back."""
+    if not shas:
+        return {}
+    found: dict[str, bytes] = {}
+    # Chunked so a long day's worth of ids cannot blow the parameter limit
+    # (SQLite's default is 999; Postgres's is 65535).
+    for i in range(0, len(shas), 500):
+        chunk = shas[i:i + 500]
+        placeholders = ','.join('?' for _ in chunk)
+        rows = conn.execute(
+            f'SELECT text_sha, vector FROM dig_vectors '
+            f'WHERE model=? AND dim=? AND text_sha IN ({placeholders})',
+            [model, dim, *chunk],
+        )
+        for row in rows:
+            found[row['text_sha']] = bytes(row['vector'])
+    return found
+
+
+def prune_vectors(conn: sqlite3.Connection, before: str) -> int:
+    """Drop cache entries last wanted before `before` (ISO date).
+
+    Pruned on `seen_at`, not on the paper's date: a vector for an old abstract
+    that people still ask for is still worth keeping, and one nobody has asked
+    for in a week is dead weight whatever its paper's age.
+    """
+    return conn.execute(
+        'DELETE FROM dig_vectors WHERE seen_at IS NOT NULL AND seen_at < ?',
+        (before,),
+    ).rowcount
 
 
 # --------------------------------------------------------------------------
