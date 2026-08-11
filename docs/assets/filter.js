@@ -162,7 +162,8 @@
     seamOrder: null,        // [N] indices into stones, sorted by cluster
     seamMap: null,          // [N×N] cosine matrix (upper triangle populated)
     seamComponents: null,   // [{indices: [int], centralTitle: string}]
-    seamView: 'matrix',     // 'matrix' | 'graph'
+    seamView: 'table',      // 'table' | 'graph' | 'matrix'
+    seamThresh: 0.75,       // live-tunable, starts at SEAM_THRESH
     seamGraph: null,        // live graph handle for the inline canvas
     seamModalGraph: null,   // live graph handle for the modal canvas
   };
@@ -893,16 +894,61 @@
 
   // Edge threshold and minimum seam size — shared by the matrix ordering
   // and the graph view so both draw the same adjacency.
-  var SEAM_THRESH = 0.70;
+  var SEAM_THRESH = 0.75;
   var SEAM_MIN_SIZE = 3;
 
+  /** Count seams ≥ SEAM_MIN_SIZE at one threshold, and how many stones they
+   *  hold. Cheaper than clusterOrder — no ordering, no centrality — because
+   *  the threshold sweep runs this a few dozen times. */
+  function countSeams(S, N, thresh) {
+    var seen = new Uint8Array(N);
+    var stack = new Int32Array(N);
+    var seams = 0, clustered = 0;
+    for (var i = 0; i < N; i++) {
+      if (seen[i]) continue;
+      var top = 0, size = 0;
+      stack[top++] = i;
+      seen[i] = 1;
+      while (top > 0) {
+        var v = stack[--top];
+        size++;
+        var row = S[v];
+        for (var w = 0; w < N; w++) {
+          if (!seen[w] && w !== v && row[w] >= thresh) { seen[w] = 1; stack[top++] = w; }
+        }
+      }
+      if (size >= SEAM_MIN_SIZE) { seams++; clustered += size; }
+    }
+    return { seams: seams, clustered: clustered };
+  }
+
   /**
-   * Cluster order: threshold at SEAM_THRESH, connected components ≥ SEAM_MIN_SIZE.
+   * Pick the threshold that splits the haul into the most distinct seams.
+   * Too low and everything fuses into one blob; too high and every stone is
+   * lone — the count peaks in between, and that peak is the interesting cut.
+   * Ties go to the threshold that leaves more stones inside a seam.
+   */
+  function bestSeamThresh(S, N) {
+    var best = SEAM_THRESH, bestSeams = -1, bestClustered = -1;
+    for (var pct = 50; pct <= 95; pct++) {
+      var t = pct / 100;
+      var r = countSeams(S, N, t);
+      if (r.seams > bestSeams ||
+          (r.seams === bestSeams && r.clustered > bestClustered)) {
+        best = t; bestSeams = r.seams; bestClustered = r.clustered;
+      }
+    }
+    return best;
+  }
+
+  /**
+   * Cluster order: threshold at `thresh` (default SEAM_THRESH), connected
+   * components ≥ SEAM_MIN_SIZE.
    * Returns [order: [indices], components: [{indices:[], centralTitle:string}]]
    */
-  function clusterOrder(stones, S) {
+  function clusterOrder(stones, S, thresh) {
     var N = stones.length;
-    var THRESH = SEAM_THRESH;
+    var THRESH = thresh === undefined ? SEAM_THRESH : thresh;
     var MIN_SIZE = SEAM_MIN_SIZE;
 
     // Build adjacency for values >= THRESH
@@ -1119,6 +1165,7 @@
     var N = stones.length;
     var W = opts.width || 640;
     var H = opts.height || 420;
+    var THRESH = opts.thresh === undefined ? SEAM_THRESH : opts.thresh;
     var dpr = window.devicePixelRatio || 1;
 
     canvas.width = Math.round(W * dpr);
@@ -1137,7 +1184,7 @@
     for (i = 0; i < N; i++) {
       for (var j = i + 1; j < N; j++) {
         var w = S[i][j];
-        if (w >= SEAM_THRESH) {
+        if (w >= THRESH) {
           edges.push({ a: i, b: j, w: w });
           deg[i]++; deg[j]++;
           nbrs[i].push(j); nbrs[j].push(i);
@@ -1146,8 +1193,17 @@
     }
 
     // Seed positions: each seam on its own arc, lone stones on an outer ring.
+    // Anchors sit further out than the seed offset — the simulation pulls each
+    // seam's own stones back to its anchor every tick, so seams end up as
+    // distinct blobs instead of melting into one ring under shared gravity.
     var nodes = new Array(N);
     var nComp = components.length;
+    var ANCHOR_R = 130 + nComp * 24;
+    var clusterAnchor = new Array(nComp);
+    for (var ci = 0; ci < nComp; ci++) {
+      var cbase = (ci / Math.max(1, nComp)) * Math.PI * 2;
+      clusterAnchor[ci] = { x: Math.cos(cbase) * ANCHOR_R, y: Math.sin(cbase) * ANCHOR_R };
+    }
     var seamCount = {};
     for (i = 0; i < N; i++) {
       var c = cid[i];
@@ -1190,6 +1246,10 @@
           if (d2 < 0.01) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d2 = 0.01; }
           if (d2 > 90000) continue;              // ignore far pairs
           var f = REP / d2;
+          // Push different seams apart harder, let one seam's own stones
+          // pack tighter — that's what turns a blurred ring into blobs.
+          if (cid[a] !== cid[b]) f *= 1.7;
+          else if (cid[a] >= 0) f *= 0.6;
           var d = Math.sqrt(d2);
           var ux = dx / d, uy = dy / d;
           na.vx += ux * f; na.vy += uy * f;
@@ -1201,7 +1261,7 @@
       for (var e = 0; e < edges.length; e++) {
         var ed = edges[e];
         var p = nodes[ed.a], q = nodes[ed.b];
-        var t = (ed.w - SEAM_THRESH) / Math.max(0.001, 1 - SEAM_THRESH);
+        var t = (ed.w - THRESH) / Math.max(0.001, 1 - THRESH);
         var L = 92 - 46 * t;
         var ddx = q.x - p.x, ddy = q.y - p.y;
         var dd = Math.sqrt(ddx * ddx + ddy * ddy) || 0.01;
@@ -1211,10 +1271,20 @@
         q.vx -= fx; q.vy -= fy;
       }
 
-      // Gravity to centre, so nothing drifts off the rock face
+      // Gravity: clustered stones pull toward their own seam's anchor point,
+      // not the shared centre — that's what keeps seams apart at rest instead
+      // of drifting back into one ring once the springs settle.
       for (var g = 0; g < N; g++) {
-        nodes[g].vx -= nodes[g].x * 0.012;
-        nodes[g].vy -= nodes[g].y * 0.012;
+        var ndg = nodes[g];
+        var cg = cid[g];
+        if (cg >= 0) {
+          var an = clusterAnchor[cg];
+          ndg.vx += (an.x - ndg.x) * 0.020;
+          ndg.vy += (an.y - ndg.y) * 0.020;
+        } else {
+          ndg.vx -= ndg.x * 0.006;
+          ndg.vy -= ndg.y * 0.006;
+        }
       }
 
       // Integrate, with a speed cap — uncapped, a dense seam's summed
@@ -1300,10 +1370,17 @@
       ctx.fillRect(0, 0, W, H);
 
       var focus = pinnedNode !== null ? pinnedNode : hoverNode;
+      // With a node pinned, hovering one of its own seam-mates compares
+      // against the pin. Unconnected stones don't react — the pin only
+      // reads out against stones it actually shares a seam with.
+      var compareNode = (pinnedNode !== null && hoverNode !== null && hoverNode !== pinnedNode
+        && nbrs[pinnedNode].indexOf(hoverNode) !== -1)
+        ? hoverNode : null;
       var lit = null;
       if (focus !== null) {
         lit = new Set(nbrs[focus]);
         lit.add(focus);
+        if (compareNode !== null) lit.add(compareNode);
       }
 
       // Edges
@@ -1311,7 +1388,7 @@
         var ed = edges[e];
         var p = toScreen(nodes[ed.a]), q = toScreen(nodes[ed.b]);
         var touched = focus !== null && (ed.a === focus || ed.b === focus);
-        var t = (ed.w - SEAM_THRESH) / Math.max(0.001, 1 - SEAM_THRESH);
+        var t = (ed.w - THRESH) / Math.max(0.001, 1 - THRESH);
         var alphaE = 0.12 + 0.5 * t;
         if (focus !== null) alphaE = touched ? 0.95 : alphaE * 0.25;
         ctx.globalAlpha = alphaE;
@@ -1322,6 +1399,20 @@
         ctx.moveTo(p.x, p.y);
         ctx.lineTo(q.x, q.y);
         ctx.stroke();
+      }
+
+      // Compare line: pin ↔ hovered seam-mate.
+      if (compareNode !== null) {
+        var cp = toScreen(nodes[pinnedNode]), cq = toScreen(nodes[compareNode]);
+        ctx.globalAlpha = 0.9;
+        ctx.strokeStyle = '#f2ede3';
+        ctx.lineWidth = 1.8;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        ctx.moveTo(cp.x, cp.y);
+        ctx.lineTo(cq.x, cq.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
       }
 
       // Nodes. Radius follows the zoom a little, so a tight seam stays a
@@ -1371,36 +1462,27 @@
       if (raf === null && !stopped) raf = requestAnimationFrame(loop);
     }
 
-    // ── Readout ──
-    function emit(idx, isPinned) {
+    // ── Readout ── a tooltip naming the stone under the cursor. While it
+    // trails the cursor its link can't be clicked, so a pinned stone parks
+    // its tooltip on the node instead and lets the pointer reach the link.
+    function tipHtml(idx) {
+      return '<div class="tt-title"><a href="' + stones[idx].abs_url +
+        '" target="_blank" rel="noopener">' + escapeHtml(stones[idx].title) + '</a></div>';
+    }
+
+    function emit(idx, isPinned, evt) {
       if (!readoutFn) return;
-      if (idx === null) { readoutFn('', '', false); return; }
-      var st = stones[idx];
-      // Nearest neighbour by cosine, for context
-      var bestJ = -1, bestV = 0;
-      for (var j2 = 0; j2 < N; j2++) {
-        if (j2 === idx) continue;
-        if (S[idx][j2] > bestV) { bestV = S[idx][j2]; bestJ = j2; }
-      }
-      var seamText = cid[idx] >= 0
-        ? 'seam of ' + components[cid[idx]].indices.length + ' · ' + deg[idx] + ' links'
-        : 'lone stone';
-      if (grades) {
-        seamText += ' · grade ' + grades[idx].toFixed(3) + ' (#' + (rank[idx] + 1) + ')' +
-          (payDirt && payDirt.has(idx) ? ' <span class="seam-paydirt-tag">pay dirt</span>' : '');
-      }
-      var nearest = bestJ >= 0
-        ? ' · closest: <a href="' + stones[bestJ].abs_url + '" target="_blank" rel="noopener">' +
-            escapeHtml(stones[bestJ].title) + '</a> ' + bestV.toFixed(2)
-        : '';
-      readoutFn(
-        '<a href="' + st.abs_url + '" target="_blank" rel="noopener">' +
-          escapeHtml(st.title) + '</a>',
-        seamText + nearest +
-          (isPinned ? '  ·  <span class="seam-pin-hint">pinned — click the node again to release</span>'
-                    : '  ·  <span class="seam-pin-hint">click to pin</span>'),
-        !!isPinned
-      );
+      if (idx === null) { readoutFn('', false, null); return; }
+      readoutFn(tipHtml(idx), !!isPinned, evt);
+    }
+
+    /** Park the tooltip on the pinned node, clickable, wherever it has drifted. */
+    function emitPinnedAnchor() {
+      if (!readoutFn || pinnedNode === null) return;
+      var rect = canvas.getBoundingClientRect();
+      var s = toScreen(nodes[pinnedNode]);
+      readoutFn(tipHtml(pinnedNode), true,
+        { clientX: rect.left + s.x, clientY: rect.top + s.y });
     }
 
     // ── Mouse ──
@@ -1452,16 +1534,22 @@
       canvas.style.cursor = p.node !== null ? 'pointer' : 'grab';
       if (p.node !== hoverNode) {
         hoverNode = p.node;
-        if (pinnedNode === null) emit(hoverNode, false);
+        // Off every node with something pinned: hand the tooltip back to the
+        // pin, parked and clickable, so the pointer can walk over to its link.
+        if (hoverNode === null && pinnedNode !== null) emitPinnedAnchor();
+        else if (hoverNode !== null && hoverNode === pinnedNode) emitPinnedAnchor();
+        else emit(hoverNode, false, e);
         draw();
+      } else if (hoverNode !== null && hoverNode !== pinnedNode) {
+        readoutFn(null, false, e);   // reposition only
       }
     };
 
     canvas.onmouseup = function (e) {
       if (dragNode && !dragNode.moved) {
         var idx = dragNode.i;
-        if (pinnedNode === idx) { pinnedNode = null; emit(idx, false); }
-        else { pinnedNode = idx; emit(idx, true); }
+        if (pinnedNode === idx) { pinnedNode = null; emit(idx, false, e); }
+        else { pinnedNode = idx; emitPinnedAnchor(); }
         draw();
       }
       dragNode = null;
@@ -1471,7 +1559,12 @@
     canvas.onmouseleave = function () {
       dragNode = null;
       panning = null;
-      if (pinnedNode === null) { hoverNode = null; emit(null, false); draw(); }
+      hoverNode = null;
+      // A pinned tooltip has to survive the cursor leaving the canvas — that
+      // is exactly the trip the pointer makes to reach its link.
+      if (pinnedNode !== null) emitPinnedAnchor();
+      else emit(null, false, null);
+      draw();
     };
 
     canvas.onwheel = function (e) {
@@ -1508,8 +1601,17 @@
         raf = null;
         canvas.onmousedown = canvas.onmousemove = canvas.onmouseup = null;
         canvas.onmouseleave = canvas.onwheel = null;
+        pinnedNode = null;
+        hoverNode = null;
+        emit(null, false, null);
       },
       reheat: function () { autoFit = true; wake(1); },
+      /** Drop the pin without touching the tooltip — the caller owns that. */
+      unpin: function () {
+        if (stopped) return;
+        pinnedNode = null;
+        draw();
+      },
       /** Overlay the assay: gold rings on the pay-dirt cut, grades in the
        *  readout. Redraw only — the layout is left alone. */
       setAssay: function (g, order, topN) {
@@ -1522,7 +1624,7 @@
         }
         draw();
         var focus = pinnedNode !== null ? pinnedNode : hoverNode;
-        if (focus !== null) emit(focus, pinnedNode !== null);
+        if (focus !== null) emit(focus, pinnedNode !== null, null);
       }
     };
   }
@@ -1536,6 +1638,25 @@
     };
   }
 
+  /** Floating-tooltip sink for the seam graph: (html, isPinned, evt).
+   *  html === null repositions the open tooltip without rebuilding it. */
+  function seamTooltipSink() {
+    var tip = byId('seam-tooltip');
+    return function (html, isPinned, evt) {
+      if (html === null) {
+        if (tip.style.display === 'block' && evt) positionTooltip(evt, tip);
+        return;
+      }
+      if (!html) { tip.style.display = 'none'; tip.classList.remove('pinned'); return; }
+      tip.innerHTML = html;
+      // Only a pinned tooltip takes the pointer: a trailing one would sit
+      // between the cursor and the canvas and swallow the next hover.
+      tip.classList.toggle('pinned', !!isPinned);
+      tip.style.display = 'block';
+      if (evt) positionTooltip(evt, tip);
+    };
+  }
+
   /** Current matrix order, honouring the Clustered toggle. */
   function currentSeamOrder() {
     return byId('seam-sort-toggle').checked
@@ -1544,7 +1665,19 @@
   }
 
   var SEAM_GRAPH_HINT = 'drag a stone to move it · drag the rock to pan · ' +
-    'scroll to zoom · click to pin';
+    'scroll to zoom · click to pin, then hover its seam-mates to compare';
+
+  /** Seam count and how many stones fell outside every seam. Kept short —
+   *  it shares the header row with the view switch and the threshold. */
+  function updateSeamStats() {
+    var comps = state.seamComponents || [];
+    var inSeam = 0;
+    for (var c = 0; c < comps.length; c++) inSeam += comps[c].indices.length;
+    var lone = state.stones.length - inSeam;
+    byId('seam-stats').innerHTML = comps.length
+      ? '<strong>' + comps.length + '</strong> seams · <strong>' + lone + '</strong> lone'
+      : 'no seams · <strong>' + state.stones.length + '</strong> lone';
+  }
 
   /** Push the current grades onto any live seam graph. No-op before stage 3. */
   function applySeamAssay() {
@@ -1559,18 +1692,111 @@
       if (!graphs[i]) continue;
       graphs[i].setAssay(state.grades, state.order, topN);
     }
+    // The tables carry a Grade column that only exists once stage 3 has run.
+    if (state.seamView === 'table' && state.seamMap) renderSeamTables();
+  }
+
+  /**
+   * Table view: one table per seam, plus a closing table of the lone stones.
+   * Within a seam, stones are ordered by centrality — the stone most like the
+   * rest of its seam first, so the head of each table reads as its subject.
+   */
+  function renderSeamTables() {
+    var wrap = byId('seam-table-wrap');
+    var stones = state.stones;
+    var S = state.seamMap;
+    var comps = state.seamComponents || [];
+    var colors = SEAM_COLORS;
+
+    var inSeam = new Set();
+    var html = '';
+
+    for (var c = 0; c < comps.length; c++) {
+      var members = comps[c].indices.slice();
+      for (var m = 0; m < members.length; m++) inSeam.add(members[m]);
+
+      // Centrality: mean similarity to the rest of the seam.
+      var central = {};
+      for (var a = 0; a < members.length; a++) {
+        var sum = 0;
+        for (var b = 0; b < members.length; b++) {
+          if (a !== b) sum += S[members[a]][members[b]];
+        }
+        central[members[a]] = members.length > 1 ? sum / (members.length - 1) : 1;
+      }
+      members.sort(function (x, y) { return central[y] - central[x]; });
+
+      html += '<div class="seam-table-block">' +
+        '<div class="seam-table-head">' +
+          '<span class="seam-swatch" style="background:' + colors[c % colors.length] + '"></span>' +
+          '<span class="seam-table-name">Seam ' + (c + 1) + '</span>' +
+          '<span class="seam-table-count">' + members.length + ' stones</span>' +
+        '</div>' +
+        seamTableRows(members, central);
+      html += '</div>';
+    }
+
+    var lone = [];
+    for (var i = 0; i < stones.length; i++) if (!inSeam.has(i)) lone.push(i);
+    if (lone.length) {
+      html += '<div class="seam-table-block">' +
+        '<div class="seam-table-head">' +
+          '<span class="seam-swatch" style="background:' + LONE_COLOR + '"></span>' +
+          '<span class="seam-table-name">Lone stones</span>' +
+          '<span class="seam-table-count">' + lone.length + ' stones</span>' +
+        '</div>' +
+        seamTableRows(lone, null);
+      html += '</div>';
+    }
+
+    wrap.innerHTML = html || '<p class="hint">No stones to show.</p>';
+  }
+
+  /** Rows for one seam table. `central` null means the lone-stone table. */
+  function seamTableRows(members, central) {
+    var stones = state.stones;
+    var grades = state.grades;
+    var out = '<table class="seam-table"><thead><tr>' +
+      '<th>Title</th><th>Category</th><th>arXiv</th>' +
+      (central ? '<th>Centrality</th>' : '') +
+      (grades ? '<th>Grade</th>' : '') +
+      '</tr></thead><tbody>';
+    for (var i = 0; i < members.length; i++) {
+      var si = members[i];
+      var st = stones[si];
+      out += '<tr>' +
+        '<td><a class="seam-td-title" href="' + st.abs_url +
+          '" target="_blank" rel="noopener">' + escapeHtml(st.title) + '</a></td>' +
+        '<td class="seam-td-cat">' + escapeHtml(st.primary_category || '') + '</td>' +
+        '<td><a href="' + st.abs_url + '" target="_blank" rel="noopener">' +
+          escapeHtml(st.arxiv_id) + '</a></td>' +
+        (central ? '<td class="num">' + central[si].toFixed(3) + '</td>' : '') +
+        (grades ? '<td class="num">' + grades[si].toFixed(3) + '</td>' : '') +
+        '</tr>';
+    }
+    return out + '</tbody></table>';
   }
 
   /** Render the inline seam panel in whichever view is selected. */
   function renderSeamPanel() {
     if (!state.seamMap || !state.stones.length) return;
-    var isGraph = state.seamView === 'graph';
+    var view = state.seamView;
+    var isGraph = view === 'graph';
+    var isTable = view === 'table';
+    var isMatrix = view === 'matrix';
 
-    byId('seam-matrix-wrap').style.display = isGraph ? 'none' : '';
+    byId('seam-matrix-wrap').style.display = isMatrix ? '' : 'none';
     byId('seam-graph-wrap').style.display = isGraph ? '' : 'none';
-    byId('seam-sort-label').style.display = isGraph ? 'none' : '';
+    byId('seam-table-wrap').style.display = isTable ? '' : 'none';
+    byId('seam-sort-label').style.display = isMatrix ? '' : 'none';
+    // Nothing to blow up about a table — it already uses the full width.
+    byId('seam-expand-btn').style.display = isTable ? 'none' : '';
+    // Only the matrix reads out into the bar below it: the graph has its own
+    // floating tooltip and the table says everything on its face.
+    byId('seam-readout').style.display = isMatrix ? '' : 'none';
     byId('seam-readout').innerHTML = '';
     byId('seam-readout').classList.remove('pinned');
+    releaseSeamPin();
 
     if (state.seamGraph) { state.seamGraph.stop(); state.seamGraph = null; }
 
@@ -1579,8 +1805,10 @@
       var w = Math.max(320, wrap.clientWidth || 640);
       state.seamGraph = drawSeamGraph(
         byId('seam-graph-canvas'), state.seamMap, state.stones, state.seamComponents,
-        seamReadoutSink('seam-readout'), { width: w, height: 420 });
+        seamTooltipSink(), { width: w, height: 420, thresh: state.seamThresh });
       applySeamAssay();
+    } else if (isTable) {
+      renderSeamTables();
     } else {
       drawSeamMap(byId('seam-canvas'), state.seamMap, currentSeamOrder(), state.stones,
         state.seamComponents, seamReadoutSink('seam-readout'));
@@ -1625,15 +1853,17 @@
       var S = computeSeamMap(vectors);
       state.seamMap = S;
 
-      var cluster = clusterOrder(stones, S);
+      // Start from the threshold that splits this haul into the most seams,
+      // rather than a fixed cut that suits one day's papers and not the next.
+      state.seamThresh = bestSeamThresh(S, stones.length);
+      byId('seam-thresh-slider').value = state.seamThresh;
+      byId('seam-thresh-value').textContent = state.seamThresh.toFixed(2);
+
+      var cluster = clusterOrder(stones, S, state.seamThresh);
       state.seamOrder = cluster.order;
       state.seamComponents = cluster.components;
 
-      // Stats
-      var compText = cluster.components.map(function (c) {
-        return c.indices.length + ' stones from one seam';
-      }).join(', ');
-      byId('seam-stats').textContent = compText || 'No large seams detected';
+      updateSeamStats();
       byId('seam-sort-toggle').checked = true;
       seamPanel.style.display = '';
 
@@ -2447,6 +2677,47 @@
       state.seamComponents, seamReadoutSink('seam-readout'));
   });
 
+  /** Release the pin on both seam graphs and hide the tooltip. */
+  function releaseSeamPin() {
+    var tip = byId('seam-tooltip');
+    tip.style.display = 'none';
+    tip.classList.remove('pinned');
+    if (state.seamGraph) state.seamGraph.unpin();
+    if (state.seamModalGraph) state.seamModalGraph.unpin();
+  }
+
+  document.addEventListener('click', function (e) {
+    if (e.target.id === 'seam-graph-canvas' || e.target.id === 'seam-modal-graph-canvas') return;
+    // Clicks inside the tooltip must survive, or its arXiv link never fires.
+    if (byId('seam-tooltip').contains(e.target)) return;
+    releaseSeamPin();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') releaseSeamPin();
+  });
+
+  /** Re-cluster at a new threshold and redraw whichever view is live. */
+  function recomputeSeamThresh(thresh) {
+    if (!state.seamMap || !state.stones.length) return;
+    state.seamThresh = thresh;
+    var cluster = clusterOrder(state.stones, state.seamMap, thresh);
+    state.seamOrder = cluster.order;
+    state.seamComponents = cluster.components;
+    updateSeamStats();
+    renderSeamPanel();
+    // Modal is a separate live graph — refresh it too if it's open.
+    if (state.seamModalGraph && byId('seam-modal').style.display !== 'none') {
+      byId('seam-expand-btn').click();
+    }
+  }
+
+  // Seam threshold slider
+  byId('seam-thresh-slider').addEventListener('input', function () {
+    var v = parseFloat(this.value);
+    byId('seam-thresh-value').textContent = v.toFixed(2);
+    recomputeSeamThresh(v);
+  });
+
   // Matrix ↔ graph switch
   byId('seam-view-switch').addEventListener('click', function (e) {
     var btn = e.target.closest('.seam-view-btn');
@@ -2457,7 +2728,8 @@
     Array.prototype.forEach.call(this.querySelectorAll('.seam-view-btn'), function (b) {
       b.classList.toggle('is-active', b.getAttribute('data-view') === view);
     });
-    byId('seam-modal-header-title').textContent = view === 'graph' ? 'Seam graph' : 'Seam map';
+    byId('seam-modal-header-title').textContent =
+      view === 'graph' ? 'Seam graph' : view === 'table' ? 'Seams' : 'Seam map';
     renderSeamPanel();
   });
 
@@ -2479,7 +2751,8 @@
       var w = Math.min(1100, Math.round(window.innerWidth * 0.86));
       var h = Math.min(760, Math.round(window.innerHeight * 0.74));
       state.seamModalGraph = drawSeamGraph(graphCanvas, state.seamMap, state.stones,
-        state.seamComponents, seamReadoutSink('seam-modal-readout'), { width: w, height: h });
+        state.seamComponents, seamTooltipSink(),
+        { width: w, height: h, thresh: state.seamThresh });
       applySeamAssay();
     } else {
       drawSeamMap(matrixCanvas, state.seamMap, currentSeamOrder(), state.stones,
@@ -2489,6 +2762,7 @@
 
   function closeSeamModal() {
     byId('seam-modal').style.display = 'none';
+    releaseSeamPin();
     if (state.seamModalGraph) { state.seamModalGraph.stop(); state.seamModalGraph = null; }
   }
 

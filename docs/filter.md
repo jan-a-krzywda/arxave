@@ -126,21 +126,28 @@ permalink: /
         <span class="seam-title">Seam map</span>
         <span class="seam-stats" id="seam-stats"></span>
         <div class="seam-view-switch" id="seam-view-switch">
-          <button type="button" class="seam-view-btn is-active" data-view="matrix">Matrix</button>
+          <button type="button" class="seam-view-btn is-active" data-view="table">Table</button>
           <button type="button" class="seam-view-btn" data-view="graph">Graph</button>
+          <button type="button" class="seam-view-btn" data-view="matrix">Matrix</button>
         </div>
         <label class="toggle-label" id="seam-sort-label">
           <input type="checkbox" id="seam-sort-toggle" checked> Clustered
         </label>
+        <label class="seam-thresh-label" id="seam-thresh-label">
+          Threshold
+          <input type="range" id="seam-thresh-slider" min="0.5" max="0.95" step="0.01" value="0.75">
+          <span id="seam-thresh-value">0.75</span>
+        </label>
         <button type="button" class="seam-expand-btn" id="seam-expand-btn">Expand</button>
       </div>
-      <div class="seam-canvas-wrap" id="seam-matrix-wrap">
+      <div class="seam-canvas-wrap" id="seam-matrix-wrap" style="display:none">
         <canvas id="seam-canvas"></canvas>
       </div>
       <div class="seam-graph-wrap" id="seam-graph-wrap" style="display:none">
         <canvas id="seam-graph-canvas"></canvas>
-        <div class="seam-graph-hint" id="seam-graph-hint">drag a stone to move it · drag the rock to pan · scroll to zoom · click to pin</div>
+        <div class="seam-graph-hint" id="seam-graph-hint">drag a stone to move it · drag the rock to pan · scroll to zoom · click to pin, then hover its seam-mates to compare</div>
       </div>
+      <div class="seam-table-wrap" id="seam-table-wrap"></div>
       <div class="seam-readout" id="seam-readout"></div>
     </div>
   </fieldset>
@@ -236,6 +243,9 @@ permalink: /
     <!-- Tooltip -->
     <div id="cell-tooltip" class="cell-tooltip" style="display:none" role="tooltip"></div>
   </fieldset>
+
+  <!-- Seam graph tooltip — shared by the inline and modal graphs -->
+  <div id="seam-tooltip" class="cell-tooltip seam-tooltip" style="display:none" role="tooltip"></div>
 
   <!-- ── Seam map modal ── -->
   <div id="seam-modal" class="seam-modal" style="display:none">
