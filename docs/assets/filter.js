@@ -1874,6 +1874,7 @@
     var laidOutFor = -1; // the total the current train length was built for
     var target = 0;      // stones the haul has earned
     var shown = 0;       // stones drawn, chasing target so they land one by one
+    var shownF = 0;      // …carried as a float, so a slow frame still lands the tail
     var lastDrop = -99;  // when the newest stone started falling
     var t = 0, prev = 0, raf = 0, alive = true;
     var puffs = [];
@@ -1973,17 +1974,27 @@
     function frame() {
       if (!alive) return;
       var n = now();
-      var dt = Math.min(0.05, prev ? n - prev : 0.016);
+      var elapsed = prev ? n - prev : 0.016;
+      // The wheels and the scrolling track want a clamped step, or a frame the
+      // browser skipped turns into a jump. The load does not — see below.
+      var dt = Math.min(0.05, elapsed);
       prev = n;
       t += dt;
 
-      // Stones land at a readable rate rather than snapping to the count.
-      if (shown < target) {
-        var step = Math.max(1, Math.round((target - shown) * dt * 6));
-        shown = Math.min(target, shown + step);
-        lastDrop = t;
-      } else if (shown > target) {
-        shown = target;   // a re-haul empties the carts
+      /* Stones land at a readable rate rather than snapping to the count, but
+         the rate is per second, not per frame: the gap decays by a fixed
+         factor of e⁻⁷ per second whatever the frame delivery. Frames are
+         exactly what goes short here — the main thread is busy embedding while
+         the haul runs, and a backgrounded tab gets a frame a second — and a
+         per-frame step left the train stuck at a third of a load it had
+         already earned. */
+      if (shownF < target) {
+        shownF = still ? target : target - (target - shownF) * Math.exp(-7 * elapsed);
+        if (target - shownF < 0.5) shownF = target;
+        var next = Math.min(target, Math.ceil(shownF));
+        if (next !== shown) { shown = next; lastDrop = t; }
+      } else if (shownF > target) {
+        shownF = shown = target;   // a re-haul empties the carts
       }
 
       var moving = shown < capacity;
@@ -2032,7 +2043,7 @@
       if (total !== laidOutFor) {
         laidOutFor = total;
         relayout(total);              // relayout clamps the length to the column
-        if (shown > capacity) shown = capacity;
+        if (shown > capacity) shownF = shown = capacity;
       }
       target = total > 0 ? Math.min(capacity, Math.round((done / total) * capacity)) : 0;
       if (!raf) { prev = 0; raf = requestAnimationFrame(frame); }
