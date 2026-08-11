@@ -227,9 +227,49 @@ fieldset legend {
   background: var(--rock-lit);
 }
 
+/* ── The pick gate (top of Stage 2) ───────────────────────────────
+   One-time cost, so it reads as a gate rather than a step: a wide button
+   with the "once" promise sitting under it, and the whole block gone the
+   moment the pick is sharpened. */
+.pick-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.55rem;
+  margin: 0.6rem 0 1rem;
+  padding: 1rem;
+  border: 1px dashed var(--rock-lit);
+  border-radius: 8px;
+  background: rgba(245, 179, 1, 0.05);
+}
+
+.pick-gate-btn {
+  width: 100%;
+  padding: 0.9rem 1.4rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--gold);
+  background: var(--gold);
+  color: #221a00;
+  box-shadow: 0 0 0 1px rgba(245, 179, 1, 0.35),
+              0 6px 22px -8px rgba(245, 179, 1, 0.55);
+  transition: background 0.15s, border-color 0.15s;
+}
+.pick-gate-btn:hover:not(:disabled) { background: #ffc730; }
+.pick-gate-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.pick-gate-say {
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+.pick-gate-say strong { color: var(--text); }
+
 /* Whichever stage button is live is the one thing to press next, so it
    carries the ore colour and the others stay rock. */
-#sharpen-btn:not(:disabled),
 #haul-btn:not(:disabled) {
   background: var(--gold);
   color: #221a00;
@@ -237,7 +277,6 @@ fieldset legend {
   box-shadow: 0 0 0 1px rgba(245, 179, 1, 0.35),
               0 6px 22px -8px rgba(245, 179, 1, 0.55);
 }
-#sharpen-btn:not(:disabled):hover,
 #haul-btn:not(:disabled):hover {
   background: #ffc730;
 }

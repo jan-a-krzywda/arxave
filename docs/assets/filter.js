@@ -1,10 +1,9 @@
 /**
  * arxave filter — staged Dig pipeline.
  *
- * Four stages, each with its own button, output, and resumable state:
- *   0. Sharpen the pick  — load the in-browser embedding model
+ * Three stages, each with its own button, output, and resumable state:
  *   1. Haul the stones   — scout arXiv + embed abstracts + seam map
- *   2. Set the touchstones — free text + core samples (OpenAlex)
+ *   2. Filter            — sharpen the pick, then free text + core samples
  *   3. Assay             — (k+1)×N matrix with live re-blend
  *
  * Dependencies: none. Runs in the browser, no bundler.
@@ -36,10 +35,13 @@
      the dead archives and the long tail would bury the ones people scout —
      and "Other…" takes any code by hand for whatever is missing. */
   const ARXIV_CATEGORIES = [
-    /* The four most-reached-for codes, repeated at the top so the common case
-       is one click rather than a scroll into the right archive. Adding one is
-       deduped against the list, so picking it here or below is the same. */
-    ['Popular', [
+    /* The codes the nightly warm-dig run pre-cuts (scripts/warm-dig.mjs, run by
+       .github/workflows/warm-dig.yml off the ARXAVE_WARM_CATEGORIES variable),
+       repeated at the top: a haul of these is a cache lookup, seconds rather
+       than a minute of local embedding. Keep this group in step with that
+       variable or the label starts lying. Adding one is deduped against the
+       list, so picking it here or below is the same. */
+    ['Popular — cached, fast', [
       ['quant-ph', 'Quantum physics'],
       ['cs.AI', 'Artificial intelligence'],
       ['cs.LG', 'Machine learning'],
@@ -576,7 +578,7 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  // STAGE 0 — Sharpen the pick
+  // The pick — loaded on demand, gated at the top of Stage 2
   // ═══════════════════════════════════════════════════════════════════
   /*
    * The pick is loaded when something actually needs it, not before.
@@ -593,8 +595,9 @@
    *   * a haul with cache misses (embedTexts, via embedTextsCached);
    *   * any touchstone, always — touchstones never go through the cache.
    *
-   * The Stage 0 button stays for people who would rather fetch it up front,
-   * and as the escape hatch for core samples parked on a fresh page load.
+   * The button now lives at the top of Stage 2, where the need is unavoidable:
+   * your own words are never in the shared cache. It also stays the escape
+   * hatch for core samples parked on a fresh page load.
    */
 
   var _pickPromise = null;
@@ -668,6 +671,10 @@
     state.modelLoaded = true;
     progWrap.style.display = 'none';
     doneEl.style.display = '';
+    /* The whole gate goes, not just its button: once the pick is sharpened the
+       one-time notice is noise, and the done line says what happened. */
+    var gate = byId('pick-gate');
+    if (gate) gate.style.display = 'none';
     btn.style.display = 'none';
     statusEl.textContent = '';
 
@@ -2333,7 +2340,7 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  // STAGE 2 — Set the touchstones
+  // STAGE 2 — Filter (touchstones + core samples)
   // ═══════════════════════════════════════════════════════════════════
 
   // Touchstone row management
@@ -3102,7 +3109,7 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  // Event bindings — Stage 0
+  // Event bindings — the pick (Stage 2 gate)
   // ═══════════════════════════════════════════════════════════════════
 
   byId('sharpen-btn').addEventListener('click', async function () {
