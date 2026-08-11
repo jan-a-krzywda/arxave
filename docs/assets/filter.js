@@ -1957,11 +1957,12 @@
         if (idx >= shown) break;
         var col = [2, 5, 8][s % 3];
         var row = s < 3 ? yb - 5 : yb - 8;            // bottom row loads first
-        // The newest stone falls the last few pixels into its slot.
+        /* The newest stone falls the last few pixels into its slot — from the
+           rim, not above it, so it never reads as floating beside the cart. */
         var drop = 0;
         if (idx === shown - 1) {
           var p = (t - lastDrop) / 0.18;
-          if (p < 1) drop = -Math.round((1 - Math.max(0, p)) * 7);
+          if (p < 1) drop = -Math.round((1 - Math.max(0, p)) * (row - (yb - 10)));
         }
         var gold = trainStoneGold(idx);
         px(cx + col, row + drop, 2, 2, gold ? TRAIN_C.gold : TRAIN_C.rock);
