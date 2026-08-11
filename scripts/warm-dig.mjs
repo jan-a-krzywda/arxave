@@ -117,6 +117,27 @@ async function fetchAbstracts(category) {
   return parseFeed(await resp.text());
 }
 
+/**
+ * Where to talk to the cache: the flag, then the environment, then the default.
+ *
+ * `||`, not `??`, and validated rather than trusted. **An unset GitHub Actions
+ * variable interpolates to the empty string**, not to nothing, so
+ * `env: DIG_CACHE_URL: ${{ vars.NOT_SET }}` hands this the empty string — which
+ * `??` accepts as a perfectly good endpoint. The failure then lands twenty
+ * seconds later, inside `fetch`, as `TypeError: Failed to parse URL from`,
+ * after the whole day has been embedded and with nowhere to put it. Resolving
+ * and validating up front turns that into an exit(2) in the first second.
+ */
+export function resolveEndpoint(flag, env) {
+  const endpoint = flag || env || DEFAULT_ENDPOINT;
+  try {
+    new URL(endpoint);
+  } catch {
+    throw new Error(`--endpoint is not a valid URL: ${JSON.stringify(endpoint)}`);
+  }
+  return endpoint;
+}
+
 async function main() {
   const categories = (arg('categories') ?? '')
     .split(',').map((c) => c.trim()).filter(Boolean);
@@ -124,7 +145,13 @@ async function main() {
     console.error('warm-dig: --categories is required, e.g. --categories "quant-ph"');
     process.exit(2);
   }
-  const endpoint = arg('endpoint', process.env.DIG_CACHE_URL ?? DEFAULT_ENDPOINT);
+  let endpoint;
+  try {
+    endpoint = resolveEndpoint(arg('endpoint'), process.env.DIG_CACHE_URL);
+  } catch (err) {
+    console.error('warm-dig: ' + err.message);
+    process.exit(2);
+  }
   const writeKey = process.env.DIG_WRITE_KEY ?? '';
   if (!writeKey && !DRY_RUN) {
     console.error('warm-dig: $DIG_WRITE_KEY is unset. Set it, or pass --dry-run.');
