@@ -1,0 +1,58 @@
+name: Warm the Dig cache
+
+# arXiv announces at 20:00 ET, which is 00:00/01:00 UTC the next day, Sun–Thu
+# evenings — so the feed for a weekday is up shortly after midnight UTC. This
+# runs at 01:30 UTC Tue–Sat, an hour behind the announcement, so that whoever
+# opens the page in the European morning finds the day already embedded.
+on:
+  schedule:
+    - cron: '30 1 * * 2-6'
+  workflow_dispatch:
+    inputs:
+      categories:
+        description: 'arXiv categories (comma-separated)'
+        type: string
+        default: 'quant-ph, cond-mat.mes-hall'
+      dry_run:
+        description: 'Embed but write nothing'
+        type: boolean
+        default: false
+
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # The model is 32 MB and never changes; downloading it on every run is
+      # the single slowest step otherwise.
+      - name: Cache the embedding model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-bge-small-en-v1.5-q8
+
+      - name: Install warmer dependencies
+        working-directory: scripts
+        run: npm install --no-package-lock --no-audit --no-fund
+
+      # Cheap, and it guards the one failure this job cannot detect itself: if
+      # the warmer's parse diverges from the browser's, every vector is filed
+      # under a key nobody looks up and the job still reports success.
+      - name: Check the parse still matches the browser's
+        working-directory: scripts
+        run: node --test warm-dig.test.mjs
+
+      - name: Warm
+        working-directory: scripts
+        env:
+          DIG_WRITE_KEY: ${{ secrets.DIG_WRITE_KEY }}
+          DIG_CACHE_URL: ${{ vars.ARXAVE_DIG_CACHE_URL }}
+        run: |
+          node warm-dig.mjs \
+            --categories "${{ inputs.categories || vars.ARXAVE_WARM_CATEGORIES || 'quant-ph, cond-mat.mes-hall' }}" \
+            ${{ inputs.dry_run && '--dry-run' || '' }}

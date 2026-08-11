@@ -15,6 +15,10 @@
   // ── Constants ────────────────────────────────────────────────────
   const FUNCTIONS_BASE = 'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1';
   const RELAY_URL = window.ARXAVE_RELAY || (FUNCTIONS_BASE + '/relay');
+  /* The shared vector cache. Set window.ARXAVE_DIG_CACHE = false to opt out and
+     embed everything locally — the page works either way, just slower. */
+  const CACHE_URL = window.ARXAVE_DIG_CACHE === false ? null
+    : (window.ARXAVE_DIG_CACHE || (FUNCTIONS_BASE + '/dig-cache'));
   const TRANSFORMERS_VERSION = '3.7.6';
   const TRANSFORMERS_URLS = [
     'https://cdn.jsdelivr.net/npm/@huggingface/transformers@' + TRANSFORMERS_VERSION,
@@ -167,6 +171,7 @@
     seamGraph: null,        // live graph handle for the inline canvas
     seamModalGraph: null,   // live graph handle for the modal canvas
     haulTrain: null,        // live handle for stage 1's mine-train progress
+    hauledFromCache: 0,     // stones whose vector came from the shared cache
   };
 
   // ── Persistence ───────────────────────────────────────────────────
@@ -850,6 +855,111 @@
       }
       await new Promise(function (res) { setTimeout(res, 0); });
     }
+    return vectors;
+  }
+
+  // ── The shared vector cache ───────────────────────────────────────
+  /*
+   * Embedding a day of abstracts here costs ~60 s; the vectors are ~200 kB.
+   * So the second person to haul a day downloads instead of re-embedding.
+   *
+   * The key is the sha256 of the text — never an arXiv id — so one cache
+   * serves abstracts, touchstones and core samples alike, and a revised
+   * abstract is a *different text* and therefore a miss rather than a stale
+   * hit. `model` and `dim` ride in the key for the reason in §5.6 of the spec:
+   * a 384-dim bge vector and a 768-dim one for the same text are not
+   * interchangeable, and mixing them fails silently.
+   *
+   * Every failure here is a miss, never an error. The cache is an
+   * optimization; the haul must work with it down, empty, or opted out.
+   *
+   * ONLY PUBLISHED TEXT GOES THROUGH HERE. Abstracts (arXiv) and core-sample
+   * abstracts (OpenAlex) are already public and already left this tab to be
+   * fetched. Touchstones are the user's own words and are embedded locally,
+   * always — Stage 0 promises "nothing you type leaves this tab", and a sha256
+   * of a short typed phrase is one dictionary away from the phrase itself.
+   * See maybeEmbedFeatures(), which is where the split is enforced.
+   */
+
+  /** Collapse exactly as the server does, so both sides hash the same string. */
+  function cacheKeyText(text) { return (text || '').replace(/\s+/g, ' ').trim(); }
+
+  async function sha256Hex(text) {
+    var bytes = new TextEncoder().encode(cacheKeyText(text));
+    var digest = await crypto.subtle.digest('SHA-256', bytes);
+    var out = '';
+    new Uint8Array(digest).forEach(function (b) {
+      out += b.toString(16).padStart(2, '0');
+    });
+    return out;
+  }
+
+  /** base64 of little-endian float32 → a plain Array, L2-normalized. */
+  function decodeVector(b64, dim) {
+    var binary = atob(b64);
+    if (binary.length !== dim * 4) {
+      throw new Error('cached vector is ' + binary.length + ' bytes, expected ' + (dim * 4));
+    }
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    var floats = new Float32Array(bytes.buffer);
+    var v = Array.prototype.slice.call(floats);
+    // The invariant is ours to hold, not the server's — normalize on ingest.
+    return normalize(v);
+  }
+
+  /** Ask the cache for these texts. Returns {sha: vector}; {} on any failure. */
+  async function cacheLookup(texts) {
+    if (!CACHE_URL || !texts.length || !(crypto && crypto.subtle)) return { shas: [], hits: {} };
+    var shas;
+    try {
+      shas = await Promise.all(texts.map(sha256Hex));
+    } catch (_) {
+      return { shas: [], hits: {} };
+    }
+    var unique = Object.keys(shas.reduce(function (acc, s) { acc[s] = 1; return acc; }, {}));
+    var hits = {};
+    try {
+      var resp = await fetch(CACHE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: LOCAL_MODEL, dim: LOCAL_DIM, sha: unique }),
+      });
+      if (!resp.ok) return { shas: shas, hits: {} };
+      var data = await resp.json();
+      Object.keys(data.hits || {}).forEach(function (sha) {
+        try { hits[sha] = decodeVector(data.hits[sha], LOCAL_DIM); } catch (_) {}
+      });
+    } catch (_) {
+      return { shas: shas, hits: {} };
+    }
+    return { shas: shas, hits: hits };
+  }
+
+  /**
+   * embedTexts, with the shared cache in front of it. Same contract — one unit
+   * vector per input text, in order — plus a `cached` count on the returned
+   * array for the status line. Only the misses reach the model.
+   */
+  async function embedTextsCached(texts, statusFn) {
+    var look = await cacheLookup(texts);
+    var vectors = new Array(texts.length);
+    var missIdx = [];
+    for (var i = 0; i < texts.length; i++) {
+      var hit = look.shas.length ? look.hits[look.shas[i]] : null;
+      if (hit) vectors[i] = hit.slice();
+      else missIdx.push(i);
+    }
+    var nCached = texts.length - missIdx.length;
+    if (statusFn) statusFn(nCached, texts.length);
+    if (missIdx.length) {
+      var missed = await embedTexts(
+        missIdx.map(function (i) { return texts[i]; }),
+        statusFn && function (done, total) { statusFn(nCached + done, texts.length); }
+      );
+      for (var m = 0; m < missIdx.length; m++) vectors[missIdx[m]] = missed[m];
+    }
+    vectors.cached = nCached;
     return vectors;
   }
 
@@ -2073,6 +2183,7 @@
     if (state.haulTrain) state.haulTrain.stop();
     state.haulTrain = startHaulTrain(byId('haul-train'));
     progLabel.textContent = 'Scouting...';
+    state.hauledFromCache = 0;
     statusEl.textContent = '';
     statusEl.style.color = '';
     seamPanel.style.display = 'none';
@@ -2086,11 +2197,12 @@
       // Embed abstracts
       statusEl.textContent = 'Embedding ' + stones.length + ' abstracts...';
       var texts = stones.map(function (s) { return s.abstract; });
-      var vectors = await embedTexts(texts, function (done, total) {
+      var vectors = await embedTextsCached(texts, function (done, total) {
         if (state.haulTrain) state.haulTrain.set(done, total);
         progLabel.textContent = 'Stones hauled: ' + done + ' / ' + total;
       });
       state.A = vectors;
+      state.hauledFromCache = vectors.cached || 0;
 
       // Compute seam map
       statusEl.textContent = 'Computing seam map...';
@@ -2127,6 +2239,12 @@
       var parts = [nNew + ' new'];
       if (nCross) parts.push(nCross + ' cross-listed');
       if (nEarlier) parts.push(nEarlier + ' from earlier days');
+      /* Say how many came down the shaft already cut. It is the difference
+         between a minute and a second, and the user should be able to see
+         which one they just got. */
+      if (state.hauledFromCache) {
+        parts.push(state.hauledFromCache + ' already cut (cached)');
+      }
       statusEl.textContent = stones.length + ' stones hauled — ' + parts.join(', ') + '.';
       statusEl.style.color = 'var(--moss)';
       /* The loaded train stays on the page — it is the picture of the day's
@@ -2333,7 +2451,9 @@
 
     // Embed title + abstract together
     var embedText = title + ' ' + abstract;
-    var vectors = await embedTexts([embedText.trim()], null);
+    /* Through the shared cache: a core sample is a paper other people keep
+       too, so its vector is the most re-fetched text in the whole app. */
+    var vectors = await embedTextsCached([embedText.trim()], null);
     var vector = vectors[0];
 
     var entry = { doi: doi, title: title, abstract: abstract, vector: vector, weak: weak };
@@ -2424,7 +2544,26 @@
       return;
     }
 
-    var newVectors = await embedTexts(textsToEmbed, null);
+    /* Split by provenance, not by convenience. A core sample's abstract is a
+       published paper's text and goes through the shared cache; a touchstone is
+       the user's own words and never does — the page promises "nothing you type
+       leaves this tab", and a sha256 of a short typed phrase is a dictionary
+       lookup away from the phrase. See docs/dig-spec.md §6c.2. */
+    var newVectors = new Array(textsToEmbed.length);
+    var localIdx = [], sharedIdx = [];
+    for (var p = 0; p < embedMap.length; p++) {
+      (embedMap[p].type === 'touchstone' ? localIdx : sharedIdx).push(p);
+    }
+    function textAt(i) { return textsToEmbed[i]; }
+    if (sharedIdx.length) {
+      var shared = await embedTextsCached(sharedIdx.map(textAt), null);
+      for (var s = 0; s < sharedIdx.length; s++) newVectors[sharedIdx[s]] = shared[s];
+    }
+    if (localIdx.length) {
+      var local = await embedTexts(localIdx.map(textAt), null);
+      for (var l = 0; l < localIdx.length; l++) newVectors[localIdx[l]] = local[l];
+    }
+
     for (var e = 0; e < embedMap.length; e++) {
       var em = embedMap[e];
       if (em.type === 'touchstone') {

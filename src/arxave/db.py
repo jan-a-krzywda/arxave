@@ -114,6 +114,22 @@ SCHEMA: tuple[str, ...] = (
         created_at      TEXT,
         PRIMARY KEY (cite_key, user_id)
     )""",
+    # The Dig's shared vector cache. Keyed on the *text*, not the paper: the
+    # same row shape serves an abstract, a touchstone and a core sample, and a
+    # revised abstract is a different text and therefore a different row rather
+    # than a silently stale one. `model` and `dim` are in the key because a
+    # 384-dim bge vector and a 768-dim Gemini one for the same text are not
+    # interchangeable — mixing them produces plausible garbage and no error.
+    """CREATE TABLE IF NOT EXISTS dig_vectors (
+        text_sha TEXT NOT NULL,
+        model    TEXT NOT NULL,
+        dim      INTEGER NOT NULL,
+        vector   {blob} NOT NULL,
+        source   TEXT,
+        seen_at  TEXT,
+        PRIMARY KEY (text_sha, model, dim)
+    )""",
+    "CREATE INDEX IF NOT EXISTS idx_dig_vectors_seen ON dig_vectors(seen_at)",
     """CREATE TABLE IF NOT EXISTS runs (
         run_id     {pk_autoinc},
         started    TEXT,

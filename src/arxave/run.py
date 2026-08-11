@@ -90,6 +90,12 @@ def cmd_run(args, cfg: config.Config) -> int:
             from datetime import timedelta
             before = (on_date - timedelta(days=cfg.retention.days)).isoformat()
             pruned = store.prune_old(conn, before)
+            # The Dig's vector cache ages on its own clock (last wanted, not
+            # published), but the same window bounds it.
+            n_vectors = store.prune_vectors(conn, before)
+            if n_vectors:
+                log.info('prune: dropped %d cached vectors unused since %s',
+                         n_vectors, before)
             if pruned['papers']:
                 log.info(
                     'prune: dropped %d papers published before %s '

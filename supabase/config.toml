@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.embed]
 verify_jwt = false
+
+# dig-cache reads are public by design (they hand back vectors anyone could
+# recompute); its writes are gated on the x-dig-key secret inside the function,
+# not on a JWT the static page could never supply.
+[functions.dig-cache]
+verify_jwt = false

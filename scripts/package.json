@@ -1,0 +1,10 @@
+{
+  "name": "arxave-scripts",
+  "private": true,
+  "type": "module",
+  "description": "CI-only tooling. The site itself has no build step and no dependencies — these are installed in the warmer's workflow and never shipped to the browser.",
+  "dependencies": {
+    "@huggingface/transformers": "3.7.6",
+    "fast-xml-parser": "^4.5.0"
+  }
+}

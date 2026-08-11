@@ -61,5 +61,18 @@ create policy user_filters_own on user_filters
   using (user_id = auth.uid()::text)
   with check (user_id = auth.uid()::text);
 
+-- ---------------------------------------------------------------------------
+-- dig_vectors — the Dig's shared vector cache
+--
+-- No policies, on purpose. Clients never touch this table directly: they go
+-- through the `dig-cache` edge function, which holds the service_role key and
+-- so bypasses RLS. Enabling RLS with no policy is therefore the correct
+-- posture — deny-all for anon and authenticated, full access for the function.
+-- A direct anon SELECT would be harmless, but a direct anon INSERT would let
+-- anyone plant a vector nobody can verify, so the table stays closed and the
+-- function stays the only door.
+-- ---------------------------------------------------------------------------
+alter table dig_vectors enable row level security;
+
 -- Note: the runs table is batch-internal bookkeeping. Leave RLS off (default
 -- deny for anon, full access for service_role) — clients never read it.
