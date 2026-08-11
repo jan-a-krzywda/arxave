@@ -28,6 +28,7 @@
   const LOCAL_MODEL = 'Xenova/bge-small-en-v1.5';
   const LOCAL_DIM = 384;
   const LOCAL_BATCH = 16;
+  const CACHE_READ_CHUNK = 500;   // stays under dig-cache's MAX_SHAS
   const OPENALEX_MAILTO = 'arxiv-filter@example.com';
 
   /* arXiv categories, for the picker. Grouped the way arXiv groups them, so
@@ -920,16 +921,25 @@
     var unique = Object.keys(shas.reduce(function (acc, s) { acc[s] = 1; return acc; }, {}));
     var hits = {};
     try {
-      var resp = await fetch(CACHE_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: LOCAL_MODEL, dim: LOCAL_DIM, sha: unique }),
-      });
-      if (!resp.ok) return { shas: shas, hits: {} };
-      var data = await resp.json();
-      Object.keys(data.hits || {}).forEach(function (sha) {
-        try { hits[sha] = decodeVector(data.hits[sha], LOCAL_DIM); } catch (_) {}
-      });
+      /* Chunked: the endpoint caps a read, and "Max results" is a free number
+         field, so a wide scout can exceed it. One oversized request would 413
+         and drop the whole day back to local embedding — with nothing visibly
+         wrong, just slow. */
+      for (var c = 0; c < unique.length; c += CACHE_READ_CHUNK) {
+        var resp = await fetch(CACHE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: LOCAL_MODEL, dim: LOCAL_DIM,
+            sha: unique.slice(c, c + CACHE_READ_CHUNK),
+          }),
+        });
+        if (!resp.ok) return { shas: shas, hits: {} };
+        var data = await resp.json();
+        Object.keys(data.hits || {}).forEach(function (sha) {
+          try { hits[sha] = decodeVector(data.hits[sha], LOCAL_DIM); } catch (_) {}
+        });
+      }
     } catch (_) {
       return { shas: shas, hits: {} };
     }
