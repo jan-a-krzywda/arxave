@@ -11,7 +11,26 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { cacheKeyText, parseFeed } from './warm-dig.mjs';
+import { cacheKeyText, parseFeed, resolveEndpoint } from './warm-dig.mjs';
+
+const DEFAULT = 'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1/dig-cache';
+
+test('an unset Actions variable does not become the endpoint', () => {
+  // `env: DIG_CACHE_URL: ${{ vars.NOT_SET }}` hands us '', not undefined. With
+  // `??` that passed straight through and failed 20 s later inside fetch, after
+  // the whole day had been embedded and with nowhere to put it.
+  assert.equal(resolveEndpoint(null, ''), DEFAULT);
+  assert.equal(resolveEndpoint(undefined, undefined), DEFAULT);
+});
+
+test('the flag wins over the environment, which wins over the default', () => {
+  assert.equal(resolveEndpoint('https://a.test/x', 'https://b.test/y'), 'https://a.test/x');
+  assert.equal(resolveEndpoint(null, 'https://b.test/y'), 'https://b.test/y');
+});
+
+test('a malformed endpoint fails immediately, not after embedding', () => {
+  assert.throws(() => resolveEndpoint('not-a-url', null), /not a valid URL/);
+});
 
 function feed(items) {
   return `<?xml version="1.0" encoding="UTF-8"?><rss><channel>${items.join('')}</channel></rss>`;
