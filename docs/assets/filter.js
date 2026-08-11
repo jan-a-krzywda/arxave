@@ -2,7 +2,7 @@
  * arxave filter — staged Dig pipeline.
  *
  * Three stages, each with its own button, output, and resumable state:
- *   1. Haul the stones   — scout arXiv + embed abstracts + seam map
+ *   1. Haul the stones   — scout arXiv + embed abstracts + coupling map
  *   2. Filter            — sharpen the pick, then free text + core samples
  *   3. Assay             — (k+1)×N matrix with live re-blend
  *
@@ -166,13 +166,13 @@
     /* featureVectors rows are: touchstones[0..kk-1], then cores[0..kp-1], then rush (null) */
     grades: null,           // [N] blended scores
     order: null,            // [N] indices into stones, sorted by grade desc
-    seamOrder: null,        // [N] indices into stones, sorted by cluster
-    seamMap: null,          // [N×N] cosine matrix (upper triangle populated)
-    seamComponents: null,   // [{indices: [int], centralTitle: string}]
-    seamView: 'table',      // 'table' | 'graph' | 'matrix'
-    seamThresh: 0.75,       // live-tunable, starts at SEAM_THRESH
-    seamGraph: null,        // live graph handle for the inline canvas
-    seamModalGraph: null,   // live graph handle for the modal canvas
+    wagonOrder: null,        // [N] indices into stones, sorted by cluster
+    wagonMap: null,          // [N×N] cosine matrix (upper triangle populated)
+    wagonComponents: null,   // [{indices: [int], centralTitle: string}]
+    wagonView: 'table',      // 'table' | 'graph' | 'matrix'
+    wagonThresh: 0.75,       // live-tunable, starts at WAGON_THRESH
+    wagonGraph: null,        // live graph handle for the inline canvas
+    wagonModalGraph: null,   // live graph handle for the modal canvas
     haulTrain: null,        // live handle for stage 1's mine-train progress
     hauledFromCache: 0,     // stones whose vector came from the shared cache
   };
@@ -588,7 +588,7 @@
     if (!str) return '';
     /* Every replacement but the last had lost its entity somewhere and was
        rewriting a character to itself. Titles and author names go into
-       innerHTML and, since the seam table, into title="…" attributes, so a
+       innerHTML and, since the wagon table, into title="…" attributes, so a
        stray < or " from arXiv would rewrite the markup around it. */
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -653,7 +653,7 @@
    *
    * It used to be a gate: 32 MB downloaded up front, with Stage 1 disabled
    * until it finished. Since the shared cache arrived, a day whose vectors are
-   * already cut needs no model at all — the haul is a lookup, and the seam map,
+   * already cut needs no model at all — the haul is a lookup, and the coupling map,
    * which the spec calls the first thing worth looking at, arrives in about a
    * second. Making everyone pay 32 MB to reach a screen that no longer needs it
    * is the wrong default.
@@ -1108,7 +1108,7 @@
   // STAGE 1 — Haul the stones
   // ═══════════════════════════════════════════════════════════════════
 
-  function computeSeamMap(A) {
+  function computeWagonMap(A) {
     var N = A.length;
     var S = new Array(N);
     for (var i = 0; i < N; i++) {
@@ -1126,18 +1126,18 @@
     return S;
   }
 
-  // Edge threshold and minimum seam size — shared by the matrix ordering
+  // Edge threshold and minimum wagon size — shared by the matrix ordering
   // and the graph view so both draw the same adjacency.
-  var SEAM_THRESH = 0.75;
-  var SEAM_MIN_SIZE = 3;
+  var WAGON_THRESH = 0.75;
+  var WAGON_MIN_SIZE = 3;
 
-  /** Count seams ≥ SEAM_MIN_SIZE at one threshold, and how many stones they
+  /** Count wagons ≥ WAGON_MIN_SIZE at one threshold, and how many stones they
    *  hold. Cheaper than clusterOrder — no ordering, no centrality — because
    *  the threshold sweep runs this a few dozen times. */
-  function countSeams(S, N, thresh) {
+  function countWagons(S, N, thresh) {
     var seen = new Uint8Array(N);
     var stack = new Int32Array(N);
-    var seams = 0, clustered = 0;
+    var wagons = 0, clustered = 0;
     for (var i = 0; i < N; i++) {
       if (seen[i]) continue;
       var top = 0, size = 0;
@@ -1151,39 +1151,39 @@
           if (!seen[w] && w !== v && row[w] >= thresh) { seen[w] = 1; stack[top++] = w; }
         }
       }
-      if (size >= SEAM_MIN_SIZE) { seams++; clustered += size; }
+      if (size >= WAGON_MIN_SIZE) { wagons++; clustered += size; }
     }
-    return { seams: seams, clustered: clustered };
+    return { wagons: wagons, clustered: clustered };
   }
 
   /**
-   * Pick the threshold that splits the haul into the most distinct seams.
+   * Pick the threshold that splits the haul into the most distinct wagons.
    * Too low and everything fuses into one blob; too high and every stone is
    * lone — the count peaks in between, and that peak is the interesting cut.
-   * Ties go to the threshold that leaves more stones inside a seam.
+   * Ties go to the threshold that leaves more stones inside a wagon.
    */
-  function bestSeamThresh(S, N) {
-    var best = SEAM_THRESH, bestSeams = -1, bestClustered = -1;
+  function bestWagonThresh(S, N) {
+    var best = WAGON_THRESH, bestWagons = -1, bestClustered = -1;
     for (var pct = 50; pct <= 95; pct++) {
       var t = pct / 100;
-      var r = countSeams(S, N, t);
-      if (r.seams > bestSeams ||
-          (r.seams === bestSeams && r.clustered > bestClustered)) {
-        best = t; bestSeams = r.seams; bestClustered = r.clustered;
+      var r = countWagons(S, N, t);
+      if (r.wagons > bestWagons ||
+          (r.wagons === bestWagons && r.clustered > bestClustered)) {
+        best = t; bestWagons = r.wagons; bestClustered = r.clustered;
       }
     }
     return best;
   }
 
   /**
-   * Cluster order: threshold at `thresh` (default SEAM_THRESH), connected
-   * components ≥ SEAM_MIN_SIZE.
+   * Cluster order: threshold at `thresh` (default WAGON_THRESH), connected
+   * components ≥ WAGON_MIN_SIZE.
    * Returns [order: [indices], components: [{indices:[], centralTitle:string}]]
    */
   function clusterOrder(stones, S, thresh) {
     var N = stones.length;
-    var THRESH = thresh === undefined ? SEAM_THRESH : thresh;
-    var MIN_SIZE = SEAM_MIN_SIZE;
+    var THRESH = thresh === undefined ? WAGON_THRESH : thresh;
+    var MIN_SIZE = WAGON_MIN_SIZE;
 
     // Build adjacency for values >= THRESH
     var adj = new Array(N);
@@ -1257,7 +1257,7 @@
   /** Map cosine value to ore ramp hex. Normalized by [minOff, maxOff]
    *  so the weakest correlation gets the dimmest yellowish step
    *  and the strongest gets the brightest. */
-  function seamColor(val, minOff, maxOff) {
+  function wagonColor(val, minOff, maxOff) {
     var span = maxOff - minOff;
     if (span <= 0.001) return ORE_HEX[3];
     var norm = (val - minOff) / span;   // minOff→0, maxOff→1
@@ -1267,7 +1267,7 @@
     return ORE_HEX[idx];
   }
 
-  function drawSeamMap(canvas, S, order, stones, components, readoutFn) {
+  function drawWagonMap(canvas, S, order, stones, components, readoutFn) {
     var N = order.length;
     var cellSize = Math.max(3, Math.floor(240 / N));
     var width = N * cellSize;
@@ -1299,7 +1299,7 @@
         var i = order[oi];
         var j = order[oj];
         var val = S[i][j];
-        ctx.fillStyle = seamColor(val, minOff, maxOff);
+        ctx.fillStyle = wagonColor(val, minOff, maxOff);
         ctx.fillRect(oi * cellSize, oj * cellSize, cellSize, cellSize);
       }
     }
@@ -1338,9 +1338,9 @@
           escapeHtml(stones[si].title) + '</a> — ' +
         '<a href="' + stones[sj].abs_url + '" target="_blank" rel="noopener">' +
           escapeHtml(stones[sj].title) + '</a>',
-        val.toFixed(2) + (same ? ' · same seam' : '') +
-          (isPinned ? '  ·  <span class="seam-pin-hint">pinned — click cell again to release</span>'
-                    : '  ·  <span class="seam-pin-hint">click to pin</span>'),
+        val.toFixed(2) + (same ? ' · same wagon' : '') +
+          (isPinned ? '  ·  <span class="wagon-pin-hint">pinned — click cell again to release</span>'
+                    : '  ·  <span class="wagon-pin-hint">click to pin</span>'),
         !!isPinned
       );
     }
@@ -1366,20 +1366,20 @@
     canvas.style.cursor = 'pointer';
   }
 
-  // ── Seam graph ──────────────────────────────────────────────────
-  // The seam map is an adjacency matrix, so it is also a graph: one node
-  // per stone, an edge wherever cosine ≥ SEAM_THRESH. Same clustering,
-  // drawn as a force-directed layout with one colour per seam.
+  // ── Wagon graph ──────────────────────────────────────────────────
+  // The coupling map is an adjacency matrix, so it is also a graph: one node
+  // per stone, an edge wherever cosine ≥ WAGON_THRESH. Same clustering,
+  // drawn as a force-directed layout with one colour per wagon.
 
-  // One hue per seam, cycled if there are more seams than colours.
-  var SEAM_COLORS = [
+  // One hue per wagon, cycled if there are more wagons than colours.
+  var WAGON_COLORS = [
     '#f5b301', '#5fb3a1', '#c96f4a', '#8f7fd4',
     '#7fa650', '#d98cb3', '#4f9ad6', '#c9a227',
     '#a8705a', '#6fbf73'
   ];
-  var LONE_COLOR = '#6c6355';   // stones that joined no seam
+  var LONE_COLOR = '#6c6355';   // stones that joined no wagon
 
-  /** [N] array of cluster ids, -1 for stones outside every seam. */
+  /** [N] array of cluster ids, -1 for stones outside every wagon. */
   function clusterIds(n, components) {
     var cid = new Array(n).fill(-1);
     for (var c = 0; c < components.length; c++) {
@@ -1390,16 +1390,16 @@
   }
 
   /**
-   * Force-directed seam graph on a canvas. Nodes are draggable, the view
+   * Force-directed wagon graph on a canvas. Nodes are draggable, the view
    * pans and zooms, hover previews and click pins the readout.
    * Returns a handle with .stop() — call it when the canvas goes away.
    */
-  function drawSeamGraph(canvas, S, stones, components, readoutFn, opts) {
+  function drawWagonGraph(canvas, S, stones, components, readoutFn, opts) {
     opts = opts || {};
     var N = stones.length;
     var W = opts.width || 640;
     var H = opts.height || 420;
-    var THRESH = opts.thresh === undefined ? SEAM_THRESH : opts.thresh;
+    var THRESH = opts.thresh === undefined ? WAGON_THRESH : opts.thresh;
     var dpr = window.devicePixelRatio || 1;
 
     canvas.width = Math.round(W * dpr);
@@ -1426,9 +1426,9 @@
       }
     }
 
-    // Seed positions: each seam on its own arc, lone stones on an outer ring.
+    // Seed positions: each wagon on its own arc, lone stones on an outer ring.
     // Anchors sit further out than the seed offset — the simulation pulls each
-    // seam's own stones back to its anchor every tick, so seams end up as
+    // wagon's own stones back to its anchor every tick, so wagons end up as
     // distinct blobs instead of melting into one ring under shared gravity.
     var nodes = new Array(N);
     var nComp = components.length;
@@ -1438,15 +1438,15 @@
       var cbase = (ci / Math.max(1, nComp)) * Math.PI * 2;
       clusterAnchor[ci] = { x: Math.cos(cbase) * ANCHOR_R, y: Math.sin(cbase) * ANCHOR_R };
     }
-    var seamCount = {};
+    var wagonCount = {};
     for (i = 0; i < N; i++) {
       var c = cid[i];
       var r, ang;
       if (c >= 0) {
-        seamCount[c] = (seamCount[c] || 0) + 1;
+        wagonCount[c] = (wagonCount[c] || 0) + 1;
         var base = (c / Math.max(1, nComp)) * Math.PI * 2;
-        ang = base + (seamCount[c] % 17) * 0.37;
-        r = 60 + (seamCount[c] % 5) * 12;
+        ang = base + (wagonCount[c] % 17) * 0.37;
+        r = 60 + (wagonCount[c] % 5) * 12;
       } else {
         ang = Math.random() * Math.PI * 2;
         r = 190 + Math.random() * 60;
@@ -1480,7 +1480,7 @@
           if (d2 < 0.01) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d2 = 0.01; }
           if (d2 > 90000) continue;              // ignore far pairs
           var f = REP / d2;
-          // Push different seams apart harder, let one seam's own stones
+          // Push different wagons apart harder, let one wagon's own stones
           // pack tighter — that's what turns a blurred ring into blobs.
           if (cid[a] !== cid[b]) f *= 1.7;
           else if (cid[a] >= 0) f *= 0.6;
@@ -1505,8 +1505,8 @@
         q.vx -= fx; q.vy -= fy;
       }
 
-      // Gravity: clustered stones pull toward their own seam's anchor point,
-      // not the shared centre — that's what keeps seams apart at rest instead
+      // Gravity: clustered stones pull toward their own wagon's anchor point,
+      // not the shared centre — that's what keeps wagons apart at rest instead
       // of drifting back into one ring once the springs settle.
       for (var g = 0; g < N; g++) {
         var ndg = nodes[g];
@@ -1521,7 +1521,7 @@
         }
       }
 
-      // Integrate, with a speed cap — uncapped, a dense seam's summed
+      // Integrate, with a speed cap — uncapped, a dense wagon's summed
       // repulsion throws nodes across the canvas and the layout flickers
       // instead of relaxing.
       var MAX_STEP = 14;
@@ -1587,14 +1587,14 @@
     var panning = null;
 
     // Assay overlay — set once stage 3 has graded the stones. The layout never
-    // changes with it: seams come from the stones themselves, grades come from
+    // changes with it: wagons come from the stones themselves, grades come from
     // the touchstones, and you want to see one against the other.
     var grades = null;      // Float32Array [N] or null
     var rank = null;        // [N] position in the grade order, 0 = best
     var payDirt = null;     // Set of indices in the pay-dirt cut
 
     function nodeColor(idx) {
-      return cid[idx] >= 0 ? SEAM_COLORS[cid[idx] % SEAM_COLORS.length] : LONE_COLOR;
+      return cid[idx] >= 0 ? WAGON_COLORS[cid[idx] % WAGON_COLORS.length] : LONE_COLOR;
     }
 
     function draw() {
@@ -1604,9 +1604,9 @@
       ctx.fillRect(0, 0, W, H);
 
       var focus = pinnedNode !== null ? pinnedNode : hoverNode;
-      // With a node pinned, hovering one of its own seam-mates compares
+      // With a node pinned, hovering one of its own wagon-mates compares
       // against the pin. Unconnected stones don't react — the pin only
-      // reads out against stones it actually shares a seam with.
+      // reads out against stones it actually shares a wagon with.
       var compareNode = (pinnedNode !== null && hoverNode !== null && hoverNode !== pinnedNode
         && nbrs[pinnedNode].indexOf(hoverNode) !== -1)
         ? hoverNode : null;
@@ -1635,7 +1635,7 @@
         ctx.stroke();
       }
 
-      // Compare line: pin ↔ hovered seam-mate.
+      // Compare line: pin ↔ hovered wagon-mate.
       if (compareNode !== null) {
         var cp = toScreen(nodes[pinnedNode]), cq = toScreen(nodes[compareNode]);
         ctx.globalAlpha = 0.9;
@@ -1649,7 +1649,7 @@
         ctx.setLineDash([]);
       }
 
-      // Nodes. Radius follows the zoom a little, so a tight seam stays a
+      // Nodes. Radius follows the zoom a little, so a tight wagon stays a
       // cloud of dots when zoomed out instead of one solid blob.
       var rScale = Math.min(1.3, Math.max(0.5, view.k));
       for (var n = 0; n < N; n++) {
@@ -1662,7 +1662,7 @@
         ctx.arc(s.x, s.y, rr, 0, Math.PI * 2);
         ctx.fill();
         if (payDirt && payDirt.has(n)) {
-          // Pay dirt: gold ring, so the assay's picks are findable in the seams
+          // Pay dirt: gold ring, so the assay's picks are findable in the wagons
           ctx.globalAlpha = dim ? 0.35 : 1;
           ctx.strokeStyle = '#f5b301';
           ctx.lineWidth = 2;
@@ -1822,7 +1822,7 @@
     canvas.style.cursor = 'grab';
 
     // Warm up before the first paint. The opening frames are the ones where
-    // seams are still tearing themselves apart; showing them reads as flicker,
+    // wagons are still tearing themselves apart; showing them reads as flicker,
     // so run them silently and start the animation from a rough shape.
     var WARMUP = 90;
     for (var wu = 0; wu < WARMUP; wu++) {
@@ -1867,8 +1867,8 @@
     };
   }
 
-  /** Wire a readout element to drawSeamMap's readoutFn contract. */
-  function seamReadoutSink(elId) {
+  /** Wire a readout element to drawWagonMap's readoutFn contract. */
+  function wagonReadoutSink(elId) {
     return function (full, detail, isPinned) {
       var el = byId(elId);
       el.innerHTML = full ? full + '  ·  ' + detail : '';
@@ -1876,10 +1876,10 @@
     };
   }
 
-  /** Floating-tooltip sink for the seam graph: (html, isPinned, evt).
+  /** Floating-tooltip sink for the wagon graph: (html, isPinned, evt).
    *  html === null repositions the open tooltip without rebuilding it. */
-  function seamTooltipSink() {
-    var tip = byId('seam-tooltip');
+  function wagonTooltipSink() {
+    var tip = byId('wagon-tooltip');
     return function (html, isPinned, evt) {
       if (html === null) {
         if (tip.style.display === 'block' && evt) positionTooltip(evt, tip);
@@ -1896,64 +1896,64 @@
   }
 
   /** Current matrix order, honouring the Clustered toggle. */
-  function currentSeamOrder() {
-    return byId('seam-sort-toggle').checked
-      ? state.seamOrder
+  function currentWagonOrder() {
+    return byId('wagon-sort-toggle').checked
+      ? state.wagonOrder
       : state.stones.map(function (_, i) { return i; });
   }
 
-  var SEAM_GRAPH_HINT = 'drag a stone to move it · drag the rock to pan · ' +
-    'scroll to zoom · click to pin, then hover its seam-mates to compare';
+  var WAGON_GRAPH_HINT = 'drag a stone to move it · drag the rock to pan · ' +
+    'scroll to zoom · click to pin, then hover its wagon-mates to compare';
 
-  /** Seam count and how many stones fell outside every seam. Kept short —
+  /** Wagon count and how many stones fell outside every wagon. Kept short —
    *  it shares the header row with the view switch and the threshold. */
-  function updateSeamStats() {
-    var comps = state.seamComponents || [];
-    var inSeam = 0;
-    for (var c = 0; c < comps.length; c++) inSeam += comps[c].indices.length;
-    var lone = state.stones.length - inSeam;
-    byId('seam-stats').innerHTML = comps.length
-      ? '<strong>' + comps.length + '</strong> seams · <strong>' + lone + '</strong> lone'
-      : 'no seams · <strong>' + state.stones.length + '</strong> lone';
+  function updateWagonStats() {
+    var comps = state.wagonComponents || [];
+    var inWagon = 0;
+    for (var c = 0; c < comps.length; c++) inWagon += comps[c].indices.length;
+    var lone = state.stones.length - inWagon;
+    byId('wagon-stats').innerHTML = comps.length
+      ? '<strong>' + comps.length + '</strong> wagons · <strong>' + lone + '</strong> lone'
+      : 'no wagons · <strong>' + state.stones.length + '</strong> lone';
   }
 
-  /** Push the current grades onto any live seam graph. No-op before stage 3. */
-  function applySeamAssay() {
+  /** Push the current grades onto any live wagon graph. No-op before stage 3. */
+  function applyWagonAssay() {
     var topN = state.blend.paydirt_n;
-    var hint = byId('seam-graph-hint');
+    var hint = byId('wagon-graph-hint');
     if (hint) {
-      hint.innerHTML = SEAM_GRAPH_HINT +
-        (state.grades ? ' · <span class="seam-paydirt-tag">gold ring</span> = pay dirt' : '');
+      hint.innerHTML = WAGON_GRAPH_HINT +
+        (state.grades ? ' · <span class="wagon-paydirt-tag">gold ring</span> = pay dirt' : '');
     }
-    var graphs = [state.seamGraph, state.seamModalGraph];
+    var graphs = [state.wagonGraph, state.wagonModalGraph];
     for (var i = 0; i < graphs.length; i++) {
       if (!graphs[i]) continue;
       graphs[i].setAssay(state.grades, state.order, topN);
     }
     // The tables carry a Grade column that only exists once stage 3 has run.
-    if (state.seamView === 'table' && state.seamMap) renderSeamTables();
+    if (state.wagonView === 'table' && state.wagonMap) renderWagonTables();
   }
 
   /**
-   * Table view: one table per seam, plus a closing table of the lone stones.
-   * Within a seam, stones are ordered by centrality — the stone most like the
-   * rest of its seam first, so the head of each table reads as its subject.
+   * Table view: one table per wagon, plus a closing table of the lone stones.
+   * Within a wagon, stones are ordered by centrality — the stone most like the
+   * rest of its wagon first, so the head of each table reads as its subject.
    */
-  function renderSeamTables() {
-    var wrap = byId('seam-table-wrap');
+  function renderWagonTables() {
+    var wrap = byId('wagon-table-wrap');
     var stones = state.stones;
-    var S = state.seamMap;
-    var comps = state.seamComponents || [];
-    var colors = SEAM_COLORS;
+    var S = state.wagonMap;
+    var comps = state.wagonComponents || [];
+    var colors = WAGON_COLORS;
 
-    var inSeam = new Set();
+    var inWagon = new Set();
     var html = '';
 
     for (var c = 0; c < comps.length; c++) {
       var members = comps[c].indices.slice();
-      for (var m = 0; m < members.length; m++) inSeam.add(members[m]);
+      for (var m = 0; m < members.length; m++) inWagon.add(members[m]);
 
-      // Centrality: mean similarity to the rest of the seam.
+      // Centrality: mean similarity to the rest of the wagon.
       var central = {};
       for (var a = 0; a < members.length; a++) {
         var sum = 0;
@@ -1964,40 +1964,40 @@
       }
       members.sort(function (x, y) { return central[y] - central[x]; });
 
-      html += '<div class="seam-table-block">' +
-        '<div class="seam-table-head">' +
-          '<span class="seam-swatch" style="background:' + colors[c % colors.length] + '"></span>' +
-          '<span class="seam-table-name">Seam ' + (c + 1) + '</span>' +
-          '<span class="seam-table-count">' + members.length + ' stones</span>' +
+      html += '<div class="wagon-table-block" id="wagon-block-' + c + '">' +
+        '<div class="wagon-table-head">' +
+          '<span class="wagon-swatch" style="background:' + colors[c % colors.length] + '"></span>' +
+          '<span class="wagon-table-name">Wagon ' + (c + 1) + '</span>' +
+          '<span class="wagon-table-count">' + members.length + ' stones</span>' +
         '</div>' +
-        seamTableRows(members, central);
+        wagonTableRows(members, central);
       html += '</div>';
     }
 
     var lone = [];
-    for (var i = 0; i < stones.length; i++) if (!inSeam.has(i)) lone.push(i);
+    for (var i = 0; i < stones.length; i++) if (!inWagon.has(i)) lone.push(i);
     if (lone.length) {
-      html += '<div class="seam-table-block">' +
-        '<div class="seam-table-head">' +
-          '<span class="seam-swatch" style="background:' + LONE_COLOR + '"></span>' +
-          '<span class="seam-table-name">Lone stones</span>' +
-          '<span class="seam-table-count">' + lone.length + ' stones</span>' +
+      html += '<div class="wagon-table-block" id="wagon-block-lone">' +
+        '<div class="wagon-table-head">' +
+          '<span class="wagon-swatch" style="background:' + LONE_COLOR + '"></span>' +
+          '<span class="wagon-table-name">Lone stones</span>' +
+          '<span class="wagon-table-count">' + lone.length + ' stones</span>' +
         '</div>' +
-        seamTableRows(lone, null);
+        wagonTableRows(lone, null);
       html += '</div>';
     }
 
     wrap.innerHTML = html || '<p class="hint">No stones to show.</p>';
   }
 
-  /** Rows for one seam table. `central` null means the lone-stone table. */
-  function seamTableRows(members, central) {
+  /** Rows for one wagon table. `central` null means the lone-stone table. */
+  function wagonTableRows(members, central) {
     var stones = state.stones;
     var grades = state.grades;
     /* No arXiv-ID column: the title is the link to the abstract page, so the
        id was a second copy of the same click eating the width the title and
        the authors want. */
-    var out = '<table class="seam-table"><thead><tr>' +
+    var out = '<table class="wagon-table"><thead><tr>' +
       '<th>Title</th><th>Authors</th><th>Category</th>' +
       (central ? '<th>Centrality</th>' : '') +
       (grades ? '<th>Grade</th>' : '') +
@@ -2011,14 +2011,14 @@
         /* One line, clipped, with the whole title in the native tooltip: a
            wrapped title makes rows of different heights and the table stops
            being scannable, which is the only thing it is for. */
-        '<td class="seam-td-title-cell"><a class="seam-td-title" href="' + st.abs_url +
+        '<td class="wagon-td-title-cell"><a class="wagon-td-title" href="' + st.abs_url +
           '" target="_blank" rel="noopener" title="' + escapeHtml(st.title) + '">' +
           escapeHtml(st.title) + '</a></td>' +
         /* The scroller has to be a div: a td is a table-cell box and ignores
            overflow, so the names used to spill over the next column. */
-        '<td class="seam-td-authors" title="' + escapeHtml(authorsFull) + '">' +
-          '<div class="seam-authors-scroll">' + escapeHtml(authors) + '</div></td>' +
-        '<td class="seam-td-cat">' + escapeHtml(st.primary_category || '') + '</td>' +
+        '<td class="wagon-td-authors" title="' + escapeHtml(authorsFull) + '">' +
+          '<div class="wagon-authors-scroll">' + escapeHtml(authors) + '</div></td>' +
+        '<td class="wagon-td-cat">' + escapeHtml(st.primary_category || '') + '</td>' +
         (central ? '<td class="num">' + central[si].toFixed(3) + '</td>' : '') +
         (grades ? '<td class="num">' + grades[si].toFixed(3) + '</td>' : '') +
         '</tr>';
@@ -2026,41 +2026,177 @@
     return out + '</tbody></table>';
   }
 
-  /** Render the inline seam panel in whichever view is selected. */
-  function renderSeamPanel() {
-    if (!state.seamMap || !state.stones.length) return;
-    var view = state.seamView;
+  /* ── The train strip ───────────────────────────────────────────────
+     One wagon per cluster, sitting above whichever view is selected. A
+     wagon's width is its share of the haul — eight stones next to five
+     draw 8:5 — so the shape of the night reads before a single table
+     does, and dragging the threshold is watching wagons couple and split.
+     Stones in no wagon ride the flatcar at the tail, which keeps the
+     strip's full width equal to the whole haul. */
+
+  /** Most common primary category among `members`, '' if none carry one. */
+  function topCategory(members) {
+    var stones = state.stones, counts = {}, best = '', bestN = 0;
+    for (var i = 0; i < members.length; i++) {
+      var cat = stones[members[i]].primary_category;
+      if (!cat) continue;
+      counts[cat] = (counts[cat] || 0) + 1;
+      if (counts[cat] > bestN) { bestN = counts[cat]; best = cat; }
+    }
+    return best;
+  }
+
+  /** Tooltip body for one wagon. `central` null means the lone flatcar. */
+  function wagonTipHtml(name, members, central, total) {
+    var pct = total ? Math.round((members.length / total) * 100) : 0;
+    var cat = topCategory(members);
+    return '<div class="tt-title">' + escapeHtml(name) + '</div>' +
+      '<div class="tt-row">' + members.length + ' stones · ' + pct + '% of the haul' +
+        (cat ? ' · mostly ' + escapeHtml(cat) : '') + '</div>' +
+      (central ? '<div class="tt-row tt-central">' + escapeHtml(central) + '</div>' : '');
+  }
+
+  /**
+   * Rebuild the strip from the current components. Cheap enough to run on
+   * every slider input — it is a handful of divs, no canvas and no layout
+   * of its own beyond flex.
+   */
+  function renderTrainStrip() {
+    var strip = byId('train-strip');
+    if (!strip) return;
+    var comps = state.wagonComponents || [];
+    var stones = state.stones || [];
+    if (!stones.length) { strip.innerHTML = ''; return; }
+
+    var inWagon = 0;
+    for (var c = 0; c < comps.length; c++) inWagon += comps[c].indices.length;
+    var lone = stones.length - inWagon;
+
+    var html = '<span class="train-loco" aria-hidden="true"></span>';
+    for (var w = 0; w < comps.length; w++) {
+      var n = comps[w].indices.length;
+      /* flex-grow carries the ratio and flex-basis is 0, so widths are the
+         counts themselves rather than counts plus some content width. */
+      html += '<button type="button" class="train-wagon" data-wagon="' + w + '"' +
+        ' style="flex-grow:' + n + ';background:' +
+        WAGON_COLORS[w % WAGON_COLORS.length] + '"' +
+        ' title="Wagon ' + (w + 1) + ' — ' + n + ' stones">' +
+        '<span class="train-wagon-n">' + n + '</span></button>';
+    }
+    if (lone) {
+      html += '<button type="button" class="train-wagon is-lone" data-wagon="lone"' +
+        ' style="flex-grow:' + lone + ';background:' + LONE_COLOR + '"' +
+        ' title="Lone stones — ' + lone + ' stones">' +
+        '<span class="train-wagon-n">' + lone + '</span></button>';
+    }
+    strip.innerHTML = html;
+  }
+
+  /** Wagon under the pointer, or null. */
+  function stripWagonAt(target) {
+    return target && target.closest ? target.closest('.train-wagon') : null;
+  }
+
+  /* Hover reads the wagon out into its own floating tooltip — the graph's
+     tooltip is tied up in that view's pin state, so the strip keeps a
+     separate one and never fights it. */
+  function wireTrainStrip() {
+    var strip = byId('train-strip');
+    var tip = byId('train-strip-tip');
+    if (!strip || !tip) return;
+
+    function hide() { tip.style.display = 'none'; }
+
+    strip.addEventListener('mousemove', function (e) {
+      var el = stripWagonAt(e.target);
+      if (!el) { hide(); return; }
+      var key = el.getAttribute('data-wagon');
+      var comps = state.wagonComponents || [];
+      var members, name, central;
+      if (key === 'lone') {
+        var inWagon = new Set();
+        for (var c = 0; c < comps.length; c++) {
+          for (var m = 0; m < comps[c].indices.length; m++) inWagon.add(comps[c].indices[m]);
+        }
+        members = [];
+        for (var i = 0; i < state.stones.length; i++) if (!inWagon.has(i)) members.push(i);
+        name = 'Lone stones';
+        central = null;
+      } else {
+        var comp = comps[+key];
+        if (!comp) { hide(); return; }
+        members = comp.indices;
+        name = 'Wagon ' + (+key + 1);
+        central = comp.centralTitle;
+      }
+      tip.innerHTML = wagonTipHtml(name, members, central, state.stones.length);
+      tip.style.display = '';
+      /* Clamp to the viewport so the last wagon's tooltip does not hang off
+         the right edge of a narrow window. */
+      var w = tip.offsetWidth || 260;
+      var x = Math.min(e.clientX + 14, window.innerWidth - w - 8);
+      tip.style.left = Math.max(8, x) + 'px';
+      tip.style.top = (e.clientY + 16) + 'px';
+    });
+    strip.addEventListener('mouseleave', hide);
+
+    /* A wagon is also a jump: click it and the table view opens on that
+       wagon's own table. */
+    strip.addEventListener('click', function (e) {
+      var el = stripWagonAt(e.target);
+      if (!el) return;
+      hide();
+      var key = el.getAttribute('data-wagon');
+      if (state.wagonView !== 'table') {
+        var btn = byId('wagon-view-switch').querySelector('.wagon-view-btn[data-view="table"]');
+        if (btn) btn.click();
+      }
+      var block = byId('wagon-block-' + key);
+      if (block && block.scrollIntoView) {
+        block.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }
+
+  /** Render the inline wagon panel in whichever view is selected. */
+  function renderWagonPanel() {
+    if (!state.wagonMap || !state.stones.length) return;
+    var view = state.wagonView;
     var isGraph = view === 'graph';
     var isTable = view === 'table';
     var isMatrix = view === 'matrix';
 
-    byId('seam-matrix-wrap').style.display = isMatrix ? '' : 'none';
-    byId('seam-graph-wrap').style.display = isGraph ? '' : 'none';
-    byId('seam-table-wrap').style.display = isTable ? '' : 'none';
-    byId('seam-sort-label').style.display = isMatrix ? '' : 'none';
+    // The strip stands whichever view is showing: it is the overview the
+    // three views are details of.
+    renderTrainStrip();
+
+    byId('wagon-matrix-wrap').style.display = isMatrix ? '' : 'none';
+    byId('wagon-graph-wrap').style.display = isGraph ? '' : 'none';
+    byId('wagon-table-wrap').style.display = isTable ? '' : 'none';
+    byId('wagon-sort-label').style.display = isMatrix ? '' : 'none';
     // Nothing to blow up about a table — it already uses the full width.
-    byId('seam-expand-btn').style.display = isTable ? 'none' : '';
+    byId('wagon-expand-btn').style.display = isTable ? 'none' : '';
     // Only the matrix reads out into the bar below it: the graph has its own
     // floating tooltip and the table says everything on its face.
-    byId('seam-readout').style.display = isMatrix ? '' : 'none';
-    byId('seam-readout').innerHTML = '';
-    byId('seam-readout').classList.remove('pinned');
-    releaseSeamPin();
+    byId('wagon-readout').style.display = isMatrix ? '' : 'none';
+    byId('wagon-readout').innerHTML = '';
+    byId('wagon-readout').classList.remove('pinned');
+    releaseWagonPin();
 
-    if (state.seamGraph) { state.seamGraph.stop(); state.seamGraph = null; }
+    if (state.wagonGraph) { state.wagonGraph.stop(); state.wagonGraph = null; }
 
     if (isGraph) {
-      var wrap = byId('seam-graph-wrap');
+      var wrap = byId('wagon-graph-wrap');
       var w = Math.max(320, wrap.clientWidth || 640);
-      state.seamGraph = drawSeamGraph(
-        byId('seam-graph-canvas'), state.seamMap, state.stones, state.seamComponents,
-        seamTooltipSink(), { width: w, height: 420, thresh: state.seamThresh });
-      applySeamAssay();
+      state.wagonGraph = drawWagonGraph(
+        byId('wagon-graph-canvas'), state.wagonMap, state.stones, state.wagonComponents,
+        wagonTooltipSink(), { width: w, height: 420, thresh: state.wagonThresh });
+      applyWagonAssay();
     } else if (isTable) {
-      renderSeamTables();
+      renderWagonTables();
     } else {
-      drawSeamMap(byId('seam-canvas'), state.seamMap, currentSeamOrder(), state.stones,
-        state.seamComponents, seamReadoutSink('seam-readout'));
+      drawWagonMap(byId('wagon-canvas'), state.wagonMap, currentWagonOrder(), state.stones,
+        state.wagonComponents, wagonReadoutSink('wagon-readout'));
     }
   }
 
@@ -2310,7 +2446,7 @@
     var statusEl = byId('haul-status');
     var progWrap = byId('haul-progress-wrap');
     var progLabel = byId('haul-label');
-    var seamPanel = byId('seam-panel');
+    var wagonPanel = byId('wagon-panel');
 
     btn.disabled = true;
     btn.classList.remove('is-done');
@@ -2324,7 +2460,7 @@
     state.hauledFromCache = 0;
     statusEl.textContent = '';
     statusEl.style.color = '';
-    seamPanel.style.display = 'none';
+    wagonPanel.style.display = 'none';
 
     try {
       // Scout
@@ -2353,28 +2489,28 @@
       state.A = vectors;
       state.hauledFromCache = vectors.cached || 0;
 
-      // Compute seam map
-      statusEl.textContent = 'Computing seam map...';
-      var S = computeSeamMap(vectors);
-      state.seamMap = S;
+      // Compute coupling map
+      statusEl.textContent = 'Computing coupling map...';
+      var S = computeWagonMap(vectors);
+      state.wagonMap = S;
 
-      // Start from the threshold that splits this haul into the most seams,
+      // Start from the threshold that splits this haul into the most wagons,
       // rather than a fixed cut that suits one day's papers and not the next.
-      state.seamThresh = bestSeamThresh(S, stones.length);
-      byId('seam-thresh-slider').value = state.seamThresh;
-      byId('seam-thresh-value').textContent = state.seamThresh.toFixed(2);
+      state.wagonThresh = bestWagonThresh(S, stones.length);
+      byId('wagon-thresh-slider').value = state.wagonThresh;
+      byId('wagon-thresh-value').textContent = state.wagonThresh.toFixed(2);
 
-      var cluster = clusterOrder(stones, S, state.seamThresh);
-      state.seamOrder = cluster.order;
-      state.seamComponents = cluster.components;
+      var cluster = clusterOrder(stones, S, state.wagonThresh);
+      state.wagonOrder = cluster.order;
+      state.wagonComponents = cluster.components;
 
-      updateSeamStats();
-      byId('seam-sort-toggle').checked = true;
-      seamPanel.style.display = '';
+      updateWagonStats();
+      byId('wagon-sort-toggle').checked = true;
+      wagonPanel.style.display = '';
 
       // Draw whichever view is selected (panel must be visible first, so the
       // graph canvas can measure its own width)
-      renderSeamPanel();
+      renderWagonPanel();
 
       // Mark done. The breakdown is worth showing: "why 55 and not 43" is the
       // cross-lists, and the number only makes sense next to the listing page
@@ -2821,8 +2957,8 @@
     var topN = state.blend.paydirt_n;
 
     // Stage 1's graph gains a gold ring per pay-dirt stone, so a re-blend
-    // shows immediately which seams the touchstones are actually picking from
-    applySeamAssay();
+    // shows immediately which wagons the touchstones are actually picking from
+    applyWagonAssay();
 
     // Show assay section
     byId('stage-3').style.display = '';
@@ -3209,110 +3345,112 @@
     catch (err) { /* already handled */ }
   });
 
-  // Seam sort toggle (matrix view only)
-  byId('seam-sort-toggle').addEventListener('change', function () {
-    if (!state.seamMap || !state.stones.length) return;
-    drawSeamMap(byId('seam-canvas'), state.seamMap, currentSeamOrder(), state.stones,
-      state.seamComponents, seamReadoutSink('seam-readout'));
+  wireTrainStrip();
+
+  // Wagon sort toggle (matrix view only)
+  byId('wagon-sort-toggle').addEventListener('change', function () {
+    if (!state.wagonMap || !state.stones.length) return;
+    drawWagonMap(byId('wagon-canvas'), state.wagonMap, currentWagonOrder(), state.stones,
+      state.wagonComponents, wagonReadoutSink('wagon-readout'));
   });
 
-  /** Release the pin on both seam graphs and hide the tooltip. */
-  function releaseSeamPin() {
-    var tip = byId('seam-tooltip');
+  /** Release the pin on both wagon graphs and hide the tooltip. */
+  function releaseWagonPin() {
+    var tip = byId('wagon-tooltip');
     tip.style.display = 'none';
     tip.classList.remove('pinned');
-    if (state.seamGraph) state.seamGraph.unpin();
-    if (state.seamModalGraph) state.seamModalGraph.unpin();
+    if (state.wagonGraph) state.wagonGraph.unpin();
+    if (state.wagonModalGraph) state.wagonModalGraph.unpin();
   }
 
   document.addEventListener('click', function (e) {
-    if (e.target.id === 'seam-graph-canvas' || e.target.id === 'seam-modal-graph-canvas') return;
+    if (e.target.id === 'wagon-graph-canvas' || e.target.id === 'wagon-modal-graph-canvas') return;
     // Clicks inside the tooltip must survive, or its arXiv link never fires.
-    if (byId('seam-tooltip').contains(e.target)) return;
-    releaseSeamPin();
+    if (byId('wagon-tooltip').contains(e.target)) return;
+    releaseWagonPin();
   });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') releaseSeamPin();
+    if (e.key === 'Escape') releaseWagonPin();
   });
 
   /** Re-cluster at a new threshold and redraw whichever view is live. */
-  function recomputeSeamThresh(thresh) {
-    if (!state.seamMap || !state.stones.length) return;
-    state.seamThresh = thresh;
-    var cluster = clusterOrder(state.stones, state.seamMap, thresh);
-    state.seamOrder = cluster.order;
-    state.seamComponents = cluster.components;
-    updateSeamStats();
-    renderSeamPanel();
+  function recomputeWagonThresh(thresh) {
+    if (!state.wagonMap || !state.stones.length) return;
+    state.wagonThresh = thresh;
+    var cluster = clusterOrder(state.stones, state.wagonMap, thresh);
+    state.wagonOrder = cluster.order;
+    state.wagonComponents = cluster.components;
+    updateWagonStats();
+    renderWagonPanel();
     // Modal is a separate live graph — refresh it too if it's open.
-    if (state.seamModalGraph && byId('seam-modal').style.display !== 'none') {
-      byId('seam-expand-btn').click();
+    if (state.wagonModalGraph && byId('wagon-modal').style.display !== 'none') {
+      byId('wagon-expand-btn').click();
     }
   }
 
-  // Seam threshold slider
-  byId('seam-thresh-slider').addEventListener('input', function () {
+  // Wagon threshold slider
+  byId('wagon-thresh-slider').addEventListener('input', function () {
     var v = parseFloat(this.value);
-    byId('seam-thresh-value').textContent = v.toFixed(2);
-    recomputeSeamThresh(v);
+    byId('wagon-thresh-value').textContent = v.toFixed(2);
+    recomputeWagonThresh(v);
   });
 
   // Matrix ↔ graph switch
-  byId('seam-view-switch').addEventListener('click', function (e) {
-    var btn = e.target.closest('.seam-view-btn');
+  byId('wagon-view-switch').addEventListener('click', function (e) {
+    var btn = e.target.closest('.wagon-view-btn');
     if (!btn) return;
     var view = btn.getAttribute('data-view');
-    if (view === state.seamView) return;
-    state.seamView = view;
-    Array.prototype.forEach.call(this.querySelectorAll('.seam-view-btn'), function (b) {
+    if (view === state.wagonView) return;
+    state.wagonView = view;
+    Array.prototype.forEach.call(this.querySelectorAll('.wagon-view-btn'), function (b) {
       b.classList.toggle('is-active', b.getAttribute('data-view') === view);
     });
-    byId('seam-modal-header-title').textContent =
-      view === 'graph' ? 'Seam graph' : view === 'table' ? 'Seams' : 'Seam map';
-    renderSeamPanel();
+    byId('wagon-modal-header-title').textContent =
+      view === 'graph' ? 'Train graph' : view === 'table' ? 'Wagons' : 'Coupling map';
+    renderWagonPanel();
   });
 
-  // Seam expand
-  byId('seam-expand-btn').addEventListener('click', function () {
-    if (!state.seamMap) return;
-    var modal = byId('seam-modal');
-    var matrixCanvas = byId('seam-modal-canvas');
-    var graphCanvas = byId('seam-modal-graph-canvas');
-    var isGraph = state.seamView === 'graph';
+  // Wagon expand
+  byId('wagon-expand-btn').addEventListener('click', function () {
+    if (!state.wagonMap) return;
+    var modal = byId('wagon-modal');
+    var matrixCanvas = byId('wagon-modal-canvas');
+    var graphCanvas = byId('wagon-modal-graph-canvas');
+    var isGraph = state.wagonView === 'graph';
 
     matrixCanvas.style.display = isGraph ? 'none' : 'block';
     graphCanvas.style.display = isGraph ? 'block' : 'none';
-    byId('seam-modal-readout').innerHTML = '';
+    byId('wagon-modal-readout').innerHTML = '';
     modal.style.display = 'flex';
 
-    if (state.seamModalGraph) { state.seamModalGraph.stop(); state.seamModalGraph = null; }
+    if (state.wagonModalGraph) { state.wagonModalGraph.stop(); state.wagonModalGraph = null; }
     if (isGraph) {
       var w = Math.min(1100, Math.round(window.innerWidth * 0.86));
       var h = Math.min(760, Math.round(window.innerHeight * 0.74));
-      state.seamModalGraph = drawSeamGraph(graphCanvas, state.seamMap, state.stones,
-        state.seamComponents, seamTooltipSink(),
-        { width: w, height: h, thresh: state.seamThresh });
-      applySeamAssay();
+      state.wagonModalGraph = drawWagonGraph(graphCanvas, state.wagonMap, state.stones,
+        state.wagonComponents, wagonTooltipSink(),
+        { width: w, height: h, thresh: state.wagonThresh });
+      applyWagonAssay();
     } else {
-      drawSeamMap(matrixCanvas, state.seamMap, currentSeamOrder(), state.stones,
-        state.seamComponents, seamReadoutSink('seam-modal-readout'));
+      drawWagonMap(matrixCanvas, state.wagonMap, currentWagonOrder(), state.stones,
+        state.wagonComponents, wagonReadoutSink('wagon-modal-readout'));
     }
   });
 
-  function closeSeamModal() {
-    byId('seam-modal').style.display = 'none';
-    releaseSeamPin();
-    if (state.seamModalGraph) { state.seamModalGraph.stop(); state.seamModalGraph = null; }
+  function closeWagonModal() {
+    byId('wagon-modal').style.display = 'none';
+    releaseWagonPin();
+    if (state.wagonModalGraph) { state.wagonModalGraph.stop(); state.wagonModalGraph = null; }
   }
 
-  byId('seam-modal').addEventListener('click', function (e) {
-    if (e.target === byId('seam-modal-backdrop') || e.target.classList.contains('seam-modal-close')) {
-      closeSeamModal();
+  byId('wagon-modal').addEventListener('click', function (e) {
+    if (e.target === byId('wagon-modal-backdrop') || e.target.classList.contains('wagon-modal-close')) {
+      closeWagonModal();
     }
   });
-  byId('seam-modal-close').addEventListener('click', closeSeamModal);
+  byId('wagon-modal-close').addEventListener('click', closeWagonModal);
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && byId('seam-modal').style.display !== 'none') closeSeamModal();
+    if (e.key === 'Escape' && byId('wagon-modal').style.display !== 'none') closeWagonModal();
   });
 
   // ═══════════════════════════════════════════════════════════════════

@@ -67,7 +67,7 @@ permalink: /
        the haul is about, and nothing else reads them) ── -->
   <fieldset id="stage-1">
     <legend>1. Haul the stones</legend>
-    <p class="hint">Fetch tonight's arXiv announcement — new papers and cross-lists, the same set the listing page shows — and read them into numbers. The seam map below shows how they cluster.</p>
+    <p class="hint">Fetch tonight's arXiv announcement — new papers and cross-lists, the same set the listing page shows — and read them into numbers. The train below shows how they cluster — one wagon per cluster.</p>
 
     <div class="scout-block">
       <div class="cat-field">
@@ -101,35 +101,39 @@ permalink: /
       <canvas id="haul-train" class="haul-train" aria-hidden="true"></canvas>
       <span class="progress-label" id="haul-label" role="status"></span>
     </div>
-    <!-- Seam map panel -->
-    <div id="seam-panel" style="display:none">
-      <div class="seam-header">
-        <span class="seam-title">Seam map</span>
-        <span class="seam-stats" id="seam-stats"></span>
-        <div class="seam-view-switch" id="seam-view-switch">
-          <button type="button" class="seam-view-btn is-active" data-view="table">Table</button>
-          <button type="button" class="seam-view-btn" data-view="graph">Graph</button>
-          <button type="button" class="seam-view-btn" data-view="matrix">Matrix</button>
+    <!-- The train — one wagon per cluster -->
+    <div id="wagon-panel" style="display:none">
+      <div class="wagon-header">
+        <span class="wagon-title">The train</span>
+        <span class="wagon-stats" id="wagon-stats"></span>
+        <div class="wagon-view-switch" id="wagon-view-switch">
+          <button type="button" class="wagon-view-btn is-active" data-view="table">Table</button>
+          <button type="button" class="wagon-view-btn" data-view="graph">Graph</button>
+          <button type="button" class="wagon-view-btn" data-view="matrix">Matrix</button>
         </div>
-        <label class="toggle-label" id="seam-sort-label">
-          <input type="checkbox" id="seam-sort-toggle" checked> Clustered
+        <label class="toggle-label" id="wagon-sort-label">
+          <input type="checkbox" id="wagon-sort-toggle" checked> Clustered
         </label>
-        <label class="seam-thresh-label" id="seam-thresh-label">
+        <label class="wagon-thresh-label" id="wagon-thresh-label">
           Threshold
-          <input type="range" id="seam-thresh-slider" min="0.5" max="0.95" step="0.01" value="0.75">
-          <span id="seam-thresh-value">0.75</span>
+          <input type="range" id="wagon-thresh-slider" min="0.5" max="0.95" step="0.01" value="0.75">
+          <span id="wagon-thresh-value">0.75</span>
         </label>
-        <button type="button" class="seam-expand-btn" id="seam-expand-btn">Expand</button>
+        <button type="button" class="wagon-expand-btn" id="wagon-expand-btn">Expand</button>
       </div>
-      <div class="seam-canvas-wrap" id="seam-matrix-wrap" style="display:none">
-        <canvas id="seam-canvas"></canvas>
+      <!-- Train strip: always on, whichever view is selected. Wagon width is
+           its share of the haul, so the shape of the night reads at a glance
+           and re-forms live as the threshold moves. -->
+      <div class="train-strip" id="train-strip"></div>
+      <div class="wagon-canvas-wrap" id="wagon-matrix-wrap" style="display:none">
+        <canvas id="wagon-canvas"></canvas>
       </div>
-      <div class="seam-graph-wrap" id="seam-graph-wrap" style="display:none">
-        <canvas id="seam-graph-canvas"></canvas>
-        <div class="seam-graph-hint" id="seam-graph-hint">drag a stone to move it · drag the rock to pan · scroll to zoom · click to pin, then hover its seam-mates to compare</div>
+      <div class="wagon-graph-wrap" id="wagon-graph-wrap" style="display:none">
+        <canvas id="wagon-graph-canvas"></canvas>
+        <div class="wagon-graph-hint" id="wagon-graph-hint">drag a stone to move it · drag the rock to pan · scroll to zoom · click to pin, then hover its wagon-mates to compare</div>
       </div>
-      <div class="seam-table-wrap" id="seam-table-wrap"></div>
-      <div class="seam-readout" id="seam-readout"></div>
+      <div class="wagon-table-wrap" id="wagon-table-wrap"></div>
+      <div class="wagon-readout" id="wagon-readout"></div>
     </div>
   </fieldset>
 
@@ -245,20 +249,23 @@ permalink: /
     <div id="cell-tooltip" class="cell-tooltip" style="display:none" role="tooltip"></div>
   </fieldset>
 
-  <!-- Seam graph tooltip — shared by the inline and modal graphs -->
-  <div id="seam-tooltip" class="cell-tooltip seam-tooltip" style="display:none" role="tooltip"></div>
+  <!-- Train graph tooltip — shared by the inline and modal graphs -->
+  <div id="wagon-tooltip" class="cell-tooltip wagon-tooltip" style="display:none" role="tooltip"></div>
 
-  <!-- ── Seam map modal ── -->
-  <div id="seam-modal" class="seam-modal" style="display:none">
-    <div class="seam-modal-backdrop" id="seam-modal-backdrop"></div>
-    <div class="seam-modal-content">
-      <div class="seam-modal-header">
-        <span class="seam-title" id="seam-modal-header-title">Seam map</span>
-        <button type="button" class="seam-modal-close" id="seam-modal-close">×</button>
+  <!-- Train strip tooltip — its own, so it never fights the graph's pin -->
+  <div id="train-strip-tip" class="cell-tooltip wagon-tooltip" style="display:none" role="tooltip"></div>
+
+  <!-- ── Train modal ── -->
+  <div id="wagon-modal" class="wagon-modal" style="display:none">
+    <div class="wagon-modal-backdrop" id="wagon-modal-backdrop"></div>
+    <div class="wagon-modal-content">
+      <div class="wagon-modal-header">
+        <span class="wagon-title" id="wagon-modal-header-title">Coupling map</span>
+        <button type="button" class="wagon-modal-close" id="wagon-modal-close">×</button>
       </div>
-      <canvas id="seam-modal-canvas"></canvas>
-      <canvas id="seam-modal-graph-canvas" style="display:none"></canvas>
-      <div class="seam-modal-readout" id="seam-modal-readout"></div>
+      <canvas id="wagon-modal-canvas"></canvas>
+      <canvas id="wagon-modal-graph-canvas" style="display:none"></canvas>
+      <div class="wagon-modal-readout" id="wagon-modal-readout"></div>
     </div>
   </div>
 
@@ -279,7 +286,7 @@ permalink: /
   <div class="cave-footnote" id="small-print">
     <p><strong>Where things go.</strong> Touchstones, core samples, and weights stay in this tab. With in-browser embeddings nothing is billed and nothing is sent; only the arXiv fetch leaves, through the relay above.</p>
     <p><strong>Touchstone length.</strong> A one-word touchstone and a paragraph-long one are not directly comparable — longer text is more specific. The per-row weights in the assay are the mitigation.</p>
-    <p><strong>What is real today.</strong> Scouting arXiv, embedding abstracts in your browser (staged, with the seam map as intermediate output), and ranking on touchstone similarity with live re-blending. The rush (Scirate) is parked behind a Cloudflare challenge and stays inactive until a path exists.</p>
+    <p><strong>What is real today.</strong> Scouting arXiv, embedding abstracts in your browser (staged, with the train as intermediate output), and ranking on touchstone similarity with live re-blending. The rush (Scirate) is parked behind a Cloudflare challenge and stays inactive until a path exists.</p>
   </div>
 </div>
 
