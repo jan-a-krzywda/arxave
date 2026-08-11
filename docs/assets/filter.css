@@ -1196,20 +1196,26 @@ progress::-moz-progress-bar {
   text-decoration: none;
 }
 
-/* Authors: one line, clipped the same way, scrollable when a collaboration
-   runs past the column. Full list in the cell's tooltip. */
+/* Authors: one line, scrollable when a collaboration runs past the column.
+   The cell only sizes the column — a td is a table-cell box and ignores
+   overflow, so the scrolling happens in the div inside it. Full list in the
+   cell's tooltip. */
 .seam-table .seam-td-authors {
   width: 22%;
   max-width: 0;
+  overflow: hidden;
+  font-size: 0.8rem;
+  color: var(--text-faint);
+}
+.seam-table .seam-authors-scroll {
+  max-width: 100%;
   white-space: nowrap;
   overflow-x: auto;
   overflow-y: hidden;
-  font-size: 0.8rem;
-  color: var(--text-faint);
   scrollbar-width: thin;
 }
-.seam-table .seam-td-authors::-webkit-scrollbar { height: 5px; }
-.seam-table .seam-td-authors::-webkit-scrollbar-thumb {
+.seam-table .seam-authors-scroll::-webkit-scrollbar { height: 5px; }
+.seam-table .seam-authors-scroll::-webkit-scrollbar-thumb {
   background: var(--rock-lit);
   border-radius: 3px;
 }
