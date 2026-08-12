@@ -22,7 +22,9 @@
 -->
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-                xmlns:atom="http://www.w3.org/2005/Atom">
+                xmlns:atom="http://www.w3.org/2005/Atom"
+                xmlns:arxave="https://arxave.com/ns/feed"
+                exclude-result-prefixes="atom arxave">
   <xsl:output method="html" encoding="UTF-8" indent="yes"/>
 
   <xsl:template match="/rss">
@@ -120,6 +122,9 @@
           .body strong { color: var(--ore-dim); font-weight: 600; }
           .body .grade { color: var(--text-faint); font-size: 0.85rem; }
           .body .grade strong { color: var(--text-dim); }
+          /* The abstract is the long tail of the card; dimming it puts the three
+             generated fields first without hiding the author's own words. */
+          .body .abstract { color: var(--text-dim); font-size: 0.9rem; }
 
           .empty {
             border: 1px dashed var(--rock-lit); border-radius: 6px;
@@ -174,10 +179,40 @@
                   </a>
                 </h2>
               </div>
-              <!-- description carries escaped HTML; disable-output-escaping
-                   puts the markup back rather than printing the tags. -->
+              <!-- Rendered from the arxave:* elements, never from <description>.
+                   description holds escaped HTML for feed readers, and undoing
+                   that escaping needs disable-output-escaping, which no browser
+                   implements — it printed the tags on screen instead. -->
               <div class="body">
-                <xsl:value-of select="description" disable-output-escaping="yes"/>
+                <p class="grade">
+                  <strong>Grade <xsl:value-of select="arxave:grade"/></strong>
+                  <xsl:if test="arxave:z">
+                    <xsl:text> · </xsl:text>
+                    <xsl:value-of select="arxave:z"/>
+                    <xsl:text>&#963; above the day's baseline</xsl:text>
+                  </xsl:if>
+                  <xsl:if test="arxave:authors">
+                    <xsl:text> · </xsl:text><xsl:value-of select="arxave:authors"/>
+                  </xsl:if>
+                </p>
+                <xsl:if test="arxave:question">
+                  <p><strong>Question. </strong><xsl:value-of select="arxave:question"/></p>
+                </xsl:if>
+                <xsl:if test="arxave:tools">
+                  <p><strong>Tools. </strong><xsl:value-of select="arxave:tools"/></p>
+                </xsl:if>
+                <xsl:if test="arxave:summary">
+                  <p><strong>Summary. </strong><xsl:value-of select="arxave:summary"/></p>
+                </xsl:if>
+                <p class="abstract">
+                  <strong>Abstract. </strong><xsl:value-of select="arxave:abstract"/>
+                </p>
+                <p>
+                  <a>
+                    <xsl:attribute name="href"><xsl:value-of select="/rss/channel/link"/></xsl:attribute>
+                    Tune this in the Dig
+                  </a>
+                </p>
               </div>
             </article>
           </xsl:for-each>
