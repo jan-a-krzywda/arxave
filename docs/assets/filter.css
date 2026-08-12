@@ -1517,3 +1517,17 @@ details.advanced input[type="text"] {
   /* Wraps rather than truncating: the blurb is what tells two presets apart. */
   white-space: normal;
 }
+.preset-feed {
+  align-self: center;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  border: 1px solid var(--rock-lit);
+  border-radius: 3px;
+  text-decoration: none;
+}
+.preset-feed:hover {
+  border-color: var(--lamp);
+  color: var(--lamp);
+}
