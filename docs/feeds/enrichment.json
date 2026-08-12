@@ -1,0 +1,32 @@
+{
+ "2608.11072": {
+  "fields": {
+   "research_question": "What factors limit single-qubit gate fidelity in driven silicon spin qubits, and how can fidelity beyond 99.999% be achieved?",
+   "tools": [
+    "Driven silicon spin qubits",
+    "Spin-locking coherence time ($T_{1\\rho}$) measurement",
+    "Parity readout",
+    "Spectrally tailored pulse shaping",
+    "Microwave driving"
+   ],
+   "summary": "The authors investigated fidelity-limiting factors in driven silicon spin qubits, finding that proximal reservoirs degrade spin-locking coherence and off-resonant excitation causes benchmarking artifacts. By mitigating these effects and using spectrally tailored pulse shaping, they achieved a single-qubit gate fidelity of 99.99920(2)%."
+  },
+  "seen": "2026-08-12",
+  "model": "gemini-2.5-flash"
+ },
+ "2608.10325": {
+  "fields": {
+   "research_question": "How can a high-bandwidth feedback stabilization scheme be implemented for silicon double quantum dots to suppress low-frequency charge noise?",
+   "tools": [
+    "Silicon double quantum dot device",
+    "rf-reflectometry readout",
+    "Field-programmable gate array (FPGA)",
+    "OPX by Quantum Machines",
+    "Gradient-descent feedback (GDFB) approach"
+   ],
+   "summary": "The authors extended a gradient-descent feedback approach in a silicon double quantum dot device using an FPGA (OPX) for digital signal processing and high-bandwidth rf-reflectometry readout, enabling continuous multi-parameter gradient calculation and quick gate voltage updates. This high-speed stabilization scheme achieved -6 dB noise suppression up to a bandwidth of 5 kHz, effectively suppressing low-frequency 1/f noise and maintaining device stability."
+  },
+  "seen": "2026-08-12",
+  "model": "gemini-2.5-flash"
+ }
+}

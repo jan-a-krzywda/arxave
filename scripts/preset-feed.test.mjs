@@ -11,7 +11,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { cosine, grade, renderFeed, xmlEscape } from './preset-feed.mjs';
+import { cosine, grade, renderFeed, selectItems, xmlEscape } from './preset-feed.mjs';
 
 /* Orthonormal basis vectors make the cosines exactly 1, 0 or -1, so every
    expectation below is arithmetic anyone can check by eye. */
@@ -100,4 +100,48 @@ test('every link in the feed points at the site it was built for', () => {
   });
   assert.doesNotMatch(xml, /github\.io/);
   assert.match(xml, /<link>https:\/\/arxave\.com\/\?preset=s<\/link>/);
+});
+
+/* Selection. The gate is a robust z-score, not an absolute grade: measured on
+   2026-08-12, 94 abstracts scored 0.498–0.735 against spin-qubits with a median
+   of 0.605, so "above 0.65" kept ten papers of which eight were off-topic. What
+   separates is distance from the day's own baseline. */
+
+const spread = [0.50, 0.55, 0.58, 0.60, 0.61, 0.62, 0.63, 0.65, 0.70, 0.90]
+  .map((g, i) => ({ arxivId: String(i), grade: g }));
+
+test('a paper far above the day baseline is kept, the bulk is not', () => {
+  const picked = selectItems(spread, { minZ: 2.0, maxItems: 15 });
+  assert.deepEqual(picked.map((p) => p.grade), [0.90]);
+});
+
+test('lowering the gate lets the next tier in, in grade order', () => {
+  // z here is 4.72 and 1.35; the next paper down (0.65) sits at 0.84 and stays
+  // out, which is the point — the tiers are set by the spread, not by rank.
+  const picked = selectItems(spread, { minZ: 1.0, maxItems: 15 });
+  assert.deepEqual(picked.map((p) => p.grade), [0.90, 0.70]);
+});
+
+test('maxItems is a ceiling, never a target', () => {
+  // The failure this prevents: padding a quiet day to a fixed ten, which is how
+  // a feed teaches people to stop opening it.
+  assert.equal(selectItems(spread, { minZ: 2.0, maxItems: 10 }).length, 1);
+  assert.equal(selectItems(spread, { minZ: 0.5, maxItems: 2 }).length, 2);
+});
+
+test('a day where nothing stands out yields an empty feed, not a filled one', () => {
+  const flat = [0.60, 0.601, 0.602, 0.599].map((g, i) => ({ arxivId: String(i), grade: g }));
+  assert.equal(selectItems(flat, { minZ: 3.0, maxItems: 15 }).length, 0);
+});
+
+test('an identical spread falls back to top-N rather than dividing by zero', () => {
+  // MAD === 0 has no baseline to be above; z would be NaN and filter everything.
+  const same = [0.6, 0.6, 0.6].map((g, i) => ({ arxivId: String(i), grade: g }));
+  const picked = selectItems(same, { minZ: 2.0, maxItems: 2 });
+  assert.equal(picked.length, 2);
+  assert.equal(picked[0].z, null);
+});
+
+test('no papers at all is empty, not an error', () => {
+  assert.deepEqual(selectItems([], {}), []);
 });

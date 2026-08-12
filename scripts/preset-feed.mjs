@@ -38,6 +38,7 @@ import { pathToFileURL } from 'node:url';
 import {
   DIM, MODEL, fetchAbstracts, loadModel, loadPresets, resolveEndpoint, sha256Hex,
 } from './warm-dig.mjs';
+import { enrichItems } from './enrich.mjs';
 
 const READ_CHUNK = 500;
 const BATCH = 16;
@@ -142,6 +143,51 @@ async function vectorize(texts, endpoint) {
   return out;
 }
 
+
+/**
+ * Which papers make the feed.
+ *
+ * NOT an absolute grade threshold, and the measured reason is worth keeping:
+ * bge-small cosines over arXiv abstracts sit in a high, narrow band. On
+ * 2026-08-12 the 94 cond-mat.mes-hall + quant-ph abstracts scored between
+ * 0.498 and 0.735 against the spin-qubits preset, median 0.605. A cut at 0.65
+ * kept ten papers, eight of which were generic quant-ph. The absolute number
+ * says almost nothing; the *distance from the day's own baseline* says a lot.
+ *
+ * So the gate is a robust z-score — median and MAD, not mean and stdev, so a
+ * handful of genuinely on-topic papers cannot drag the baseline up toward
+ * themselves. Same day, scored this way:
+ *
+ *     z >= 3.0 -> 1 paper    z >= 2.5 -> 2    z >= 2.0 -> 2    z >= 1.5 -> 5
+ *
+ * and the two above 2.5 were exactly the two a spin-qubit reader would want.
+ * `maxItems` is a ceiling for an unusually rich day, not a target: a quiet day
+ * is supposed to produce a short feed, and a day with nothing is supposed to
+ * produce nothing. Padding to a fixed ten is how a feed teaches people to stop
+ * opening it.
+ */
+export function selectItems(scored, opts = {}) {
+  const minZ = Number.isFinite(opts.minZ) ? opts.minZ : 2.0;
+  const maxItems = Number.isFinite(opts.maxItems) ? opts.maxItems : 15;
+  const ranked = [...scored].sort((a, b) => b.grade - a.grade);
+  if (!ranked.length) return [];
+
+  const grades = ranked.map((r) => r.grade).sort((a, b) => a - b);
+  const median = grades[Math.floor(grades.length / 2)];
+  const devs = grades.map((g) => Math.abs(g - median)).sort((a, b) => a - b);
+  const mad = devs[Math.floor(devs.length / 2)];
+
+  /* A degenerate spread (every paper identical, or too few to have one) has no
+     baseline to be above. Falling back to the plain top-N keeps the feed
+     working on a day the statistics cannot speak to. */
+  if (!(mad > 0)) return ranked.slice(0, maxItems).map((r) => ({ ...r, z: null }));
+
+  return ranked
+    .map((r) => ({ ...r, z: (r.grade - median) / (1.4826 * mad) }))
+    .filter((r) => r.z >= minZ)
+    .slice(0, maxItems);
+}
+
 export function renderFeed({ preset, slug, items, site, builtOn }) {
   const self = new URL(`feeds/${slug}.xml`, site).href;
   const digLink = new URL(`?preset=${encodeURIComponent(slug)}`, site).href;
@@ -173,9 +219,20 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
     /* The grade is in the item body, not just implied by the order: a reader
        that re-sorts by date — most of them do — otherwise destroys the only
        signal this feed carries. */
-    const body = `<p><strong>Grade ${it.grade.toFixed(3)}</strong>` +
+    const e = it.enrichment;
+    /* The three fields first, the abstract after. The enrichment exists to be
+       skimmed; the abstract stays because it is the author's own words and the
+       only part of this item nothing generated. */
+    const body =
+      `<p class="grade"><strong>Grade ${it.grade.toFixed(3)}</strong>` +
+      (Number.isFinite(it.z) ? ` · ${it.z.toFixed(1)}\u03c3 above the day's baseline` : '') +
       (it.authors ? ` · ${xmlEscape(it.authors)}` : '') + '</p>' +
-      `<p>${xmlEscape(it.abstract)}</p>` +
+      (e ? (
+        (e.research_question ? `<p><strong>Question.</strong> ${xmlEscape(e.research_question)}</p>` : '') +
+        (e.tools?.length ? `<p><strong>Tools.</strong> ${xmlEscape(e.tools.join(' · '))}</p>` : '') +
+        (e.summary ? `<p><strong>Summary.</strong> ${xmlEscape(e.summary)}</p>` : '')
+      ) : '') +
+      `<p><strong>Abstract.</strong> ${xmlEscape(it.abstract)}</p>` +
       `<p><a href="${xmlEscape(digLink)}">Tune this in the Dig</a></p>`;
     lines.push(
       '    <item>',
@@ -245,16 +302,26 @@ async function main() {
     const stoneVecs = vectors.slice(0, stones.length);
     const rowVecs = rows.map((r, i) => ({ weight: r.weight, vector: vectors[stones.length + i] }));
 
-    const ranked = stones
-      .map((s, i) => ({ ...s, grade: grade(stoneVecs[i], rowVecs) }))
-      .sort((a, b) => b.grade - a.grade)
-      .slice(0, top);
+    const scored = stones.map((s, i) => ({ ...s, grade: grade(stoneVecs[i], rowVecs) }));
+    const ranked = selectItems(scored, {
+      minZ: preset.select?.min_z,
+      maxItems: Number.isFinite(preset.select?.max_items) ? preset.select.max_items : top,
+    });
+    if (!ranked.length) {
+      console.log(`preset-feed: ${slug} — nothing cleared the bar today (${scored.length} scored)`);
+    }
 
-    const xml = renderFeed({ preset, slug, items: ranked, site, builtOn });
+    const enriched = await enrichItems(ranked, {
+      cachePath: path.join(outDir, 'enrichment.json'),
+    });
+
+    const xml = renderFeed({ preset, slug, items: enriched, site, builtOn });
     await fs.writeFile(path.join(outDir, `${slug}.xml`), xml);
-    console.log(
-      `preset-feed: ${slug} — ${ranked.length} of ${stones.length} stones, ` +
-      `top grade ${ranked[0].grade.toFixed(3)}`);
+    if (ranked.length) {
+      console.log(
+        `preset-feed: ${slug} — ${ranked.length} of ${scored.length} stones, ` +
+        `grades ${ranked[ranked.length - 1].grade.toFixed(3)}–${ranked[0].grade.toFixed(3)}`);
+    }
     written++;
   }
   console.log(`preset-feed: wrote ${written} feed(s)`);
