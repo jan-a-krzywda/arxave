@@ -1,12 +1,28 @@
 name: Warm the Dig cache
 
-# arXiv announces at 20:00 ET, which is 00:00/01:00 UTC the next day, Sun–Thu
-# evenings — so the feed for a weekday is up shortly after midnight UTC. This
-# runs at 01:30 UTC Tue–Sat, an hour behind the announcement, so that whoever
-# opens the page in the European morning finds the day already embedded.
+# arXiv announces at 20:00 ET on Sun–Thu evenings, which is 00:00/01:00 UTC the
+# *next* day — so the feed lands on UTC Mon–Fri, not Tue–Sat. The first run is
+# at 02:13 UTC (04:13 CEST), an hour behind the announcement, so whoever opens
+# the page in the European morning finds the day already embedded.
+#
+# The odd minute is deliberate. GitHub's cron dispatcher is a shared,
+# best-effort pipeline and it congests hardest on round minutes, where most
+# crons in the world sit. The first scheduled run of this workflow was set for
+# 01:30 UTC and the event arrived at 03:38 — the runner then started it with
+# zero queue wait and finished in 43 s, so the two hours were dispatch, not us.
+#
+# The 06:13 UTC (08:13 CEST) run is the catch-up, for the mornings the dispatch
+# slips anyway or arXiv announces late. No guard on it: the warmer only embeds
+# what is not already cached, so a second run on a day that already went
+# through costs a minute and writes nothing.
+#
+# GitHub cron is UTC and does not follow DST — in winter these are 03:00/07:00
+# CET. Shift both back an hour if the local times matter more than the offset
+# from the announcement.
 on:
   schedule:
-    - cron: '30 1 * * 2-6'
+    - cron: '13 2 * * 1-5'
+    - cron: '13 6 * * 1-5'
   workflow_dispatch:
     inputs:
       categories:
