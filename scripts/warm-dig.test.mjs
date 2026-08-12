@@ -11,7 +11,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { cacheKeyText, parseFeed, resolveEndpoint } from './warm-dig.mjs';
+import { cacheKeyText, feedBuildDate, parseFeed, resolveEndpoint } from './warm-dig.mjs';
 
 const DEFAULT = 'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1/dig-cache';
 
@@ -41,6 +41,31 @@ function item({ id = '2508.00001', announce = 'new', desc = 'Abstract: hello' })
     `<arxiv:announce_type>${announce}</arxiv:announce_type>` +
     `<description>${desc}</description></item>`;
 }
+
+/* The build date is how the warmer tells today's listing from yesterday's still
+   being served. Getting it wrong is the failure that reports success. */
+test('the feed build date is read as a UTC date', () => {
+  const xml = '<?xml version="1.0"?><rss><channel>' +
+    '<lastBuildDate>Wed, 12 Aug 2026 04:00:21 +0000</lastBuildDate>' +
+    '<pubDate>Wed, 12 Aug 2026 00:00:00 -0400</pubDate>' +
+    '</channel></rss>';
+  assert.equal(feedBuildDate(xml), '2026-08-12');
+});
+
+test('midnight Eastern in pubDate is 04:00 UTC the same day, not the day before', () => {
+  // The whole confusion in one assertion: arXiv stamps midnight ET, which lands
+  // at 04:00 UTC on the *same* date. A run at 02:00 UTC is before the rebuild.
+  const xml = '<?xml version="1.0"?><rss><channel>' +
+    '<pubDate>Wed, 12 Aug 2026 00:00:00 -0400</pubDate></channel></rss>';
+  assert.equal(feedBuildDate(xml), '2026-08-12');
+});
+
+test('a feed with no date reads as unknown, not as today', () => {
+  // Unknown must not be mistaken for fresh, and must not halt the run either.
+  assert.equal(feedBuildDate('<?xml version="1.0"?><rss><channel></channel></rss>'), '');
+  assert.equal(feedBuildDate('<?xml version="1.0"?><rss><channel>' +
+    '<lastBuildDate>not a date</lastBuildDate></channel></rss>'), '');
+});
 
 test('numeric character references decode, as DOMParser decodes them', () => {
   // The bug this is here for: fast-xml-parser's default options decode the five

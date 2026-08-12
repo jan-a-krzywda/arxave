@@ -1,27 +1,32 @@
 name: Warm the Dig cache
 
-# arXiv announces at 20:00 ET on Sun–Thu evenings, which is 00:00/01:00 UTC the
-# *next* day — so the feed lands on UTC Mon–Fri, not Tue–Sat. The first run is
-# at 02:13 UTC (04:13 CEST), an hour behind the announcement, so whoever opens
-# the page in the European morning finds the day already embedded.
+# WHEN THE FEED EXISTS IS THE WHOLE CONSTRAINT. arXiv rebuilds the announcement
+# RSS around 04:00 UTC — its `pubDate` is midnight ET, which *is* 04:00 UTC —
+# and serves the previous day's listing until then. Measured 2026-08-12:
+# `lastBuildDate: Wed, 12 Aug 2026 04:00:21 +0000`. So nothing useful can be
+# warmed before ~04:00 UTC, which is 06:00 CEST. An earlier run is not merely
+# early: it warms yesterday, finds it all cached, and exits 0.
 #
-# The odd minute is deliberate. GitHub's cron dispatcher is a shared,
-# best-effort pipeline and it congests hardest on round minutes, where most
-# crons in the world sit. The first scheduled run of this workflow was set for
-# 01:30 UTC and the event arrived at 03:38 — the runner then started it with
-# zero queue wait and finished in 43 s, so the two hours were dispatch, not us.
+# 04:20 UTC (06:20 CEST) is therefore the first run, twenty minutes after the
+# rebuild. The odd minute is deliberate too — GitHub's cron dispatcher is shared
+# and best-effort, and congests hardest on round minutes. This workflow's first
+# scheduled run was set for 01:30 UTC and the event arrived at 03:38; the runner
+# then started it instantly and finished in 43 s, so the delay was dispatch.
 #
-# The 06:13 UTC (08:13 CEST) run is the catch-up, for the mornings the dispatch
-# slips anyway or arXiv announces late. No guard on it: the warmer only embeds
-# what is not already cached, so a second run on a day that already went
-# through costs a minute and writes nothing.
+# 06:13 UTC (08:13 CEST) is the catch-up, for the mornings dispatch slips or
+# arXiv rebuilds late. No guard on it: the warmer only embeds what is not
+# already cached, so a second run on a warmed day costs a minute and writes
+# nothing. The warmer itself refuses a stale feed (exit 3) rather than
+# reporting a healthy-looking run over yesterday's papers.
 #
-# GitHub cron is UTC and does not follow DST — in winter these are 03:00/07:00
-# CET. Shift both back an hour if the local times matter more than the offset
-# from the announcement.
+# The feed lands on UTC Mon–Fri (it carries <skipDays>Sat, Sun</skipDays>).
+#
+# GitHub cron is UTC and does not follow DST — in winter these are 05:20/07:13
+# CET. The offset from the 04:00 UTC rebuild is what matters here, not the local
+# clock, so leave them alone unless arXiv moves.
 on:
   schedule:
-    - cron: '13 2 * * 1-5'
+    - cron: '20 4 * * 1-5'
     - cron: '13 6 * * 1-5'
   workflow_dispatch:
     inputs:

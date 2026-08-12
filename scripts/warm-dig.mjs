@@ -123,6 +123,27 @@ export function parseFeed(xml) {
   return out;
 }
 
+/**
+ * When arXiv last rebuilt this feed, as a UTC date string, or '' if it says.
+ *
+ * Load-bearing for a failure that otherwise reports success. arXiv rebuilds the
+ * announcement around 04:00 UTC — `pubDate` is midnight ET, which *is* 04:00
+ * UTC — and serves the previous day's listing until it does. A run before that
+ * fetches yesterday, finds every abstract already cached from yesterday's run,
+ * prints "865 already cached, 4 to embed" and exits 0, having warmed nothing
+ * anyone will ask for. That is exactly what happened on 2026-08-12: the job
+ * fired at 03:38 UTC against a feed built at 04:00:21, and the morning's
+ * readers embedded all 94 abstracts themselves.
+ */
+export function feedBuildDate(xml) {
+  const parser = new XMLParser({ ignoreAttributes: false, trimValues: true });
+  const channel = parser.parse(xml)?.rss?.channel ?? {};
+  const raw = String(channel.lastBuildDate ?? channel.pubDate ?? '').trim();
+  if (!raw) return '';
+  const when = new Date(raw);
+  return Number.isNaN(when.getTime()) ? '' : when.toISOString().slice(0, 10);
+}
+
 async function fetchAbstracts(category) {
   const url = 'https://rss.arxiv.org/rss/' + encodeURIComponent(category);
   const resp = await fetch(url, {
@@ -130,7 +151,8 @@ async function fetchAbstracts(category) {
     signal: AbortSignal.timeout(30_000),
   });
   if (!resp.ok) throw new Error(`${category}: HTTP ${resp.status}`);
-  return parseFeed(await resp.text());
+  const xml = await resp.text();
+  return { stones: parseFeed(xml), builtOn: feedBuildDate(xml) };
 }
 
 /**
@@ -194,9 +216,12 @@ async function main() {
   const seen = new Set();
   const stones = [];
   const failures = [];
+  const builtOn = new Set();
   for (const cat of categories) {
     try {
-      for (const s of await fetchAbstracts(cat)) {
+      const feed = await fetchAbstracts(cat);
+      if (feed.builtOn) builtOn.add(feed.builtOn);
+      for (const s of feed.stones) {
         if (seen.has(s.arxivId)) continue;
         seen.add(s.arxivId);
         stones.push(s);
@@ -204,6 +229,23 @@ async function main() {
     } catch (err) {
       failures.push(`${cat} → ${err.message}`);
     }
+  }
+
+  /* Warming yesterday is not a warm run, and it must not exit 0. See
+     feedBuildDate: every abstract is already cached, so the numbers look
+     healthier than a real run does. */
+  const today = new Date().toISOString().slice(0, 10);
+  const stale = [...builtOn].filter((d) => d < today);
+  if (builtOn.size && stale.length === builtOn.size) {
+    console.error(
+      `warm-dig: the feed is still ${[...builtOn].join(', ')} — arXiv has not ` +
+      `built ${today} yet (it rebuilds ~04:00 UTC). Warming this would cache ` +
+      `yesterday again. Run later.`,
+    );
+    process.exit(3);
+  }
+  if (stale.length) {
+    console.warn(`warm-dig: some feeds are still on ${stale.join(', ')}, not ${today}`);
   }
   if (stones.length === 0) {
     console.error('warm-dig: nothing to warm.' + (failures.length ? ' ' + failures.join(' | ') : ''));
