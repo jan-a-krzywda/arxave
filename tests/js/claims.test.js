@@ -21,6 +21,7 @@ const IDS = [
   'wagon-matrix-wrap', 'wagon-graph-wrap', 'wagon-graph-hint', 'wagon-readout',
   'train-strip', 'train-strip-tip',
   'touchstones-list', 'add-touchstone',
+  'presets-list', 'presets-group', 'presets-hint',
   'cores-list', 'add-core', 'bib-file', 'bib-status',
   'paydirt-n', 'table-view-toggle', 'assay-stats', 'assay-grid', 'assay-rail',
   'assay-column-titles', 'assay-matrix-wrap', 'assay-legends',
@@ -235,6 +236,43 @@ console.log('\n8. name collision does not overwrite');
   const c = claims(env);
   const named = Object.keys(c).filter(function (k) { return k !== 'working'; });
   check('two distinct slots', named.length === 2, JSON.stringify(named));
+}
+
+console.log('\n9. preset provenance');
+{
+  /* The privacy line (docs/dig-spec.md 6c.3) is enforced per row: a preset's
+     phrases may be hashed against the shared cache because this repo published
+     them, and a phrase the user touches may never be. These two checks are the
+     page half of that rule. */
+  const env = fresh({
+    'arxave-dig-claims': JSON.stringify({
+      working: {
+        arxave_claim: 1, name: 'Working claim',
+        scout: { categories: 'quant-ph', lookback_days: 1, max_results: 200 },
+        touchstones: [
+          { text: 'double quantum dot exchange gates', weight: 1, preset: 'spin-qubits' },
+          { text: 'my own private hunch', weight: 1 },
+        ],
+        cores: [], blend: { paydirt_n: 10 },
+      },
+    }),
+    'arxave-dig-current': 'working',
+  });
+  const d = env.registry;
+  let saved = claims(env)['working'];
+  check('preset provenance survives a reload',
+    saved.touchstones[0].preset === 'spin-qubits', JSON.stringify(saved.touchstones[0]));
+  check('a typed phrase carries none',
+    saved.touchstones[1].preset === undefined, JSON.stringify(saved.touchstones[1]));
+
+  const row = d['touchstones-list'].children[0].querySelector('.ts-text');
+  row.value = 'double quantum dot exchange gates and readout';
+  row.fire('input');
+  saved = claims(env)['working'];
+  check('editing a preset row drops its provenance',
+    saved.touchstones[0].preset === undefined, JSON.stringify(saved.touchstones[0]));
+  check('the edited text is kept',
+    saved.touchstones[0].text === 'double quantum dot exchange gates and readout');
 }
 
 console.log(failures === 0 ? '\nALL PASS\n' : '\n' + failures + ' FAILURE(S)\n');

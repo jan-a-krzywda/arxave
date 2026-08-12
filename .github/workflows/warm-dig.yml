@@ -80,4 +80,5 @@ jobs:
         run: |
           node warm-dig.mjs \
             --categories "${{ inputs.categories || vars.ARXAVE_WARM_CATEGORIES || 'quant-ph, cond-mat.mes-hall, cs.AI, cs.LG' }}" \
+            --presets ../docs/presets \
             ${{ inputs.dry_run && '--dry-run' || '' }}

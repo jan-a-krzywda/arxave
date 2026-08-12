@@ -162,6 +162,20 @@ permalink: /
       Pick sharpened — <code>bge-small-en-v1.5</code>, 384-dim. Done for good on this browser.
     </div>
 
+    <!-- Presets: a curated claim, loaded in one click. Their phrases and core
+         abstracts are warmed nightly, so a preset costs no embedding — which is
+         also why they are offered above the empty rows rather than below. -->
+    <div id="presets-group">
+      <div class="group-label">Start from a preset <span class="sub">— curated, already cut</span></div>
+      <div id="presets-list" class="preset-buttons"></div>
+      <p class="hint" id="presets-hint" style="display:none">
+        Replaces the rows below. Edit any row afterwards — an edited phrase is
+        yours again, and is cut in this tab like anything else you type.
+      </p>
+    </div>
+
+    <hr class="group-rule">
+
     <!-- Touchstones (free text) -->
     <div id="touchstones-group">
       <div class="group-label">Touchstones <span class="sub">— free text, one per row</span></div>
@@ -292,4 +306,8 @@ permalink: /
 
 <link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}">
 <link rel="stylesheet" href="{{ '/assets/filter.css' | relative_url }}">
+<!-- Where the preset claims live. Handed over by Jekyll rather than guessed in
+     JS: the page's permalink is `/`, so a relative fetch works today and breaks
+     the day this site gains a baseurl or moves under a path. -->
+<script>window.ARXAVE_PRESETS_BASE = "{{ '/presets/' | relative_url }}";</script>
 <script src="{{ '/assets/filter.js' | relative_url }}"></script>

@@ -237,7 +237,11 @@
         max_results: state.scout.max_results,
       },
       touchstones: state.touchstones.map(function (t) {
-        return { text: t.text, weight: t.weight };
+        /* Provenance persists with the row. Without it a reload turns every
+           preset phrase back into typed text — safe, but it re-embeds six
+           phrases the cache already holds, which is the whole point of a
+           preset. Losing the flag can only ever cost speed, never disclosure. */
+        return { text: t.text, weight: t.weight, preset: t.preset || undefined };
       }),
       cores: state.cores.map(function (c) {
         return { doi: c.doi, weight: c.weight };
@@ -297,12 +301,20 @@
       paydirt_n: parseInt(bl.paydirt_n, 10) || 10,
     };
 
+    /* Provenance, carried per row. A preset's phrases are text this repo
+       published, so their hashes may go through the shared cache; anything the
+       user types may not (docs/dig-spec.md §6c.3). The flag rides on the row
+       rather than on the claim because the two mix the moment someone edits one
+       row of a loaded preset. */
+    var fromPreset = typeof claim.preset === 'string' ? claim.preset : null;
+
     state.touchstones = (claim.touchstones || []).map(function (t) {
       return {
         id: 'ts-' + (++touchstoneCounter),
         text: t.text || '',
         weight: isFinite(parseFloat(t.weight)) ? parseFloat(t.weight) : 1.0,
         vector: null,
+        preset: (typeof t.preset === 'string' && t.preset) || fromPreset,
       };
     });
     state.cores = (claim.cores || []).map(function (c) {
@@ -2616,6 +2628,11 @@
     if (!rec) return;
     rec.text = text;
     rec.vector = null; // force re-embed
+    /* The edited phrase is the user's now, whatever it started as, so it loses
+       the preset's provenance and goes back down the local path. Dropped here,
+       on the first keystroke, rather than on blur or on assay: between those
+       moments is exactly where a typed phrase could reach the shared cache. */
+    rec.preset = null;
     autosave();
     reassay();
   }
@@ -2851,7 +2868,12 @@
     var newVectors = new Array(textsToEmbed.length);
     var localIdx = [], sharedIdx = [];
     for (var p = 0; p < embedMap.length; p++) {
-      (embedMap[p].type === 'touchstone' ? localIdx : sharedIdx).push(p);
+      /* Core samples are published papers; preset touchstones are phrases this
+         repo published. Both are safe to hash against a server. A touchstone
+         with no preset tag is the user's own words and never is. */
+      var shareable = embedMap[p].type !== 'touchstone' ||
+        !!state.touchstones[embedMap[p].idx].preset;
+      (shareable ? sharedIdx : localIdx).push(p);
     }
     function textAt(i) { return textsToEmbed[i]; }
     if (sharedIdx.length) {
@@ -3463,6 +3485,81 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && byId('wagon-modal').style.display !== 'none') closeWagonModal();
   });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Presets — curated claims the repo ships
+  // ═══════════════════════════════════════════════════════════════════
+
+  function presetsBase() {
+    return window.ARXAVE_PRESETS_BASE || '/presets/';
+  }
+
+  /**
+   * Load a preset over the current rows.
+   *
+   * Goes through applyClaim, so a preset is not a second kind of thing: it is
+   * a claim with a `preset` slug on it, and the slug is what marks its
+   * touchstones as repo-published (see maybeEmbedFeatures). Stage 1's hauled
+   * stones survive, so this re-assays the day already on screen.
+   */
+  async function applyPreset(slug) {
+    var resp = await fetch(presetsBase() + encodeURIComponent(slug) + '.json', { cache: 'no-cache' });
+    if (!resp.ok) throw new Error('preset ' + slug + ': HTTP ' + resp.status);
+    var preset = await resp.json();
+    preset.preset = slug;           // trust the file we fetched, not its contents
+    applyClaim(preset);
+    autosave();
+    await reassay();
+  }
+
+  /* Absent, unreachable, or malformed presets leave the page exactly as it was.
+     They are a shortcut, never a dependency — the same rule the cache follows. */
+  async function renderPresets() {
+    var wrap = byId('presets-list');
+    var group = byId('presets-group');
+    var hint = byId('presets-hint');
+    // The test harness mounts a subset of the page; absent nodes are not an error.
+    if (!wrap || !group || !hint || typeof fetch !== 'function') return;
+    var list;
+    try {
+      var resp = await fetch(presetsBase() + 'index.json', { cache: 'no-cache' });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      list = ((await resp.json()) || {}).presets || [];
+    } catch (_) {
+      group.style.display = 'none';
+      return;
+    }
+    if (!list.length) {
+      group.style.display = 'none';
+      return;
+    }
+    for (var i = 0; i < list.length; i++) {
+      (function (p) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'preset-btn';
+        btn.innerHTML = '<span class="preset-name">' + escapeHtml(p.name || p.slug) + '</span>' +
+          (p.blurb ? '<span class="preset-blurb">' + escapeHtml(p.blurb) + '</span>' : '');
+        btn.addEventListener('click', async function () {
+          btn.disabled = true;
+          var was = btn.className;
+          btn.className = was + ' loading';
+          try {
+            await applyPreset(p.slug);
+          } catch (err) {
+            btn.title = err.message;
+          } finally {
+            btn.disabled = false;
+            btn.className = was;
+          }
+        });
+        wrap.appendChild(btn);
+      })(list[i]);
+    }
+    hint.style.display = '';
+  }
+
+  renderPresets();
 
   // ═══════════════════════════════════════════════════════════════════
   // Event bindings — Stage 2

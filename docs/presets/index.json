@@ -1,0 +1,9 @@
+{
+  "presets": [
+    {
+      "slug": "spin-qubits",
+      "name": "Spin qubits",
+      "blurb": "Exchange gates, readout, and the noise that limits them."
+    }
+  ]
+}

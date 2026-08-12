@@ -233,9 +233,28 @@ async function fetchCore(doi, slug) {
 export async function loadPresets(dir) {
   let names;
   try {
-    names = (await fs.readdir(dir)).filter((n) => n.endsWith('.json')).sort();
+    names = (await fs.readdir(dir))
+      .filter((n) => n.endsWith('.json') && n !== 'index.json')
+      .sort();
   } catch (err) {
     throw new Error(`--presets ${dir}: ${err.message}`);
+  }
+
+  /* index.json is what the page offers as buttons; the directory is what gets
+     warmed. A preset in one and not the other is either an invisible preset or
+     a button that loads uncached text, and neither announces itself. Warn
+     rather than fail: a mismatched manifest is a page problem, and stopping
+     here would take the night's abstracts down with it. */
+  try {
+    const manifest = JSON.parse(await fs.readFile(path.join(dir, 'index.json'), 'utf8'));
+    const listed = new Set((manifest.presets ?? []).map((p) => p.slug + '.json'));
+    const onDisk = new Set(names);
+    const missing = [...onDisk].filter((n) => !listed.has(n));
+    const phantom = [...listed].filter((n) => !onDisk.has(n));
+    if (missing.length) console.warn(`warm-dig: not in index.json — ${missing.join(', ')}`);
+    if (phantom.length) console.warn(`warm-dig: in index.json but not on disk — ${phantom.join(', ')}`);
+  } catch (err) {
+    console.warn(`warm-dig: no readable index.json in ${dir} — the page will show no presets`);
   }
   const units = [];
   const failures = [];
