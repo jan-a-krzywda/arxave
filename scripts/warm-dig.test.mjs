@@ -11,7 +11,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { cacheKeyText, feedBuildDate, parseFeed, resolveEndpoint } from './warm-dig.mjs';
+import {
+  cacheKeyText, coreEmbedText, doiKey, feedBuildDate, parseFeed,
+  presetUnits, reconstructAbstract, resolveEndpoint,
+} from './warm-dig.mjs';
 
 const DEFAULT = 'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1/dig-cache';
 
@@ -113,4 +116,50 @@ test('an empty feed yields nothing rather than throwing', () => {
 
 test('an item with no abstract is skipped, not cached as an empty string', () => {
   assert.deepEqual(parseFeed(feed([item({ desc: '' })])), []);
+});
+
+/* Presets. Same property as the feed tests above: the warmer must hash the
+   string the browser hashes, or the preset caches under keys nobody asks for. */
+
+test('a bare DOI becomes the form OpenAlex resolves', () => {
+  // /works/10.1038/nature02693 is a 404; /works/doi:10.1038/nature02693 is 200.
+  // Verified against the live API 2026-08-12.
+  assert.equal(doiKey('10.1038/nature02693'), 'doi:10.1038/nature02693');
+  assert.equal(doiKey('https://doi.org/10.1038/nature02693'), 'doi:10.1038/nature02693');
+  assert.equal(doiKey('http://dx.doi.org/10.1038/NATURE02693'), 'doi:10.1038/nature02693');
+  assert.equal(doiKey('doi:10.1038/nature02693'), 'doi:10.1038/nature02693');
+  assert.equal(doiKey('  10.1038/nature02693  '), 'doi:10.1038/nature02693');
+  assert.equal(doiKey(''), '');
+  assert.equal(doiKey(null), '');
+});
+
+test('an inverted index rebuilds into the prose the page embeds', () => {
+  assert.equal(
+    reconstructAbstract({ We: [0], show: [1], that: [2], spins: [3] }),
+    'We show that spins',
+  );
+  assert.equal(reconstructAbstract(null), '');
+});
+
+test('a gap in the inverted index truncates, as it does in the browser', () => {
+  // filter.js walks positions from 0 until one is missing. Reproducing the
+  // truncation is the point: matching the browser beats a better abstract.
+  assert.equal(reconstructAbstract({ a: [0], b: [1], d: [3] }), 'a b');
+});
+
+test('a core sample is embedded as title, space, abstract', () => {
+  assert.equal(coreEmbedText('Title', 'Body text'), 'Title Body text');
+});
+
+test('a core sample with no abstract repeats the title, as the page does', () => {
+  // filter.js falls back to `abstract = title`, then embeds `title + ' ' +
+  // abstract` — so the title genuinely appears twice in the hashed string.
+  assert.equal(coreEmbedText('Only a title', ''), 'Only a title Only a title');
+});
+
+test('preset touchstones are trimmed and empty rows dropped', () => {
+  const units = presetUnits({
+    touchstones: [{ text: '  exchange gates  ' }, { text: '' }, { text: '   ' }],
+  }, 'spin-qubits');
+  assert.deepEqual(units, [{ text: 'exchange gates', source: 'preset:spin-qubits' }]);
 });

@@ -23,10 +23,12 @@
  *
  * Flags:
  *   --categories  comma-separated arXiv categories (required)
+ *   --presets     directory of preset claims to warm as well (docs/presets)
  *   --endpoint    dig-cache URL (default: the project's deployed function)
  *   --dry-run     fetch and embed, write nothing
  */
 
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { XMLParser } from 'fast-xml-parser';
@@ -56,6 +58,10 @@ const DEFAULT_ENDPOINT =
   'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1/dig-cache';
 const PUT_CHUNK = 200;   // stays under the function's MAX_ITEMS
 const READ_CHUNK = 500;  // stays under the function's MAX_SHAS
+
+/* The polite-pool contact OpenAlex asks for. Only affects rate limiting, and
+   only the warmer's own requests — the page sends its own. */
+const OPENALEX_MAILTO = process.env.OPENALEX_MAILTO || 'j.a.krzywda@gmail.com';
 
 function arg(name, fallback = null) {
   const i = process.argv.indexOf('--' + name);
@@ -142,6 +148,111 @@ export function feedBuildDate(xml) {
   if (!raw) return '';
   const when = new Date(raw);
   return Number.isNaN(when.getTime()) ? '' : when.toISOString().slice(0, 10);
+}
+
+/**
+ * OpenAlex ships abstracts as an inverted index; the page rebuilds the prose
+ * from it and embeds that. Mirrors fetchCoreFromOpenAlex in filter.js, stop
+ * condition included: it walks positions from 0 until one is missing, so a gap
+ * truncates rather than throwing. Reproduce the truncation, not the intent —
+ * the goal is the browser's string, not the best possible string.
+ */
+export function reconstructAbstract(invIdx) {
+  if (!invIdx) return '';
+  const posToWord = {};
+  for (const word of Object.keys(invIdx)) {
+    for (const p of invIdx[word]) posToWord[p] = word;
+  }
+  const words = [];
+  for (let pos = 0; posToWord[pos] !== undefined; pos++) words.push(posToWord[pos]);
+  return words.join(' ');
+}
+
+/**
+ * The exact text a core sample is cached under: title, a space, abstract.
+ *
+ * Diverge here and preset core samples cache under keys the page never asks
+ * for — the same silent failure parseFeed is pinned against. When OpenAlex has
+ * no abstract the page falls back to the title alone, which then appears twice
+ * in the embedded string; that is what it hashes, so that is what we hash.
+ */
+export function coreEmbedText(title, abstract) {
+  const body = abstract || title || '';
+  return ((title || '') + ' ' + body).trim();
+}
+
+/** One preset's cacheable texts. Typed touchstones never come through here. */
+export function presetUnits(preset, slug) {
+  const units = [];
+  for (const t of preset.touchstones ?? []) {
+    const text = (t.text ?? '').trim();
+    if (text) units.push({ text, source: `preset:${slug}` });
+  }
+  return units;
+}
+
+/**
+ * The form of a DOI that OpenAlex actually resolves.
+ *
+ * `/works/10.1038/nature02693` is a 404 — verified 2026-08-12, along with the
+ * two forms that do work. OpenAlex wants either the full doi.org URL or the
+ * `doi:` prefix, and the bare string is the one everybody types. Normalizing to
+ * `doi:` also makes the slash-bearing DOI safe to percent-encode whole.
+ */
+export function doiKey(doi) {
+  const bare = String(doi || '').trim()
+    .replace(/^https?:\/\/(dx\.)?doi\.org\//i, '')
+    .replace(/^doi:/i, '');
+  return bare ? 'doi:' + bare.toLowerCase() : '';
+}
+
+async function fetchCore(doi, slug) {
+  const key = doiKey(doi);
+  if (!key) throw new Error(`${doi}: not a DOI`);
+  const url = 'https://api.openalex.org/works/' + encodeURIComponent(key) +
+    '?mailto=' + encodeURIComponent(OPENALEX_MAILTO);
+  const resp = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+  if (!resp.ok) throw new Error(`${doi}: OpenAlex HTTP ${resp.status}`);
+  const data = await resp.json();
+  const text = coreEmbedText(data.title ?? '', reconstructAbstract(data.abstract_inverted_index));
+  if (!text) throw new Error(`${doi}: no title and no abstract`);
+  return { text, source: `preset:${slug}` };
+}
+
+/**
+ * Every preset's touchstones and core samples, ready to embed.
+ *
+ * WHY PRESET TOUCHSTONES MAY BE CACHED AND TYPED ONES MAY NOT (spec §6c.3):
+ * the rule is provenance, not row kind. "Nothing you type leaves this tab" is
+ * about *typed* text — a sha256 of a short private phrase is one dictionary
+ * lookup from the phrase. A preset phrase is text this repository published;
+ * its hash discloses nothing that `git show` does not. The page enforces the
+ * same line from the other side: a preset row that the user edits loses its
+ * provenance flag and goes back to being embedded locally.
+ */
+export async function loadPresets(dir) {
+  let names;
+  try {
+    names = (await fs.readdir(dir)).filter((n) => n.endsWith('.json')).sort();
+  } catch (err) {
+    throw new Error(`--presets ${dir}: ${err.message}`);
+  }
+  const units = [];
+  const failures = [];
+  for (const name of names) {
+    const slug = name.replace(/\.json$/, '');
+    const preset = JSON.parse(await fs.readFile(path.join(dir, name), 'utf8'));
+    units.push(...presetUnits(preset, slug));
+    for (const core of preset.cores ?? []) {
+      if (!core.doi) continue;
+      try {
+        units.push(await fetchCore(core.doi, slug));
+      } catch (err) {
+        failures.push(err.message);
+      }
+    }
+  }
+  return { units, presets: names.length, failures };
 }
 
 async function fetchAbstracts(category) {
@@ -254,9 +365,24 @@ async function main() {
   if (failures.length) console.warn('warm-dig: some feeds failed — ' + failures.join(' | '));
   console.log(`warm-dig: ${stones.length} abstracts from ${categories.join(', ')}`);
 
+  /* Presets ride along with the day's abstracts rather than in their own job:
+     they share the model load, which is the expensive part, and they are a
+     handful of texts against several hundred. Their vectors never change, so
+     after the first warm every later run finds them cached and skips them. */
+  const units = stones.map((s) => ({ text: s.abstract, source: 'arxiv:' + s.arxivId }));
+  const presetDir = arg('presets');
+  if (presetDir) {
+    const loaded = await loadPresets(presetDir);
+    if (loaded.failures.length) {
+      console.warn('warm-dig: some core samples failed — ' + loaded.failures.join(' | '));
+    }
+    console.log(`warm-dig: ${loaded.units.length} preset texts from ${loaded.presets} preset(s)`);
+    units.push(...loaded.units);
+  }
+
   // Skip what is already cached: on a re-run, or when the browser's own hauls
   // have already covered the day, this makes the job seconds instead of a minute.
-  const shas = await Promise.all(stones.map((s) => sha256Hex(s.abstract)));
+  const shas = await Promise.all(units.map((u) => sha256Hex(u.text)));
   const unique = [...new Set(shas)];
   let known = new Set();
   try {
@@ -284,8 +410,13 @@ async function main() {
   }
 
   const todo = [];
-  for (let i = 0; i < stones.length; i++) {
-    if (!known.has(shas[i])) todo.push({ ...stones[i], sha: shas[i] });
+  const queued = new Set();
+  for (let i = 0; i < units.length; i++) {
+    // Two categories can carry the same abstract, and two presets the same core
+    // sample. Embedding it twice writes the same row twice.
+    if (known.has(shas[i]) || queued.has(shas[i])) continue;
+    queued.add(shas[i]);
+    todo.push({ ...units[i], sha: shas[i] });
   }
   console.log(`warm-dig: ${known.size} already cached, ${todo.length} to embed`);
   if (todo.length === 0) return;
@@ -295,17 +426,13 @@ async function main() {
   const items = [];
   for (let i = 0; i < todo.length; i += BATCH) {
     const chunk = todo.slice(i, i + BATCH);
-    const out = await extractor(chunk.map((s) => s.abstract), { pooling: 'mean', normalize: true });
+    const out = await extractor(chunk.map((u) => u.text), { pooling: 'mean', normalize: true });
     const rows = out.tolist();
     for (let r = 0; r < rows.length; r++) {
       if (rows[r].length !== DIM) {
         throw new Error(`model returned ${rows[r].length} dims, expected ${DIM}`);
       }
-      items.push({
-        sha: chunk[r].sha,
-        vector: toBase64(rows[r]),
-        source: 'arxiv:' + chunk[r].arxivId,
-      });
+      items.push({ sha: chunk[r].sha, vector: toBase64(rows[r]), source: chunk[r].source });
     }
     process.stdout.write(`\rwarm-dig: embedded ${items.length} / ${todo.length}`);
   }
