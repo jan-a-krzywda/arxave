@@ -1475,3 +1475,45 @@ details.advanced input[type="text"] {
   position: relative;
   z-index: 1;
 }
+
+/* Presets — solid where "+ Add touchstone" is dashed. The dashed border means
+   "an empty row appears here"; a preset arrives already filled, so it reads as
+   a thing you take rather than a slot you fill. */
+.preset-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.3rem 0 0.2rem;
+}
+.preset-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  max-width: 20rem;
+  padding: 0.45rem 0.8rem;
+  background: none;
+  border: 1px solid var(--rock-lit);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.preset-btn:hover:not(:disabled) {
+  border-color: var(--lamp);
+  color: var(--lamp);
+}
+.preset-btn:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+.preset-name {
+  font-size: 0.95rem;
+}
+.preset-blurb {
+  font-size: 0.8rem;
+  opacity: 0.75;
+  /* Wraps rather than truncating: the blurb is what tells two presets apart. */
+  white-space: normal;
+}
