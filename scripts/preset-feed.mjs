@@ -41,7 +41,12 @@ import {
 
 const READ_CHUNK = 500;
 const BATCH = 16;
-const DEFAULT_SITE = 'https://jan-a-krzywda.github.io/arxave/';
+/* The canonical domain, not the github.io one Pages also answers on. Every
+   link inside a feed is absolute and outlives the file it came in, so a wrong
+   default here ships wrong URLs into people's readers. Verified against the
+   live site: arxave.com serves /feeds/spin-qubits.xml. Overridable with
+   $ARXAVE_SITE for a fork or a staging deploy. */
+const DEFAULT_SITE = 'https://arxave.com/';
 
 function arg(name, fallback = null) {
   const i = process.argv.indexOf('--' + name);
@@ -140,8 +145,18 @@ async function vectorize(texts, endpoint) {
 export function renderFeed({ preset, slug, items, site, builtOn }) {
   const self = new URL(`feeds/${slug}.xml`, site).href;
   const digLink = new URL(`?preset=${encodeURIComponent(slug)}`, site).href;
+  /* A browser opening a .xml gets the raw tree and a scolding about missing
+     style information; readers ignore the stylesheet entirely. Since the RSS
+     link on the page is something people will click before they subscribe,
+     the first impression is worth one static XSL.
+
+     Relative, unlike every other URL in this file: browsers refuse to apply a
+     cross-origin XSLT, so an absolute arxave.com href would silently stop
+     transforming the moment a feed is read from the github.io mirror or a
+     fork's Pages domain. The stylesheet is the file's neighbour either way. */
   const lines = [
     '<?xml version="1.0" encoding="UTF-8"?>',
+    '<?xml-stylesheet type="text/xsl" href="feed.xsl"?>',
     '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
     '  <channel>',
     `    <title>${xmlEscape('The Dig — ' + (preset.name || slug))}</title>`,
