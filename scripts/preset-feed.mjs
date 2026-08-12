@@ -203,7 +203,13 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
   const lines = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<?xml-stylesheet type="text/xsl" href="feed.xsl"?>',
-    '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
+    /* The arxave namespace exists because browsers do not implement XSLT's
+       disable-output-escaping: the stylesheet cannot turn the escaped HTML in
+       <description> back into markup, and prints the tags instead. Readers want
+       that HTML, so it stays — and the stylesheet renders from these structured
+       elements instead, which need no unescaping. */
+    '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" ' +
+      'xmlns:arxave="https://arxave.com/ns/feed">',
     '  <channel>',
     `    <title>${xmlEscape('The Dig — ' + (preset.name || slug))}</title>`,
     `    <link>${xmlEscape(digLink)}</link>`,
@@ -234,6 +240,18 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
       ) : '') +
       `<p><strong>Abstract.</strong> ${xmlEscape(it.abstract)}</p>` +
       `<p><a href="${xmlEscape(digLink)}">Tune this in the Dig</a></p>`;
+    const fields = [
+      `      <arxave:grade>${it.grade.toFixed(3)}</arxave:grade>`,
+      Number.isFinite(it.z) ? `      <arxave:z>${it.z.toFixed(1)}</arxave:z>` : '',
+      it.authors ? `      <arxave:authors>${xmlEscape(it.authors)}</arxave:authors>` : '',
+      e?.research_question
+        ? `      <arxave:question>${xmlEscape(e.research_question)}</arxave:question>` : '',
+      e?.tools?.length
+        ? `      <arxave:tools>${xmlEscape(e.tools.join(' · '))}</arxave:tools>` : '',
+      e?.summary ? `      <arxave:summary>${xmlEscape(e.summary)}</arxave:summary>` : '',
+      `      <arxave:abstract>${xmlEscape(it.abstract)}</arxave:abstract>`,
+    ].filter(Boolean);
+
     lines.push(
       '    <item>',
       `      <title>${xmlEscape(it.title || it.arxivId)}</title>`,
@@ -241,6 +259,7 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
       `      <guid isPermaLink="false">${xmlEscape(`arxave:${slug}:${builtOn}:${it.arxivId}`)}</guid>`,
       `      <pubDate>${new Date().toUTCString()}</pubDate>`,
       `      <description>${xmlEscape(body)}</description>`,
+      ...fields,
       '    </item>',
     );
   }

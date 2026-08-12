@@ -145,3 +145,37 @@ test('an identical spread falls back to top-N rather than dividing by zero', () 
 test('no papers at all is empty, not an error', () => {
   assert.deepEqual(selectItems([], {}), []);
 });
+
+test('items carry structured fields, not only escaped HTML', () => {
+  /* Browsers do not implement XSLT's disable-output-escaping, so the stylesheet
+     cannot turn the HTML inside <description> back into markup — it printed the
+     tags on screen. Readers still want that HTML, so both shapes ship: escaped
+     HTML for readers, arxave:* elements for the stylesheet. */
+  const xml = renderFeed({
+    preset: { name: 'P' }, slug: 's', site: 'https://arxave.com/', builtOn: '2026-08-12',
+    items: [{
+      arxivId: '1', title: 't', link: 'https://arxiv.org/abs/1', abstract: 'the abstract',
+      authors: 'A. Author', grade: 0.7, z: 3.5,
+      enrichment: { research_question: 'Why?', tools: ['a', 'b'], summary: 'They did.' },
+    }],
+  });
+  assert.match(xml, /xmlns:arxave="https:\/\/arxave\.com\/ns\/feed"/);
+  assert.match(xml, /<arxave:question>Why\?<\/arxave:question>/);
+  assert.match(xml, /<arxave:tools>a · b<\/arxave:tools>/);
+  assert.match(xml, /<arxave:summary>They did\.<\/arxave:summary>/);
+  assert.match(xml, /<arxave:abstract>the abstract<\/arxave:abstract>/);
+  assert.match(xml, /<arxave:z>3\.5<\/arxave:z>/);
+});
+
+test('an unenriched item omits the generated elements rather than emptying them', () => {
+  const xml = renderFeed({
+    preset: { name: 'P' }, slug: 's', site: 'https://arxave.com/', builtOn: '2026-08-12',
+    items: [{
+      arxivId: '1', title: 't', link: 'l', abstract: 'a', authors: '', grade: 0.7, z: null,
+      enrichment: null,
+    }],
+  });
+  assert.doesNotMatch(xml, /arxave:question/);
+  assert.doesNotMatch(xml, /arxave:z/);
+  assert.match(xml, /<arxave:abstract>a<\/arxave:abstract>/);
+});
