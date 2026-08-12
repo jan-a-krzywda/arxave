@@ -2695,13 +2695,24 @@
     }
   }
 
+  /* OpenAlex 404s on a bare DOI — `/works/10.1038/nature02693` is not found,
+     `/works/doi:10.1038/nature02693` is. The bare form is what everyone types
+     and what every corpus record stores, so every core sample entered that way
+     failed to resolve. Mirrored in scripts/warm-dig.mjs, which has the tests. */
+  function doiKey(doi) {
+    var bare = String(doi || '').trim()
+      .replace(/^https?:\/\/(dx\.)?doi\.org\//i, '')
+      .replace(/^doi:/i, '');
+    return bare ? 'doi:' + bare.toLowerCase() : '';
+  }
+
   async function fetchCoreFromOpenAlex(doi) {
     var cacheKey = coreCacheKey(doi);
     if (state._coreCache && state._coreCache[cacheKey]) {
       return state._coreCache[cacheKey];
     }
 
-    var url = 'https://api.openalex.org/works/' + encodeURIComponent(doi) + '?mailto=' + encodeURIComponent(OPENALEX_MAILTO);
+    var url = 'https://api.openalex.org/works/' + encodeURIComponent(doiKey(doi)) + '?mailto=' + encodeURIComponent(OPENALEX_MAILTO);
     var resp = await fetch(url);
     if (!resp.ok) throw new Error('OpenAlex returned HTTP ' + resp.status);
 
