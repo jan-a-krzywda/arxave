@@ -309,5 +309,8 @@ permalink: /
 <!-- Where the preset claims live. Handed over by Jekyll rather than guessed in
      JS: the page's permalink is `/`, so a relative fetch works today and breaks
      the day this site gains a baseurl or moves under a path. -->
-<script>window.ARXAVE_PRESETS_BASE = "{{ '/presets/' | relative_url }}";</script>
+<script>
+  window.ARXAVE_PRESETS_BASE = "{{ '/presets/' | relative_url }}";
+  window.ARXAVE_FEEDS_BASE = "{{ '/feeds/' | relative_url }}";
+</script>
 <script src="{{ '/assets/filter.js' | relative_url }}"></script>

@@ -3494,6 +3494,10 @@
     return window.ARXAVE_PRESETS_BASE || '/presets/';
   }
 
+  function feedsBase() {
+    return window.ARXAVE_FEEDS_BASE || '/feeds/';
+  }
+
   /**
    * Load a preset over the current rows.
    *
@@ -3554,6 +3558,17 @@
           }
         });
         wrap.appendChild(btn);
+
+        /* The feed is yesterday's answer to the same question the button asks,
+           so it belongs beside the button. Built nightly with the preset's own
+           weights; anyone who wants different weights clicks the button and
+           moves them here, where the matrix is visible. */
+        var feed = document.createElement('a');
+        feed.className = 'preset-feed';
+        feed.href = feedsBase() + encodeURIComponent(p.slug) + '.xml';
+        feed.textContent = 'RSS';
+        feed.title = 'Daily feed for ' + (p.name || p.slug) + ', at the preset\'s default weights';
+        wrap.appendChild(feed);
       })(list[i]);
     }
     hint.style.display = '';

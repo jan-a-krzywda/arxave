@@ -161,5 +161,14 @@ test('preset touchstones are trimmed and empty rows dropped', () => {
   const units = presetUnits({
     touchstones: [{ text: '  exchange gates  ' }, { text: '' }, { text: '   ' }],
   }, 'spin-qubits');
-  assert.deepEqual(units, [{ text: 'exchange gates', source: 'preset:spin-qubits' }]);
+  assert.deepEqual(units, [{
+    text: 'exchange gates', source: 'preset:spin-qubits', kind: 'touchstone', weight: 1.0,
+  }]);
+});
+
+test('a preset row without a weight assays at 1.0, as an untouched page row does', () => {
+  const [row] = presetUnits({ touchstones: [{ text: 'a' }] }, 's');
+  assert.equal(row.weight, 1.0);
+  const [weighted] = presetUnits({ touchstones: [{ text: 'a', weight: 0.6 }] }, 's');
+  assert.equal(weighted.weight, 0.6);
 });

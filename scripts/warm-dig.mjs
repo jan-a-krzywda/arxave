@@ -35,9 +35,9 @@ import { XMLParser } from 'fast-xml-parser';
 import { env, pipeline } from '@huggingface/transformers';
 
 // Must match docs/assets/filter.js exactly — these three strings are the cache key.
-const MODEL = 'Xenova/bge-small-en-v1.5';
-const DIM = 384;
-const DTYPE = 'q8';
+export const MODEL = 'Xenova/bge-small-en-v1.5';
+export const DIM = 384;
+export const DTYPE = 'q8';
 
 /* Park the model outside node_modules. transformers.js defaults its Node cache
    to `node_modules/@huggingface/transformers/.cache/`, which `npm install`
@@ -74,7 +74,7 @@ export function cacheKeyText(text) {
   return (text || '').replace(/\s+/g, ' ').trim();
 }
 
-async function sha256Hex(text) {
+export async function sha256Hex(text) {
   const bytes = new TextEncoder().encode(cacheKeyText(text));
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -124,7 +124,17 @@ export function parseFeed(xml) {
     const abstract = cacheKeyText(m ? m[1] : desc);
     if (!abstract) continue;
 
-    out.push({ arxivId, abstract });
+    /* Title and authors are for the feed to display, never for the cache key —
+       `abstract` above is the only hashed field, and it must stay byte-for-byte
+       what the browser hashes. Adding display fields here cannot move it. */
+    const creators = item['dc:creator'];
+    out.push({
+      arxivId,
+      abstract,
+      title: cacheKeyText(String(item.title ?? '')),
+      authors: cacheKeyText(String(Array.isArray(creators) ? creators.join(', ') : (creators ?? ''))),
+      link: link || ('https://arxiv.org/abs/' + arxivId),
+    });
   }
   return out;
 }
@@ -186,7 +196,17 @@ export function presetUnits(preset, slug) {
   const units = [];
   for (const t of preset.touchstones ?? []) {
     const text = (t.text ?? '').trim();
-    if (text) units.push({ text, source: `preset:${slug}` });
+    // `weight` and `kind` are inert here — the warmer only embeds. They ride
+    // along so the feed builder can assay from the same rows the warmer warmed,
+    // rather than re-deriving them and drifting.
+    if (text) {
+      units.push({
+        text,
+        source: `preset:${slug}`,
+        kind: 'touchstone',
+        weight: Number.isFinite(parseFloat(t.weight)) ? parseFloat(t.weight) : 1.0,
+      });
+    }
   }
   return units;
 }
@@ -206,7 +226,7 @@ export function doiKey(doi) {
   return bare ? 'doi:' + bare.toLowerCase() : '';
 }
 
-async function fetchCore(doi, slug) {
+export async function fetchCore(doi, slug) {
   const key = doiKey(doi);
   if (!key) throw new Error(`${doi}: not a DOI`);
   const url = 'https://api.openalex.org/works/' + encodeURIComponent(key) +
@@ -216,7 +236,7 @@ async function fetchCore(doi, slug) {
   const data = await resp.json();
   const text = coreEmbedText(data.title ?? '', reconstructAbstract(data.abstract_inverted_index));
   if (!text) throw new Error(`${doi}: no title and no abstract`);
-  return { text, source: `preset:${slug}` };
+  return { text, source: `preset:${slug}`, kind: 'core', weight: 1.0, doi: doiKey(doi) };
 }
 
 /**
@@ -258,23 +278,29 @@ export async function loadPresets(dir) {
   }
   const units = [];
   const failures = [];
+  const bySlug = new Map();
   for (const name of names) {
     const slug = name.replace(/\.json$/, '');
     const preset = JSON.parse(await fs.readFile(path.join(dir, name), 'utf8'));
-    units.push(...presetUnits(preset, slug));
+    const rows = presetUnits(preset, slug);
+    units.push(...rows);
+    bySlug.set(slug, { preset, rows });
     for (const core of preset.cores ?? []) {
       if (!core.doi) continue;
       try {
-        units.push(await fetchCore(core.doi, slug));
+        const unit = await fetchCore(core.doi, slug);
+        unit.weight = Number.isFinite(parseFloat(core.weight)) ? parseFloat(core.weight) : 1.0;
+        units.push(unit);
+        bySlug.get(slug).rows.push(unit);
       } catch (err) {
         failures.push(err.message);
       }
     }
   }
-  return { units, presets: names.length, failures };
+  return { units, presets: names.length, failures, bySlug };
 }
 
-async function fetchAbstracts(category) {
+export async function fetchAbstracts(category) {
   const url = 'https://rss.arxiv.org/rss/' + encodeURIComponent(category);
   const resp = await fetch(url, {
     headers: { 'User-Agent': 'arxave-warmer/0.1 (+https://github.com/jan-a-krzywda/arxave)' },
@@ -306,7 +332,7 @@ export function resolveEndpoint(flag, env) {
   return endpoint;
 }
 
-async function loadModel() {
+export async function loadModel() {
   for (let attempt = 1; ; attempt++) {
     try {
       return await pipeline('feature-extraction', MODEL, { dtype: DTYPE });

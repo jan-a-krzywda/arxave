@@ -39,6 +39,9 @@ on:
         type: boolean
         default: false
 
+permissions:
+  contents: write
+
 jobs:
   warm:
     runs-on: ubuntu-latest
@@ -68,9 +71,13 @@ jobs:
       # Cheap, and it guards the one failure this job cannot detect itself: if
       # the warmer's parse diverges from the browser's, every vector is filed
       # under a key nobody looks up and the job still reports success.
-      - name: Check the parse still matches the browser's
+      # Cheap, and they guard the two failures this job cannot detect itself: a
+      # parse that diverges from the browser's files every vector under a key
+      # nobody looks up, and a blend that diverges from the browser's makes the
+      # feed recommend papers the page would not. Both report success.
+      - name: Check the parse and the blend still match the browser's
         working-directory: scripts
-        run: node --test warm-dig.test.mjs
+        run: node --test warm-dig.test.mjs preset-feed.test.mjs
 
       - name: Warm
         working-directory: scripts
@@ -82,3 +89,29 @@ jobs:
             --categories "${{ inputs.categories || vars.ARXAVE_WARM_CATEGORIES || 'quant-ph, cond-mat.mes-hall, cs.AI, cs.LG' }}" \
             --presets ../docs/presets \
             ${{ inputs.dry_run && '--dry-run' || '' }}
+
+      # Runs after the warm, so in the normal case every vector it needs is a
+      # cache hit and the model is never loaded a second time.
+      - name: Build the preset feeds
+        if: ${{ !inputs.dry_run }}
+        working-directory: scripts
+        env:
+          DIG_CACHE_URL: ${{ vars.ARXAVE_DIG_CACHE_URL }}
+          ARXAVE_SITE: ${{ vars.ARXAVE_SITE }}
+        run: node preset-feed.mjs --presets ../docs/presets --out ../docs/feeds
+
+      # An unchanged feed is the normal Saturday outcome and not worth a commit;
+      # `git diff --staged --quiet` is what keeps this from pushing every run.
+      - name: Commit the feeds
+        if: ${{ !inputs.dry_run }}
+        run: |
+          git config user.name "Arxave Bot"
+          git config user.email "arxave-bot@users.noreply.github.com"
+          git add docs/feeds/
+          if git diff --staged --quiet; then
+            echo 'Feeds unchanged — nothing to push.'
+            exit 0
+          fi
+          git commit -m "feeds: $(date -u +%F) preset feeds"
+          git pull --rebase --autostash
+          git push
