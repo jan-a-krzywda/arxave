@@ -81,3 +81,23 @@ test('the guid is stable per paper per day, so a rebuild is not a new item', () 
   assert.equal(of('2608.00001'), 'arxave:s:2026-08-12:2608.00001');
   assert.notEqual(of('2608.00002'), of('2608.00001'));
 });
+
+test('the stylesheet reference is relative, so it survives another domain', () => {
+  // Browsers refuse a cross-origin XSLT. An absolute href would keep working on
+  // arxave.com and quietly stop transforming anywhere else the file is served.
+  const xml = renderFeed({
+    preset: { name: 'P' }, slug: 's', site: 'https://arxave.com/', builtOn: '2026-08-12',
+    items: [],
+  });
+  assert.match(xml, /<\?xml-stylesheet type="text\/xsl" href="feed\.xsl"\?>/);
+  assert.doesNotMatch(xml.split('\n')[1], /https?:/);
+});
+
+test('every link in the feed points at the site it was built for', () => {
+  const xml = renderFeed({
+    preset: { name: 'P' }, slug: 's', site: 'https://arxave.com/', builtOn: '2026-08-12',
+    items: [{ arxivId: '1', title: 't', link: 'https://arxiv.org/abs/1', abstract: 'a', authors: '', grade: 0.1 }],
+  });
+  assert.doesNotMatch(xml, /github\.io/);
+  assert.match(xml, /<link>https:\/\/arxave\.com\/\?preset=s<\/link>/);
+});
