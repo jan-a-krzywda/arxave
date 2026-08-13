@@ -74,6 +74,11 @@ function stays its only door.
 The same `DIG_WRITE_KEY` goes into the repo's GitHub secrets, where the nightly
 [warm-dig workflow](../../.github/workflows/warm-dig.yml) picks it up.
 
+That workflow has no `on: schedule` — its clock is a pg_cron job in this same
+project, set up by [`warm-cron.sql`](../warm-cron.sql), which calls the Actions
+dispatch API at 04:10 UTC. GitHub's cron dispatcher was measured slipping up to
+two hours on this repo, which pushed the warm past the morning it was for.
+
 ## Verify
 
 ```bash
