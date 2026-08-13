@@ -168,6 +168,37 @@ select cron.schedule(
 --   gh run list --workflow warm-dig.yml --limit 3
 --
 -- ---------------------------------------------------------------------------
+-- Test the schedule (not just the function)
+-- ---------------------------------------------------------------------------
+-- `select public.dispatch_warm_dig();` proves the token and the POST work. It
+-- does NOT prove pg_cron fires — which is the thing GitHub got wrong, so it is
+-- the thing worth testing. This schedules a real run five minutes from whenever
+-- you paste it; the format() computes the minute and hour so the expression is
+-- never stale:
+--
+--   select cron.schedule(
+--     'warm-dig-test',
+--     format('%s %s * * *',
+--       extract(minute from (now() + interval '5 minutes') at time zone 'UTC')::int,
+--       extract(hour   from (now() + interval '5 minutes') at time zone 'UTC')::int),
+--     $job$ select public.dispatch_warm_dig(); $job$
+--   );
+--
+--   select jobname, schedule, active from cron.job where jobname = 'warm-dig-test';
+--
+-- Five minutes later, in order — did cron fire, did GitHub accept, did a run start:
+--
+--   select jobid, status, return_message, start_time
+--     from cron.job_run_details order by runid desc limit 5;
+--   select id, status_code, error_msg, created
+--     from net._http_response order by id desc limit 5;   -- expect 204
+--   -- gh run list --workflow warm-dig.yml --limit 3
+--
+-- THEN REMOVE IT. Left alone it fires every day at that minute, forever:
+--
+--   select cron.unschedule('warm-dig-test');
+--
+-- ---------------------------------------------------------------------------
 -- Health check
 -- ---------------------------------------------------------------------------
 -- The failure this path cannot feel: the token expires, GitHub answers 401,
