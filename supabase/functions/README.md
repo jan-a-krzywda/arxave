@@ -192,6 +192,9 @@ curl -s -X POST "$BASE/wagon-name" -H 'Content-Type: application/json' \
 # the meter is durable — run the same wagon 41 times from one address and the
 # 41st should come back capped:true rather than billing a 41st call.
 
+# the rate limit bites first: six or more *uncached* wagons in one request on
+# the free tier come back with retryAfter set and the rest unnamed, not errored.
+
 # end to end: warm one category, then check the page reports "already cut"
 DIG_WRITE_KEY=… node ../../scripts/warm-dig.mjs --categories quant-ph
 ```
@@ -211,13 +214,31 @@ or put the project's own function rate limits in front.
 `wagon-name` is the other one that costs money, and it is the first function
 here that spends it *on a stranger's behalf* — so its counter is the durable
 one that paragraph asks for. Worst case per day is `WAGON_NAME_GLOBAL_DAILY`
-calls of **~650 total tokens** each — measured 2026-08-13 on a real four-title
-wagon: 205 prompt, ~50 output, the rest thinking, capped by an explicit
-`thinkingBudget: 512`. Left unset, thinking is unbounded and the same identical
-request measured 425, 884 and 1031 thinking tokens on three consecutive tries;
-set to 0 it drops to 246 total but the name degrades to "Silicon Valley
-Splitting", so the budget is what buys the correct word order. At the default
-600 calls that is under 400k tokens a day even if every single call is a miss. Realistically it is far less, because the cache is shared and two people
+calls of **~270 total tokens** each — measured 2026-08-13 across two wagons, two
+runs each: 182–205 prompt, ~50 output, no thinking. At the default 600 calls
+that is under 200k tokens a day even if every single call is a miss.
+
+Thinking is off (`thinkingBudget: 0`) and the prompt carries the load instead.
+This was briefly set to 512 on the theory that thinking bought the correct word
+order — a four-title wagon named itself "Silicon Valley Splitting" at 0 and
+"Valley Splitting in Silicon" at 512. That misread the evidence. The fault was
+in `SYSTEM`, which asked for the field's terminology but never said to keep a
+paper's prepositional phrasing, leaving the model free to compress into a
+compound that collides with a famous proper noun. With that stated outright,
+budget 0 produces the right name on both test wagons twice each, and is the
+*more* stable of the two settings as well as 2.4× cheaper — at 512 the label
+drifts ("Valley splitting and coupling in silicon"). A thinking budget cannot
+fix a prompt that never stated the constraint.
+
+**The binding limit is requests per minute, not the daily budget.** Measured
+2026-08-13, this project's key is on the Gemini free tier: **5 requests/min** on
+`gemini-2.5-flash`. A first haul with ten uncached wagons therefore 429s on the
+sixth, long before any daily cap is in sight. The function stops at the first
+429 rather than marching through the rest collecting one each, refunds every
+granted-but-unspent call, and returns `retryAfter` in seconds so the page can
+say "press again in about 50s" instead of "come back tomorrow". The wagons
+already named are cache hits, so the next press resumes rather than restarts.
+Raising throughput means a paid tier, not a code change. Realistically it is far less, because the cache is shared and two people
 hauling `quant-ph` on the same morning cluster the same papers. Caps and both
 budgets are at the top of [`wagon-name/index.ts`](wagon-name/index.ts); the
 transactional meter is in [`wagon-names.sql`](../wagon-names.sql).

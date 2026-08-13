@@ -63,7 +63,10 @@ export const SYSTEM = [
   'The label is a noun phrase of two to five words, in the field\'s own',
   'terminology, specific enough to distinguish this cluster from a neighbouring',
   'one — "Valley splitting in Si/SiGe", not "Quantum computing" and not',
-  '"Physics papers". Never invent a topic no title supports: if the titles have',
+  '"Physics papers". Keep the phrasing a paper would use, prepositions and',
+  'all — "Valley splitting in silicon", never the compressed compound',
+  '"Silicon valley splitting", which reads as an unrelated proper noun.',
+  'Never invent a topic no title supports: if the titles have',
   'little in common, say so in the gloss and give the label the broadest',
   'accurate name. Do not editorialize about importance or novelty.',
 ].join(' ');
@@ -118,6 +121,22 @@ export function parseResponse(body: unknown): WagonName | null {
   const gloss = String(parsed.gloss ?? '').replace(/\s+/g, ' ').trim().slice(0, 300);
   if (!name) return null;
   return { name, gloss };
+}
+
+/**
+ * How long to wait after a 429, in whole seconds.
+ *
+ * Gemini does not send Retry-After on a free-tier quota rejection; it puts the
+ * number in the message body ("Please retry in 49.711726874s"), so both are
+ * read and the header wins when it is there. The 60-second fallback is only for
+ * a 429 that says neither — better to overshoot than to hammer a limit that has
+ * already been hit.
+ */
+export function retryAfterSeconds(header: string | null, body: string): number {
+  const fromHeader = Number(header);
+  if (Number.isFinite(fromHeader) && fromHeader > 0) return Math.ceil(fromHeader);
+  const m = body.match(/retry in ([\d.]+)\s*s/i);
+  return m ? Math.ceil(Number(m[1])) : 60;
 }
 
 /**

@@ -14,6 +14,7 @@ import {
   parseResponse,
   promptFor,
   readWagons,
+  retryAfterSeconds,
   wagonKey,
 } from './naming.ts';
 
@@ -102,6 +103,31 @@ Deno.test('parseResponse returns null for every shape of failure', () => {
   // A reply that validates but carries no name is no name.
   const empty = { candidates: [{ content: { parts: [{ text: '{"name":"","gloss":"x"}' }] } }] };
   assertEquals(parseResponse(empty), null);
+});
+
+/* The real body Gemini returned on 2026-08-13 when this project's key hit its
+   free-tier limit of 5 requests/min. Trimmed, but the phrasing is verbatim —
+   the wait is in the prose, not in a Retry-After header, which is the whole
+   reason retryAfterSeconds reads both. */
+const REAL_429 = 'You exceeded your current quota, please check your plan and billing ' +
+  'details. * Quota exceeded for metric: ' +
+  'generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, ' +
+  'model: gemini-2.5-flash\nPlease retry in 49.711726874s.';
+
+Deno.test('retryAfterSeconds reads the wait out of a real Gemini 429 body', () => {
+  assertEquals(retryAfterSeconds(null, REAL_429), 50);   // rounded up, never down
+});
+
+Deno.test('retryAfterSeconds prefers a Retry-After header when there is one', () => {
+  assertEquals(retryAfterSeconds('12', REAL_429), 12);
+  assertEquals(retryAfterSeconds('0.5', ''), 1);
+});
+
+Deno.test('retryAfterSeconds falls back to a minute when told nothing usable', () => {
+  assertEquals(retryAfterSeconds(null, 'slow down'), 60);
+  assertEquals(retryAfterSeconds('', ''), 60);
+  assertEquals(retryAfterSeconds('not-a-number', ''), 60);
+  assertEquals(retryAfterSeconds('-5', ''), 60);       // never a negative wait
 });
 
 Deno.test('readWagons accepts a well-formed body', () => {
