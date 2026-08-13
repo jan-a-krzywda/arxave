@@ -1,39 +1,36 @@
 name: Warm the Dig cache
 
-# WHEN THE FEED EXISTS IS THE WHOLE CONSTRAINT. arXiv rebuilds the announcement
-# RSS around 04:00 UTC — its `pubDate` is midnight ET, which *is* 04:00 UTC —
-# and serves the previous day's listing until then. Measured 2026-08-12:
-# `lastBuildDate: Wed, 12 Aug 2026 04:00:21 +0000`. So nothing useful can be
-# warmed before ~04:00 UTC, which is 06:00 CEST. An earlier run is not merely
-# early: it warms yesterday, finds it all cached, and exits 0.
+# THIS WORKFLOW HAS NO SCHEDULE, ON PURPOSE. Its clock lives in Postgres, in
+# [`supabase/warm-cron.sql`](../../supabase/warm-cron.sql) — a pg_cron job that
+# POSTs to the Actions dispatch API at 04:10 and 06:13 UTC, Mon–Fri.
 #
-# 04:20 UTC (06:20 CEST) is therefore the first run, twenty minutes after the
-# rebuild. The odd minute is deliberate too — GitHub's cron dispatcher is shared
-# and best-effort, and congests hardest on round minutes. This workflow's first
-# scheduled run was set for 01:30 UTC and the event arrived at 03:38; the runner
-# then started it instantly and finished in 43 s, so the delay was dispatch.
+# WHEN THE FEED EXISTS IS THE WHOLE CONSTRAINT, and it is why the clock moved.
+# arXiv rebuilds the announcement RSS around 04:00 UTC — its `pubDate` is
+# midnight ET, which *is* 04:00 UTC — and serves the previous day's listing
+# until then. Measured 2026-08-12: `lastBuildDate: Wed, 12 Aug 2026 04:00:21
+# +0000`. So nothing useful can be warmed before 06:00 CEST, leaving a narrow
+# window before anyone is awake to read the feed — and `on: schedule` could not
+# hit it. GitHub's cron dispatcher is shared and best-effort: this workflow's
+# `30 1` cron fired at 03:38 UTC (+2h08) and its `13 6` at 07:50 UTC (+1h37).
+# A warm that slips two hours is not a warm cache in the morning.
 #
-# 06:13 UTC (08:13 CEST) is the catch-up, for the mornings dispatch slips or
-# arXiv rebuilds late. No guard on it: the warmer only embeds what is not
-# already cached, so a second run on a warmed day costs a minute and writes
-# nothing. The warmer itself refuses a stale feed (exit 3) rather than
-# reporting a healthy-looking run over yesterday's papers.
+# `workflow_dispatch` has no such queue. Measured 2026-08-12: created
+# 06:50:44Z, started 06:50:44Z, done 06:51:48Z. The work stayed here — a 32 MB
+# model and ~750 embeddings want a real runner, and the model cache and secrets
+# already live here — and only the trigger left.
 #
-# The feed lands on UTC Mon–Fri (it carries <skipDays>Sat, Sun</skipDays>).
-#
-# GitHub cron is UTC and does not follow DST — in winter these are 05:20/07:13
-# CET. The offset from the 04:00 UTC rebuild is what matters here, not the local
-# clock, so leave them alone unless arXiv moves.
+# Both schedules are in the SQL file, with the reasoning for their times.
+# Changing the timing means editing that file, not this one.
 on:
-  schedule:
-    - cron: '20 4 * * 1-5'
-    - cron: '13 6 * * 1-5'
   workflow_dispatch:
     inputs:
+      # Deliberately no `default:`. Every run is a dispatch now, and GitHub
+      # fills a declared default in on API dispatches too — so a default here
+      # would always win the `||` below and `vars.ARXAVE_WARM_CATEGORIES` would
+      # silently stop having any effect. Empty means "use the repo variable".
       categories:
-        description: 'arXiv categories (comma-separated)'
+        description: 'arXiv categories (comma-separated) — blank uses ARXAVE_WARM_CATEGORIES'
         type: string
-        default: 'quant-ph, cond-mat.mes-hall, cs.AI, cs.LG'
       dry_run:
         description: 'Embed but write nothing'
         type: boolean
@@ -68,9 +65,6 @@ jobs:
         working-directory: scripts
         run: npm install --no-package-lock --no-audit --no-fund
 
-      # Cheap, and it guards the one failure this job cannot detect itself: if
-      # the warmer's parse diverges from the browser's, every vector is filed
-      # under a key nobody looks up and the job still reports success.
       # Cheap, and they guard the two failures this job cannot detect itself: a
       # parse that diverges from the browser's files every vector under a key
       # nobody looks up, and a blend that diverges from the browser's makes the
