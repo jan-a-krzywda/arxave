@@ -11,7 +11,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { cosine, grade, renderFeed, selectItems, xmlEscape } from './preset-feed.mjs';
+import {
+  bestRow, cosine, grade, renderFeed, rowLabel, selectItems, xmlEscape,
+} from './preset-feed.mjs';
 
 /* Orthonormal basis vectors make the cosines exactly 1, 0 or -1, so every
    expectation below is arithmetic anyone can check by eye. */
@@ -156,15 +158,62 @@ test('items carry structured fields, not only escaped HTML', () => {
     items: [{
       arxivId: '1', title: 't', link: 'https://arxiv.org/abs/1', abstract: 'the abstract',
       authors: 'A. Author', grade: 0.7, z: 3.5,
-      enrichment: { research_question: 'Why?', tools: ['a', 'b'], summary: 'They did.' },
+      matched: { label: 'valley splitting in silicon quantum dots', cosine: 0.71 },
+      enrichment: {
+        verdict: 'read', kind: 'new result', headline: 'T2* of 3.4 ms.',
+        so_what: 'Doubles the usable gate count.', caveat: 'One device, at 10 mK.',
+        tools: ['a', 'b'],
+      },
     }],
   });
   assert.match(xml, /xmlns:arxave="https:\/\/arxave\.com\/ns\/feed"/);
-  assert.match(xml, /<arxave:question>Why\?<\/arxave:question>/);
+  assert.match(xml, /<arxave:verdict>read<\/arxave:verdict>/);
+  assert.match(xml, /<arxave:kind>new result<\/arxave:kind>/);
+  assert.match(xml, /<arxave:headline>T2\* of 3\.4 ms\.<\/arxave:headline>/);
+  assert.match(xml, /<arxave:sowhat>Doubles the usable gate count\.<\/arxave:sowhat>/);
+  assert.match(xml, /<arxave:caveat>One device, at 10 mK\.<\/arxave:caveat>/);
   assert.match(xml, /<arxave:tools>a · b<\/arxave:tools>/);
-  assert.match(xml, /<arxave:summary>They did\.<\/arxave:summary>/);
+  assert.match(xml, /<arxave:matched>valley splitting in silicon quantum dots<\/arxave:matched>/);
   assert.match(xml, /<arxave:abstract>the abstract<\/arxave:abstract>/);
   assert.match(xml, /<arxave:z>3\.5<\/arxave:z>/);
+});
+
+test('the decision leads the body, ahead of the grade and the abstract', () => {
+  /* Most readers truncate an item to its first line in the list view, so
+     whatever leads is the whole item for a large share of subscribers. If the
+     grade line or the abstract drifts back above the verdict, that share sees a
+     number instead of a recommendation, and nothing throws. */
+  const xml = renderFeed({
+    preset: { name: 'P' }, slug: 's', site: 'https://arxave.com/', builtOn: '2026-08-12',
+    items: [{
+      arxivId: '1', title: 't', link: 'l', abstract: 'the abstract', authors: '',
+      grade: 0.7, z: 3.5,
+      enrichment: {
+        verdict: 'read', kind: 'new method', headline: 'T2* of 3.4 ms.',
+        so_what: 'S.', caveat: 'C.', tools: [],
+      },
+    }],
+  });
+  // The item's description, not the channel's — the channel has one too, and it
+  // is the first match in the file.
+  const body = xml.match(/<item>[\s\S]*?<description>([\s\S]*?)<\/description>/)[1];
+  assert.ok(body.indexOf('Read') < body.indexOf('Grade 0.700'), 'verdict before grade');
+  assert.ok(body.indexOf('Grade 0.700') < body.indexOf('So what'), 'grade before so-what');
+  assert.ok(body.indexOf('So what') < body.indexOf('Abstract'), 'abstract last');
+  assert.match(body, /Read.*new method.*T2\* of 3\.4 ms\./);
+});
+
+test('the grade line names the row that earned the grade', () => {
+  // A bare 0.612 tells a reader nothing about why this paper is in their feed,
+  // and gives them nothing to edit when the feed drifts.
+  const xml = renderFeed({
+    preset: { name: 'P' }, slug: 's', site: 'https://arxave.com/', builtOn: '2026-08-12',
+    items: [{
+      arxivId: '1', title: 't', link: 'l', abstract: 'a', authors: '', grade: 0.612, z: 2.1,
+      matched: { label: 'charge noise and dephasing in Si/SiGe', cosine: 0.7 },
+    }],
+  });
+  assert.match(xml, /matched .*charge noise and dephasing in Si\/SiGe/);
 });
 
 test('an unenriched item omits the generated elements rather than emptying them', () => {
@@ -172,10 +221,74 @@ test('an unenriched item omits the generated elements rather than emptying them'
     preset: { name: 'P' }, slug: 's', site: 'https://arxave.com/', builtOn: '2026-08-12',
     items: [{
       arxivId: '1', title: 't', link: 'l', abstract: 'a', authors: '', grade: 0.7, z: null,
-      enrichment: null,
+      enrichment: null, matched: null,
     }],
   });
-  assert.doesNotMatch(xml, /arxave:question/);
+  assert.doesNotMatch(xml, /arxave:verdict/);
+  assert.doesNotMatch(xml, /arxave:headline/);
+  assert.doesNotMatch(xml, /arxave:matched/);
   assert.doesNotMatch(xml, /arxave:z/);
   assert.match(xml, /<arxave:abstract>a<\/arxave:abstract>/);
+});
+
+test('a paper with no caveat drops the line instead of printing an empty one', () => {
+  const xml = renderFeed({
+    preset: { name: 'P' }, slug: 's', site: 'https://arxave.com/', builtOn: '2026-08-12',
+    items: [{
+      arxivId: '1', title: 't', link: 'l', abstract: 'a', authors: '', grade: 0.7, z: null,
+      enrichment: { verdict: 'skim', kind: '', headline: 'H.', so_what: '', caveat: '', tools: [] },
+    }],
+  });
+  assert.doesNotMatch(xml, /arxave:caveat/);
+  assert.doesNotMatch(xml, /<strong>But\./);
+  assert.match(xml, /Skim/);
+});
+
+/* The matched row. Not part of grade(), which mirrors the browser verbatim. */
+
+test('the matched row is the highest cosine among the weighted rows', () => {
+  const rows = [
+    { vector: e1, weight: 1, label: 'exchange gates' },
+    { vector: e2, weight: 1, label: 'valley splitting' },
+  ];
+  assert.equal(bestRow(e1, rows).label, 'exchange gates');
+  assert.equal(bestRow(e2, rows).label, 'valley splitting');
+});
+
+test('a row that could not be embedded, or is switched off, cannot be the match', () => {
+  assert.equal(bestRow(e1, [{ vector: null, weight: 1, label: 'unresolved' }]), null);
+  assert.equal(bestRow(e1, [{ vector: e1, weight: 0, label: 'off' }]), null);
+  assert.equal(bestRow(e1, []), null);
+});
+
+test('weight ranks the blend but not the match', () => {
+  /* The match answers "which of my rows does this paper look like", which is a
+     question about similarity alone. Letting weight in would name the row the
+     reader cares most about rather than the one the paper actually resembles. */
+  const rows = [
+    { vector: e1, weight: 0.1, label: 'exchange gates' },
+    { vector: e2, weight: 9, label: 'valley splitting' },
+  ];
+  assert.equal(bestRow(e1, rows).label, 'exchange gates');
+});
+
+test('a core sample is labelled by its title, not by the head of its embed text', () => {
+  // A core's embed text is title and abstract run together on one line, so
+  // slicing a label out of it prints half a title and the start of an abstract.
+  const core = {
+    kind: 'core',
+    title: 'Coherent Manipulation of Coupled Electron Spins in Semiconductor Quantum Dots',
+    text: 'Coherent Manipulation of Coupled Electron Spins in Semiconductor Quantum Dots ' +
+          'We demonstrated coherent control of a two-electron spin state...',
+  };
+  assert.equal(rowLabel(core), core.title);
+  assert.equal(rowLabel({ text: 'double quantum dot exchange gates' }),
+    'double quantum dot exchange gates');
+  assert.equal(rowLabel({}), '');
+});
+
+test('a label too long for one line is cut, not wrapped into the grade line', () => {
+  const long = { text: 'x'.repeat(200) };
+  assert.equal(rowLabel(long).length, 80);
+  assert.ok(rowLabel(long).endsWith('…'));
 });

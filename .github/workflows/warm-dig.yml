@@ -92,8 +92,8 @@ jobs:
         env:
           DIG_CACHE_URL: ${{ vars.ARXAVE_DIG_CACHE_URL }}
           ARXAVE_SITE: ${{ vars.ARXAVE_SITE }}
-          # Optional. Without it the feed still builds, carrying abstracts and
-          # no question/tools/summary — the enricher fails soft by design.
+          # Optional. Without it the feed still builds, carrying grades and
+          # abstracts and no verdict line — the enricher fails soft by design.
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: node preset-feed.mjs --presets ../docs/presets --out ../docs/feeds
 

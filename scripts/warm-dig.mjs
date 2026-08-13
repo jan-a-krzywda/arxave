@@ -236,7 +236,13 @@ export async function fetchCore(doi, slug) {
   const data = await resp.json();
   const text = coreEmbedText(data.title ?? '', reconstructAbstract(data.abstract_inverted_index));
   if (!text) throw new Error(`${doi}: no title and no abstract`);
-  return { text, source: `preset:${slug}`, kind: 'core', weight: 1.0, doi: doiKey(doi) };
+  /* `title` is inert to the warmer, which only embeds `text`. It rides along so
+     the feed can name the row a paper matched: the embed text is title and
+     abstract run together, and cutting a label out of that gives half a title. */
+  return {
+    text, title: (data.title ?? '').trim(),
+    source: `preset:${slug}`, kind: 'core', weight: 1.0, doi: doiKey(doi),
+  };
 }
 
 /**

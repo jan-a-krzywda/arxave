@@ -1,10 +1,33 @@
 /**
- * enrich — what a paper asks, what it uses, and what it found, from Gemini.
+ * enrich — the decision a reader has to make about a paper, from Gemini.
  *
  * The feed's items carry an abstract, which is what the author wrote to be
- * indexed, not to be skimmed. This turns each one into three fixed fields —
- * research question, tools, summary — so a reader can decide in a glance
- * instead of a paragraph.
+ * indexed, not to be skimmed. This turns each one into fixed fields so a reader
+ * can decide in a glance instead of a paragraph.
+ *
+ * WHY THESE FIELDS AND NOT A SUMMARY. The abstract is already a summary, and it
+ * is the author's own. A generated paragraph next to it has to be better than
+ * it to be worth the reader's eye, and it never is. So nothing here restates
+ * the paper: every field is something the abstract makes the reader dig for.
+ *
+ *   verdict   read or skim — the decision itself, first, because most readers
+ *             truncate an item to its first line and that line has to carry it.
+ *   kind      new result / new method / theory / review / incremental. One
+ *             phrase that catches the case grading cannot see: the third paper
+ *             this year from the same group on the same device.
+ *   headline  the finding with its number. "Improved coherence" is what the
+ *             abstract says; "T2* = 3.4 ms" is what the reader wants.
+ *   so_what   the one line of consequence. What changes if it holds.
+ *   caveat    the condition the number is under. This is the field that makes
+ *             the other four credible — a feed that only ever sells stops
+ *             being read. Empty when the abstract states no limit, never
+ *             invented to fill the slot.
+ *   tools     what it was done with, for filtering by eye.
+ *
+ * `caveat` and `headline` are the two the abstract most often withholds, and
+ * both get better with the paper's full text rather than its abstract. That is
+ * the natural next tier here; the schema is shaped so it can arrive without
+ * moving anything else.
  *
  * ONLY THE SELECTED PAPERS ARE SENT. The feed picks a handful out of ~100
  * abstracts before this runs, so the cost is a few calls a day, not a hundred:
@@ -29,33 +52,79 @@ const TIMEOUT_MS = 45_000;
 const MAX_ABSTRACT = 6_000;   // characters; longer is padding, not signal
 const CACHE_DAYS = 30;
 
+/* Bumped whenever the field set changes. A cached record from an older shape is
+   treated as a miss and re-generated, because the alternative is a feed where
+   some items have a verdict and some have a "Question." heading, with nothing
+   in the code saying which era an item came from. */
+export const SHAPE = 2;
+
+export const VERDICTS = ['read', 'skim'];
+export const KINDS = ['new result', 'new method', 'theory', 'review', 'incremental'];
+
 const SYSTEM = [
-  'You summarize physics and computer science preprints for a working researcher',
-  'who will decide from your three fields whether to open the paper.',
-  'Be concrete and use the paper\'s own terminology. Never speculate beyond the',
-  'abstract, and never editorialize about importance or novelty.',
+  'You brief a working researcher on physics and computer science preprints.',
+  'They will decide from your fields alone whether to open the paper, so lead',
+  'with the decision and the finding, never with methodology.',
+  'Do not summarize the abstract — it is printed directly below your fields and',
+  'they can read it themselves. Give them what it makes them dig for: the',
+  'number, the consequence, and the condition the number is under.',
+  'Use the paper\'s own terminology, quote its quantities with units, and never',
+  'state anything the abstract does not support. Do not editorialize about',
+  'importance or novelty beyond the two judgements asked of you below.',
 ].join(' ');
 
 /* An explicit schema rather than "reply in JSON": the API enforces it, so a
-   malformed response is a transport error rather than a parse surprise. */
+   malformed response is a transport error rather than a parse surprise. The
+   enums matter most — a free-text verdict would arrive as "worth a skim" and
+   every consumer downstream would have to guess. */
 const SCHEMA = {
   type: 'object',
   properties: {
-    research_question: {
+    verdict: {
       type: 'string',
-      description: 'The question the paper sets out to answer, one sentence.',
+      enum: VERDICTS,
+      description:
+        '"read" if a researcher in this area should open the paper today; ' +
+        '"skim" if the fields above are enough unless it touches their exact problem.',
+    },
+    kind: {
+      type: 'string',
+      enum: KINDS,
+      description:
+        'What sort of contribution this is. Use "incremental" when it extends ' +
+        'the authors\' own prior result rather than opening anything new.',
+    },
+    headline: {
+      type: 'string',
+      description:
+        'The central finding as a headline, one sentence. Include the key ' +
+        'quantity with its units when the abstract gives one. Never restate ' +
+        'the title.',
+    },
+    so_what: {
+      type: 'string',
+      description:
+        'One sentence on what changes for people working in this area if the ' +
+        'result holds. Consequence, not restatement.',
+    },
+    caveat: {
+      type: 'string',
+      description:
+        'The condition the result was obtained under, or the limitation the ' +
+        'authors state: sample count, temperature, post-selection, simulation ' +
+        'rather than measurement. One short clause. Return an empty string if ' +
+        'the abstract states none — do not invent one.',
     },
     tools: {
       type: 'array',
       description: 'Methods, devices, materials or techniques used. 2-5 short noun phrases.',
       items: { type: 'string' },
     },
-    summary: {
-      type: 'string',
-      description: 'What they did and what they found, two sentences at most.',
-    },
   },
-  required: ['research_question', 'tools', 'summary'],
+  required: ['verdict', 'kind', 'headline', 'so_what', 'caveat', 'tools'],
+  /* Gemini emits properties in this order, which is also the order the feed
+     renders them — handy when reading raw responses while tuning the prompt. */
+  propertyOrdering: ['verdict', 'kind', 'headline', 'so_what', 'caveat', 'tools'],
 };
 
 export function promptFor(item) {
@@ -67,8 +136,14 @@ export function promptFor(item) {
   ].filter(Boolean).join('\n');
 }
 
+/** An enum field, or '' — never a value no consumer downstream knows. */
+function oneOf(value, allowed) {
+  const v = String(value ?? '').trim().toLowerCase();
+  return allowed.includes(v) ? v : '';
+}
+
 /**
- * Gemini's response shape, reduced to our three fields, or null.
+ * Gemini's response shape, reduced to our fields, or null.
  *
  * Returns null rather than throwing on anything unexpected — a truncated
  * response (`finishReason: MAX_TOKENS`), a safety block with no candidate, an
@@ -83,13 +158,24 @@ export function parseResponse(body) {
   } catch {
     return null;
   }
-  const question = String(parsed.research_question ?? '').trim();
-  const summary = String(parsed.summary ?? '').trim();
-  const tools = Array.isArray(parsed.tools)
-    ? parsed.tools.map((t) => String(t).trim()).filter(Boolean)
-    : [];
-  if (!question && !summary && !tools.length) return null;
-  return { research_question: question, tools, summary };
+  const fields = {
+    verdict: oneOf(parsed.verdict, VERDICTS),
+    kind: oneOf(parsed.kind, KINDS),
+    headline: String(parsed.headline ?? '').trim(),
+    so_what: String(parsed.so_what ?? '').trim(),
+    /* An absent caveat is a real answer — plenty of abstracts state no
+       limitation — so it never blocks the record, and the feed simply omits
+       the line. What must not happen is a fabricated one. */
+    caveat: String(parsed.caveat ?? '').trim(),
+    tools: Array.isArray(parsed.tools)
+      ? parsed.tools.map((t) => String(t).trim()).filter(Boolean)
+      : [],
+  };
+  /* The verdict and the kind are labels on a paper, not a description of it. A
+     record carrying only those says nothing, and rendering "Skim ·
+     incremental" over a bare abstract is worse than rendering the abstract. */
+  if (!fields.headline && !fields.so_what && !fields.tools.length) return null;
+  return fields;
 }
 
 async function callGemini(item, apiKey, model) {
@@ -123,6 +209,12 @@ export function pruneCache(cache, today = new Date().toISOString().slice(0, 10))
   return kept;
 }
 
+/** A usable cached record, or null — an older field set counts as a miss. */
+export function cachedFields(rec) {
+  if (!rec?.fields) return null;
+  return rec.shape === SHAPE ? rec.fields : null;
+}
+
 /**
  * Enrich items in place-ish: returns a new array, each item with `enrichment`
  * set when one is available. Cache hits cost nothing; misses cost one call.
@@ -141,7 +233,7 @@ export async function enrichItems(items, { cachePath, apiKey, model = DEFAULT_MO
 
   if (!key) {
     console.warn('enrich: no GEMINI_API_KEY — feeding abstracts unenriched');
-    return items.map((it) => ({ ...it, enrichment: cache[it.arxivId]?.fields ?? null }));
+    return items.map((it) => ({ ...it, enrichment: cachedFields(cache[it.arxivId]) }));
   }
 
   const out = [];
@@ -150,16 +242,17 @@ export async function enrichItems(items, { cachePath, apiKey, model = DEFAULT_MO
   let failed = 0;
   for (const item of items) {
     const cached = cache[item.arxivId];
-    if (cached?.fields) {
+    const fresh = cachedFields(cached);
+    if (fresh) {
       cached.seen = today;
       hits++;
-      out.push({ ...item, enrichment: cached.fields });
+      out.push({ ...item, enrichment: fresh });
       continue;
     }
     try {
       const fields = await callGemini(item, key, model);
       called++;
-      if (fields) cache[item.arxivId] = { fields, seen: today, model };
+      if (fields) cache[item.arxivId] = { fields, seen: today, model, shape: SHAPE };
       out.push({ ...item, enrichment: fields });
     } catch (err) {
       failed++;
