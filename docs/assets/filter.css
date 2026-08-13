@@ -632,6 +632,41 @@ progress::-moz-progress-bar {
   color: var(--lamp);
 }
 
+/* Same shape as Expand — it sits beside it and does the same kind of job,
+   one press for one result, so it should not look like a bigger commitment
+   than it is. */
+.wagon-name-btn {
+  background: none;
+  border: 1px solid var(--rock-edge);
+  color: var(--text-dim);
+  padding: 0.25rem 0.65rem;
+  border-radius: 4px;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.wagon-name-btn:hover:not(:disabled) {
+  border-color: var(--lamp);
+  color: var(--lamp);
+}
+.wagon-name-btn:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+/* Empty until something is worth saying, and it takes no room when empty —
+   a permanently reserved status line reads as a permanent warning. */
+.wagon-name-status {
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  margin: -0.2rem 0 0.45rem;
+}
+.wagon-name-status:empty {
+  display: none;
+}
+.wagon-name-status.is-error {
+  color: var(--warn, #c08a5a);
+}
+
 .toggle-label {
   font-size: 0.88rem;
   color: var(--text-dim);
@@ -728,6 +763,13 @@ progress::-moz-progress-bar {
 .wagon-tooltip .tt-central {
   color: var(--text-faint);
   font-size: 0.78rem;
+}
+
+/* Above the central title and lighter than the counts: the gloss explains the
+   name, the central title is evidence for it. */
+.wagon-tooltip .tt-gloss {
+  color: var(--text-dim);
+  font-size: 0.8rem;
 }
 
 .wagon-canvas-wrap {
@@ -1207,6 +1249,20 @@ progress::-moz-progress-bar {
 .wagon-table-count {
   font-size: 0.84rem;
   color: var(--text-faint);
+}
+
+/* Takes the rest of the row and truncates rather than wrapping the heading
+   onto a second line — the name and count must stay on one line with the
+   swatch. */
+.wagon-table-gloss {
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  font-style: italic;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .wagon-table {

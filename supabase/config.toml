@@ -14,3 +14,9 @@ verify_jwt = false
 # not on a JWT the static page could never supply.
 [functions.dig-cache]
 verify_jwt = false
+
+# wagon-name is called by the same session-less page. It is the one function
+# that spends money per call, so its protection is a daily budget in Postgres
+# (supabase/wagon-names.sql) rather than a JWT the static page could not supply.
+[functions.wagon-name]
+verify_jwt = false

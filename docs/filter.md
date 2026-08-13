@@ -119,8 +119,14 @@ permalink: /
           <input type="range" id="wagon-thresh-slider" min="0.5" max="0.95" step="0.01" value="0.75">
           <span id="wagon-thresh-value">0.75</span>
         </label>
+        <!-- Naming is on a button, not automatic: it calls a metered API, and
+             the threshold slider re-forms the wagons on every nudge. Settle
+             the threshold, then ask. -->
+        <button type="button" class="wagon-name-btn" id="wagon-name-btn"
+                title="Ask what each wagon is about, from its titles">Name the wagons</button>
         <button type="button" class="wagon-expand-btn" id="wagon-expand-btn">Expand</button>
       </div>
+      <div class="wagon-name-status" id="wagon-name-status" role="status"></div>
       <!-- Train strip: always on, whichever view is selected. Wagon width is
            its share of the haul, so the shape of the night reads at a glance
            and re-forms live as the threshold moves. -->
