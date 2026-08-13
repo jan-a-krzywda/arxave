@@ -18,6 +18,12 @@
      embed everything locally — the page works either way, just slower. */
   const CACHE_URL = window.ARXAVE_DIG_CACHE === false ? null
     : (window.ARXAVE_DIG_CACHE || (FUNCTIONS_BASE + '/dig-cache'));
+  /* Wagon naming. Set window.ARXAVE_WAGON_NAME = false to hide the button
+     entirely — the train works unnamed, which is what it did before this
+     existed. */
+  const NAME_URL = window.ARXAVE_WAGON_NAME === false ? null
+    : (window.ARXAVE_WAGON_NAME || (FUNCTIONS_BASE + '/wagon-name'));
+  const NAME_MAX_WAGONS = 24;     // must match MAX_WAGONS in wagon-name/naming.ts
   const TRANSFORMERS_VERSION = '3.7.6';
   const TRANSFORMERS_URLS = [
     'https://cdn.jsdelivr.net/npm/@huggingface/transformers@' + TRANSFORMERS_VERSION,
@@ -168,7 +174,9 @@
     order: null,            // [N] indices into stones, sorted by grade desc
     wagonOrder: null,        // [N] indices into stones, sorted by cluster
     wagonMap: null,          // [N×N] cosine matrix (upper triangle populated)
-    wagonComponents: null,   // [{indices: [int], centralTitle: string}]
+    wagonComponents: null,   // [{indices: [int], centralTitle: string, key, name, gloss}]
+    wagonNames: {},          // wagon key → {name, gloss}, kept across thresholds
+    wagonNaming: false,      // a naming request is in flight
     wagonView: 'table',      // 'table' | 'graph' | 'matrix'
     wagonThresh: 0.75,       // live-tunable, starts at WAGON_THRESH
     wagonGraph: null,        // live graph handle for the inline canvas
@@ -1260,6 +1268,217 @@
     return { order: clustered.concat(remainder), components: compInfo };
   }
 
+  /* ── Naming the wagons ─────────────────────────────────────────────
+   *
+   * A wagon knows what it contains and not what it is about. `centralTitle`
+   * is the closest the clustering alone can get: the most central paper, which
+   * is one paper's phrasing standing in for a dozen. Naming asks a model to
+   * read the titles and say what they share.
+   *
+   * ON A BUTTON, NOT ON EVERY RECOMPUTE, and that is the whole cost design.
+   * The threshold slider re-derives components on every input event, so wiring
+   * naming into clusterOrder would turn one drag into dozens of call-sets
+   * against a metered API. The user settles the threshold, then asks.
+   *
+   * Names are kept in `state.wagonNames`, keyed by membership rather than by
+   * wagon number — so dragging the threshold away and back re-attaches the
+   * names already paid for, with no request at all, and a wagon that survives
+   * a small threshold change unchanged keeps its name.
+   */
+
+  /**
+   * The wagon's cache key. MUST MATCH `wagonKey` in the function's naming.ts.
+   *
+   * A divergence here does not throw and does not look like anything: it files
+   * every name under a hash the server never looks up, so naming silently stops
+   * hitting cache and starts paying full price on every haul. The agreement is
+   * pinned by a golden digest — these two stones, with exactly this dirty
+   * whitespace, hash to
+   *
+   *   0cf357c0a944ef663d75fd37e3acd4fc8978aa386e05f90ea2a33e3725b578fb
+   *
+   *     {2608.01234, 'Valley  splitting in\nSi/SiGe quantum wells '}
+   *     {2608.05678, 'Charge noise in silicon double quantum dots'}
+   *
+   * and `deno test supabase/functions/wagon-name/` asserts the same value from
+   * the other side.
+   */
+  async function wagonKeyLocal(members) {
+    var stones = state.stones;
+    var lines = members.map(function (i) {
+      var st = stones[i] || {};
+      return String(st.arxiv_id || '').trim() + '\t' +
+        String(st.title || '').replace(/\s+/g, ' ').trim().slice(0, 400);
+    }).sort();
+    var bytes = new TextEncoder().encode(lines.join('\n'));
+    var digest = await crypto.subtle.digest('SHA-256', bytes);
+    return Array.prototype.map.call(new Uint8Array(digest), function (b) {
+      return ('0' + b.toString(16)).slice(-2);
+    }).join('');
+  }
+
+  /**
+   * Give every current component its key, and any name already known for it.
+   * Returns true if a name got attached, so the caller knows to redraw.
+   *
+   * Silent on failure: no crypto.subtle (an http:// origin, say) means no
+   * keys, which means no names and a train that reads exactly as it did
+   * before naming existed.
+   */
+  async function attachWagonNames() {
+    var comps = state.wagonComponents || [];
+    if (!comps.length || !(crypto && crypto.subtle)) return false;
+    var changed = false;
+    for (var c = 0; c < comps.length; c++) {
+      try {
+        var key = await wagonKeyLocal(comps[c].indices);
+        comps[c].key = key;
+        var known = state.wagonNames[key];
+        if (known && comps[c].name !== known.name) {
+          comps[c].name = known.name;
+          comps[c].gloss = known.gloss;
+          changed = true;
+        }
+      } catch (_) {
+        return false;
+      }
+    }
+    return changed;
+  }
+
+  /**
+   * Fire-and-forget re-attach after a re-cluster, redrawing only if something
+   * actually got a name.
+   *
+   * Generation-guarded because the threshold slider fires on every input event
+   * and hashing is async: without the guard, a slow hash from a threshold the
+   * user has already dragged past would land late and repaint the train with a
+   * stale set of names. `clusterOrder` itself is synchronous and always wins;
+   * this only ever decorates whatever it left behind.
+   */
+  var wagonNameGen = 0;
+  function reattachWagonNames() {
+    var gen = ++wagonNameGen;
+    attachWagonNames().then(function (changed) {
+      if (changed && gen === wagonNameGen) renderWagonPanel();
+    }).catch(function () { /* no names is the pre-naming train, which is fine */ });
+  }
+
+  /** The label a wagon goes by: its name once it has one, its number until then. */
+  function wagonLabel(c) {
+    var comp = (state.wagonComponents || [])[c];
+    return (comp && comp.name) ? comp.name : 'Wagon ' + (c + 1);
+  }
+
+  function setNameStatus(msg, isError) {
+    var el = byId('wagon-name-status');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.classList.toggle('is-error', !!isError);
+  }
+
+  /**
+   * Ask the endpoint to name every wagon that has no name yet.
+   *
+   * One request for the whole train, not one per wagon: the endpoint reads its
+   * cache in a single query and only the genuine misses cost anything, so
+   * batching is both faster and cheaper. A failure of any kind leaves the
+   * numbered wagons in place and says so in the status line — a name is a
+   * garnish on a clustering that already happened locally, and it must never
+   * be the reason a haul looks broken.
+   */
+  async function nameWagons() {
+    var comps = state.wagonComponents || [];
+    if (!NAME_URL || !comps.length || state.wagonNaming) return;
+
+    await attachWagonNames();
+    var pending = [];
+    for (var c = 0; c < comps.length; c++) if (!comps[c].name) pending.push(c);
+    if (!pending.length) {
+      setNameStatus('Every wagon is named.');
+      renderWagonPanel();
+      return;
+    }
+
+    /* The endpoint refuses a request carrying more wagons than it will name,
+       and refuses the *whole* request — so a low threshold that splits the haul
+       into thirty components would otherwise name none of them. Send the
+       biggest it will take and say what was left over.
+       Sorted here rather than assumed: clusterOrder emits components in the
+       order its DFS reached them, which is arXiv-listing order and has nothing
+       to do with size. */
+    var overflow = 0;
+    if (pending.length > NAME_MAX_WAGONS) {
+      pending.sort(function (a, b) {
+        return comps[b].indices.length - comps[a].indices.length;
+      });
+      overflow = pending.length - NAME_MAX_WAGONS;
+      pending = pending.slice(0, NAME_MAX_WAGONS);
+    }
+
+    state.wagonNaming = true;
+    var btn = byId('wagon-name-btn');
+    if (btn) btn.disabled = true;
+    setNameStatus('Naming ' + pending.length + ' wagon' + (pending.length === 1 ? '' : 's') + '…');
+
+    try {
+      var payload = pending.map(function (c) {
+        return {
+          members: comps[c].indices.map(function (i) {
+            var st = state.stones[i] || {};
+            return { id: String(st.arxiv_id || ''), title: String(st.title || '') };
+          }),
+        };
+      });
+      var resp = await fetch(NAME_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wagons: payload }),
+      });
+      if (!resp.ok) {
+        var detail = '';
+        try { detail = (await resp.json()).error || ''; } catch (_) {}
+        setNameStatus(detail || ('Naming failed (HTTP ' + resp.status + ').'), true);
+        return;
+      }
+      var data = await resp.json();
+      var names = data.names || {};
+      Object.keys(names).forEach(function (k) { state.wagonNames[k] = names[k]; });
+
+      await attachWagonNames();
+      var named = 0;
+      for (var i = 0; i < comps.length; i++) if (comps[i].name) named++;
+
+      var tail = overflow
+        ? ' The ' + overflow + ' smallest went unasked — name them by raising the threshold.'
+        : '';
+
+      /* `capped` is the one thing the page cannot work out for itself, and the
+         one worth saying plainly: the missing names are a budget, not a bug,
+         and they come back tomorrow. */
+      if (data.capped) {
+        setNameStatus(named + ' of ' + comps.length +
+          ' named — the shared daily limit is spent. The rest keep their numbers.' + tail);
+      } else if (!named) {
+        /* Nothing named, nothing capped: the endpoint is up but has no key
+           behind it. Saying "0 of 9 named" would read as a failure the user
+           could retry, and it is not one. */
+        setNameStatus('Naming is not configured on this deployment.', true);
+      } else if (data.unnamed) {
+        setNameStatus(named + ' of ' + comps.length + ' named.' + tail);
+      } else {
+        setNameStatus('Named ' + named + ' wagon' + (named === 1 ? '' : 's') +
+          (data.generated ? '' : ' — all from cache') + '.' + tail);
+      }
+    } catch (err) {
+      setNameStatus('Naming is unavailable right now.', true);
+    } finally {
+      state.wagonNaming = false;
+      if (btn) btn.disabled = false;
+      renderWagonPanel();
+    }
+  }
+
   // Pre-resolved ramp hexes — canvas can't resolve CSS var() strings.
   var ORE_HEX = [
     '#2b2620', '#45371c', '#5d4a1a', '#785f16',
@@ -1979,8 +2198,11 @@
       html += '<div class="wagon-table-block" id="wagon-block-' + c + '">' +
         '<div class="wagon-table-head">' +
           '<span class="wagon-swatch" style="background:' + colors[c % colors.length] + '"></span>' +
-          '<span class="wagon-table-name">Wagon ' + (c + 1) + '</span>' +
+          '<span class="wagon-table-name">' + escapeHtml(wagonLabel(c)) + '</span>' +
           '<span class="wagon-table-count">' + members.length + ' stones</span>' +
+          (comps[c].gloss
+            ? '<span class="wagon-table-gloss">' + escapeHtml(comps[c].gloss) + '</span>'
+            : '') +
         '</div>' +
         wagonTableRows(members, central);
       html += '</div>';
@@ -2059,12 +2281,13 @@
   }
 
   /** Tooltip body for one wagon. `central` null means the lone flatcar. */
-  function wagonTipHtml(name, members, central, total) {
+  function wagonTipHtml(name, members, central, total, gloss) {
     var pct = total ? Math.round((members.length / total) * 100) : 0;
     var cat = topCategory(members);
     return '<div class="tt-title">' + escapeHtml(name) + '</div>' +
       '<div class="tt-row">' + members.length + ' stones · ' + pct + '% of the haul' +
         (cat ? ' · mostly ' + escapeHtml(cat) : '') + '</div>' +
+      (gloss ? '<div class="tt-row tt-gloss">' + escapeHtml(gloss) + '</div>' : '') +
       (central ? '<div class="tt-row tt-central">' + escapeHtml(central) + '</div>' : '');
   }
 
@@ -2092,7 +2315,7 @@
       html += '<button type="button" class="train-wagon" data-wagon="' + w + '"' +
         ' style="flex-grow:' + n + ';background:' +
         WAGON_COLORS[w % WAGON_COLORS.length] + '"' +
-        ' title="Wagon ' + (w + 1) + ' — ' + n + ' stones">' +
+        ' title="' + escapeHtml(wagonLabel(w)) + ' — ' + n + ' stones">' +
         '<span class="train-wagon-n">' + n + '</span></button>';
     }
     if (lone) {
@@ -2124,7 +2347,7 @@
       if (!el) { hide(); return; }
       var key = el.getAttribute('data-wagon');
       var comps = state.wagonComponents || [];
-      var members, name, central;
+      var members, name, central, gloss = '';
       if (key === 'lone') {
         var inWagon = new Set();
         for (var c = 0; c < comps.length; c++) {
@@ -2138,10 +2361,11 @@
         var comp = comps[+key];
         if (!comp) { hide(); return; }
         members = comp.indices;
-        name = 'Wagon ' + (+key + 1);
+        name = wagonLabel(+key);
         central = comp.centralTitle;
+        gloss = comp.gloss || '';
       }
-      tip.innerHTML = wagonTipHtml(name, members, central, state.stones.length);
+      tip.innerHTML = wagonTipHtml(name, members, central, state.stones.length, gloss);
       tip.style.display = '';
       /* Clamp to the viewport so the last wagon's tooltip does not hang off
          the right edge of a narrow window. */
@@ -2515,6 +2739,7 @@
       var cluster = clusterOrder(stones, S, state.wagonThresh);
       state.wagonOrder = cluster.order;
       state.wagonComponents = cluster.components;
+      reattachWagonNames();
 
       updateWagonStats();
       byId('wagon-sort-toggle').checked = true;
@@ -3413,6 +3638,7 @@
     var cluster = clusterOrder(state.stones, state.wagonMap, thresh);
     state.wagonOrder = cluster.order;
     state.wagonComponents = cluster.components;
+    reattachWagonNames();
     updateWagonStats();
     renderWagonPanel();
     // Modal is a separate live graph — refresh it too if it's open.
@@ -3442,6 +3668,15 @@
       view === 'graph' ? 'Train graph' : view === 'table' ? 'Wagons' : 'Coupling map';
     renderWagonPanel();
   });
+
+  // Name the wagons. Hidden outright when naming is switched off, so the page
+  // never offers a button that cannot do anything.
+  if (!NAME_URL) {
+    var nameBtn = byId('wagon-name-btn');
+    if (nameBtn) nameBtn.style.display = 'none';
+  } else {
+    byId('wagon-name-btn').addEventListener('click', nameWagons);
+  }
 
   // Wagon expand
   byId('wagon-expand-btn').addEventListener('click', function () {
