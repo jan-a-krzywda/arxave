@@ -72,12 +72,55 @@ export function grade(stoneVector, rows) {
   return den > 0 ? num / den : 0;
 }
 
+const LABEL_MAX = 80;
+
+/**
+ * What to call a preset row in the feed.
+ *
+ * A touchstone is already a short phrase a reader wrote. A core sample's embed
+ * text is its title and abstract run together in one line, so slicing a label
+ * out of that yields half a title — `fetchCore` carries the title separately
+ * for exactly this.
+ */
+export function rowLabel(row) {
+  const label = String(row?.title || row?.text || '').trim().replace(/\s+/g, ' ');
+  if (label.length <= LABEL_MAX) return label;
+  return label.slice(0, LABEL_MAX - 1).trimEnd() + '…';
+}
+
+/**
+ * The preset row this paper matched most strongly.
+ *
+ * The grade alone is a bare number: the item says 0.612 and the reader has no
+ * way to tell whether that came from the line about valley splitting or the one
+ * about charge noise. This names it, which both explains the recommendation and
+ * tells someone whose feed has drifted which row to go and edit.
+ *
+ * Deliberately NOT part of `grade()` — that function mirrors the browser's
+ * blend verbatim and is pinned to it, so nothing else may grow inside it.
+ */
+export function bestRow(stoneVector, rows) {
+  let best = null;
+  for (const row of rows) {
+    if (!row || !row.vector || !(row.weight > 0)) continue;
+    const c = cosine(stoneVector, row.vector);
+    if (!best || c > best.cosine) best = { label: row.label || '', cosine: c };
+  }
+  return best && best.label ? best : null;
+}
+
 /** Both sides are unit vectors from the same model, so this is the dot. */
 export function cosine(a, b) {
   if (a.length !== b.length) throw new Error(`dimension mismatch: ${a.length} vs ${b.length}`);
   let s = 0;
   for (let i = 0; i < a.length; i++) s += a[i] * b[i];
   return s;
+}
+
+/** "read" -> "Read". The verdict is stored lowercase and shown capitalised. */
+export function titleCase(word) {
+  const w = String(word ?? '');
+  return w ? w[0].toUpperCase() + w.slice(1) : '';
 }
 
 /** XML text nodes. Ampersand first, or the escapes escape each other. */
@@ -222,33 +265,58 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
     `    <pubDate>${new Date().toUTCString()}</pubDate>`,
   ];
   for (const it of items) {
-    /* The grade is in the item body, not just implied by the order: a reader
-       that re-sorts by date — most of them do — otherwise destroys the only
-       signal this feed carries. */
     const e = it.enrichment;
-    /* The three fields first, the abstract after. The enrichment exists to be
-       skimmed; the abstract stays because it is the author's own words and the
-       only part of this item nothing generated. */
+    /* ORDER IS THE DESIGN HERE. Most readers show a list of items truncated to
+       roughly their first line, so for a lot of subscribers that line *is* the
+       item. It holds the decision — verdict, kind, and the finding with its
+       number — and everything that only supports the decision comes after it.
+
+       The grade is in the body and not merely implied by the order, because a
+       reader that re-sorts by date — most of them do — otherwise destroys the
+       only signal this feed carries. The matched row rides the same line: it is
+       what turns 0.612 from a bare number into a reason, and it tells someone
+       whose feed has drifted which preset row to go and edit.
+
+       The abstract stays, last. It is the author's own words and the only part
+       of the item nothing generated, which makes it the reader's check on
+       everything above it. */
+    const decision = e && (e.verdict || e.kind || e.headline)
+      ? '<p class="verdict">' +
+        (e.verdict ? `<strong>${xmlEscape(titleCase(e.verdict))}</strong>` : '') +
+        (e.verdict && e.kind ? ' · ' : '') +
+        (e.kind ? xmlEscape(e.kind) : '') +
+        (e.headline
+          ? `${e.verdict || e.kind ? ' — ' : ''}${xmlEscape(e.headline)}` : '') +
+        '</p>'
+      : '';
+    const provenance = [
+      `<strong>Grade ${it.grade.toFixed(3)}</strong>`,
+      Number.isFinite(it.z) ? `${it.z.toFixed(1)}σ above the day's baseline` : '',
+      it.matched ? `matched “${xmlEscape(it.matched.label)}”` : '',
+      it.authors ? xmlEscape(it.authors) : '',
+    ].filter(Boolean).join(' · ');
     const body =
-      `<p class="grade"><strong>Grade ${it.grade.toFixed(3)}</strong>` +
-      (Number.isFinite(it.z) ? ` · ${it.z.toFixed(1)}\u03c3 above the day's baseline` : '') +
-      (it.authors ? ` · ${xmlEscape(it.authors)}` : '') + '</p>' +
+      decision +
+      `<p class="grade">${provenance}</p>` +
       (e ? (
-        (e.research_question ? `<p><strong>Question.</strong> ${xmlEscape(e.research_question)}</p>` : '') +
-        (e.tools?.length ? `<p><strong>Tools.</strong> ${xmlEscape(e.tools.join(' · '))}</p>` : '') +
-        (e.summary ? `<p><strong>Summary.</strong> ${xmlEscape(e.summary)}</p>` : '')
+        (e.so_what ? `<p><strong>So what.</strong> ${xmlEscape(e.so_what)}</p>` : '') +
+        (e.caveat ? `<p><strong>But.</strong> ${xmlEscape(e.caveat)}</p>` : '') +
+        (e.tools?.length ? `<p><strong>Tools.</strong> ${xmlEscape(e.tools.join(' · '))}</p>` : '')
       ) : '') +
-      `<p><strong>Abstract.</strong> ${xmlEscape(it.abstract)}</p>` +
+      `<p class="abstract"><strong>Abstract.</strong> ${xmlEscape(it.abstract)}</p>` +
       `<p><a href="${xmlEscape(digLink)}">Tune this in the Dig</a></p>`;
     const fields = [
       `      <arxave:grade>${it.grade.toFixed(3)}</arxave:grade>`,
       Number.isFinite(it.z) ? `      <arxave:z>${it.z.toFixed(1)}</arxave:z>` : '',
+      it.matched ? `      <arxave:matched>${xmlEscape(it.matched.label)}</arxave:matched>` : '',
       it.authors ? `      <arxave:authors>${xmlEscape(it.authors)}</arxave:authors>` : '',
-      e?.research_question
-        ? `      <arxave:question>${xmlEscape(e.research_question)}</arxave:question>` : '',
+      e?.verdict ? `      <arxave:verdict>${xmlEscape(e.verdict)}</arxave:verdict>` : '',
+      e?.kind ? `      <arxave:kind>${xmlEscape(e.kind)}</arxave:kind>` : '',
+      e?.headline ? `      <arxave:headline>${xmlEscape(e.headline)}</arxave:headline>` : '',
+      e?.so_what ? `      <arxave:sowhat>${xmlEscape(e.so_what)}</arxave:sowhat>` : '',
+      e?.caveat ? `      <arxave:caveat>${xmlEscape(e.caveat)}</arxave:caveat>` : '',
       e?.tools?.length
         ? `      <arxave:tools>${xmlEscape(e.tools.join(' · '))}</arxave:tools>` : '',
-      e?.summary ? `      <arxave:summary>${xmlEscape(e.summary)}</arxave:summary>` : '',
       `      <arxave:abstract>${xmlEscape(it.abstract)}</arxave:abstract>`,
     ].filter(Boolean);
 
@@ -319,9 +387,15 @@ async function main() {
     const vectors = await vectorize(
       stones.map((s) => s.abstract).concat(rows.map((r) => r.text)), endpoint);
     const stoneVecs = vectors.slice(0, stones.length);
-    const rowVecs = rows.map((r, i) => ({ weight: r.weight, vector: vectors[stones.length + i] }));
+    const rowVecs = rows.map((r, i) => ({
+      weight: r.weight, vector: vectors[stones.length + i], label: rowLabel(r),
+    }));
 
-    const scored = stones.map((s, i) => ({ ...s, grade: grade(stoneVecs[i], rowVecs) }));
+    const scored = stones.map((s, i) => ({
+      ...s,
+      grade: grade(stoneVecs[i], rowVecs),
+      matched: bestRow(stoneVecs[i], rowVecs),
+    }));
     const ranked = selectItems(scored, {
       minZ: preset.select?.min_z,
       maxItems: Number.isFinite(preset.select?.max_items) ? preset.select.max_items : top,
