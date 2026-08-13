@@ -1453,10 +1453,17 @@
         ? ' The ' + overflow + ' smallest went unasked — name them by raising the threshold.'
         : '';
 
+      /* A rate limit outranks the budget message: it clears in about a minute,
+         and the names already generated are cached, so pressing again picks up
+         exactly where this stopped. Telling someone to come back tomorrow when
+         they could press again shortly is the worse of the two errors. */
+      if (data.retryAfter) {
+        setNameStatus(named + ' of ' + comps.length + ' named — the model is rate-limited. ' +
+          'Press again in about ' + Math.ceil(data.retryAfter) + 's to name the rest.');
       /* `capped` is the one thing the page cannot work out for itself, and the
          one worth saying plainly: the missing names are a budget, not a bug,
          and they come back tomorrow. */
-      if (data.capped) {
+      } else if (data.capped) {
         setNameStatus(named + ' of ' + comps.length +
           ' named — the shared daily limit is spent. The rest keep their numbers.' + tail);
       } else if (!named) {

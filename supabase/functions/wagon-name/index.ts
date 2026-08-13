@@ -35,7 +35,16 @@
  * reason a haul looks broken.
  */
 
-import { MAX_WAGONS, parseResponse, promptFor, readWagons, SCHEMA, SYSTEM, wagonKey } from './naming.ts';
+import {
+  MAX_WAGONS,
+  parseResponse,
+  promptFor,
+  readWagons,
+  retryAfterSeconds,
+  SCHEMA,
+  SYSTEM,
+  wagonKey,
+} from './naming.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -188,6 +197,16 @@ async function refund(client: string, n: number): Promise<void> {
   }
 }
 
+/**
+ * The provider said "too many requests". Distinct from every other failure
+ * because it is the only one where trying the *next* wagon is actively wrong.
+ */
+class RateLimited extends Error {
+  constructor(readonly retryAfter: number) {
+    super(`rate limited, retry in ~${retryAfter}s`);
+  }
+}
+
 async function callGemini(titles: string): Promise<{ name: string; gloss: string } | null> {
   const url = `${ENDPOINT}/${encodeURIComponent(MODEL)}:generateContent` +
     `?key=${encodeURIComponent(GEMINI_KEY)}`;
@@ -202,25 +221,38 @@ async function callGemini(titles: string): Promise<{ name: string; gloss: string
         temperature: 0.2,
         responseMimeType: 'application/json',
         responseSchema: SCHEMA,
-        /* A CAP ON VARIANCE MORE THAN A SAVING, and both numbers are measured
-           rather than guessed (2026-08-13, gemini-2.5-flash, a real four-title
-           valley-splitting wagon; prompt was 205 tokens every time).
+        /* NO THINKING. The prompt does the work instead, and that is a
+           measured claim rather than a preference.
 
-             default   677 / 1146 / 1280 total tokens across three identical
-                       requests — thinking is unbounded and ran 425–1031
-             budget 0  246 / 249 / 246, and the name degrades consistently to
-                       "Silicon Valley Splitting", which reads as the tech
-                       region rather than the physics
-             budget 512  655, and the name is "Valley Splitting in Silicon"
+           This started at 512 on the theory that thinking bought the right
+           word order: a four-title wagon named "Silicon Valley Splitting" at
+           budget 0 and "Valley Splitting in Silicon" at 512. That read the
+           evidence wrong. The real fault was the prompt, which asked for the
+           field's terminology and never said to keep a paper's prepositional
+           phrasing — so the model was free to compress into a compound that
+           collides with a famous proper noun. Once SYSTEM says so outright,
+           measured 2026-08-13 on two wagons, twice each:
 
-           So thinking is what buys the correct word order, and 512 is enough
-           of it. Leaving it unset would double the cost of a bad draw and
-           bound nothing. */
-        thinkingConfig: { thinkingBudget: 512 },
+             3 titles, budget 0    260 / 257 tok   "Valley splitting in silicon" x2
+             3 titles, budget 512  666 / 613 tok   drifts to "Valley splitting
+                                                   and coupling in silicon"
+             4 titles, budget 0    274 / 282 tok   "Valley splitting in silicon" x2
+
+           Budget 0 is the *more* stable of the two as well as 2.4x cheaper:
+           thinking mostly buys itself room to editorialize the label. A
+           thinking budget cannot fix a prompt that never stated the
+           constraint, and it is an expensive place to look for the fix. */
+        thinkingConfig: { thinkingBudget: 0 },
       },
     }),
   });
-  if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${(await resp.text()).slice(0, 160)}`);
+  if (!resp.ok) {
+    const text = await resp.text();
+    if (resp.status === 429) {
+      throw new RateLimited(retryAfterSeconds(resp.headers.get('retry-after'), text));
+    }
+    throw new Error(`HTTP ${resp.status}: ${text.slice(0, 160)}`);
+  }
   return parseResponse(await resp.json());
 }
 
@@ -269,6 +301,7 @@ Deno.serve(async (req) => {
 
   let generated = 0;
   let granted = 0;
+  let rateLimited = 0;   // seconds to wait, 0 when the provider never said to
   if (missing.length && GEMINI_KEY) {
     const client = await clientHash(req);
     granted = await spend(client, missing.length);
@@ -289,6 +322,21 @@ Deno.serve(async (req) => {
           await refund(client, 1);   // a blocked or truncated reply is not a name
         }
       } catch (err) {
+        /* A 429 is the one failure where continuing is actively wrong. THE
+           BINDING LIMIT IS REQUESTS PER MINUTE, NOT THE DAILY BUDGET: measured
+           2026-08-13, this key's free tier allows 5 requests/min on
+           gemini-2.5-flash, so a first haul with ten new wagons would 429 on
+           the sixth and, without this branch, march through the remaining four
+           collecting one 429 each. Stop at the first, hand back every call the
+           meter granted and we did not spend, and tell the page how long to
+           wait. The wagons keep their numbers and the next press picks up where
+           this left off, because the ones already named are now cache hits. */
+        if (err instanceof RateLimited) {
+          rateLimited = err.retryAfter;
+          await refund(client, granted - i);
+          console.warn(`wagon-name: rate limited after ${generated}, retry in ${err.retryAfter}s`);
+          break;
+        }
         console.warn(`wagon-name: ${key.slice(0, 12)} — ${err instanceof Error ? err.message : err}`);
         await refund(client, 1);
       }
@@ -311,6 +359,10 @@ Deno.serve(async (req) => {
        of silently showing three numbered wagons. */
     unnamed: missing.length - generated,
     capped: missing.length > granted && !!GEMINI_KEY,
+    /* Seconds, or 0. Distinct from `capped`: a spent budget is over until
+       tomorrow, a rate limit is over in a minute, and telling a user to come
+       back tomorrow when they could press again shortly is the worse error. */
+    retryAfter: rateLimited,
     limit: MAX_WAGONS,
   });
 });
