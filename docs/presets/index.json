@@ -4,6 +4,21 @@
       "slug": "spin-qubits",
       "name": "Spin qubits",
       "blurb": "Exchange gates, readout, and the noise that limits them."
+    },
+    {
+      "slug": "error-correction",
+      "name": "Quantum error correction",
+      "blurb": "Codes, decoders, and thresholds — what it costs to keep a logical qubit alive."
+    },
+    {
+      "slug": "superconducting-qubits",
+      "name": "Superconducting qubits",
+      "blurb": "Transmons and their cousins — gates, readout, and the loss that limits them."
+    },
+    {
+      "slug": "quantum-machine-learning",
+      "name": "Quantum machine learning",
+      "blurb": "Variational circuits, quantum kernels, and whether any of it beats a laptop."
     }
   ]
 }
