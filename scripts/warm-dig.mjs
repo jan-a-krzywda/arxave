@@ -24,7 +24,7 @@
  * Flags:
  *   --categories   comma-separated arXiv categories (required)
  *   --lookback     weekdays of history to warm as well (default 1: tonight only)
- *   --max-results  cap on the search-API window (default 200, the page's default)
+ *   --max-results  per-category cap on the search-API window (default 400)
  *   --presets      directory of preset claims to warm as well (docs/presets)
  *   --endpoint     dig-cache URL (default: the project's deployed function)
  *   --dry-run      fetch and embed, write nothing
@@ -441,24 +441,50 @@ export function parseAtom(xml) {
 /**
  * Everything the page's lookback pass would ask for, back to the cutoff.
  *
- * One request for all categories, as the page sends. The stop condition is the
- * page's too: the window is sorted newest first, so the first paper older than
- * the cutoff ends the list rather than filtering it — a paper resubmitted into
- * an old slot must not drag the whole window in behind it.
+ * ONE REQUEST PER CATEGORY, WHICH IS NOT WHAT THE PAGE SENDS. The page ORs its
+ * categories into a single query under one `max_results`, and a reader scouting
+ * two archives gets a window that reaches days back. The warmer covers four, so
+ * the same shape spent the same 200 slots across twice the volume and bottomed
+ * out mid-day: measured 2026-08-14, the single-query warm reached only 75 of
+ * the 88 papers a quant-ph + cond-mat.mes-hall haul asks for on 2026-08-12,
+ * leaving 13 cold on the boundary day. Per category, each gets the full window,
+ * so any subset a reader scouts is covered at least as deeply as they scout it.
+ *
+ * The stop condition is the page's: the window is sorted newest first, so the
+ * first paper older than the cutoff ends the list rather than filtering it — a
+ * paper resubmitted into an old slot must not drag the window in behind it.
  */
 export async function fetchEarlier(categories, lookback, maxResults, now = new Date()) {
-  const query = categories.map((c) => 'cat:' + c).join('+OR+');
-  const url = 'https://export.arxiv.org/api/query?' +
-    'search_query=' + query +
-    '&sortBy=submittedDate&sortOrder=descending' +
-    '&max_results=' + maxResults +
-    '&start=0';
-  const resp = await fetch(url, {
-    headers: { 'User-Agent': 'arxave-warmer/0.1 (+https://github.com/jan-a-krzywda/arxave)' },
-    signal: AbortSignal.timeout(60_000),
-  });
-  if (!resp.ok) throw new Error(`search API: HTTP ${resp.status}`);
-  return withinCutoff(parseAtom(await resp.text()), cutoffDate(now, lookback));
+  const cutoff = cutoffDate(now, lookback);
+  const seen = new Set();
+  const out = [];
+  const failures = [];
+  for (const cat of categories) {
+    const url = 'https://export.arxiv.org/api/query?' +
+      'search_query=cat:' + encodeURIComponent(cat) +
+      '&sortBy=submittedDate&sortOrder=descending' +
+      '&max_results=' + maxResults +
+      '&start=0';
+    try {
+      const resp = await fetch(url, {
+        headers: { 'User-Agent': 'arxave-warmer/0.1 (+https://github.com/jan-a-krzywda/arxave)' },
+        signal: AbortSignal.timeout(60_000),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      for (const s of withinCutoff(parseAtom(await resp.text()), cutoff)) {
+        if (seen.has(s.arxivId)) continue;   // a cross-list is one abstract
+        seen.add(s.arxivId);
+        out.push(s);
+      }
+    } catch (err) {
+      failures.push(`${cat} → ${err.message}`);
+    }
+    // arXiv asks for one request every three seconds, and means it.
+    if (cat !== categories[categories.length - 1]) await new Promise((r) => setTimeout(r, 3_000));
+  }
+  if (failures.length && !out.length) throw new Error(`search API: ${failures.join(' | ')}`);
+  if (failures.length) console.warn('warm-dig: some lookback windows failed — ' + failures.join(' | '));
+  return out;
 }
 
 /** The page's loop: take from the newest until one falls past the cutoff. */
@@ -577,7 +603,12 @@ async function main() {
      slot only appears in this window afterwards. Failure is a warning, never
      fatal — tonight is what people read, and it is already in hand. */
   const lookback = parseInt(arg('lookback', '1'), 10) || 1;
-  const maxResults = parseInt(arg('max-results', '200'), 10) || 200;
+  /* Deeper than the page's 200, because this window has to reach the cutoff
+     rather than fill a screen: cs.AI alone announced 211 papers on 2026-08-14,
+     so 200 does not survive one day of a busy archive, let alone `lookback` of
+     them. Over-fetching is nearly free — the surplus is one cache read that
+     hits — while under-fetching is silent, and lands as a cold boundary day. */
+  const maxResults = parseInt(arg('max-results', '400'), 10) || 400;
   if (lookback > 1) {
     try {
       const earlier = await fetchEarlier(categories, lookback, maxResults);

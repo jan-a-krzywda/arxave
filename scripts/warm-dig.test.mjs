@@ -17,8 +17,8 @@ import { fileURLToPath } from 'node:url';
 
 import {
   bareArxivId, cacheKeyText, coreEmbedText, cutoffDate, deLatex, doiKey,
-  feedBuildDate, parseAtom, parseFeed, presetUnits, reconstructAbstract,
-  resolveEndpoint, withinCutoff,
+  feedBuildDate, fetchEarlier, parseAtom, parseFeed, presetUnits,
+  reconstructAbstract, resolveEndpoint, withinCutoff,
 } from './warm-dig.mjs';
 
 const DEFAULT = 'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1/dig-cache';
@@ -272,6 +272,50 @@ test('the window stops at the first paper past the cutoff, it does not filter', 
     { arxivId: 'd', published: '2026-08-13' },
   ], '2026-08-13');
   assert.deepEqual(got.map((s) => s.arxivId), ['a', 'b']);
+});
+
+test('each category gets its own window, and a cross-list is still one stone', async () => {
+  /* The page ORs its categories into one query under one max_results, and that
+     shape does not survive being copied here: the warmer covers twice the page's
+     categories, so the shared window bottomed out mid-day and left 13 papers of
+     2026-08-12 cold. One request per category, deduped after. */
+  const asked = [];
+  const real = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    asked.push(String(url));
+    const cat = String(url).match(/cat:([^&]*)/)[1];
+    return { ok: true, text: async () => atom([
+      entry({ id: '2508.0000' + asked.length, summary: 'only in ' + cat, published: '2026-08-13T00:00:00Z' }),
+      entry({ id: '2508.99999', summary: 'cross-listed to both', published: '2026-08-13T00:00:00Z' }),
+    ]) };
+  };
+  try {
+    const got = await fetchEarlier(['quant-ph', 'math-ph'], 2, 400, new Date('2026-08-14T06:00:00Z'));
+    assert.equal(asked.length, 2);
+    assert.match(asked[0], /search_query=cat:quant-ph&/);
+    assert.match(asked[1], /search_query=cat:math-ph&/);
+    for (const u of asked) assert.match(u, /max_results=400/);
+    assert.deepEqual(got.map((s) => s.arxivId).sort(), ['2508.00001', '2508.00002', '2508.99999']);
+  } finally {
+    globalThis.fetch = real;
+  }
+});
+
+test('one dead category does not take the other categories down with it', async () => {
+  const real = globalThis.fetch;
+  globalThis.fetch = async (url) => (String(url).includes('cat:dead')
+    ? { ok: false, status: 503, text: async () => '' }
+    : { ok: true, text: async () => atom([entry({ published: '2026-08-13T00:00:00Z' })]) });
+  try {
+    const got = await fetchEarlier(['dead', 'math-ph'], 2, 400, new Date('2026-08-14T06:00:00Z'));
+    assert.equal(got.length, 1);
+    // But all of them failing is a real failure, not an empty warm.
+    globalThis.fetch = async () => ({ ok: false, status: 503, text: async () => '' });
+    await assert.rejects(
+      fetchEarlier(['dead'], 2, 400, new Date('2026-08-14T06:00:00Z')), /HTTP 503/);
+  } finally {
+    globalThis.fetch = real;
+  }
 });
 
 test("the browser's copy of cutoffDate agrees on a year of dates", () => {
