@@ -207,6 +207,53 @@ The feed is the shop window, not the shop.
 
 ---
 
+## Part 4 — Where user-defined feeds actually go
+
+> Written 2026-08-14 alongside the issue #50 fixes. Amends §3.4's flat "no
+> per-user feeds" into three tiers, because "accept everything" and "curate
+> everything" are both wrong and the split between them is cheap.
+
+**Tier 1 — private feed, automatic, unlisted.** A claim serialises to a hash;
+the nightly job builds `feeds/u/<hash>.xml` from the same warm dig cache. No PR,
+no name, no review, not in `index.json`. This is where "accept all" is safe:
+nobody's catalogue is polluted by it, and the marginal cost is near zero because
+enrichment is keyed by `arxivId` and already shared (Part 1). It is also the
+honest answer to "can I have my own feed" — yes, immediately, no gatekeeping.
+
+**Tier 2 — the catalogue, entered by demand rather than by taste.** A private
+feed becomes a candidate when someone other than its author subscribes, or when
+its author opens a PR. Then §3.1's build-and-show-the-output review applies. The
+promotion rule matters more than the review: "this feed has readers" is
+evidence, and "this feed sounds interesting" is not.
+
+**Tier 3 — dormancy**, exactly as §3.4 already specifies.
+
+### Grouping similar setups — compare outputs, not phrasings
+
+The obvious move is to cluster presets by embedding their touchstones and
+taking cosines. Don't. Two people describing the same seam in different
+vocabulary score low; two people describing different seams in shared jargon
+score high. Both errors are invisible to the person being told.
+
+**Compare what the feeds ship.** Build both over the same 7 days and take the
+Jaccard overlap of the arXiv IDs that cleared each one's gate. Above ~0.6 they
+are the same feed however differently they are written, and the bot can say
+something falsifiable:
+
+> `ships 4 of the same 5 papers as spin-qubits this week — co-maintain that one
+> instead of adding a slug?`
+
+This is the "coordinate similar people" mechanism, and it pays twice: a preset
+with two maintainers survives one of them going quiet, which is the failure
+§3.4's dormancy ping is otherwise left to catch alone.
+
+**Dependency.** Overlap scoring needs feed history. If §1.3 moves feeds from
+committed XML to build output, keep a small per-day ledger of
+`slug → [arxivIds]` — a few KB a day, and the only thing overlap needs. Decide
+this *with* §1.3, not after it.
+
+---
+
 ## Suggested order
 
 1. §1.1 fetch memo and §1.2 enrichment spacing/budget/visibility — prerequisites.
@@ -214,5 +261,11 @@ The feed is the shop window, not the shop.
 3. §1.3 commit-vs-build decision, while the catalogue is still four files.
 4. §3.2 schema + §3.1 PR preview job.
 5. §3.3 catalogue page, §3.4 contribution guide with the dormancy rule stated.
+6. §4 tier 1 (hash-addressed private feeds), then the overlap ledger.
+
+**Done since.** `docs/feeds/index.json` — the feed manifest, written by
+`preset-feed.mjs` and read by the page — landed with the issue #50 fixes. It
+already carries `items` and `updated` per slug, so §3.3's catalogue page has its
+data source and the page no longer links a feed before it exists.
 
 Steps 1 and 2 are independent and can run in parallel — 2 is just waiting.

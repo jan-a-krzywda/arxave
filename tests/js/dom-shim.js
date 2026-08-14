@@ -15,6 +15,26 @@ function El(tag, cls) {
   this._html = '';
   this._listeners = {};
   this.files = [];
+  this.attributes = {};
+  var self = this;
+  /* Class list over the same string `className` exposes, so code may use either
+     and the two cannot disagree. No layout involved, so this is faithful. */
+  function tokens() {
+    return self.className.split(/\s+/).filter(function (t) { return t.length > 0; });
+  }
+  this.classList = {
+    contains: function (c) { return tokens().indexOf(c) !== -1; },
+    add: function (c) { if (tokens().indexOf(c) === -1) self.className = tokens().concat([c]).join(' '); },
+    remove: function (c) {
+      self.className = tokens().filter(function (t) { return t !== c; }).join(' ');
+    },
+    toggle: function (c, on) {
+      var has = tokens().indexOf(c) !== -1;
+      var want = arguments.length > 1 ? !!on : !has;
+      if (want) this.add(c); else this.remove(c);
+      return want;
+    },
+  };
 }
 
 El.prototype = {
@@ -66,6 +86,11 @@ El.prototype = {
   querySelectorAll: function (sel) {
     return this._all().filter(function (e) { return e._matches(sel); });
   },
+  setAttribute: function (k, v) { this.attributes[k] = String(v); },
+  getAttribute: function (k) {
+    return Object.prototype.hasOwnProperty.call(this.attributes, k) ? this.attributes[k] : null;
+  },
+  contains: function (el) { return el === this || this._all().indexOf(el) !== -1; },
   addEventListener: function (type, fn) {
     (this._listeners[type] = this._listeners[type] || []).push(fn);
   },

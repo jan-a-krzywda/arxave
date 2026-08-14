@@ -172,9 +172,20 @@ permalink: /
          abstracts are warmed nightly, so a preset costs no embedding — which is
          also why they are offered above the empty rows rather than below. -->
     <div id="presets-group">
-      <div class="group-label">Start from a preset <span class="sub">— curated, already cut</span></div>
+      <div class="group-label label-with-action">
+        <span>Start from a preset <span class="sub">— curated, already cut</span></span>
+        <!-- One RSS control for the whole catalogue, not one per preset: the
+             feeds are a list you browse, and a button beside every chip is what
+             broke the row. Hidden until the feed manifest says what exists. -->
+        <span class="feeds-wrap" id="preset-feeds" style="display:none">
+          <button type="button" id="preset-feeds-btn" class="feeds-btn"
+                  aria-haspopup="true" aria-expanded="false">RSS <span aria-hidden="true">▾</span></button>
+          <div class="feeds-menu" id="preset-feeds-menu" role="menu" style="display:none"></div>
+        </span>
+      </div>
       <div id="presets-list" class="preset-buttons"></div>
       <p class="hint" id="presets-hint" style="display:none">
+        <span id="presets-blurb" class="preset-blurb-line"></span>
         Replaces the rows below. Edit any row afterwards — an edited phrase is
         yours again, and is cut in this tab like anything else you type.
       </p>

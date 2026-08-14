@@ -1541,18 +1541,19 @@ details.advanced input[type="text"] {
   gap: 0.5rem;
   margin: 0.3rem 0 0.2rem;
 }
+/* One line each. The blurb lives in the hint below, so four chips read as one
+   row of choices rather than four paragraphs. */
 .preset-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.15rem;
-  max-width: 20rem;
-  padding: 0.45rem 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
   background: none;
   border: 1px solid var(--rock-lit);
   border-radius: 4px;
   color: var(--text-dim);
   font: inherit;
+  font-size: 0.95rem;
   text-align: left;
   cursor: pointer;
 }
@@ -1564,26 +1565,98 @@ details.advanced input[type="text"] {
   opacity: 0.5;
   cursor: progress;
 }
-.preset-name {
-  font-size: 0.95rem;
-}
-.preset-blurb {
-  font-size: 0.8rem;
-  opacity: 0.75;
-  /* Wraps rather than truncating: the blurb is what tells two presets apart. */
-  white-space: normal;
-}
-.preset-feed {
-  align-self: center;
-  padding: 0.2rem 0.4rem;
-  font-size: 0.75rem;
-  letter-spacing: 0.04em;
-  color: var(--text-dim);
-  border: 1px solid var(--rock-lit);
-  border-radius: 3px;
-  text-decoration: none;
-}
-.preset-feed:hover {
+/* The selected chip is lit, not merely outlined — at a glance the question is
+   "which one is on", and only a fill answers that from across the page. */
+.preset-btn.is-active {
   border-color: var(--lamp);
   color: var(--lamp);
+  background: color-mix(in srgb, var(--lamp) 12%, transparent);
+}
+.preset-name {
+  font-size: inherit;
+}
+/* ✓ when clean, "edited" once a row loses the preset's provenance. Empty
+   otherwise, and it holds no width then. */
+.preset-state:empty {
+  display: none;
+}
+.preset-state {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+.preset-btn.is-edited .preset-state {
+  font-style: italic;
+}
+/* Selected preset's blurb, printed once above the standing hint. */
+.preset-blurb-line {
+  color: var(--text-dim);
+}
+
+/* ── The feeds menu ────────────────────────────────────────────────────
+   One control for the catalogue. Anchored to the group label so it cannot
+   push the chip row around, whatever the catalogue grows to. */
+.label-with-action {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.feeds-wrap {
+  position: relative;
+  font-weight: 400;
+}
+.feeds-btn {
+  padding: 0.2rem 0.5rem;
+  background: none;
+  border: 1px solid var(--rock-lit);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.feeds-btn:hover,
+.feeds-btn[aria-expanded="true"] {
+  border-color: var(--lamp);
+  color: var(--lamp);
+}
+.feeds-menu {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  right: 0;
+  z-index: 20;
+  min-width: 16rem;
+  padding: 0.25rem;
+  background: var(--rock-deep);
+  border: 1px solid var(--rock-lit);
+  border-radius: 4px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+.feeds-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+a.feeds-item:hover {
+  background: var(--rock);
+  color: var(--lamp);
+}
+/* A feed that has not been built yet is shown and not offered — the link that
+   would 404 is the one that teaches people the feeds are broken. */
+.feeds-item.is-pending {
+  opacity: 0.55;
+  cursor: default;
+}
+.feeds-note {
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  white-space: nowrap;
 }
