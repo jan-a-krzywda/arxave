@@ -16,8 +16,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  cacheKeyText, coreEmbedText, deLatex, doiKey, feedBuildDate, parseFeed,
-  presetUnits, reconstructAbstract, resolveEndpoint,
+  bareArxivId, cacheKeyText, coreEmbedText, cutoffDate, deLatex, doiKey,
+  feedBuildDate, parseAtom, parseFeed, presetUnits, reconstructAbstract,
+  resolveEndpoint, withinCutoff,
 } from './warm-dig.mjs';
 
 const DEFAULT = 'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1/dig-cache';
@@ -201,6 +202,94 @@ test("the browser's copy of deLatex agrees on every case", () => {
   for (const s of ['$\\Delta \\approx 8.8$', '$|x|^{-2\\Delta}$', '${\\Delta}$',
     '$\\mathrm{d}x$', '\\version{2}', '', 'plain text']) {
     assert.equal(browser(s), deLatex(s), s);
+  }
+});
+
+/* The earlier days. Same property once more, now against the other source: the
+   warmer reads the search API for the days behind tonight, and the abstracts it
+   files there must be the ones the page's lookback pass asks for. */
+
+function atom(entries) {
+  return '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<feed xmlns="http://www.w3.org/2005/Atom">' + entries.join('') + '</feed>';
+}
+
+function entry({ id = '2508.00001v1', summary = 'hello', published = '2026-08-13T00:00:00Z' }) {
+  return `<entry><id>http://arxiv.org/abs/${id}</id>` +
+    `<published>${published}</published><summary>${summary}</summary></entry>`;
+}
+
+test('a search-API abstract is normalised exactly as a feed abstract is', () => {
+  // The pair that made #53: one paper, two sources, and before deLatex two keys.
+  const [fromApi] = parseAtom(atom([entry({ summary: 'the Lüders bound' })]));
+  const [fromFeed] = parseFeed(feed([item({ desc: 'Abstract: the L\\"uders bound' })]));
+  assert.equal(fromApi.abstract, fromFeed.abstract);
+});
+
+test('the version suffix is stripped on both sides, so dedup sees one paper', () => {
+  assert.equal(bareArxivId('http://arxiv.org/abs/2508.12345v2'), '2508.12345');
+  assert.equal(bareArxivId('arXiv:2508.12345'), '2508.12345');
+  const [api] = parseAtom(atom([entry({ id: '2508.00001v3' })]));
+  const [rss] = parseFeed(feed([item({ id: '2508.00001' })]));
+  assert.equal(api.arxivId, rss.arxivId);
+});
+
+test('numeric refs decode on the API side too, as DOMParser decodes them', () => {
+  const [s] = parseAtom(atom([entry({ summary: 'a gap of &#8722;2 at &#x3b1;' })]));
+  assert.equal(s.abstract, 'a gap of −2 at α');
+});
+
+test('a single-entry feed is not mistaken for a bare object', () => {
+  assert.equal(parseAtom(atom([entry({})])).length, 1);
+  assert.equal(parseAtom(atom([])).length, 0);
+});
+
+test('an entry with no abstract is skipped, not cached as an empty string', () => {
+  assert.equal(parseAtom(atom([entry({ summary: '   ' })])).length, 0);
+});
+
+/* The cutoff counts weekdays because arXiv does not announce on the weekend.
+   Counting calendar days from a Monday would ask for Sunday and Saturday and
+   warm one real day out of the three the flag promised. */
+test('the cutoff steps back over the weekend, not into it', () => {
+  // Monday 2026-08-17, two weekdays back: Friday the 14th, then Thursday.
+  assert.equal(cutoffDate(new Date('2026-08-17T06:00:00Z'), 2), '2026-08-13');
+  // Friday 2026-08-14, two weekdays back: Thursday, then Wednesday.
+  assert.equal(cutoffDate(new Date('2026-08-14T06:00:00Z'), 2), '2026-08-12');
+  // The page treats 0 and 1 alike — one step back, whatever the caller meant.
+  assert.equal(cutoffDate(new Date('2026-08-14T06:00:00Z'), 0),
+    cutoffDate(new Date('2026-08-14T06:00:00Z'), 1));
+});
+
+test('the window stops at the first paper past the cutoff, it does not filter', () => {
+  // Sorted newest first, so an old paper ends the list. Filtering instead would
+  // let one resubmission drag a whole earlier day in behind it — and the page,
+  // which breaks here, would never ask for what that warmed.
+  const got = withinCutoff([
+    { arxivId: 'a', published: '2026-08-14' },
+    { arxivId: 'b', published: '2026-08-13' },
+    { arxivId: 'c', published: '2026-08-02' },
+    { arxivId: 'd', published: '2026-08-13' },
+  ], '2026-08-13');
+  assert.deepEqual(got.map((s) => s.arxivId), ['a', 'b']);
+});
+
+test("the browser's copy of cutoffDate agrees on a year of dates", () => {
+  // The second thing the two files must spell identically: warming days the page
+  // never asks for is wasted, and the page asking for a day nobody warmed is the
+  // bug this flag exists to fix.
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const js = fs.readFileSync(path.join(here, '..', 'docs', 'assets', 'filter.js'), 'utf8');
+  const start = js.indexOf('  function cutoffDate(onDate, lookbackDays) {');
+  const end = js.indexOf('\n  }', start) + 4;
+  assert.ok(start > 0 && end > start, 'cutoffDate not found in filter.js');
+  const browser = new Function(js.slice(start, end) + '\n  return cutoffDate;')();
+
+  for (let d = 0; d < 365; d++) {
+    const day = new Date(Date.UTC(2026, 0, 1 + d));
+    for (const lb of [1, 2, 3, 7]) {
+      assert.equal(browser(day, lb), cutoffDate(day, lb), `${day.toISOString()} lb=${lb}`);
+    }
   }
 });
 

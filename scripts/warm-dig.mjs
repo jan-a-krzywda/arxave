@@ -22,10 +22,12 @@
  *   DIG_WRITE_KEY=… node scripts/warm-dig.mjs --categories "quant-ph,cond-mat.mes-hall"
  *
  * Flags:
- *   --categories  comma-separated arXiv categories (required)
- *   --presets     directory of preset claims to warm as well (docs/presets)
- *   --endpoint    dig-cache URL (default: the project's deployed function)
- *   --dry-run     fetch and embed, write nothing
+ *   --categories   comma-separated arXiv categories (required)
+ *   --lookback     weekdays of history to warm as well (default 1: tonight only)
+ *   --max-results  cap on the search-API window (default 200, the page's default)
+ *   --presets      directory of preset claims to warm as well (docs/presets)
+ *   --endpoint     dig-cache URL (default: the project's deployed function)
+ *   --dry-run      fetch and embed, write nothing
  */
 
 import fs from 'node:fs/promises';
@@ -169,7 +171,9 @@ export function parseFeed(xml) {
     if (announce !== 'new' && announce !== 'cross') continue;
 
     const link = String(item.link ?? '');
-    const arxivId = link.replace(/^.*\/abs\//, '').trim();
+    /* Bare, because the earlier-days pass dedupes against these ids and the
+       search API spells the version suffix the feed omits (#49). */
+    const arxivId = bareArxivId(link);
     if (!arxivId) continue;
 
     const desc = String(item.description ?? '');
@@ -370,6 +374,103 @@ export async function fetchAbstracts(category) {
   return { stones: parseFeed(xml), builtOn: feedBuildDate(xml) };
 }
 
+/* ── The earlier days ────────────────────────────────────────────────────
+ *
+ * The announcement feed carries one night, so until now that was the whole of
+ * what the warmer covered: a haul with `lookback > 1` read the search API for
+ * the earlier days and found them cold, whoever ran it paying the embedding for
+ * everyone. The page's own lookback pass is mirrored below — same query, same
+ * cutoff, same stop condition — so the days it asks for are the days that were
+ * warmed.
+ *
+ * BYTE-IDENTICAL TO cutoffDate() IN docs/assets/filter.js, held there by the
+ * parity test. Weekdays, not days: arXiv does not announce on the weekend, so
+ * counting calendar days back from a Monday would ask for two empty days and
+ * warm one real one.
+ */
+export function cutoffDate(onDate, lookbackDays) {
+  const cursor = new Date(Date.UTC(onDate.getUTCFullYear(), onDate.getUTCMonth(), onDate.getUTCDate()));
+  let remaining = Math.max(lookbackDays, 1);
+  while (remaining > 0) {
+    cursor.setUTCDate(cursor.getUTCDate() - 1);
+    const dow = cursor.getUTCDay();
+    if (dow >= 1 && dow <= 5) remaining -= 1;
+  }
+  return cursor.toISOString().substring(0, 10);
+}
+
+/** '…/abs/2508.12345v2', 'arXiv:2508.12345' → '2508.12345'. Mirrors filter.js. */
+export function bareArxivId(raw) {
+  return String(raw || '').trim()
+    .replace(/^.*\/abs\//, '')
+    .replace(/^arxiv:/i, '')
+    .replace(/v\d+$/, '');
+}
+
+/**
+ * The search API's Atom → the same stones parseFeed yields.
+ *
+ * The abstract goes through deLatex and cacheKeyText exactly as the feed's does.
+ * That is the whole point of warming this source: the API already spells its
+ * math in Unicode, so before deLatex the two sources hashed one paper to two
+ * keys (#53), and warming one did nothing for the other.
+ */
+export function parseAtom(xml) {
+  const parser = new XMLParser({
+    ignoreAttributes: false, trimValues: true, htmlEntities: true,
+  });
+  const raw = parser.parse(xml)?.feed?.entry ?? [];
+  const entries = Array.isArray(raw) ? raw : [raw];
+
+  const out = [];
+  for (const entry of entries) {
+    const arxivId = bareArxivId(entry?.id ?? '');
+    if (!arxivId) continue;
+    const abstract = cacheKeyText(deLatex(String(entry.summary ?? '')));
+    if (!abstract) continue;
+    out.push({
+      arxivId,
+      abstract,
+      published: String(entry.published ?? '').trim().substring(0, 10),
+      link: 'https://arxiv.org/abs/' + arxivId,
+    });
+  }
+  return out;
+}
+
+/**
+ * Everything the page's lookback pass would ask for, back to the cutoff.
+ *
+ * One request for all categories, as the page sends. The stop condition is the
+ * page's too: the window is sorted newest first, so the first paper older than
+ * the cutoff ends the list rather than filtering it — a paper resubmitted into
+ * an old slot must not drag the whole window in behind it.
+ */
+export async function fetchEarlier(categories, lookback, maxResults, now = new Date()) {
+  const query = categories.map((c) => 'cat:' + c).join('+OR+');
+  const url = 'https://export.arxiv.org/api/query?' +
+    'search_query=' + query +
+    '&sortBy=submittedDate&sortOrder=descending' +
+    '&max_results=' + maxResults +
+    '&start=0';
+  const resp = await fetch(url, {
+    headers: { 'User-Agent': 'arxave-warmer/0.1 (+https://github.com/jan-a-krzywda/arxave)' },
+    signal: AbortSignal.timeout(60_000),
+  });
+  if (!resp.ok) throw new Error(`search API: HTTP ${resp.status}`);
+  return withinCutoff(parseAtom(await resp.text()), cutoffDate(now, lookback));
+}
+
+/** The page's loop: take from the newest until one falls past the cutoff. */
+export function withinCutoff(candidates, cutoff) {
+  const out = [];
+  for (const c of candidates) {
+    if (c.published && c.published < cutoff) break;
+    out.push(c);
+  }
+  return out;
+}
+
 /**
  * Where to talk to the cache: the flag, then the environment, then the default.
  *
@@ -468,6 +569,33 @@ async function main() {
   }
   if (failures.length) console.warn('warm-dig: some feeds failed — ' + failures.join(' | '));
   console.log(`warm-dig: ${stones.length} abstracts from ${categories.join(', ')}`);
+
+  /* The earlier days ride on the same model load, and only their misses cost
+     anything: a day already warmed by yesterday's run is a cache hit here, so
+     the steady-state price of --lookback is one HTTP request. It is worth
+     paying every night rather than once, because a paper submitted to an old
+     slot only appears in this window afterwards. Failure is a warning, never
+     fatal — tonight is what people read, and it is already in hand. */
+  const lookback = parseInt(arg('lookback', '1'), 10) || 1;
+  const maxResults = parseInt(arg('max-results', '200'), 10) || 200;
+  if (lookback > 1) {
+    try {
+      const earlier = await fetchEarlier(categories, lookback, maxResults);
+      let added = 0;
+      for (const s of earlier) {
+        if (seen.has(s.arxivId)) continue;
+        seen.add(s.arxivId);
+        stones.push(s);
+        added++;
+      }
+      console.log(
+        `warm-dig: ${added} more from the ${lookback - 1} weekday(s) before ` +
+        `today, back to ${cutoffDate(new Date(), lookback)}`,
+      );
+    } catch (err) {
+      console.warn(`warm-dig: the lookback window failed (${err.message}) — tonight is warmed anyway`);
+    }
+  }
 
   /* Presets ride along with the day's abstracts rather than in their own job:
      they share the model load, which is the expensive part, and they are a

@@ -31,6 +31,10 @@ on:
       categories:
         description: 'arXiv categories (comma-separated) — blank uses ARXAVE_WARM_CATEGORIES'
         type: string
+      # Same deal — no default, so the repo variable stays meaningful.
+      lookback:
+        description: 'Weekdays to warm, tonight included — blank uses ARXAVE_WARM_LOOKBACK, then 2'
+        type: string
       dry_run:
         description: 'Embed but write nothing'
         type: boolean
@@ -81,6 +85,7 @@ jobs:
         run: |
           node warm-dig.mjs \
             --categories "${{ inputs.categories || vars.ARXAVE_WARM_CATEGORIES || 'quant-ph, cond-mat.mes-hall, cs.AI, cs.LG' }}" \
+            --lookback "${{ inputs.lookback || vars.ARXAVE_WARM_LOOKBACK || '2' }}" \
             --presets ../docs/presets \
             ${{ inputs.dry_run && '--dry-run' || '' }}
 
