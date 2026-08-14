@@ -74,6 +74,59 @@ export function cacheKeyText(text) {
   return (text || '').replace(/\s+/g, ' ').trim();
 }
 
+/* ── LaTeX escapes → Unicode ─────────────────────────────────────────────
+ *
+ * BYTE-IDENTICAL TO deLatex() IN docs/assets/filter.js. The reasoning lives
+ * there; the short version is that the announcement feed carries the author's
+ * LaTeX (`L\"uders`, `$\Omega$`, `1{\deg}`) while the search API — which the
+ * browser reads for any day past tonight — has already converted it. Two
+ * spellings of one abstract are two cache keys, so the lookback pass missed on
+ * every abstract carrying an escape. The parity test pins the two copies
+ * together; edit one and you must edit the other.
+ */
+export const GREEK = {
+  alpha: 'α', beta: 'β', gamma: 'γ', delta: 'δ', epsilon: 'ε', varepsilon: 'ε',
+  zeta: 'ζ', eta: 'η', theta: 'θ', vartheta: 'θ', iota: 'ι', kappa: 'κ',
+  lambda: 'λ', mu: 'μ', nu: 'ν', xi: 'ξ', pi: 'π', varpi: 'π', rho: 'ρ',
+  varrho: 'ρ', sigma: 'σ', varsigma: 'ς', tau: 'τ', upsilon: 'υ', phi: 'φ',
+  varphi: 'φ', chi: 'χ', psi: 'ψ', omega: 'ω',
+  Gamma: 'Γ', Delta: 'Δ', Theta: 'Θ', Lambda: 'Λ', Xi: 'Ξ', Pi: 'Π',
+  Sigma: 'Σ', Upsilon: 'Υ', Phi: 'Φ', Psi: 'Ψ', Omega: 'Ω',
+};
+
+export const SPECIALS = {
+  ss: 'ß', o: 'ø', O: 'Ø', l: 'ł', L: 'Ł', aa: 'å', AA: 'Å',
+  ae: 'æ', AE: 'Æ', oe: 'œ', OE: 'Œ', i: 'i', j: 'j',
+  deg: '°', degree: '°', textdegree: '°',
+};
+
+const COMBINING = {
+  '`': '̀', "'": '́', '^': '̂', '~': '̃', '"': '̈',
+  '=': '̄', '.': '̇', c: '̧', v: '̌', u: '̆',
+  r: '̊', H: '̋', k: '̨',
+};
+
+const ACCENT_SRC = '\\\\([`\'"^~=.]|[cvruHk](?=\\{))\\s*(?:\\{\\\\?([A-Za-z])\\}|\\\\?([A-Za-z]))';
+const ACCENT_BARE = new RegExp(ACCENT_SRC, 'g');
+const ACCENT_BRACED = new RegExp('\\{' + ACCENT_SRC + '\\}', 'g');
+
+function accent(m, acc, braced, bare) {
+  return ((braced || bare) + COMBINING[acc]).normalize('NFC');
+}
+
+function command(m, cmd) {
+  if (Object.prototype.hasOwnProperty.call(GREEK, cmd)) return GREEK[cmd];
+  if (Object.prototype.hasOwnProperty.call(SPECIALS, cmd)) return SPECIALS[cmd];
+  return m;
+}
+
+export function deLatex(text) {
+  let s = String(text || '');
+  s = s.replace(ACCENT_BRACED, accent).replace(ACCENT_BARE, accent);
+  s = s.replace(/\{\\([A-Za-z]+)\}/g, command).replace(/\\([A-Za-z]+) ?/g, command);
+  return s;
+}
+
 export async function sha256Hex(text) {
   const bytes = new TextEncoder().encode(cacheKeyText(text));
   const digest = await crypto.subtle.digest('SHA-256', bytes);
@@ -121,7 +174,7 @@ export function parseFeed(xml) {
 
     const desc = String(item.description ?? '');
     const m = desc.match(/Abstract:\s*([\s\S]*)$/);
-    const abstract = cacheKeyText(m ? m[1] : desc);
+    const abstract = cacheKeyText(deLatex(m ? m[1] : desc));
     if (!abstract) continue;
 
     /* Title and authors are for the feed to display, never for the cache key —
