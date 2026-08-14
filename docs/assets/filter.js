@@ -353,6 +353,7 @@
       renderCoreRow(state.cores[j]);
       if (state.cores[j].doi) resolveCore(state.cores[j].id);
     }
+    syncPresetSelection();
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -2930,12 +2931,15 @@
     };
     state.touchstones.push(rec);
     renderTouchstoneRow(rec);
+    // A row with no provenance joins a loaded preset: that preset is now edited.
+    syncPresetSelection();
     autosave();
     return rec;
   }
 
   function removeTouchstone(id) {
     state.touchstones = state.touchstones.filter(function (t) { return t.id !== id; });
+    syncPresetSelection();
     autosave();
     reassay();
   }
@@ -2950,6 +2954,7 @@
        on the first keystroke, rather than on blur or on assay: between those
        moments is exactly where a typed phrase could reach the shared cache. */
     rec.preset = null;
+    syncPresetSelection();
     autosave();
     reassay();
   }
@@ -3825,6 +3830,121 @@
     return window.ARXAVE_FEEDS_BASE || '/feeds/';
   }
 
+  /* slug → chip, filled once the catalogue loads. Selection is derived, never
+     stored, so this map is the only preset state the UI keeps. */
+  var presetChips = {};
+  var presetBlurbs = {};
+
+  /**
+   * Which preset is on screen — read off the rows rather than remembered.
+   *
+   * Row provenance (`t.preset`) is already exact: applyPreset stamps it and the
+   * first keystroke in a row clears it (onTouchstoneChanged). Deriving from it
+   * means the chip cannot disagree with the matrix below it, and "edited" comes
+   * out for free. Two presets mixed into one claim belongs to neither.
+   */
+  function activePreset() {
+    var ts = state.touchstones;
+    if (!ts.length) return null;
+    var slug = null;
+    var edited = false;
+    for (var i = 0; i < ts.length; i++) {
+      var p = (typeof ts[i].preset === 'string' && ts[i].preset) || null;
+      if (!p) { edited = true; continue; }
+      if (slug && p !== slug) return null;
+      slug = p;
+    }
+    return slug ? { slug: slug, edited: edited } : null;
+  }
+
+  function syncPresetSelection() {
+    var cur = activePreset();
+    var any = false;
+    for (var slug in presetChips) {
+      if (!Object.prototype.hasOwnProperty.call(presetChips, slug)) continue;
+      any = true;
+      var chip = presetChips[slug];
+      var on = !!cur && cur.slug === slug;
+      chip.classList.toggle('is-active', on);
+      chip.classList.toggle('is-edited', on && cur.edited);
+      chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+      var mark = chip.querySelector('.preset-state');
+      if (mark) mark.textContent = on ? (cur.edited ? 'edited' : '✓') : '';
+    }
+    if (!any) return;
+    var line = byId('presets-blurb');
+    if (!line) return;
+    if (cur && presetBlurbs[cur.slug]) {
+      line.textContent = presetBlurbs[cur.slug] + (cur.edited ? ' — edited since. ' : ' ');
+      line.style.display = '';
+    } else {
+      line.textContent = '';
+      line.style.display = 'none';
+    }
+  }
+
+  /* The feed manifest is written by preset-feed.mjs and says which feeds exist
+     and what shipped in them. Linking off it rather than off the preset slug is
+     what stops a preset added today from pointing at a 404 until tonight. */
+  function renderFeedsMenu(list, manifest) {
+    var wrap = byId('preset-feeds');
+    var btn = byId('preset-feeds-btn');
+    var menu = byId('preset-feeds-menu');
+    if (!wrap || !btn || !menu) return;
+
+    var feeds = (manifest && manifest.feeds) || {};
+    var built = 0;
+    for (var i = 0; i < list.length; i++) {
+      var p = list[i];
+      var f = feeds[p.slug];
+      var name = p.name || p.slug;
+      var row;
+      if (f) {
+        built++;
+        row = document.createElement('a');
+        row.className = 'feeds-item';
+        row.href = feedsBase() + encodeURIComponent(p.slug) + '.xml';
+        row.title = 'Daily feed for ' + name + ', at the preset\'s default weights';
+      } else {
+        /* A preset with no feed yet is not an error and not a dead link — it is
+           a feed that builds tonight. Say that instead of offering the 404. */
+        row = document.createElement('span');
+        row.className = 'feeds-item is-pending';
+      }
+      row.setAttribute('role', 'menuitem');
+      var n = f && isFinite(f.items) ? f.items : null;
+      var note = !f ? 'builds tonight'
+        : n === 0 ? 'nothing today'
+        : n === 1 ? '1 today'
+        : n === null ? '' : n + ' today';
+      row.innerHTML = '<span class="feeds-name">' + escapeHtml(name) + '</span>' +
+        '<span class="feeds-note">' + escapeHtml(note) + '</span>';
+      menu.appendChild(row);
+    }
+    if (!built) return;   // nothing to subscribe to yet; no button at all
+    wrap.style.display = '';
+
+    /* Openness is tracked here rather than read back off the style, so the
+       menu's state is one thing and not two that can disagree. */
+    var open = false;
+    function setMenu(next) {
+      open = next;
+      menu.style.display = next ? '' : 'none';
+      btn.setAttribute('aria-expanded', next ? 'true' : 'false');
+    }
+    setMenu(false);
+    btn.addEventListener('click', function (e) {
+      if (e && e.stopPropagation) e.stopPropagation();
+      setMenu(!open);
+    });
+    document.addEventListener('click', function (e) {
+      if (open && e && e.target && !wrap.contains(e.target)) setMenu(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (open && e.key === 'Escape') setMenu(false);
+    });
+  }
+
   /**
    * Load a preset over the current rows.
    *
@@ -3864,41 +3984,52 @@
       group.style.display = 'none';
       return;
     }
+    /* Missing manifest = no feeds offered, presets still work. Same rule as the
+       catalogue itself: a shortcut, never a dependency. */
+    var manifest = null;
+    try {
+      var mResp = await fetch(feedsBase() + 'index.json', { cache: 'no-cache' });
+      if (mResp.ok) manifest = await mResp.json();
+    } catch (_) { /* no feeds menu */ }
+
     for (var i = 0; i < list.length; i++) {
       (function (p) {
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'preset-btn';
+        btn.setAttribute('aria-pressed', 'false');
+        /* One line per preset. The blurb moves to the hint below, where only
+           the selected preset's shows — four wrapped blurbs side by side is
+           what made the row unreadable, and the one you picked is the one you
+           need to read. */
         btn.innerHTML = '<span class="preset-name">' + escapeHtml(p.name || p.slug) + '</span>' +
-          (p.blurb ? '<span class="preset-blurb">' + escapeHtml(p.blurb) + '</span>' : '');
+          '<span class="preset-state"></span>';
+        if (p.blurb) {
+          btn.title = p.blurb;
+          presetBlurbs[p.slug] = p.blurb;
+        }
         btn.addEventListener('click', async function () {
           btn.disabled = true;
-          var was = btn.className;
-          btn.className = was + ' loading';
+          btn.classList.add('is-loading');
           try {
             await applyPreset(p.slug);
           } catch (err) {
             btn.title = err.message;
           } finally {
             btn.disabled = false;
-            btn.className = was;
+            btn.classList.remove('is-loading');
+            syncPresetSelection();
           }
         });
+        presetChips[p.slug] = btn;
         wrap.appendChild(btn);
-
-        /* The feed is yesterday's answer to the same question the button asks,
-           so it belongs beside the button. Built nightly with the preset's own
-           weights; anyone who wants different weights clicks the button and
-           moves them here, where the matrix is visible. */
-        var feed = document.createElement('a');
-        feed.className = 'preset-feed';
-        feed.href = feedsBase() + encodeURIComponent(p.slug) + '.xml';
-        feed.textContent = 'RSS';
-        feed.title = 'Daily feed for ' + (p.name || p.slug) + ', at the preset\'s default weights';
-        wrap.appendChild(feed);
       })(list[i]);
     }
+    renderFeedsMenu(list, manifest);
     hint.style.display = '';
+    /* Catalogue arrives after the claim is already on screen — an autosaved
+       preset must light its chip without a click. */
+    syncPresetSelection();
   }
 
   renderPresets();

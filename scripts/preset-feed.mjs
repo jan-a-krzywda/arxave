@@ -357,12 +357,25 @@ async function main() {
   await fs.mkdir(outDir, { recursive: true });
 
   const builtOn = new Date().toISOString().slice(0, 10);
+
+  /* The feed manifest: which feeds exist and what shipped in them. The page
+     links off this rather than off the preset slug, so a preset added today
+     cannot offer a feed URL that only appears tonight. Merged, not rewritten —
+     a preset skipped this morning keeps the last feed and its last count. */
+  const manifestPath = path.join(outDir, 'index.json');
+  let priorFeeds = {};
+  try {
+    priorFeeds = JSON.parse(await fs.readFile(manifestPath, 'utf8'))?.feeds ?? {};
+  } catch (_) { /* first run */ }
+  const feeds = {};
+
   let written = 0;
   for (const [slug, { preset, rows }] of bySlug) {
     const categories = String(preset.scout?.categories ?? '')
       .split(',').map((c) => c.trim()).filter(Boolean);
     if (!categories.length) {
       console.warn(`preset-feed: ${slug} has no categories — skipped`);
+      if (priorFeeds[slug]) feeds[slug] = priorFeeds[slug];
       continue;
     }
 
@@ -381,6 +394,7 @@ async function main() {
     }
     if (!stones.length) {
       console.warn(`preset-feed: ${slug} has no stones today — leaving the last feed in place`);
+      if (priorFeeds[slug]) feeds[slug] = priorFeeds[slug];
       continue;
     }
 
@@ -410,6 +424,11 @@ async function main() {
 
     const xml = renderFeed({ preset, slug, items: enriched, site, builtOn });
     await fs.writeFile(path.join(outDir, `${slug}.xml`), xml);
+    feeds[slug] = {
+      name: preset.name || slug,
+      items: enriched.length,
+      updated: builtOn,
+    };
     if (ranked.length) {
       console.log(
         `preset-feed: ${slug} — ${ranked.length} of ${scored.length} stones, ` +
@@ -417,6 +436,14 @@ async function main() {
     }
     written++;
   }
+  /* Slugs no longer in the preset directory drop out of the manifest, so the
+     page stops offering them the moment the preset goes — the XML file itself
+     is left alone, since its subscribers' URLs still resolve. */
+  const ordered = {};
+  for (const slug of bySlug.keys()) if (feeds[slug]) ordered[slug] = feeds[slug];
+  await fs.writeFile(manifestPath,
+    JSON.stringify({ built: builtOn, feeds: ordered }, null, 2) + '\n');
+
   console.log(`preset-feed: wrote ${written} feed(s)`);
 }
 
