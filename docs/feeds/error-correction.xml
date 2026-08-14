@@ -7,13 +7,13 @@
     <atom:link href="https://arxave.com/feeds/error-correction.xml" rel="self" type="application/rss+xml"/>
     <description>Codes, decoders, and thresholds — what it costs to keep a logical qubit alive. Today&apos;s arXiv announcement, ranked against the Quantum error correction preset.</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 14 Aug 2026 04:11:15 GMT</lastBuildDate>
-    <pubDate>Fri, 14 Aug 2026 04:11:15 GMT</pubDate>
+    <lastBuildDate>Fri, 14 Aug 2026 06:13:53 GMT</lastBuildDate>
+    <pubDate>Fri, 14 Aug 2026 06:13:53 GMT</pubDate>
     <item>
       <title>Clifford Circuit Synthesis for Distributed Quantum Architectures with Arbitrary Network Topology</title>
       <link>https://arxiv.org/abs/2608.13543</link>
       <guid isPermaLink="false">arxave:error-correction:2026-08-14:2608.13543</guid>
-      <pubDate>Fri, 14 Aug 2026 04:11:15 GMT</pubDate>
+      <pubDate>Fri, 14 Aug 2026 06:13:53 GMT</pubDate>
       <description>&lt;p class=&quot;verdict&quot;&gt;&lt;strong&gt;Read&lt;/strong&gt; · new method — An asymptotically optimal synthesis method for distributed CNOT and Clifford circuits is presented, enabling CNOT circuit implementation in CSS codes with O(nk) inter-block transversal CNOTs.&lt;/p&gt;&lt;p class=&quot;grade&quot;&gt;&lt;strong&gt;Grade 0.718&lt;/strong&gt; · 2.2σ above the day&apos;s baseline · matched “High-threshold and low-overhead fault-tolerant quantum memory” · Tuomas Laakkonen&lt;/p&gt;&lt;p&gt;&lt;strong&gt;So what.&lt;/strong&gt; This method offers a way to minimize non-local operations, which often dominate the time or error budget in large-scale distributed quantum computation.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Tools.&lt;/strong&gt; block-matrix Gaussian elimination · Pauli exponential circuit representation · Clifford circuit synthesis · CSS code encoding&lt;/p&gt;&lt;p class=&quot;abstract&quot;&gt;&lt;strong&gt;Abstract.&lt;/strong&gt; To achieve large-scale fault-tolerant quantum computation, it may be easier to combine many small sets of qubits than to construct a single large set. For example via quantum error correction with block codes, or distributed quantum processors utilizing shared entanglement. In these regimes, the time or error budget of the overall quantum computation may be dominated by non-local operations. Hence, it is worthwhile to minimize the number of these operations. We consider the case where both non-local and local connectivity may be arbitrarily restricted, and give an asymptotically optimal synthesis method for distributed CNOT and Clifford circuits, based on block-matrix Gaussian elimination. We extend this to all Clifford+RZ circuits by generalizing the Pauli exponential circuit representation; this naturally integrates with existing methods for optimizing T-count. As an application, we show how to implement CNOT circuits in a CSS code encoding n logical qubits in k blocks using O(nk) inter-block transversal CNOTs and intra-block Pauli measurements.&lt;/p&gt;&lt;p&gt;&lt;a href=&quot;https://arxave.com/?preset=error-correction&quot;&gt;Tune this in the Dig&lt;/a&gt;&lt;/p&gt;</description>
       <arxave:grade>0.718</arxave:grade>
       <arxave:z>2.2</arxave:z>

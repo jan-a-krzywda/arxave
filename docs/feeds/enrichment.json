@@ -46,5 +46,23 @@
   "seen": "2026-08-14",
   "model": "gemini-2.5-flash",
   "shape": 2
+ },
+ "2608.13530": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Shunting an Andreev spin qubit with a linear inductor enhances its relaxation time by separating spin-qubit states in phase space.",
+   "so_what": "This inductively protected Andreev spin qubit combines the long coherence times and large anharmonicity of protected superconducting qubits with the operational advantages of a spin degree of freedom.",
+   "caveat": "This is a theoretical proposal.",
+   "tools": [
+    "linear inductor",
+    "quantum dot Josephson junction",
+    "semiconductor-superconductor device",
+    "fluxoniums"
+   ]
+  },
+  "seen": "2026-08-14",
+  "model": "gemini-2.5-flash",
+  "shape": 2
  }
 }
