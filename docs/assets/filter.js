@@ -786,6 +786,16 @@
     return cursor.toISOString().substring(0, 10);
   }
 
+  /* '.../abs/2508.12345v2' → '2508.12345'. The two scout sources disagree on
+     the version suffix — the RSS feed drops it, the search API keeps it — so
+     dedup only works if both sides are stripped to the same bare id. */
+  function bareArxivId(raw) {
+    return String(raw || '').trim()
+      .replace(/^.*\/abs\//, '')
+      .replace(/^arxiv:/i, '')
+      .replace(/v\d+$/, '');
+  }
+
   function parseAtomXML(xmlText) {
     var parser = new DOMParser();
     var doc = parser.parseFromString(xmlText, 'application/xml');
@@ -794,7 +804,7 @@
     entries.forEach(function (entry) {
       var idEl = entry.querySelector('id');
       if (!idEl) return;
-      var arxivId = idEl.textContent.trim().replace(/^.*\/abs\//, '');
+      var arxivId = bareArxivId(idEl.textContent);
       var titleEl = entry.querySelector('title');
       var title = titleEl ? titleEl.textContent.replace(/\s+/g, ' ').trim() : '';
       var summaryEl = entry.querySelector('summary');
@@ -835,7 +845,7 @@
 
       var linkEl = item.querySelector('link');
       if (!linkEl) return;
-      var arxivId = linkEl.textContent.trim().replace(/^.*\/abs\//, '');
+      var arxivId = bareArxivId(linkEl.textContent);
       if (!arxivId) return;
 
       var titleEl = item.querySelector('title');
