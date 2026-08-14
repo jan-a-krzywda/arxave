@@ -56,14 +56,26 @@ POST /wagon-name  { wagons: [{ members: [{ id, title }, …] }, …] }
       cached: n, generated: n, unnamed: n, capped: bool }
 ```
 
-**This calls per wagon, not per paper, and that is the whole reason it is
-affordable.** [`enrich.mjs`](../../scripts/enrich.mjs) calls once per paper and
-is kept cheap by only ever seeing the handful a feed already selected. Naming
-sees the whole haul — but a haul of ~150 stones clusters into five to fifteen
-wagons, and the request carries **titles, not abstracts**, because what a
-cluster is about is a question its titles already answer. Ten titles is ~200
-tokens against ~15k for ten abstracts. A day of naming costs less than one
-enrichment.
+**This calls once per train, not per wagon and certainly not per paper, and
+that is the whole reason it is affordable.** [`enrich.mjs`](../../scripts/enrich.mjs)
+calls once per paper and is kept cheap by only ever seeing the handful a feed
+already selected. Naming sees the whole haul — but every unnamed wagon rides in
+one request as a numbered group, and the request carries **titles, not
+abstracts**, because what a cluster is about is a question its titles already
+answer. Measured 2026-08-14: nine wagons named in one 2.3s call for 1041 tokens,
+and the 24-wagon worst case (30 papers each) in 3.3s for 6.9k. Ten abstracts
+alone would be ~15k. A day of naming costs less than one enrichment.
+
+Each group shows at most `MAX_TITLES` (12) of its members, with the true count
+stated — the topic of a thirty-paper cluster is evident in the first dozen
+titles and the rest is tokens spent to say it again.
+
+The reply is an array of `{ group, name, gloss }`, and **the group number is
+load-bearing**: a model handed nine groups can return eight, or reorder them, and
+an array position would then file every name after the gap under the wrong
+wagon. A wrong name is worse than no name, because only someone who reads the
+titles can catch it. Carrying the number makes a dropped group a missing key
+instead of a shifted one; out-of-range numbers are discarded.
 
 The cache key is `sha256` over the wagon's **sorted `id\ttitle` lines**, defined
 once in [`naming.ts`](wagon-name/naming.ts) and recomputed independently by the
@@ -189,11 +201,14 @@ curl -s -X POST "$BASE/wagon-name" -H 'Content-Type: application/json' \
 curl -s -X POST "$BASE/wagon-name" -H 'Content-Type: application/json' \
   -d '{"wagons":[{"members":[]}]}'
 
-# the meter is durable — run the same wagon 41 times from one address and the
-# 41st should come back capped:true rather than billing a 41st call.
+# the meter is durable — 40 requests carrying *uncached* wagons from one
+# address, and the 41st should come back capped:true rather than billing it.
+# (One request is one call now, however many wagons it names, so this is 40
+# presses rather than 40 wagons.)
 
-# the rate limit bites first: six or more *uncached* wagons in one request on
-# the free tier come back with retryAfter set and the rest unnamed, not errored.
+# a rate limit is a backstop, not the common case: it takes a train that
+# survives all four rungs of the ladder. When it does bite, the response has
+# retryAfter set and the rest unnamed, not errored.
 
 # end to end: warm one category, then check the page reports "already cut"
 DIG_WRITE_KEY=… node ../../scripts/warm-dig.mjs --categories quant-ph
@@ -213,10 +228,13 @@ or put the project's own function rate limits in front.
 
 `wagon-name` is the other one that costs money, and it is the first function
 here that spends it *on a stranger's behalf* — so its counter is the durable
-one that paragraph asks for. Worst case per day is `WAGON_NAME_GLOBAL_DAILY`
-calls of **~270 total tokens** each — measured 2026-08-13 across two wagons, two
-runs each: 182–205 prompt, ~50 output, no thinking. At the default 600 calls
-that is under 200k tokens a day even if every single call is a miss.
+one that paragraph asks for. **One request is one metered call**, however many
+wagons it names — so the budget now counts presses, not wagons, and a press that
+falls down the ladder costs one call per rung it tries. Worst case per day is
+`WAGON_NAME_GLOBAL_DAILY` calls of **~6.9k total tokens** each (24 wagons of 30
+papers, measured 2026-08-14: 5717 prompt, 1164 output, no thinking). At the
+default 600 that is ~4M tokens a day if every call is a maximal miss, and a
+realistic train is ~1k tokens.
 
 Thinking is off (`thinkingBudget: 0`) and the prompt carries the load instead.
 This was briefly set to 512 on the theory that thinking bought the correct word
@@ -230,15 +248,48 @@ budget 0 produces the right name on both test wagons twice each, and is the
 drifts ("Valley splitting and coupling in silicon"). A thinking budget cannot
 fix a prompt that never stated the constraint.
 
-**The binding limit is requests per minute, not the daily budget.** Measured
-2026-08-13, this project's key is on the Gemini free tier: **5 requests/min** on
-`gemini-2.5-flash`. A first haul with ten uncached wagons therefore 429s on the
-sixth, long before any daily cap is in sight. The function stops at the first
-429 rather than marching through the rest collecting one each, refunds every
-granted-but-unspent call, and returns `retryAfter` in seconds so the page can
-say "press again in about 50s" instead of "come back tomorrow". The wagons
-already named are cache hits, so the next press resumes rather than restarts.
-Raising throughput means a paid tier, not a code change. Realistically it is far less, because the cache is shared and two people
+**The scarce budget was requests per minute, not tokens, and naming used to
+spend the scarce one to save the abundant one.** Measured 2026-08-13 and again
+2026-08-14, this project's key is on the Gemini free tier and 429s on the sixth
+or seventh call within a minute — so a call per wagon meant a seven-wagon train
+stopping halfway with "4 of 7 named" while using a fraction of a 250k/min token
+ceiling. Batching the train into one request removed that limit outright; issue
+#51 was this and not a model that could not name things.
+
+The ladder below is what survives of the per-wagon fallback, and it is now a
+backstop. Rate limits are metered per model, so if a model is full, refuses the
+request, or names only some of the groups, the leftovers go to the next model —
+one metered call per rung, four rungs, at most four calls per press however it
+fails. `LADDER` in [`wagon-name/naming.ts`](wagon-name/naming.ts), best first:
+
+| rung | model | `thinkingConfig` |
+| --- | --- | --- |
+| 1 | `gemini-3.5-flash-lite` | `{ thinkingLevel: 'low' }` |
+| 2 | `gemini-3.1-flash-lite` | `{ thinkingBudget: 0 }` |
+| 3 | `gemma-4-31b-it` | *none* |
+| 4 | `gemma-4-26b-a4b-it` | *none* |
+
+**The thinking field is per-model and the wrong one is a hard 400**, not a
+warning — measured 2026-08-14: `thinkingBudget` on `gemini-3.5-flash-lite`
+returns `INVALID_ARGUMENT`, and either spelling on a Gemma returns "Thinking
+budget is not supported for this model". So it travels with the model id, and an
+id that arrives via `ARXAVE_NAME_MODELS` and is not in the table is sent no
+`thinkingConfig` at all — a missing one is never an error, a guessed one is.
+All four accept `systemInstruction` and `responseSchema` and were checked
+against a real three-title wagon.
+
+On a 429 the function steps down a rung and retries *the wagons still unnamed*;
+a 400 or 404 steps down too, since a refused request shape will be refused
+again. A failed call is refunded, so only calls that produced a name are
+charged. Only an exhausted ladder ends the run — then `retryAfter` comes back in
+seconds (the shortest wait any rung asked for) so the page can say "press again
+in about 50s" instead of "come back tomorrow"; `capped` is reserved for the
+meter itself refusing, which is the one case that really does mean tomorrow. The
+wagons already named are cache hits, so the next press
+resumes rather than restarts. `models` in the response lists the rungs that
+actually answered. Set `ARXAVE_NAME_MODELS` to a comma-separated list to
+override the ladder; the older single-model `ARXAVE_NAME_MODEL` still works and
+pins it to one rung. Realistically it is far less, because the cache is shared and two people
 hauling `quant-ph` on the same morning cluster the same papers. Caps and both
 budgets are at the top of [`wagon-name/index.ts`](wagon-name/index.ts); the
 transactional meter is in [`wagon-names.sql`](../wagon-names.sql).

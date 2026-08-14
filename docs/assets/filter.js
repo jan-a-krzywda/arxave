@@ -1539,9 +1539,11 @@
       /* A rate limit outranks the budget message: it clears in about a minute,
          and the names already generated are cached, so pressing again picks up
          exactly where this stopped. Telling someone to come back tomorrow when
-         they could press again shortly is the worse of the two errors. */
+         they could press again shortly is the worse of the two errors.
+         "Every model" rather than "the model", because the endpoint only
+         reports a wait once it has fallen through its whole ladder of them. */
       if (data.retryAfter) {
-        setNameStatus(named + ' of ' + comps.length + ' named — the model is rate-limited. ' +
+        setNameStatus(named + ' of ' + comps.length + ' named — every model is rate-limited. ' +
           'Press again in about ' + Math.ceil(data.retryAfter) + 's to name the rest.');
       /* `capped` is the one thing the page cannot work out for itself, and the
          one worth saying plainly: the missing names are a budget, not a bug,

@@ -8,10 +8,11 @@
  * and a one-line gloss.
  *
  * THE ECONOMICS ARE WHY THIS IS AFFORDABLE AND enrich.mjs's SHAPE IS NOT. That
- * one calls per *paper*. This calls per *wagon* — a haul of ~150 stones makes
- * five to fifteen — and it sends titles, not abstracts, because naming a
- * cluster is a task the titles already determine. Ten titles is ~200 tokens
- * against ~15k for ten abstracts. A whole day of naming costs less than one
+ * one calls per *paper*. This calls once per *train* — every unnamed wagon goes
+ * into one request as a numbered group — and it sends titles, not abstracts,
+ * because naming a cluster is a task the titles already determine. A nine-wagon
+ * train is ~1k tokens end to end, and the 24-wagon worst case measured 6.9k;
+ * ten abstracts alone would be ~15k. A whole day of naming costs less than one
  * enrichment.
  *
  *   POST /wagon-name  { wagons: [{ members: [{ id, title }, ...] }, ...] }
@@ -28,6 +29,18 @@
  * names without recomputing the hash — but the hash is the client's to verify,
  * and naming.ts's `wagonKey` is the shared definition.
  *
+ * THE SCARCE BUDGET IS REQUESTS, NOT TOKENS. The free tier meters requests per
+ * minute — so naming a wagon per call meant a seven-wagon haul stopping halfway
+ * with "4 of 7 named" and asking for a second press, while nowhere near the
+ * token ceiling. One request for the whole train (`promptFor` in naming.ts)
+ * removes the limit that was actually binding: measured 2026-08-14, 24 wagons
+ * of 30 papers named in a single 3.3s call, 6.9k tokens against 250k/min.
+ *
+ * `LADDER` is what remains of the per-wagon fallback, and it is now a backstop
+ * rather than the mechanism: if a model is full, refuses the request, or names
+ * only some of the groups, the leftovers go to the next model. One metered call
+ * per rung, four rungs, so a request is at most four calls however it fails.
+ *
  * EVERY FAILURE IS A MISSING NAME, NEVER AN ERROR. No Gemini key, an exhausted
  * budget, a refused call, a timeout: the wagon comes back without a name and
  * the page shows "Wagon 3" exactly as it does today. A name is an embellishment
@@ -36,12 +49,14 @@
  */
 
 import {
+  generationConfig,
+  ladderFrom,
   MAX_WAGONS,
   parseResponse,
   promptFor,
   readWagons,
   retryAfterSeconds,
-  SCHEMA,
+  type Rung,
   SYSTEM,
   wagonKey,
 } from './naming.ts';
@@ -58,7 +73,13 @@ const REST = `${SUPABASE_URL}/rest/v1/wagon_names`;
 const RPC = `${SUPABASE_URL}/rest/v1/rpc/wagon_name_spend`;
 
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
-const MODEL = Deno.env.get('ARXAVE_NAME_MODEL') ?? 'gemini-2.5-flash';
+/* A ladder, not a model. ARXAVE_NAME_MODELS overrides it as a comma-separated
+   list, best first; ARXAVE_NAME_MODEL is the old single-model name and still
+   works, pinning the ladder to one rung. naming.ts carries the reasoning and
+   the per-model thinkingConfig each rung needs. */
+const LADDER = ladderFrom(
+  Deno.env.get('ARXAVE_NAME_MODELS') ?? Deno.env.get('ARXAVE_NAME_MODEL'),
+);
 const TIMEOUT_MS = 30_000;
 
 /* ── The budget. ────────────────────────────────────────────────────────
@@ -207,8 +228,19 @@ class RateLimited extends Error {
   }
 }
 
-async function callGemini(titles: string): Promise<{ name: string; gloss: string } | null> {
-  const url = `${ENDPOINT}/${encodeURIComponent(MODEL)}:generateContent` +
+/**
+ * The request itself was refused — a bad model id, an unsupported field.
+ * Distinct because it will fail identically for every remaining wagon on this
+ * rung, so the answer is the next model rather than the next wagon.
+ */
+class BadRequest extends Error {}
+
+async function callGemini(
+  titles: string,
+  count: number,
+  rung: Rung,
+): Promise<Record<number, { name: string; gloss: string }>> {
+  const url = `${ENDPOINT}/${encodeURIComponent(rung.model)}:generateContent` +
     `?key=${encodeURIComponent(GEMINI_KEY)}`;
   const resp = await fetch(url, {
     method: 'POST',
@@ -217,33 +249,30 @@ async function callGemini(titles: string): Promise<{ name: string; gloss: string
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: SYSTEM }] },
       contents: [{ role: 'user', parts: [{ text: titles }] }],
-      generationConfig: {
-        temperature: 0.2,
-        responseMimeType: 'application/json',
-        responseSchema: SCHEMA,
-        /* NO THINKING. The prompt does the work instead, and that is a
-           measured claim rather than a preference.
+      /* NO THINKING, spelled the way this particular rung spells it — the
+         field is not portable and the wrong one is a 400. naming.ts holds the
+         per-model table and the measurements behind it.
 
-           This started at 512 on the theory that thinking bought the right
-           word order: a four-title wagon named "Silicon Valley Splitting" at
-           budget 0 and "Valley Splitting in Silicon" at 512. That read the
-           evidence wrong. The real fault was the prompt, which asked for the
-           field's terminology and never said to keep a paper's prepositional
-           phrasing — so the model was free to compress into a compound that
-           collides with a famous proper noun. Once SYSTEM says so outright,
-           measured 2026-08-13 on two wagons, twice each:
+         That the *right* answer is "no thinking" is its own measured claim.
+         This started at 512 on the theory that thinking bought the right word
+         order: a four-title wagon named "Silicon Valley Splitting" at budget 0
+         and "Valley Splitting in Silicon" at 512. That read the evidence
+         wrong. The real fault was the prompt, which asked for the field's
+         terminology and never said to keep a paper's prepositional phrasing —
+         so the model was free to compress into a compound that collides with a
+         famous proper noun. Once SYSTEM says so outright, measured 2026-08-13
+         on two wagons, twice each:
 
-             3 titles, budget 0    260 / 257 tok   "Valley splitting in silicon" x2
-             3 titles, budget 512  666 / 613 tok   drifts to "Valley splitting
-                                                   and coupling in silicon"
-             4 titles, budget 0    274 / 282 tok   "Valley splitting in silicon" x2
+           3 titles, budget 0    260 / 257 tok   "Valley splitting in silicon" x2
+           3 titles, budget 512  666 / 613 tok   drifts to "Valley splitting
+                                                 and coupling in silicon"
+           4 titles, budget 0    274 / 282 tok   "Valley splitting in silicon" x2
 
-           Budget 0 is the *more* stable of the two as well as 2.4x cheaper:
-           thinking mostly buys itself room to editorialize the label. A
-           thinking budget cannot fix a prompt that never stated the
-           constraint, and it is an expensive place to look for the fix. */
-        thinkingConfig: { thinkingBudget: 0 },
-      },
+         Budget 0 is the *more* stable of the two as well as 2.4x cheaper:
+         thinking mostly buys itself room to editorialize the label. A thinking
+         budget cannot fix a prompt that never stated the constraint, and it is
+         an expensive place to look for the fix. */
+      generationConfig: generationConfig(rung),
     }),
   });
   if (!resp.ok) {
@@ -251,13 +280,21 @@ async function callGemini(titles: string): Promise<{ name: string; gloss: string
     if (resp.status === 429) {
       throw new RateLimited(retryAfterSeconds(resp.headers.get('retry-after'), text));
     }
+    if (resp.status === 400 || resp.status === 404) {
+      throw new BadRequest(`HTTP ${resp.status}: ${text.slice(0, 160)}`);
+    }
     throw new Error(`HTTP ${resp.status}: ${text.slice(0, 160)}`);
   }
-  return parseResponse(await resp.json());
+  return parseResponse(await resp.json(), count);
 }
 
 /** Write a generated name. A failed write only costs a regeneration later. */
-async function store(key: string, fields: { name: string; gloss: string }, size: number) {
+async function store(
+  key: string,
+  fields: { name: string; gloss: string },
+  size: number,
+  model: string,
+) {
   try {
     const resp = await fetch(REST, {
       method: 'POST',
@@ -266,7 +303,7 @@ async function store(key: string, fields: { name: string; gloss: string }, size:
         wagon_key: key,
         name: fields.name,
         gloss: fields.gloss,
-        model: MODEL,
+        model,
         members: size,
         seen: new Date().toISOString().slice(0, 10),
       }]),
@@ -300,49 +337,92 @@ Deno.serve(async (req) => {
   const missing = [...new Set(keys.filter((k) => !names[k]))];
 
   let generated = 0;
-  let granted = 0;
   let rateLimited = 0;   // seconds to wait, 0 when the provider never said to
+  let starved = false;   // the meter refused, which is the only "come back tomorrow"
+  let rung = 0;
+  const used = new Set<string>();
+
+  /* THE WHOLE TRAIN IN ONE CALL. Naming used to be a call per wagon, which
+     spent the scarce budget (requests per minute) to save the abundant one
+     (tokens per minute) — a seven-wagon train burned seven of a ~6/min
+     allowance and stopped halfway. One request carrying every unnamed wagon as
+     a numbered group costs ~1.5k tokens against a 250k/min ceiling and cannot
+     be rate limited partway through, because there is no partway.
+
+     What survives from the per-wagon design is the ladder underneath it: if a
+     model is full, or refuses the request, or answers for only some of the
+     groups, the *remaining* wagons go to the next model. Each attempt spends
+     exactly one metered call and advances one rung, so a request makes at most
+     LADDER.length calls no matter what goes wrong. */
   if (missing.length && GEMINI_KEY) {
     const client = await clientHash(req);
-    granted = await spend(client, missing.length);
+    let pending = missing;
 
-    /* Sequential, not Promise.all. The budget is small enough that latency is
-       a second or two, and a burst of parallel calls into a rate-limited API
-       is how a granted budget turns into a wall of 429s. */
-    for (let i = 0; i < granted; i++) {
-      const key = missing[i];
-      const wagon = wagons[keys.indexOf(key)];
-      try {
-        const fields = await callGemini(promptFor(wagon));
-        if (fields) {
-          names[key] = fields;
-          generated++;
-          await store(key, fields, wagon.length);
-        } else {
-          await refund(client, 1);   // a blocked or truncated reply is not a name
-        }
-      } catch (err) {
-        /* A 429 is the one failure where continuing is actively wrong. THE
-           BINDING LIMIT IS REQUESTS PER MINUTE, NOT THE DAILY BUDGET: measured
-           2026-08-13, this key's free tier allows 5 requests/min on
-           gemini-2.5-flash, so a first haul with ten new wagons would 429 on
-           the sixth and, without this branch, march through the remaining four
-           collecting one 429 each. Stop at the first, hand back every call the
-           meter granted and we did not spend, and tell the page how long to
-           wait. The wagons keep their numbers and the next press picks up where
-           this left off, because the ones already named are now cache hits. */
-        if (err instanceof RateLimited) {
-          rateLimited = err.retryAfter;
-          await refund(client, granted - i);
-          console.warn(`wagon-name: rate limited after ${generated}, retry in ${err.retryAfter}s`);
-          break;
-        }
-        console.warn(`wagon-name: ${key.slice(0, 12)} — ${err instanceof Error ? err.message : err}`);
-        await refund(client, 1);
+    while (pending.length && rung < LADDER.length) {
+      const model = LADDER[rung];
+
+      /* One call, one debit — asked for immediately before spending it, so a
+         request that dies on rung 1 does not hold rungs 2-4's budget. */
+      if (await spend(client, 1) < 1) {
+        starved = true;
+        console.log(`wagon-name: budget spent with ${pending.length} wagons unnamed`);
+        break;
       }
+      used.add(model.model);
+
+      const batch = pending.map((k) => wagons[keys.indexOf(k)]);
+      let answered: Record<number, { name: string; gloss: string }> = {};
+      try {
+        answered = await callGemini(promptFor(batch), batch.length, model);
+      } catch (err) {
+        await refund(client, 1);   // a call that produced nothing is not a charge
+        /* A 429 and a 400 are both verdicts on the model rather than on the
+           titles: the next rung is a different minute-quota and a different
+           request shape. Only the wait is worth carrying — if the ladder runs
+           out, the shortest one is what the page should be told to wait. */
+        if (err instanceof RateLimited) {
+          rateLimited = rateLimited
+            ? Math.min(rateLimited, err.retryAfter)
+            : err.retryAfter;
+          console.warn(`wagon-name: ${model.model} rate limited, next rung`);
+        } else if (err instanceof BadRequest) {
+          console.warn(`wagon-name: ${model.model} refused the request — ${err.message}`);
+        } else {
+          console.warn(
+            `wagon-name: ${model.model} — ${err instanceof Error ? err.message : err}`,
+          );
+        }
+        rung++;
+        continue;
+      }
+
+      const named: string[] = [];
+      for (const [at, fields] of Object.entries(answered)) {
+        const key = pending[Number(at)];
+        if (!key || names[key]) continue;
+        names[key] = fields;
+        generated++;
+        named.push(key);
+        await store(key, fields, wagons[keys.indexOf(key)].length, model.model);
+      }
+      if (!named.length) await refund(client, 1);   // a blocked or empty reply is not a name
+
+      /* Whatever the model skipped goes to the next one. A model that answers
+         for eight of nine groups is not going to find the ninth on a second
+         look at the same titles, and a rung per attempt is what bounds the
+         call count. */
+      pending = pending.filter((k) => !names[k]);
+      if (pending.length) {
+        console.warn(`wagon-name: ${model.model} left ${pending.length} unnamed, next rung`);
+      }
+      rung++;
     }
-    if (granted < missing.length) {
-      console.log(`wagon-name: budget capped ${missing.length} misses at ${granted}`);
+
+    if (pending.length && !starved) {
+      console.warn(
+        `wagon-name: ${pending.length} unnamed after the ladder` +
+          (rateLimited ? `, retry in ${rateLimited}s` : ''),
+      );
     }
   }
 
@@ -351,14 +431,18 @@ Deno.serve(async (req) => {
   return ok({
     names,
     keys,
-    model: MODEL,
+    /* Which rungs actually answered, in ladder order. A haul named entirely by
+       the Gemma rungs is worth being able to see from the response alone —
+       the names are looser, and the reason is the ladder, not the prompt. */
+    models: [...used],
+    model: LADDER[Math.min(rung, LADDER.length - 1)].model,
     cached: keys.filter((k) => names[k]).length - generated,
     generated,
     /* What the caller could not have: how many misses went unnamed, and why.
        The page uses this to say "6 of 9 named — daily limit reached" instead
        of silently showing three numbered wagons. */
     unnamed: missing.length - generated,
-    capped: missing.length > granted && !!GEMINI_KEY,
+    capped: starved,
     /* Seconds, or 0. Distinct from `capped`: a spent budget is over until
        tomorrow, a rate limit is over in a minute, and telling a user to come
        back tomorrow when they could press again shortly is the worse error. */
