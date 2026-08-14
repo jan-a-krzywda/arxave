@@ -11,8 +11,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import {
-  cacheKeyText, coreEmbedText, doiKey, feedBuildDate, parseFeed,
+  cacheKeyText, coreEmbedText, deLatex, doiKey, feedBuildDate, parseFeed,
   presetUnits, reconstructAbstract, resolveEndpoint,
 } from './warm-dig.mjs';
 
@@ -116,6 +120,88 @@ test('an empty feed yields nothing rather than throwing', () => {
 
 test('an item with no abstract is skipped, not cached as an empty string', () => {
   assert.deepEqual(parseFeed(feed([item({ desc: '' })])), []);
+});
+
+/* LaTeX escapes. Same property again, and the sharpest case of it: the feed
+   spells the author's LaTeX, the search API — which the browser reads for any
+   day past tonight — spells Unicode. Both sides normalise towards the API's
+   spelling, so an abstract hauled from either source lands on one key. */
+
+const CASES = [
+  ['L\\"uders bound', 'Lüders bound'],
+  ["stabilizer R\\'enyi entropy", 'stabilizer Rényi entropy'],
+  ['Schr\\"{o}dinger', 'Schrödinger'],
+  ['{\\"U}ber die Quantenmechanik', 'Über die Quantenmechanik'],
+  ['Poincar\\\'{e} section', 'Poincaré section'],
+  ['Ma\\~né, Erd\\H{o}s, Ha\\c{c}, Ne\\v{s}et', 'Mañé, Erdős, Haç, Nešet'],
+  // `\i` eats its terminating space like any other control word — 'iand', not
+  // 'i and'. TeX does the same, and matching TeX is what matches the API.
+  ['the \\i and the \\"\\i', 'the iand the ï'],
+  ['$\\Omega$ and $\\beta$', '$Ω$ and $β$'],
+  ['$1\\,\\mu\\mathrm{s}$', '$1\\,μ\\mathrm{s}$'],
+  ['vanish at 1{\\deg}', 'vanish at 1°'],
+  // Both control words eat their terminating space, as `\i` above does.
+  ['Wei\\ss and \\O rsted', 'Weißand Ørsted'],
+];
+
+test('the feed spelling becomes the API spelling', () => {
+  for (const [latex, unicode] of CASES) assert.equal(deLatex(latex), unicode);
+});
+
+test('a control word eats the space that terminates it, as TeX does', () => {
+  // Measured against the live API 2026-08-14: the feed's `$\Delta \approx 8.8$`
+  // is `$Δ\approx 8.8$` there. Keep the space and the two still hash apart.
+  assert.equal(deLatex('$\\Delta \\approx 8.8$'), '$Δ\\approx 8.8$');
+});
+
+test('a brace group survives — the closing brace is not eaten', () => {
+  // The bug the two-regex shape exists for: with `\{?…\}?` the greek pass ate
+  // the group's closing brace and `$|x|^{-2\Delta}$` came out unbalanced.
+  assert.equal(deLatex('$|x|^{-2\\Delta}$'), '$|x|^{-2Δ}$');
+  assert.equal(deLatex('${\\Delta}$'), '$Δ$');
+});
+
+test('everything unrecognised passes through untouched', () => {
+  // `\alphas` included on purpose: a command is its whole run of letters, so
+  // this is `\alphas` and not `\alpha` with an s stuck to it.
+  for (const s of ['$\\mathrm{d}x$', 'a \\, b', '\\version{2}', '\\understand',
+    '100\\% of \\alphas', 'no latex at all']) {
+    assert.equal(deLatex(s), s);
+  }
+  assert.equal(deLatex(''), '');
+  assert.equal(deLatex(null), '');
+});
+
+test('it is idempotent, so a text already Unicode is left alone', () => {
+  for (const [, unicode] of CASES) assert.equal(deLatex(unicode), unicode);
+});
+
+test('the feed parse runs the abstract through it', () => {
+  const [stone] = parseFeed(feed([item({ desc: 'Abstract: the L\\"uders bound' })]));
+  assert.equal(stone.abstract, 'the Lüders bound');
+});
+
+/* The one that actually holds the cache together. Everything above tests this
+   copy; this tests that the browser's copy agrees, character for character, on
+   every case above. They are two files by necessity — one is an ES module for
+   Node, the other lives inside a browser IIFE with no build step — so the only
+   thing keeping them equal is this assertion. */
+test("the browser's copy of deLatex agrees on every case", () => {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const js = fs.readFileSync(path.join(here, '..', 'docs', 'assets', 'filter.js'), 'utf8');
+  const start = js.indexOf('  var GREEK = {');
+  const end = js.indexOf('\n\n', js.indexOf('function deLatex(text) {'));
+  assert.ok(start > 0 && end > start, 'deLatex not found in filter.js');
+  const browser = new Function(js.slice(start, end) + '\n  return deLatex;')();
+
+  for (const [latex, unicode] of CASES) {
+    assert.equal(browser(latex), unicode, latex);
+    assert.equal(browser(latex), deLatex(latex), latex);
+  }
+  for (const s of ['$\\Delta \\approx 8.8$', '$|x|^{-2\\Delta}$', '${\\Delta}$',
+    '$\\mathrm{d}x$', '\\version{2}', '', 'plain text']) {
+    assert.equal(browser(s), deLatex(s), s);
+  }
 });
 
 /* Presets. Same property as the feed tests above: the warmer must hash the

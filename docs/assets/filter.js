@@ -786,6 +786,79 @@
     return cursor.toISOString().substring(0, 10);
   }
 
+  /* ── LaTeX escapes → Unicode ───────────────────────────────────────────
+   *
+   * The two scout sources also disagree on how they spell math and accents.
+   * The announcement RSS carries the author's LaTeX (`L\"uders`, `$\Omega$`,
+   * `1{\deg}`); the search API has already converted it (`Lüders`, `$Ω$`,
+   * `1°`). Since the shared cache is keyed on the text, the same paper hashed
+   * to two different keys depending on which source it arrived from, so every
+   * escape-carrying abstract missed on the lookback pass — measured 2026-08-14
+   * across quant-ph, cond-mat.mes-hall, cs.LG and math-ph: 19 of 273 abstracts
+   * present in both sources, and the whole of that 19 is this.
+   *
+   * Normalising towards Unicode rather than towards LaTeX is also the better
+   * text to embed: `Lüders` is one token the model has seen, `L\"uders` is
+   * four it has not.
+   *
+   * Anything unrecognised passes through untouched — `\,`, `\mathrm{}`, `$…$`
+   * and every unknown command survive, which is what the API does too. THIS
+   * MUST STAY BYTE-IDENTICAL TO deLatex() IN scripts/warm-dig.mjs; the parity
+   * test in scripts/warm-dig.test.mjs is what holds the two together.
+   */
+  var GREEK = {
+    alpha: 'α', beta: 'β', gamma: 'γ', delta: 'δ', epsilon: 'ε', varepsilon: 'ε',
+    zeta: 'ζ', eta: 'η', theta: 'θ', vartheta: 'θ', iota: 'ι', kappa: 'κ',
+    lambda: 'λ', mu: 'μ', nu: 'ν', xi: 'ξ', pi: 'π', varpi: 'π', rho: 'ρ',
+    varrho: 'ρ', sigma: 'σ', varsigma: 'ς', tau: 'τ', upsilon: 'υ', phi: 'φ',
+    varphi: 'φ', chi: 'χ', psi: 'ψ', omega: 'ω',
+    Gamma: 'Γ', Delta: 'Δ', Theta: 'Θ', Lambda: 'Λ', Xi: 'Ξ', Pi: 'Π',
+    Sigma: 'Σ', Upsilon: 'Υ', Phi: 'Φ', Psi: 'Ψ', Omega: 'Ω',
+  };
+
+  var SPECIALS = {
+    ss: 'ß', o: 'ø', O: 'Ø', l: 'ł', L: 'Ł', aa: 'å', AA: 'Å',
+    ae: 'æ', AE: 'Æ', oe: 'œ', OE: 'Œ', i: 'i', j: 'j',
+    deg: '°', degree: '°', textdegree: '°',
+  };
+
+  // The accent marks, as the combining codepoint each one adds to its letter.
+  var COMBINING = {
+    '`': '̀', "'": '́', '^': '̂', '~': '̃', '"': '̈',
+    '=': '̄', '.': '̇', c: '̧', v: '̌', u: '̆',
+    r: '̊', H: '̋', k: '̨',
+  };
+
+  /* \"u, \"{u}, \"\i, \c{c}, \v{s} — and the braced whole, {\"u}. The
+     letter-named accents demand their braces, so that \version and \understand
+     are not read as one. Both brace positions are matched in full rather than
+     as optional halves: `\{?…\}?` would happily eat the closing brace of
+     `{-2\Delta}` and leave the group unbalanced. */
+  var ACCENT_SRC = '\\\\([`\'"^~=.]|[cvruHk](?=\\{))\\s*(?:\\{\\\\?([A-Za-z])\\}|\\\\?([A-Za-z]))';
+  var ACCENT_BARE = new RegExp(ACCENT_SRC, 'g');
+  var ACCENT_BRACED = new RegExp('\\{' + ACCENT_SRC + '\\}', 'g');
+
+  function _accent(m, acc, braced, bare) {
+    return ((braced || bare) + COMBINING[acc]).normalize('NFC');
+  }
+
+  /* The trailing space goes with the command: TeX eats the whitespace that
+     terminates a control word, so `$\Delta \approx 8$` reaches the API side as
+     `$Δ\approx 8$`. Keep that space and the two spellings still hash apart.
+     An unrecognised command is returned whole, space included. */
+  function _command(m, cmd) {
+    if (Object.prototype.hasOwnProperty.call(GREEK, cmd)) return GREEK[cmd];
+    if (Object.prototype.hasOwnProperty.call(SPECIALS, cmd)) return SPECIALS[cmd];
+    return m;
+  }
+
+  function deLatex(text) {
+    var s = String(text || '');
+    s = s.replace(ACCENT_BRACED, _accent).replace(ACCENT_BARE, _accent);
+    s = s.replace(/\{\\([A-Za-z]+)\}/g, _command).replace(/\\([A-Za-z]+) ?/g, _command);
+    return s;
+  }
+
   /* '.../abs/2508.12345v2' → '2508.12345'. The two scout sources disagree on
      the version suffix — the RSS feed drops it, the search API keeps it — so
      dedup only works if both sides are stripped to the same bare id. */
@@ -808,7 +881,7 @@
       var titleEl = entry.querySelector('title');
       var title = titleEl ? titleEl.textContent.replace(/\s+/g, ' ').trim() : '';
       var summaryEl = entry.querySelector('summary');
-      var abstract = summaryEl ? summaryEl.textContent.replace(/\s+/g, ' ').trim() : '';
+      var abstract = summaryEl ? deLatex(summaryEl.textContent).replace(/\s+/g, ' ').trim() : '';
       var authorEls = entry.querySelectorAll('author name');
       var authors = [];
       authorEls.forEach(function (a) { var n = a.textContent.trim(); if (n) authors.push(n); });
@@ -856,7 +929,7 @@
       var descEl = item.querySelector('description');
       var desc = descEl ? descEl.textContent : '';
       var absMatch = desc.match(/Abstract:\s*([\s\S]*)$/);
-      var abstract = (absMatch ? absMatch[1] : desc).replace(/\s+/g, ' ').trim();
+      var abstract = deLatex(absMatch ? absMatch[1] : desc).replace(/\s+/g, ' ').trim();
 
       var authors = [];
       var creators = item.getElementsByTagName('dc:creator');
