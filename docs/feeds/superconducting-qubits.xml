@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="feed.xsl"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:arxave="https://arxave.com/ns/feed">
+  <channel>
+    <title>The Dig — Superconducting qubits</title>
+    <link>https://arxave.com/?preset=superconducting-qubits</link>
+    <atom:link href="https://arxave.com/feeds/superconducting-qubits.xml" rel="self" type="application/rss+xml"/>
+    <description>Transmons and their cousins — gates, readout, and the loss that limits them. Today&apos;s arXiv announcement, ranked against the Superconducting qubits preset.</description>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 14 Aug 2026 04:12:04 GMT</lastBuildDate>
+    <pubDate>Fri, 14 Aug 2026 04:12:04 GMT</pubDate>
+  </channel>
+</rss>

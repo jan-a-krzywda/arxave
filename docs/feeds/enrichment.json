@@ -28,5 +28,23 @@
   },
   "seen": "2026-08-12",
   "model": "gemini-2.5-flash"
+ },
+ "2608.13543": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "An asymptotically optimal synthesis method for distributed CNOT and Clifford circuits is presented, enabling CNOT circuit implementation in CSS codes with O(nk) inter-block transversal CNOTs.",
+   "so_what": "This method offers a way to minimize non-local operations, which often dominate the time or error budget in large-scale distributed quantum computation.",
+   "caveat": "",
+   "tools": [
+    "block-matrix Gaussian elimination",
+    "Pauli exponential circuit representation",
+    "Clifford circuit synthesis",
+    "CSS code encoding"
+   ]
+  },
+  "seen": "2026-08-14",
+  "model": "gemini-2.5-flash",
+  "shape": 2
  }
 }
