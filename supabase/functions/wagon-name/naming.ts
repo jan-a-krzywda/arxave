@@ -13,6 +13,67 @@ export interface Member {
   title: string;
 }
 
+/**
+ * One rung of the model ladder: a model id and the only thing that differs
+ * between models in this request body — how each wants to be told not to think.
+ *
+ * THE THINKING FIELD IS NOT COSMETIC AND IT IS NOT PORTABLE. Sending the wrong
+ * one is a hard 400, not a warning, measured 2026-08-14 against each model:
+ *
+ *   gemini-3.5-flash-lite   thinkingBudget → 400 INVALID_ARGUMENT; wants thinkingLevel
+ *   gemini-3.1-flash-lite   thinkingBudget: 0 accepted
+ *   gemma-4-31b-it          any thinkingConfig → 400 "Thinking budget is not
+ *   gemma-4-26b-a4b-it        supported for this model"
+ *
+ * So the fragment travels with the model id rather than being a constant, and
+ * an id nobody listed here gets `null` — no thinkingConfig at all, which every
+ * model accepts and only costs thinking tokens on one that would have honoured
+ * a budget of zero.
+ */
+export interface Rung {
+  model: string;
+  thinking: Record<string, unknown> | null;
+}
+
+/**
+ * The ladder, generous-quota-last.
+ *
+ * WHY A LADDER AND NOT A BIGGER MODEL. The binding limit is requests per
+ * minute on a free-tier key, and it is metered per model — so a 429 on rung 1
+ * says nothing about rung 2's budget. A haul of ten wagons cannot be named by
+ * any single free-tier model in one press (measured 2026-08-14: this key 429s
+ * on the 7th call within a minute); across four models it can. Falling down
+ * the ladder costs a little naming quality and saves the user a second press,
+ * which is the right trade for a garnish on a clustering that already happened.
+ *
+ * Ordered best-first, and every rung was checked on 2026-08-14 to accept
+ * systemInstruction and responseSchema and to return a usable name on a real
+ * three-title wagon. The Gemma rungs are last because they are the loosest
+ * with the field's terminology, not because they failed.
+ */
+export const LADDER: Rung[] = [
+  { model: 'gemini-3.5-flash-lite', thinking: { thinkingLevel: 'low' } },
+  { model: 'gemini-3.1-flash-lite', thinking: { thinkingBudget: 0 } },
+  { model: 'gemma-4-31b-it', thinking: null },
+  { model: 'gemma-4-26b-a4b-it', thinking: null },
+];
+
+/** What each known model wants in `thinkingConfig`, for ids that arrive by env. */
+const THINKING: Record<string, Record<string, unknown> | null> = Object.fromEntries(
+  LADDER.map((r) => [r.model, r.thinking]),
+);
+
+/**
+ * The ladder to actually climb, from a comma-separated env override or the
+ * default above. An unknown id is taken at its word and sent no thinkingConfig,
+ * because a wrong one is a 400 and a missing one never is.
+ */
+export function ladderFrom(env?: string | null): Rung[] {
+  const ids = String(env ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  if (!ids.length) return LADDER;
+  return ids.map((model) => ({ model, thinking: THINKING[model] ?? null }));
+}
+
 export interface WagonName {
   name: string;
   gloss: string;
@@ -57,9 +118,11 @@ export async function wagonKey(members: Member[]): Promise<string> {
 
 export const SYSTEM = [
   'You name clusters of academic preprints that an embedding model grouped by',
-  'abstract similarity. You are given the titles of one cluster. Reply with a',
-  'label naming the specific research topic they share, and a one-sentence',
-  'gloss of what holds them together.',
+  'abstract similarity. You are given several numbered groups of titles. Name',
+  'every group: for each, a label naming the specific research topic its titles',
+  'share, and a one-sentence gloss of what holds them together. Return one entry',
+  'per group, carrying that group\'s number, and never merge or skip a group —',
+  'two groups may be close neighbours and still need labels that tell them apart.',
   'The label is a noun phrase of two to five words, in the field\'s own',
   'terminology, specific enough to distinguish this cluster from a neighbouring',
   'one — "Valley splitting in Si/SiGe", not "Quantum computing" and not',
@@ -73,54 +136,125 @@ export const SYSTEM = [
 
 /* An enforced schema rather than "reply in JSON", for the reason enrich.mjs
    gives: the API validates it, so a malformed reply is a transport error and
-   not a parse surprise downstream. */
+   not a parse surprise downstream.
+
+   `group` is the load-bearing field. A model handed nine groups can return
+   eight, or return them in an order of its own choosing, and an array position
+   would then silently file every name after the gap under the wrong wagon —
+   which is worse than no name at all, because a wrong name is checkable only
+   by someone who reads the titles. Carrying the number makes a dropped group a
+   missing key rather than a shifted one. */
 export const SCHEMA = {
   type: 'object',
   properties: {
-    name: {
-      type: 'string',
-      description: 'The shared topic as a 2-5 word noun phrase, in the field\'s terminology.',
-    },
-    gloss: {
-      type: 'string',
-      description: 'One sentence on what these papers have in common.',
+    groups: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          group: {
+            type: 'integer',
+            description: 'The number of the group being named, exactly as given.',
+          },
+          name: {
+            type: 'string',
+            description: 'The shared topic as a 2-5 word noun phrase, in the field\'s terminology.',
+          },
+          gloss: {
+            type: 'string',
+            description: 'One sentence on what these papers have in common.',
+          },
+        },
+        required: ['group', 'name', 'gloss'],
+      },
     },
   },
-  required: ['name', 'gloss'],
+  required: ['groups'],
 };
 
-/** The user turn: just the titles, numbered. Abstracts are not worth the tokens. */
-export function promptFor(members: Member[]): string {
-  const titles = members
-    .slice(0, MAX_MEMBERS)
-    .map((m, i) => `${i + 1}. ${normalizeTitle(m.title)}`)
-    .join('\n');
-  return `These ${Math.min(members.length, MAX_MEMBERS)} preprints clustered together:\n\n${titles}`;
+/**
+ * The `generationConfig` for one rung: the shared half, plus that model's own
+ * way of being told not to think — or nothing, when it has no such setting.
+ */
+export function generationConfig(rung: Rung): Record<string, unknown> {
+  return {
+    temperature: 0.2,
+    responseMimeType: 'application/json',
+    responseSchema: SCHEMA,
+    ...(rung.thinking ? { thinkingConfig: rung.thinking } : {}),
+  };
 }
 
 /**
- * Gemini's reply reduced to a name and gloss, or null.
+ * The user turn: every wagon in the train, as numbered groups of titles.
  *
- * Null rather than a throw on anything unexpected — a truncated response, a
- * safety block with no candidate, an empty parts array. The caller treats null
- * as "this wagon keeps its number", which is exactly the pre-LLM UI.
+ * ONE REQUEST FOR THE WHOLE TRAIN, NOT ONE PER WAGON. This used to send a
+ * wagon at a time, and the free tier's limit is requests per minute — so a
+ * seven-wagon train spent seven of a ~6/min allowance and stopped halfway with
+ * "4 of 7 named". The token limits are nowhere near as tight: a typical train
+ * is ~1.5k tokens against a 250k/min ceiling, and the absolute worst case here
+ * (MAX_WAGONS groups of MAX_TITLES titles) is around 12k. Trading a scarce
+ * budget for an abundant one costs nothing and makes the common press a single
+ * call that cannot be rate limited partway through.
+ *
+ * Titles per group are capped tighter than `MAX_MEMBERS` because naming is a
+ * task with sharply diminishing returns — the topic of a thirty-paper cluster
+ * is evident in the first dozen titles, and the rest is tokens spent to say it
+ * again. The count is stated so the model knows it is naming a bigger group
+ * than it can see.
  */
-export function parseResponse(body: unknown): WagonName | null {
+export const MAX_TITLES = 12;   // titles shown per group in the batched prompt
+
+export function promptFor(wagons: Member[][]): string {
+  const groups = wagons.map((members, g) => {
+    const shown = members.slice(0, MAX_TITLES);
+    const more = members.length - shown.length;
+    const head = `group ${g + 1} (${members.length} preprint${members.length === 1 ? '' : 's'}` +
+      `${more > 0 ? `, ${shown.length} shown` : ''}):`;
+    const titles = shown.map((m) => `  - ${normalizeTitle(m.title)}`).join('\n');
+    return `${head}\n${titles}`;
+  });
+  return `Name each of these ${wagons.length} group${wagons.length === 1 ? '' : 's'} ` +
+    `of preprints:\n\n${groups.join('\n\n')}`;
+}
+
+/**
+ * Gemini's reply reduced to a name per group index (0-based), or an empty map.
+ *
+ * An empty map rather than a throw on anything unexpected — a truncated
+ * response, a safety block with no candidate, an empty parts array. The caller
+ * treats a missing group as "this wagon keeps its number", which is exactly the
+ * pre-LLM UI, and a partial reply names the wagons it did answer for.
+ *
+ * `count` is what the request asked for, and every returned group number is
+ * checked against it. A model that invents "group 14" of a nine-group train is
+ * hallucinating a wagon; dropping it is the only safe reading, since there is
+ * nothing it could correctly refer to.
+ */
+export function parseResponse(body: unknown, count: number): Record<number, WagonName> {
+  const out: Record<number, WagonName> = {};
   const b = body as {
     candidates?: { content?: { parts?: { text?: string }[] } }[];
   };
   const text = b?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) return null;
-  let parsed: { name?: unknown; gloss?: unknown };
+  if (!text) return out;
+  let parsed: { groups?: unknown };
   try {
     parsed = JSON.parse(text);
   } catch {
-    return null;
+    return out;
   }
-  const name = String(parsed.name ?? '').replace(/\s+/g, ' ').trim().slice(0, 80);
-  const gloss = String(parsed.gloss ?? '').replace(/\s+/g, ' ').trim().slice(0, 300);
-  if (!name) return null;
-  return { name, gloss };
+  const groups = Array.isArray(parsed?.groups) ? parsed.groups : [];
+  for (const g of groups) {
+    const row = g as { group?: unknown; name?: unknown; gloss?: unknown };
+    const idx = Number(row?.group) - 1;          // the prompt numbers from 1
+    if (!Number.isInteger(idx) || idx < 0 || idx >= count) continue;
+    if (out[idx]) continue;                      // first answer for a group wins
+    const name = String(row.name ?? '').replace(/\s+/g, ' ').trim().slice(0, 80);
+    const gloss = String(row.gloss ?? '').replace(/\s+/g, ' ').trim().slice(0, 300);
+    if (name) out[idx] = { name, gloss };
+  }
+  return out;
 }
 
 /**
