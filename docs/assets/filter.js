@@ -2791,6 +2791,14 @@
     statusEl.style.color = '';
     wagonPanel.style.display = 'none';
 
+    /* Last haul's assay is indexed by last haul's stones. A new haul with a
+       different count would read past the end of it — drop it here and let
+       computeGrades() below put a matching one back. */
+    state.grades = null;
+    state.order = null;
+    byId('assay-table-wrap').style.display = 'none';
+    byId('stage-3').style.display = 'none';
+
     try {
       // Scout
       statusEl.textContent = 'Scouting arXiv...';
