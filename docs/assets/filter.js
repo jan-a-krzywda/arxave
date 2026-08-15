@@ -32,11 +32,21 @@
   ];
   const LOCAL_MODEL = 'Xenova/bge-small-en-v1.5';
   const LOCAL_DIM = 384;
-  /* Small on purpose. One extractor call is synchronous WASM: nothing paints
-     until the whole batch is through, so the batch size *is* the length of the
-     freeze. Sixteen abstracts locked Firefox up for seconds at a time; four
-     keeps each block short enough that the train keeps bobbing between them. */
-  const LOCAL_BATCH = 4;
+  /* Two batch sizes, because the two paths pay for size differently. In the
+     worker the extractor blocks a thread nobody is watching, so batches are
+     sized for throughput alone — bigger is faster per abstract. On the main
+     thread the batch size *is* the length of the freeze (one extractor call is
+     synchronous WASM; nothing paints until it returns), so the fallback trades
+     throughput for a page that still moves. */
+  const WORKER_BATCH = 16;
+  const INLINE_BATCH = 4;
+  /* The worker sits next to this file, wherever this file was served from —
+     read off the script tag rather than hard-coded, so the page works from a
+     Jekyll baseurl, a local server or a file:// checkout alike. */
+  const WORKER_URL = (function () {
+    var src = (document.currentScript && document.currentScript.src) || '';
+    return src ? src.replace(/[^/]*(\?.*)?$/, 'embed-worker.js') : 'assets/embed-worker.js';
+  })();
   const CACHE_READ_CHUNK = 500;   // stays under dig-cache's MAX_SHAS
   const OPENALEX_MAILTO = 'arxiv-filter@example.com';
 
@@ -709,6 +719,113 @@
     return _pickPromise;
   }
 
+  /* The pick in a worker: the same model, cutting on a thread the page is not
+     drawing on. Resolves to a handle — .embed(texts) → vectors, .batch — so the
+     caller cannot tell which of the two paths it got. Rejects if the browser
+     has no workers, if the worker script will not start, or if loading the
+     model inside it fails; loadPick() then falls back to the main thread. */
+  function loadPickInWorker(onProgress) {
+    return new Promise(function (resolve, reject) {
+      if (typeof Worker !== 'function') return reject(new Error('no Worker in this browser'));
+
+      var worker;
+      try {
+        worker = new Worker(WORKER_URL, { type: 'module' });
+      } catch (err) {
+        return reject(err);
+      }
+
+      var settled = false;
+      var nextId = 0;
+      var pending = {};   // id → {resolve, reject} for batches in flight
+
+      worker.onerror = function (e) {
+        var err = new Error('embed worker failed: ' + ((e && e.message) || 'load error'));
+        if (!settled) { settled = true; worker.terminate(); return reject(err); }
+        /* After the handle is out, a worker-level error can no longer be
+           reported by rejecting the load — fail the batches waiting on it
+           instead, or embedTexts hangs forever. */
+        Object.keys(pending).forEach(function (id) { pending[id].reject(err); delete pending[id]; });
+      };
+
+      worker.onmessage = function (e) {
+        var msg = e.data || {};
+
+        if (msg.type === 'progress') return onProgress(msg.file, msg.pct);
+
+        if (msg.type === 'ready') {
+          settled = true;
+          return resolve({
+            batch: WORKER_BATCH,
+            embed: function (texts) {
+              return new Promise(function (res, rej) {
+                var id = ++nextId;
+                pending[id] = { resolve: res, reject: rej };
+                worker.postMessage({ type: 'embed', id: id, texts: texts });
+              });
+            },
+          });
+        }
+
+        if (msg.type === 'vectors') {
+          var got = pending[msg.id];
+          if (got) { delete pending[msg.id]; got.resolve(msg.vectors); }
+          return;
+        }
+
+        if (msg.type === 'error') {
+          var err = new Error(msg.message);
+          if (!settled) { settled = true; worker.terminate(); return reject(err); }
+          var waiting = pending[msg.id];
+          if (waiting) { delete pending[msg.id]; waiting.reject(err); }
+        }
+      };
+
+      worker.postMessage({ type: 'load', urls: TRANSFORMERS_URLS, model: LOCAL_MODEL });
+    });
+  }
+
+  /* The old path, kept as the fallback. Same handle, smaller batches, and a
+     yield around every call — on this thread those are the only frames the
+     page gets. */
+  async function loadPickInline(onProgress) {
+    var mod = null;
+    var failures = [];
+    for (var u = 0; u < TRANSFORMERS_URLS.length && !mod; u++) {
+      try {
+        mod = await import(TRANSFORMERS_URLS[u]);
+      } catch (err) {
+        failures.push(TRANSFORMERS_URLS[u] + ' → ' + (err && err.message ? err.message : String(err)));
+      }
+    }
+    if (!mod) {
+      throw new Error('Could not load transformers.js from any CDN: ' + failures.join(' | '));
+    }
+
+    mod.env.allowLocalModels = false;
+
+    var extractor = await mod.pipeline('feature-extraction', LOCAL_MODEL, {
+      dtype: 'q8',
+      device: 'wasm',
+      progress_callback: function (p) {
+        if (p && p.status === 'progress' && p.file && typeof p.progress === 'number') {
+          onProgress(p.file, Math.round(p.progress));
+        }
+      },
+    });
+
+    return {
+      batch: INLINE_BATCH,
+      embed: async function (texts) {
+        await yieldToPaint();
+        var out = await extractor(texts, { pooling: 'mean', normalize: true });
+        var rows = out.tolist();
+        await yieldToPaint();
+        return rows;
+      },
+    };
+  }
+
   async function loadPick() {
     var btn = byId('sharpen-btn');
     var statusEl = byId('sharpen-status');
@@ -723,44 +840,34 @@
     progBar.value = 0;
     progLabel.textContent = 'Starting...';
 
-    var mod = null;
-    var failures = [];
-    for (var u = 0; u < TRANSFORMERS_URLS.length && !mod; u++) {
+    function onProgress(file, pct) {
+      progBar.value = pct;
+      progLabel.textContent = file + ' — ' + pct + '%';
+    }
+
+    var pick = null;
+    try {
+      pick = await loadPickInWorker(onProgress);
+    } catch (err) {
+      // Not fatal: the main thread can still do it, just less smoothly.
+      console.warn('embed worker unavailable, cutting on the main thread:', err);
+      progBar.value = 0;
+      progLabel.textContent = 'Starting...';
+    }
+
+    if (!pick) {
       try {
-        mod = await import(TRANSFORMERS_URLS[u]);
+        pick = await loadPickInline(onProgress);
       } catch (err) {
-        failures.push(TRANSFORMERS_URLS[u] + ' → ' + (err && err.message ? err.message : String(err)));
+        statusEl.textContent = 'Failed to load from any CDN.';
+        statusEl.style.color = 'var(--ember)';
+        progWrap.style.display = 'none';
+        btn.disabled = false;
+        throw err;
       }
     }
 
-    if (!mod) {
-      statusEl.textContent = 'Failed to load from any CDN.';
-      statusEl.style.color = 'var(--ember)';
-      progWrap.style.display = 'none';
-      btn.disabled = false;
-      throw new Error('Could not load transformers.js from any CDN: ' + failures.join(' | '));
-    }
-
-    mod.env.allowLocalModels = false;
-
-    var lastFile = '';
-    state.extractor = await mod.pipeline('feature-extraction', LOCAL_MODEL, {
-      dtype: 'q8',
-      device: 'wasm',
-      progress_callback: function (p) {
-        if (p && p.status === 'progress' && p.file && typeof p.progress === 'number') {
-          var pct = Math.round(p.progress);
-          progBar.value = pct;
-          if (p.file !== lastFile) {
-            progLabel.textContent = p.file + ' — ' + pct + '%';
-            lastFile = p.file;
-          } else {
-            progLabel.textContent = p.file + ' — ' + pct + '%';
-          }
-        }
-      },
-    });
-
+    state.extractor = pick;
     state.modelLoaded = true;
     progWrap.style.display = 'none';
     doneEl.style.display = '';
@@ -1074,22 +1181,19 @@
        locally funnels through here, so asking for it here means no other call
        site has to remember to — and a path served entirely from the cache never
        reaches this line, which is the whole point of loading it lazily. */
-    var extractor = await ensurePick();
+    var pick = await ensurePick();
+    var step = pick.batch || INLINE_BATCH;
     var vectors = [];
-    for (var i = 0; i < texts.length; i += LOCAL_BATCH) {
-      var chunk = texts.slice(i, i + LOCAL_BATCH);
-      /* Paint the count this batch is about to earn *before* the block, then
-         yield: the number and the stones move while the thread is busy, which
-         is the only window there is. */
-      if (statusFn) statusFn(Math.min(i + LOCAL_BATCH, texts.length), texts.length);
-      await yieldToPaint();
-      var out = await extractor(chunk, { pooling: 'mean', normalize: true });
-      var rows = out.tolist();
+    for (var i = 0; i < texts.length; i += step) {
+      var rows = await pick.embed(texts.slice(i, i + step));
       for (var r = 0; r < rows.length; r++) {
         normalize(rows[r]);  // defensive: ensure unit vector
         vectors.push(rows[r]);
       }
-      await yieldToPaint();
+      /* Report what has actually landed, once the batch is back. The train runs
+         on its own clock either way — it is only the stones that wait here, and
+         a batch that has not returned has not earned any. */
+      if (statusFn) statusFn(vectors.length, texts.length);
     }
     return vectors;
   }
