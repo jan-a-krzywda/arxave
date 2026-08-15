@@ -53,6 +53,9 @@ permalink: /
       <select id="claim-select"></select>
     </label>
     <button type="button" id="claim-save-as" class="claim-btn">Save as…</button>
+    <!-- Clear empties the setup; Delete removes the slot. Two different things,
+         so two buttons — "start over" must not cost you the named claim. -->
+    <button type="button" id="claim-clear" class="claim-btn">Clear</button>
     <button type="button" id="claim-delete" class="claim-btn claim-btn-danger" disabled>Delete</button>
     <button type="button" id="claim-export" class="claim-btn">Export…</button>
     <button type="button" id="claim-import" class="claim-btn">Import…</button>
@@ -60,7 +63,8 @@ permalink: /
     <span class="claim-status" id="claim-status"></span>
   </div>
   <p class="hint claim-hint">
-    A claim is one dig setup. Edits save themselves.
+    A claim is one dig setup. Edits save themselves. Clear empties the
+    touchstones, cores, and gate — the stones you hauled stay put.
   </p>
 
   <!-- ── Stage 1: Haul the stones (scout settings live here — they are what
@@ -239,6 +243,52 @@ permalink: /
           <input type="checkbox" id="table-view-toggle"> Table view
         </label>
       </div>
+    </div>
+
+    <!-- The gate. Pay dirt above is how much of the matrix is highlighted; the
+         gate is the cut a feed would actually make, and it is on z rather than
+         grade because absolute grades are not comparable between days. The
+         count beside it is measured on the night on screen, not estimated. -->
+    <div class="gate-block" id="gate-block" style="display:none">
+      <div class="gate-main">
+        <label class="gate-label">
+          Gate <span class="sub">z ≥</span>
+          <input type="range" id="gate-z" min="0" max="4" step="0.1" value="2">
+          <span class="gate-z-value" id="gate-z-value">2.0</span>
+        </label>
+        <span class="gate-readout" id="gate-readout" role="status"></span>
+      </div>
+      <details class="gate-adv">
+        <summary>What the gate does <span class="sub">— and the floor under it</span></summary>
+        <p class="hint">
+          Every stone gets a <em>z</em>: how far its grade sits above the night's
+          median, in MAD units, over the whole announcement. A cut at z ≥ 2 keeps
+          the papers that stand out against the day they landed in, so a quiet
+          night ships nothing rather than shipping its least-bad paper. The floor
+          is the escape hatch: if fewer than <em>floor</em> stones clear the bar,
+          the gate reaches down to <em>soft z</em> and ships that many — never
+          past the ceiling.
+        </p>
+        <div class="role-grid gate-grid">
+          <label>
+            Ceiling <span class="sub">max items</span>
+            <input type="number" id="gate-max-items" value="15" min="1" max="50">
+          </label>
+          <label>
+            Floor <span class="sub">min items</span>
+            <input type="number" id="gate-min-items" value="3" min="0" max="50">
+          </label>
+          <label>
+            Soft z <span class="sub">how far the floor reaches</span>
+            <input type="number" id="gate-soft-z" value="1" min="0" max="4" step="0.1">
+          </label>
+        </div>
+        <p class="hint">
+          These four numbers are the <code>select</code> block of a preset file —
+          export this claim and they travel with it, so a feed built from it cuts
+          where you set it here.
+        </p>
+      </details>
     </div>
 
     <!-- Matrix view -->

@@ -263,7 +263,18 @@ this *with* §1.3, not after it.
 5. §3.3 catalogue page, §3.4 contribution guide with the dormancy rule stated.
 6. §4 tier 1 (hash-addressed private feeds), then the overlap ledger.
 
-**Done since.** `docs/feeds/index.json` — the feed manifest, written by
+**Done since.** The gate is on the Dig page: stage 3 carries `select`
+(`min_z`, `soft_z`, `min_items`, `max_items`) as live controls, and the readout
+beside them counts — against the night on screen — how many papers a feed built
+from this claim would carry. `gateOver` in `docs/assets/filter.js` is a second
+implementation of `selectItems`, held to it by `tests/js/gate.test.js`; change
+one and change both. This is what §3.1's "review by output" needs a person to be
+able to do before they open the PR, and what makes §4 tier 1 a setting someone
+can tune rather than a number they inherit. Claims also gained **Clear**, and
+carry `select` on export — so an exported claim is a preset file with its cut
+already set.
+
+`docs/feeds/index.json` — the feed manifest, written by
 `preset-feed.mjs` and read by the page — landed with the issue #50 fixes. It
 already carries `items` and `updated` per slug, so §3.3's catalogue page has its
 data source and the page no longer links a feed before it exists.

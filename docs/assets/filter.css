@@ -1007,6 +1007,83 @@ progress::-moz-progress-bar {
   color: var(--text-dim);
   font-weight: 600;
 }
+/* The gate's edge: one line down the last column that would ship. Right side,
+   because the columns run best-first — everything left of it is in. */
+#assay-column-titles .col-title.gate-cut {
+  border-right: 2px solid var(--lamp);
+}
+
+/* ── The gate ─────────────────────────────────────────────────────
+   Sits between the assay's controls and the matrix, because it is a claim
+   about the matrix below it: everything left of the cut line would ship. */
+.gate-block {
+  margin: 0.5rem 0 0.9rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 6px;
+  background: var(--rock);
+}
+.gate-main {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+.gate-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.92rem;
+  color: var(--text-dim);
+  flex: none;
+}
+.gate-label input[type="range"] {
+  accent-color: var(--lamp);
+  width: 140px;
+}
+.gate-z-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  min-width: 2.2em;
+}
+.gate-readout {
+  font-size: 0.9rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+/* An empty feed is a legitimate result, not a fault — dim, never red. */
+.gate-readout.is-empty {
+  color: var(--text-dim);
+}
+.gate-adv {
+  margin-top: 0.5rem;
+}
+.gate-adv > summary {
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+}
+.gate-grid {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 0.4rem 0;
+}
+.gate-grid label {
+  font-size: 0.88rem;
+  color: var(--text-dim);
+}
+.gate-grid input[type="number"] {
+  width: 4.5em;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  background: var(--rock-lit);
+  color: var(--text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  margin-left: 0.35rem;
+}
 
 .assay-grid {
   --assay-cols: 1;
@@ -1428,6 +1505,11 @@ progress::-moz-progress-bar {
 
 #assay-table tr.paydirt-row td {
   background: rgba(245, 179, 1, 0.06);
+}
+/* Same edge as the matrix's, laid flat: rows run best-first, so the line goes
+   under the last one that ships. */
+#assay-table tr.gate-cut-row td {
+  border-bottom: 2px solid var(--lamp);
 }
 
 /* ── Advanced block ───────────────────────────────────────────── */
