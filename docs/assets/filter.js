@@ -178,6 +178,9 @@
     // ── claim-owned (saved, restored, exportable) ──
     scout: { categories: 'cond-mat.mes-hall, quant-ph', lookback: 1, max_results: 200 },
     blend: { paydirt_n: 10 },
+    /* The gate — see "The gate" below. Same four names a preset file's
+       `select` block carries, so a claim and a preset stay one shape. */
+    select: { min_z: 2.0, min_items: 3, soft_z: 1.0, max_items: 15 },
     touchstones: [],        // [{id, text, weight, vector}]  free text
     cores: [],              // [{id, doi, weight, title, abstract, vector, status, weak}]
     claimSlug: 'working',   // key into the saved-claims map
@@ -242,6 +245,26 @@
   const WORKING_NAME = 'Dig Setup';
   const LEGACY_WORKING_NAME = 'Working claim';
 
+  /* The gate's defaults, and the only place they are written down. They match
+     `selectItems` in scripts/preset-feed.mjs exactly — a claim that says
+     nothing about the gate must cut where the feed builder would. */
+  const GATE_DEFAULTS = { min_z: 2.0, min_items: 3, soft_z: 1.0, max_items: 15 };
+
+  function parseSelect(raw) {
+    function num(v, dflt, lo, hi) {
+      var f = parseFloat(v);
+      if (!isFinite(f)) return dflt;
+      return Math.min(hi, Math.max(lo, f));
+    }
+    var s = raw || {};
+    return {
+      min_z: num(s.min_z, GATE_DEFAULTS.min_z, 0, 4),
+      min_items: Math.round(num(s.min_items, GATE_DEFAULTS.min_items, 0, 50)),
+      soft_z: num(s.soft_z, GATE_DEFAULTS.soft_z, 0, 4),
+      max_items: Math.round(num(s.max_items, GATE_DEFAULTS.max_items, 1, 50)),
+    };
+  }
+
   function slugify(name) {
     var s = String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '').substring(0, 48);
@@ -270,6 +293,12 @@
       }),
       blend: {
         paydirt_n: state.blend.paydirt_n,
+      },
+      select: {
+        min_z: state.select.min_z,
+        min_items: state.select.min_items,
+        soft_z: state.select.soft_z,
+        max_items: state.select.max_items,
       },
     };
   }
@@ -322,6 +351,9 @@
     state.blend = {
       paydirt_n: parseInt(bl.paydirt_n, 10) || 10,
     };
+    /* A preset file's own `select` block lands here, so loading a preset shows
+       the cut its feed makes rather than the page's default one. */
+    state.select = parseSelect(claim.select);
 
     /* Provenance, carried per row. A preset's phrases are text this repo
        published, so their hashes may go through the shared cache; anything the
@@ -357,6 +389,7 @@
     byId('lookback').value = state.scout.lookback;
     byId('max-results').value = state.scout.max_results;
     byId('paydirt-n').value = state.blend.paydirt_n;
+    renderGateInputs();
 
     byId('touchstones-list').innerHTML = '';
     byId('cores-list').innerHTML = '';
@@ -504,6 +537,7 @@
       touchstones: ts.map(function (t) { return { text: t.text || '', weight: 1.0 }; }),
       cores: cs.map(function (c) { return { doi: c.doi || '', weight: 1.0 }; }),
       blend: { paydirt_n: 10 },
+      select: parseSelect(null),
     };
     writeClaims(map);
     try {
@@ -541,6 +575,7 @@
         };
       }),
       blend: { paydirt_n: parseInt(bl.paydirt_n, 10) || 10 },
+      select: parseSelect(raw && raw.select),
     };
   }
 
@@ -3438,9 +3473,151 @@
     return 'var(--lamp-' + idx + ')';
   }
 
+  // ═══════════════════════════════════════════════════════════════════
+  // The gate — how much of tonight would actually ship
+  // ═══════════════════════════════════════════════════════════════════
+  /*
+   * The cut scripts/preset-feed.mjs makes when it builds a feed (`selectItems`
+   * there), run here against the night already on screen. So the number beside
+   * the slider is not a forecast: it is the same rule over the same grades, and
+   * moving the slider says exactly how many papers a feed built from this claim
+   * would have carried this morning.
+   *
+   * The cut is on z — grade minus the night's median, over 1.4826·MAD — and not
+   * on grade, because grades are only comparable within one announcement. A
+   * quiet night's best paper scores like a busy night's tenth, and a fixed
+   * grade bar would either drown you on Tuesday or starve you on Friday.
+   *
+   * TWO IMPLEMENTATIONS OF ONE RULE, on purpose: the builder is a Node module
+   * and this is a browser IIFE with no bundler, so sharing the code means
+   * adding a build step to a site that has none. tests/js/gate.test.js runs
+   * both over the same inputs and fails when they disagree — that test is what
+   * makes this a promise instead of a resemblance.
+   */
+
+  /**
+   * @returns null when there is nothing to gate, else
+   *   {n, keptCount, hard, z, median, mad, degenerate, floored, softBar, opt}
+   *   where `z` is indexed by stone, like state.grades.
+   */
+  function gateReport() {
+    return gateOver(state.grades, state.order, state.select);
+  }
+
+  /* Pure, and kept that way so tests/js/gate.test.js can hand it the same
+     grades it hands selectItems and compare the two answers. */
+  function gateOver(g, order, opt) {
+    if (!g || !order || !order.length) return null;
+    var n = order.length;
+
+    var sorted = Array.prototype.slice.call(g).sort(function (a, b) { return a - b; });
+    var median = sorted[Math.floor(n / 2)];
+    var devs = sorted.map(function (x) { return Math.abs(x - median); })
+      .sort(function (a, b) { return a - b; });
+    var mad = devs[Math.floor(n / 2)];
+
+    /* No spread — every paper alike, or too few to have one. There is no
+       baseline to be above, so the gate stands down to a plain top-N rather
+       than shipping nothing or shipping everything. */
+    if (!(mad > 0)) {
+      return {
+        n: n, keptCount: Math.min(opt.max_items, n), hard: 0, z: null,
+        median: median, mad: 0, degenerate: true, floored: false,
+        softBar: opt.soft_z, opt: opt,
+      };
+    }
+
+    var scale = 1.4826 * mad;
+    var z = new Float64Array(g.length);
+    for (var i = 0; i < g.length; i++) z[i] = (g[i] - median) / scale;
+
+    /* z is monotone in grade, so whatever clears a bar is a prefix of `order`.
+       Counting the prefix is the same answer as filtering, without the copy. */
+    function clearing(bar) {
+      var c = 0;
+      while (c < n && z[order[c]] >= bar) c++;
+      return c;
+    }
+
+    var hard = clearing(opt.min_z);
+    var floorN = Math.min(opt.min_items, opt.max_items);
+    if (hard >= floorN) {
+      return {
+        n: n, keptCount: Math.min(hard, opt.max_items), hard: hard, z: z,
+        median: median, mad: mad, degenerate: false, floored: false,
+        softBar: opt.soft_z, opt: opt,
+      };
+    }
+    /* The floor never overrides the ceiling and never reaches below soft z, so
+       a day with two good papers ships two — not two and a padded third. */
+    var softBar = Math.min(opt.soft_z, opt.min_z);
+    return {
+      n: n, keptCount: Math.min(clearing(softBar), floorN), hard: hard, z: z,
+      median: median, mad: mad, degenerate: false, floored: true,
+      softBar: softBar, opt: opt,
+    };
+  }
+
+  function fmtZ(v) { return (Math.round(v * 100) / 100).toString(); }
+
+  function renderGateInputs() {
+    var s = state.select;
+    if (byId('gate-z')) byId('gate-z').value = s.min_z;
+    if (byId('gate-z-value')) byId('gate-z-value').textContent = s.min_z.toFixed(1);
+    if (byId('gate-max-items')) byId('gate-max-items').value = s.max_items;
+    if (byId('gate-min-items')) byId('gate-min-items').value = s.min_items;
+    if (byId('gate-soft-z')) byId('gate-soft-z').value = s.soft_z;
+  }
+
+  function renderGate() {
+    var block = byId('gate-block');
+    var out = byId('gate-readout');
+    if (!block || !out) return null;
+    /* The z label, not the inputs: renderGate runs on every keystroke, and
+       writing a sanitized number back into the field someone is halfway
+       through typing takes the field away from them. renderGateInputs is for
+       the claim-load path, where nobody is typing. */
+    if (byId('gate-z-value')) {
+      byId('gate-z-value').textContent = state.select.min_z.toFixed(1);
+    }
+    var r = gateReport();
+    if (!r) { block.style.display = 'none'; out.textContent = ''; return null; }
+    block.style.display = '';
+
+    var msg;
+    if (r.degenerate) {
+      msg = 'No spread tonight — nothing to be an outlier against, so the gate ' +
+        'stands down and the top ' + r.keptCount + ' by grade ship.';
+    } else if (r.keptCount === 0) {
+      msg = 'Nothing clears z ≥ ' + fmtZ(r.opt.min_z) + ' — this feed is empty today. ' +
+        'Best on the night is z ' + fmtZ(r.z[state.order[0]]) + '.';
+    } else {
+      msg = r.keptCount + ' of ' + r.n + ' would ship';
+      if (r.floored) {
+        msg += ' — only ' + r.hard + ' clear z ≥ ' + fmtZ(r.opt.min_z) +
+          ', so the floor reaches down to z ' + fmtZ(r.softBar);
+      }
+      var cut = state.order[r.keptCount - 1];
+      msg += ' · last in at z ' + fmtZ(r.z[cut]) +
+        ' (grade ' + state.grades[cut].toFixed(3) + ')' +
+        ' · best z ' + fmtZ(r.z[state.order[0]]);
+    }
+    out.textContent = msg;
+    out.classList.toggle('is-empty', !r.degenerate && r.keptCount === 0);
+    return r;
+  }
+
   function renderAssay() {
     var F = state.featureVectors;
     if (!F || state.order === null || state.grades === null) return;
+
+    /* Nothing to rank against. Grades computed over no features are all zero
+       and their order is arbitrary, so an assay here would be a matrix of
+       noise — say nothing instead. This is the state Clear leaves behind. */
+    if (!state.touchstones.length && !state.cores.length) {
+      byId('stage-3').style.display = 'none';
+      return;
+    }
 
     var N = state.stones.length;
     var order = state.order;
@@ -3453,6 +3630,9 @@
 
     // Show assay section
     byId('stage-3').style.display = '';
+    /* Drawn before the matrix: the column marking the cut reads off it. */
+    var gate = renderGate();
+    var gateN = gate ? gate.keptCount : 0;
     byId('assay-stats').textContent =
       state.stones.length + ' stones · ' + (F.length - 1) + ' features (1 inactive)';
 
@@ -3470,6 +3650,9 @@
     for (var c = 0; c < N; c++) {
       var si = order[c];
       var cls = c < topN ? ' paydirt' : '';
+      /* One line, on the last column the gate keeps — the feed's edge drawn
+         where it falls, rather than a second highlight competing with pay dirt. */
+      if (gateN > 0 && c === gateN - 1) cls += ' gate-cut';
       colTitleHTML += '<div class="col-title' + cls + '" style="width:' + cellW + 'px" title="' +
         escapeHtml(state.stones[si].title) + '">' +
         ((c % 10 === 0 || c < topN) ? (c + 1) : '') +
@@ -3788,15 +3971,23 @@
       else flabel = 'TS ' + (f + 1);
       headHTML += '<th>' + escapeHtml(flabel) + '</th>';
     }
-    headHTML += '<th>Grade</th><th>arXiv ID</th></tr>';
+    headHTML += '<th>Grade</th><th title="Grades above the night\'s median, in MAD units — what the gate cuts on">z</th><th>arXiv ID</th></tr>';
     head.innerHTML = headHTML;
+
+    /* The gate, again from state — the table is drawn on its own on the view
+       toggle, not only from renderAssay, so it cannot take the value by argument. */
+    var gate = gateReport();
+    var gateN = gate ? gate.keptCount : 0;
 
     // Body
     var bodyHTML = '';
     for (var n = 0; n < N; n++) {
       var si = order[n];
       var stone = state.stones[si];
-      var rowCls = n < topN ? ' class="paydirt-row"' : '';
+      var rowClasses = [];
+      if (n < topN) rowClasses.push('paydirt-row');
+      if (gateN > 0 && n === gateN - 1) rowClasses.push('gate-cut-row');
+      var rowCls = rowClasses.length ? ' class="' + rowClasses.join(' ') + '"' : '';
       bodyHTML += '<tr' + rowCls + '>';
       bodyHTML += '<td>' + (n + 1) + '</td>';
       bodyHTML += '<td>' + escapeHtml(stone.title) + '</td>';
@@ -3810,6 +4001,7 @@
         }
       }
       bodyHTML += '<td>' + grades[si].toFixed(2) + '</td>';
+      bodyHTML += '<td>' + (gate && gate.z ? gate.z[si].toFixed(2) : '—') + '</td>';
       bodyHTML += '<td>' + escapeHtml(stone.arxiv_id) + '</td>';
       bodyHTML += '</tr>';
     }
@@ -4226,6 +4418,28 @@
     if (state.order !== null) renderAssay();
   });
 
+  /* The gate's four controls, all the same shape: write state, save, redraw.
+     Redrawing the whole assay on a slider drag is what `paydirt-n` already
+     does at the same N, and the count in the readout has to come from the
+     same pass that marks the cut column — one path, never two. */
+  function wireGateControl(id, apply) {
+    var el = byId(id);
+    if (!el) return;
+    el.addEventListener('input', function () {
+      apply(this.value);
+      state.select = parseSelect(state.select);
+      autosave();
+      if (state.order !== null) renderAssay(); else renderGate();
+    });
+    /* On blur, put the sanitized value on screen — a field left empty or out of
+       range kept its text while state had already fallen back to the default. */
+    el.addEventListener('change', renderGateInputs);
+  }
+  wireGateControl('gate-z', function (v) { state.select.min_z = parseFloat(v); });
+  wireGateControl('gate-max-items', function (v) { state.select.max_items = parseInt(v, 10); });
+  wireGateControl('gate-min-items', function (v) { state.select.min_items = parseInt(v, 10); });
+  wireGateControl('gate-soft-z', function (v) { state.select.soft_z = parseFloat(v); });
+
   byId('table-view-toggle').addEventListener('change', function () {
     var show = this.checked;
     byId('assay-matrix-wrap').style.display = show ? 'none' : '';
@@ -4285,6 +4499,33 @@
     try { localStorage.setItem(CURRENT_KEY, slug); } catch (_) {}
     renderClaimPicker();
     setClaimStatus('Saved as “' + name + '”.');
+  });
+
+  /* Clear empties the setup; Delete removes the slot. Keeping them apart is the
+     point — "start over" is the common move and must not cost someone the claim
+     they named. The scout settings and the hauled stones stay, so clearing is
+     the start of a second dig through the same night, not a fifth haul of it. */
+  byId('claim-clear').addEventListener('click', function () {
+    if (!state.touchstones.length && !state.cores.length) {
+      setClaimStatus('Nothing to clear.');
+      return;
+    }
+    if (!window.confirm(
+      'Clear this setup? Touchstones, core samples, and the gate go back to ' +
+      'empty. Your categories and the stones you hauled stay.')) return;
+    state.touchstones = [];
+    state.cores = [];
+    state.featureVectors = null;
+    state.grades = null;
+    state.order = null;
+    state.blend = { paydirt_n: 10 };
+    state.select = parseSelect(null);
+    renderClaimIntoDom();
+    autosave();
+    byId('stage-3').style.display = 'none';
+    byId('gate-block').style.display = 'none';
+    applyWagonAssay();   // drop the gold rings the old assay left on the train
+    setClaimStatus('Cleared.');
   });
 
   byId('claim-delete').addEventListener('click', function () {
@@ -4352,5 +4593,11 @@
 
   // Initially hide Stage 3
   byId('stage-3').style.display = 'none';
+
+  /* Test hook. The gate is one rule with two implementations — this one and
+     `selectItems` in scripts/preset-feed.mjs — and tests/js/gate.test.js runs
+     both over the same grades to prove they agree. Nothing on the page reads
+     it, and it exposes a pure function, not state. */
+  window.ARXAVE_GATE_OVER = gateOver;
 
 })();
