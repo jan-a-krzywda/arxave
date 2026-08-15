@@ -36,12 +36,17 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import {
-  DIM, MODEL, fetchAbstracts, loadModel, loadPresets, resolveEndpoint, sha256Hex,
+  DIM, MODEL, fetchAbstracts, fetchEarlier, loadModel, loadPresets, resolveEndpoint,
+  sha256Hex,
 } from './warm-dig.mjs';
 import { enrichItems } from './enrich.mjs';
 
 const READ_CHUNK = 500;
 const BATCH = 16;
+/* Per category, and a window that has to reach a date rather than fill a
+   screen — the warmer's number, for the same reason it is not the page's 200:
+   quant-ph alone announces enough in a day to bottom the window out mid-run. */
+const LOOKBACK_MAX = 400;
 /* The canonical domain, not the github.io one Pages also answers on. Every
    link inside a feed is absolute and outlives the file it came in, so a wrong
    default here ships wrong URLs into people's readers. Verified against the
@@ -208,10 +213,34 @@ async function vectorize(texts, endpoint) {
  * is supposed to produce a short feed, and a day with nothing is supposed to
  * produce nothing. Padding to a fixed ten is how a feed teaches people to stop
  * opening it.
+ *
+ * THE FAILURE THE FLOOR EXISTS FOR. A z-gate measures a paper against the
+ * day's own spread, so it punishes a preset that matches its own category.
+ * Measured 2026-08-15 over a two-weekday corpus, same rows, same `grade()`:
+ *
+ *     preset                     n   median   sigma   best grade   best z   z>=2
+ *     quantum-machine-learning  51    0.652   0.055        0.728     1.37      0
+ *     spin-qubits               62    0.617   0.035        0.684     1.92      0
+ *     error-correction          51    0.621   0.039        0.718     2.45      3
+ *
+ * quantum-machine-learning scouts quant-ph and matches half of it — 27 of 51
+ * stones above 0.65 — so the baseline rises AND the spread widens, and the
+ * best paper of the day lands 1.37 sigma out. That feed shipped empty while
+ * the page showed the same papers at the top of the assay. The better a preset
+ * fits its archive, the harder its own gate bites: a pure relative gate cannot
+ * be the only rule.
+ *
+ * So `minItems` is a floor under the gate. If fewer than that clear `minZ`,
+ * top up in grade order from whatever still clears `softZ` — meaningfully above
+ * the baseline, just not exceptionally. A flat day still yields nothing,
+ * because on a flat day nothing clears `softZ` either; what changes is only the
+ * day that had a clear top tier and no outlier.
  */
 export function selectItems(scored, opts = {}) {
   const minZ = Number.isFinite(opts.minZ) ? opts.minZ : 2.0;
   const maxItems = Number.isFinite(opts.maxItems) ? opts.maxItems : 15;
+  const minItems = Number.isFinite(opts.minItems) ? opts.minItems : 3;
+  const softZ = Number.isFinite(opts.softZ) ? opts.softZ : 1.0;
   const ranked = [...scored].sort((a, b) => b.grade - a.grade);
   if (!ranked.length) return [];
 
@@ -225,10 +254,14 @@ export function selectItems(scored, opts = {}) {
      working on a day the statistics cannot speak to. */
   if (!(mad > 0)) return ranked.slice(0, maxItems).map((r) => ({ ...r, z: null }));
 
-  return ranked
-    .map((r) => ({ ...r, z: (r.grade - median) / (1.4826 * mad) }))
-    .filter((r) => r.z >= minZ)
-    .slice(0, maxItems);
+  const withZ = ranked.map((r) => ({ ...r, z: (r.grade - median) / (1.4826 * mad) }));
+  const kept = withZ.filter((r) => r.z >= minZ);
+  /* The floor never overrides the ceiling, and never reaches below softZ, so a
+     day with two good papers ships two — not two plus a padded third. */
+  if (kept.length >= Math.min(minItems, maxItems)) return kept.slice(0, maxItems);
+  return withZ
+    .filter((r) => r.z >= Math.min(softZ, minZ))
+    .slice(0, Math.min(minItems, maxItems));
 }
 
 export function renderFeed({ preset, slug, items, site, builtOn }) {
@@ -392,6 +425,25 @@ async function main() {
         console.warn(`preset-feed: ${slug} · ${err.message}`);
       }
     }
+    /* The same window the Dig reads, not just tonight's announcement. A preset
+       with lookback_days > 1 ranks several weekdays on the page; a feed built
+       from one night ranked a different, smaller set and could disagree with
+       the page about the same preset on the same morning. `fetchEarlier` is one
+       request per category back to the page's own cutoff, deduped against the
+       RSS ids above — a cross-list is one abstract either way. */
+    const lookback = parseInt(preset.scout?.lookback_days, 10) || 1;
+    if (lookback > 1) {
+      try {
+        for (const s of await fetchEarlier(categories, lookback, LOOKBACK_MAX)) {
+          if (seen.has(s.arxivId)) continue;
+          seen.add(s.arxivId);
+          stones.push(s);
+        }
+      } catch (err) {
+        console.warn(
+          `preset-feed: ${slug} lookback failed (${err.message}) — tonight only`);
+      }
+    }
     if (!stones.length) {
       console.warn(`preset-feed: ${slug} has no stones today — leaving the last feed in place`);
       if (priorFeeds[slug]) feeds[slug] = priorFeeds[slug];
@@ -412,6 +464,8 @@ async function main() {
     }));
     const ranked = selectItems(scored, {
       minZ: preset.select?.min_z,
+      minItems: preset.select?.min_items,
+      softZ: preset.select?.soft_z,
       maxItems: Number.isFinite(preset.select?.max_items) ? preset.select.max_items : top,
     });
     if (!ranked.length) {

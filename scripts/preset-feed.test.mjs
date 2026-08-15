@@ -113,27 +113,63 @@ const spread = [0.50, 0.55, 0.58, 0.60, 0.61, 0.62, 0.63, 0.65, 0.70, 0.90]
   .map((g, i) => ({ arxivId: String(i), grade: g }));
 
 test('a paper far above the day baseline is kept, the bulk is not', () => {
-  const picked = selectItems(spread, { minZ: 2.0, maxItems: 15 });
+  const picked = selectItems(spread, { minZ: 2.0, maxItems: 15, minItems: 0 });
   assert.deepEqual(picked.map((p) => p.grade), [0.90]);
 });
 
 test('lowering the gate lets the next tier in, in grade order', () => {
   // z here is 4.72 and 1.35; the next paper down (0.65) sits at 0.84 and stays
   // out, which is the point — the tiers are set by the spread, not by rank.
-  const picked = selectItems(spread, { minZ: 1.0, maxItems: 15 });
+  const picked = selectItems(spread, { minZ: 1.0, maxItems: 15, minItems: 0 });
   assert.deepEqual(picked.map((p) => p.grade), [0.90, 0.70]);
 });
 
 test('maxItems is a ceiling, never a target', () => {
   // The failure this prevents: padding a quiet day to a fixed ten, which is how
   // a feed teaches people to stop opening it.
-  assert.equal(selectItems(spread, { minZ: 2.0, maxItems: 10 }).length, 1);
-  assert.equal(selectItems(spread, { minZ: 0.5, maxItems: 2 }).length, 2);
+  assert.equal(selectItems(spread, { minZ: 2.0, maxItems: 10, minItems: 0 }).length, 1);
+  assert.equal(selectItems(spread, { minZ: 0.5, maxItems: 2, minItems: 0 }).length, 2);
 });
 
 test('a day where nothing stands out yields an empty feed, not a filled one', () => {
   const flat = [0.60, 0.601, 0.602, 0.599].map((g, i) => ({ arxivId: String(i), grade: g }));
   assert.equal(selectItems(flat, { minZ: 3.0, maxItems: 15 }).length, 0);
+});
+
+/* The floor under the gate. Measured 2026-08-15: quantum-machine-learning
+   matches half of quant-ph, so its own baseline and spread rise with it and the
+   best paper of the day sat at z 1.37 — the feed shipped empty while the page
+   showed those same papers at the top of the assay. */
+
+test('a day with a clear top tier but no outlier fills to minItems', () => {
+  // Nothing reaches z 2.0; the top three still clear softZ, so three ship.
+  const dense = [0.60, 0.61, 0.62, 0.63, 0.64, 0.65, 0.70, 0.71, 0.72]
+    .map((g, i) => ({ arxivId: String(i), grade: g }));
+  const picked = selectItems(dense, { minZ: 2.0, minItems: 3, softZ: 1.0, maxItems: 15 });
+  assert.deepEqual(picked.map((p) => p.grade), [0.72, 0.71, 0.70]);
+  assert.ok(picked.every((p) => p.z < 2.0 && p.z >= 1.0));
+});
+
+test('the floor never reaches below softZ, so a flat day still ships nothing', () => {
+  const flat = [0.60, 0.601, 0.602, 0.599].map((g, i) => ({ arxivId: String(i), grade: g }));
+  assert.equal(selectItems(flat, { minZ: 2.0, minItems: 3, softZ: 1.0 }).length, 0);
+});
+
+test('the floor tops up only what is missing, and never past maxItems', () => {
+  // Two clear softZ, minItems asks for three: two ship, not three padded.
+  const two = [0.50, 0.55, 0.58, 0.60, 0.61, 0.62, 0.63, 0.70, 0.90]
+    .map((g, i) => ({ arxivId: String(i), grade: g }));
+  assert.equal(selectItems(two, { minZ: 2.0, minItems: 3, softZ: 1.0 }).length, 2);
+  assert.equal(selectItems(two, { minZ: 2.0, minItems: 3, softZ: 1.0, maxItems: 1 }).length, 1);
+});
+
+test('papers that clear the real gate are never displaced by the floor', () => {
+  // Four above z 2.0 and minItems 3: all four ship — the floor is a floor.
+  const many = [0.50, 0.52, 0.54, 0.56, 0.57, 0.58, 0.90, 0.91, 0.92, 0.93]
+    .map((g, i) => ({ arxivId: String(i), grade: g }));
+  const picked = selectItems(many, { minZ: 2.0, minItems: 3, maxItems: 15 });
+  assert.equal(picked.length, 4);
+  assert.ok(picked.every((p) => p.z >= 2.0));
 });
 
 test('an identical spread falls back to top-N rather than dividing by zero', () => {
