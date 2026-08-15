@@ -32,7 +32,11 @@
   ];
   const LOCAL_MODEL = 'Xenova/bge-small-en-v1.5';
   const LOCAL_DIM = 384;
-  const LOCAL_BATCH = 16;
+  /* Small on purpose. One extractor call is synchronous WASM: nothing paints
+     until the whole batch is through, so the batch size *is* the length of the
+     freeze. Sixteen abstracts locked Firefox up for seconds at a time; four
+     keeps each block short enough that the train keeps bobbing between them. */
+  const LOCAL_BATCH = 4;
   const CACHE_READ_CHUNK = 500;   // stays under dig-cache's MAX_SHAS
   const OPENALEX_MAILTO = 'arxiv-filter@example.com';
 
@@ -1051,6 +1055,20 @@
     return v;
   }
 
+  /* Hand the main thread back long enough to actually paint a frame. A bare
+     setTimeout(0) only promises another task, and the next batch can win the
+     race to it — the train then advances in lurches. Waiting for a frame is
+     what the train needs, but a backgrounded tab gets one a second, so the
+     timeout stays in as a floor and whichever comes first wins. */
+  function yieldToPaint() {
+    return new Promise(function (res) {
+      var done = false;
+      function go() { if (!done) { done = true; res(); } }
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(go);
+      setTimeout(go, 16);
+    });
+  }
+
   async function embedTexts(texts, statusFn) {
     /* The one place the pick is genuinely required. Everything that embeds
        locally funnels through here, so asking for it here means no other call
@@ -1060,14 +1078,18 @@
     var vectors = [];
     for (var i = 0; i < texts.length; i += LOCAL_BATCH) {
       var chunk = texts.slice(i, i + LOCAL_BATCH);
+      /* Paint the count this batch is about to earn *before* the block, then
+         yield: the number and the stones move while the thread is busy, which
+         is the only window there is. */
       if (statusFn) statusFn(Math.min(i + LOCAL_BATCH, texts.length), texts.length);
+      await yieldToPaint();
       var out = await extractor(chunk, { pooling: 'mean', normalize: true });
       var rows = out.tolist();
       for (var r = 0; r < rows.length; r++) {
         normalize(rows[r]);  // defensive: ensure unit vector
         vectors.push(rows[r]);
       }
-      await new Promise(function (res) { setTimeout(res, 0); });
+      await yieldToPaint();
     }
     return vectors;
   }
