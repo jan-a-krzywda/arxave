@@ -2408,13 +2408,15 @@
       html += '<button type="button" class="train-wagon" data-wagon="' + w + '"' +
         ' style="flex-grow:' + n + ';background:' +
         WAGON_COLORS[w % WAGON_COLORS.length] + '"' +
-        ' title="' + escapeHtml(wagonLabel(w)) + ' — ' + n + ' stones">' +
+        /* aria-label, not title: the rich hover card already says all of this,
+           and the native tooltip drew on top of it. */
+        ' aria-label="' + escapeHtml(wagonLabel(w)) + ' — ' + n + ' stones">' +
         '<span class="train-wagon-n">' + n + '</span></button>';
     }
     if (lone) {
       html += '<button type="button" class="train-wagon is-lone" data-wagon="lone"' +
         ' style="flex-grow:' + lone + ';background:' + LONE_COLOR + '"' +
-        ' title="Lone stones — ' + lone + ' stones">' +
+        ' aria-label="Lone stones — ' + lone + ' stones">' +
         '<span class="train-wagon-n">' + lone + '</span></button>';
     }
     strip.innerHTML = html;
