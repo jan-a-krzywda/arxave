@@ -140,6 +140,31 @@
           .flag-read { background: var(--ore); color: #1b1f26; }
           .flag-skim { background: var(--rock); color: var(--text-dim);
                        border: 1px solid var(--rock-edge); }
+          /* The band is how sure the assay was, and it is deliberately a ramp
+             rather than three unrelated colours: solid ore for pay dirt, ore
+             outline for worth-a-look, plain rock for a long shot. Read down the
+             page, the colour draining out *is* the confidence draining out. */
+          .band {
+            display: inline-block; vertical-align: baseline;
+            border-radius: 3px; padding: 0.05rem 0.4rem; margin-right: 0.4rem;
+            font-size: 0.72rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.06em;
+          }
+          .band-paydirt { background: var(--ore); color: #1b1f26; }
+          .band-look { background: none; border: 1px solid var(--ore-dim);
+                       color: var(--ore-dim); }
+          .band-longshot { background: none; border: 1px solid var(--rock-edge);
+                           color: var(--text-faint); }
+          /* A long shot is on the page because the floor put it there, so it
+             sits back: the card is present, but it does not compete with a
+             paper the assay actually stood behind. */
+          article.is-longshot { opacity: 0.82; }
+          article.is-longshot .seam { background: var(--rock);
+                                      border-color: var(--rock-edge);
+                                      color: var(--text-faint); }
+          .tally {
+            margin: 0.5rem 0 0; color: var(--text-dim); font-size: 0.95rem;
+          }
           .kind {
             background: none; border: 1px solid var(--rock-edge);
             color: var(--text-faint); font-weight: 600;
@@ -165,6 +190,11 @@
           <header>
             <h1><xsl:value-of select="channel/title"/></h1>
             <p class="lede"><xsl:value-of select="channel/description"/></p>
+            <!-- An empty top band is an answer, so it is said out loud above
+                 the cards rather than left to be inferred from their chips. -->
+            <xsl:if test="channel/arxave:tally">
+              <p class="tally"><xsl:value-of select="channel/arxave:tally"/></p>
+            </xsl:if>
           </header>
 
           <div class="how">
@@ -193,6 +223,9 @@
 
           <xsl:for-each select="channel/item">
             <article>
+              <xsl:if test="arxave:band = 'longshot'">
+                <xsl:attribute name="class">is-longshot</xsl:attribute>
+              </xsl:if>
               <div class="head">
                 <span class="seam"><xsl:value-of select="position()"/></span>
                 <h2>
@@ -211,8 +244,16 @@
                      sort of paper it is, and the finding with its number. The
                      provenance line under it explains the ranking rather than
                      describing the paper, so it is set quiet. -->
-                <xsl:if test="arxave:verdict or arxave:kind or arxave:headline">
+                <xsl:if test="arxave:band or arxave:verdict or arxave:kind or arxave:headline">
                   <p class="verdict">
+                    <xsl:if test="arxave:band">
+                      <span>
+                        <xsl:attribute name="class">
+                          <xsl:text>band band-</xsl:text><xsl:value-of select="arxave:band"/>
+                        </xsl:attribute>
+                        <xsl:value-of select="arxave:bandname"/>
+                      </span>
+                    </xsl:if>
                     <xsl:if test="arxave:verdict">
                       <span>
                         <xsl:attribute name="class">

@@ -31,7 +31,7 @@ const IDS = [
   'assay-column-titles', 'assay-matrix-wrap', 'assay-legends',
   'assay-table-wrap', 'assay-table-head', 'assay-table-body',
   'gate-block', 'gate-z', 'gate-z-value', 'gate-readout',
-  'gate-max-items', 'gate-min-items', 'gate-soft-z',
+  'gate-max-items', 'gate-min-items', 'gate-soft-z', 'gate-long-z',
   'stage-1', 'stage-2', 'stage-3', 'app', 'cors-proxy',
   'wagon-modal', 'wagon-modal-backdrop', 'wagon-modal-close', 'wagon-modal-canvas',
   'wagon-modal-graph-canvas', 'wagon-modal-readout', 'wagon-modal-header-title',
@@ -106,11 +106,13 @@ async function main() {
       ['every grade identical', new Array(20).fill(0.6)],
     ];
     const opts = [
+      { min_z: 2.0, min_items: 3, soft_z: 1.0, long_z: 0.5, max_items: 15 },
+      { min_z: 0, min_items: 3, soft_z: 1.0, long_z: 0.5, max_items: 15 },
+      { min_z: 4, min_items: 0, soft_z: 1.0, long_z: 0.5, max_items: 15 },
+      { min_z: 2.0, min_items: 5, soft_z: 0.5, long_z: 0.25, max_items: 3 },
+      { min_z: 1.2, min_items: 10, soft_z: 1.2, long_z: 0, max_items: 50 },
+      // The old shape, with no long_z at all: both sides must default the same.
       { min_z: 2.0, min_items: 3, soft_z: 1.0, max_items: 15 },
-      { min_z: 0, min_items: 3, soft_z: 1.0, max_items: 15 },
-      { min_z: 4, min_items: 0, soft_z: 1.0, max_items: 15 },
-      { min_z: 2.0, min_items: 5, soft_z: 0.5, max_items: 3 },
-      { min_z: 1.2, min_items: 10, soft_z: 1.2, max_items: 50 },
     ];
 
     let mismatches = [];
@@ -120,7 +122,10 @@ async function main() {
         const mine = gateOver(grades, order, opt);
         const theirs = selectItems(
           grades.map((g, i) => ({ id: i, grade: g })),
-          { minZ: opt.min_z, minItems: opt.min_items, softZ: opt.soft_z, maxItems: opt.max_items });
+          {
+            minZ: opt.min_z, minItems: opt.min_items, softZ: opt.soft_z,
+            longZ: opt.long_z, maxItems: opt.max_items,
+          });
         if (mine.keptCount !== theirs.length) {
           mismatches.push(label + ' @ z' + opt.min_z + '/' + opt.max_items +
             ': page ' + mine.keptCount + ', builder ' + theirs.length);
@@ -154,23 +159,35 @@ async function main() {
     check('no spread stands the gate down to top-N',
       deg.degenerate === true && deg.keptCount === 15 && deg.z === null);
 
-    /* A quiet night — the bar is set out of reach, so nothing clears it and the
-       floor is the only thing shipping anything. This is the case Part 2 of the
-       catalogue plan is about: an empty feed is allowed, a padded one is not. */
+    /* A quiet night — both the pay-dirt line and the ship line are out of
+       reach, so the floor is the only thing shipping anything. This is the case
+       Part 2 of the catalogue plan is about: what the floor ships is capped at
+       the floor and wears a Long shot chip, which is what keeps a lower bar
+       from being a padded one. */
     const g = nightOf(60, 17, 2);
     const ord = orderOf(g);
-    const r = gateOver(g, ord, { min_z: 100, min_items: 3, soft_z: 0, max_items: 15 });
+    const r = gateOver(g, ord, { min_z: 100, min_items: 3, soft_z: 100, long_z: 0, max_items: 15 });
     check('the floor is a floor', r.floored === true && r.hard === 0 && r.keptCount === 3,
       JSON.stringify({ hard: r.hard, kept: r.keptCount, floored: r.floored }));
 
-    /* …and it reaches down to soft z and no further, however hungry the floor
+    /* …and it reaches down to long z and no further, however hungry the floor
        is: asking for 40 gets you the two that are actually above z 2. */
-    const reach = gateOver(g, ord, { min_z: 100, min_items: 40, soft_z: 2, max_items: 50 });
+    const reach = gateOver(g, ord,
+      { min_z: 100, min_items: 40, soft_z: 100, long_z: 2, max_items: 50 });
     let above2 = 0;
     for (let i = 0; i < g.length; i++) if (reach.z[i] >= 2) above2++;
-    check('the floor never pads past soft z',
+    check('the floor never pads past long z',
       reach.keptCount === above2 && above2 < 40,
       JSON.stringify({ kept: reach.keptCount, above2: above2 }));
+
+    /* The band split is the promise the readout makes, so it has to be the same
+       arithmetic the feed builder's tally runs. */
+    const banded = gateOver(g, ord, dflt);
+    let paydirt = 0;
+    for (let i = 0; i < banded.keptCount; i++) if (banded.z[ord[i]] >= dflt.min_z) paydirt++;
+    check('pay dirt is counted among what ships, not beyond it',
+      banded.hard === paydirt && banded.hard <= banded.keptCount,
+      JSON.stringify({ hard: banded.hard, paydirt, kept: banded.keptCount }));
 
     check('the ceiling wins over the floor',
       gateOver(g, ord, { min_z: 0, min_items: 10, soft_z: 0, max_items: 2 })
@@ -193,7 +210,16 @@ async function main() {
       JSON.stringify(c.select));
     check('the label follows the slider', d['gate-z-value'].textContent === '2.6');
     check('defaults are the builder\'s defaults',
-      c.select.min_items === 3 && c.select.soft_z === 1);
+      c.select.min_items === 3 && c.select.soft_z === 1 && c.select.long_z === 0.5,
+      JSON.stringify(c.select));
+
+    d['gate-long-z'].value = '0.2';
+    d['gate-long-z'].fire('input');
+    check('how far the floor reaches rides in the claim too',
+      claims(env)['working'].select.long_z === 0.2,
+      JSON.stringify(claims(env)['working'].select));
+    d['gate-long-z'].value = '0.5';
+    d['gate-long-z'].fire('input');
 
     // A field left empty falls back rather than poisoning the claim with NaN.
     d['gate-min-items'].value = '';

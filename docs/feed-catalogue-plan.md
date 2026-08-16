@@ -110,6 +110,35 @@ them shipping. **Do not lower `min_z` below 2.0 to make quiet feeds less empty**
 that is precisely the change that would fill every feed with the same generic
 paper and teach people to stop opening them.
 
+> **Superseded 2026-08-16 — bands.** The paragraph above is still right about
+> the danger and wrong about the only defence. Its unstated assumption is that a
+> feed has one bit to spend, in or out, so the only way to protect the reader is
+> to spend it strictly. That cost more than it saved: three of four feeds shipped
+> empty on the day measured above, and an empty XML file is what a prospective
+> subscriber sees when they click the feed link *before* subscribing — the
+> catalogue's own shop window, dark, on a day the page was showing those same
+> papers at the top of the assay.
+>
+> So the feed now ships down to `soft_z` and **labels** what it shipped:
+> **Pay dirt** above `min_z`, **Worth a look** between the two, **Long shot**
+> below. `min_z` is unchanged at 2.0 and still names the papers the assay stood
+> behind — it stopped being the thing that decides alone who travels. The
+> 12-CNOT paper at z≈1.9 now ships wearing a *Worth a look* chip, which is an
+> accurate description of it, and a reader skips it in the second it takes to
+> read the chip. **The rule that replaces the one above: never ship an unlabelled
+> paper below `min_z`.** Lowering an unmarked bar is what teaches people to stop
+> opening a feed; lowering a labelled one does not, because the feed never
+> claimed more than it had.
+>
+> `min_items` remains the floor and now reaches down to a fifth number,
+> `long_z` (default 0.5), so a night with nothing on it produces a short list of
+> admitted long shots rather than a file that reads as broken. Setting `long_z`
+> up to the ship line restores the old empty-or-nothing behaviour in one number.
+> The counts to watch are in the manifest: `feeds[slug].paydirt` beside
+> `feeds[slug].items`. **If the pay-dirt count sits at zero for a fortnight, the
+> preset is the problem, not the gate** — that is the signal the old strict cut
+> was destroying by shipping nothing either way.
+
 **Open question — categories.** All four presets currently scout `quant-ph` only
 (spin-qubits also takes `cond-mat.mes-hall`). Superconducting-qubit *device*
 papers largely announce in `cond-mat.supr-con`. Tested on 2026-08-13: adding

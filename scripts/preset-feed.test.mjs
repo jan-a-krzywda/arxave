@@ -12,7 +12,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  bestRow, cosine, grade, renderFeed, rowLabel, selectItems, xmlEscape,
+  bandOf, bestRow, cosine, grade, renderFeed, rowLabel, selectItems, tallyOf,
+  xmlEscape,
 } from './preset-feed.mjs';
 
 /* Orthonormal basis vectors make the cosines exactly 1, 0 or -1, so every
@@ -112,9 +113,44 @@ test('every link in the feed points at the site it was built for', () => {
 const spread = [0.50, 0.55, 0.58, 0.60, 0.61, 0.62, 0.63, 0.65, 0.70, 0.90]
   .map((g, i) => ({ arxivId: String(i), grade: g }));
 
-test('a paper far above the day baseline is kept, the bulk is not', () => {
+test('a paper far above the day baseline is pay dirt, the bulk is not shipped', () => {
+  /* z here is 4.72, 1.35 and 0.51 for the top three. The ship line is softZ, so
+     the second one travels — labelled, not promoted — and the third stays out.
+     The bulk of the night is still nowhere near the feed. */
   const picked = selectItems(spread, { minZ: 2.0, maxItems: 15, minItems: 0 });
-  assert.deepEqual(picked.map((p) => p.grade), [0.90]);
+  assert.deepEqual(picked.map((p) => p.grade), [0.90, 0.70]);
+  assert.deepEqual(picked.map((p) => p.band), ['paydirt', 'look']);
+});
+
+test('the ship line is labelled, not silent', () => {
+  // The failure this prevents: shipping a z-1.4 paper that reads like a z-3 one.
+  const picked = selectItems(spread, { minZ: 2.0, maxItems: 15, minItems: 0 });
+  assert.ok(picked.every((p) => p.band));
+});
+
+test('bands split on the pay-dirt line and the ship line', () => {
+  const opts = { minZ: 2.0, softZ: 1.0 };
+  assert.equal(bandOf(3.1, opts), 'paydirt');
+  assert.equal(bandOf(2.0, opts), 'paydirt');
+  assert.equal(bandOf(1.4, opts), 'look');
+  assert.equal(bandOf(0.6, opts), 'longshot');
+  // No spread means no baseline, so no confidence can be claimed.
+  assert.equal(bandOf(null, opts), 'longshot');
+});
+
+test('a ship line above the pay-dirt line cannot open an unreachable band', () => {
+  // minZ below softZ is a stricter feed, not a feed with a band nothing enters.
+  const picked = selectItems(spread, { minZ: 0.6, softZ: 2.0, maxItems: 15, minItems: 0 });
+  assert.ok(picked.every((p) => p.band === 'paydirt'));
+});
+
+test('the day says whether it had any pay dirt', () => {
+  assert.equal(tallyOf([]), '');
+  assert.equal(tallyOf([{ band: 'paydirt' }, { band: 'look' }, { band: 'look' }]),
+    '1 pay dirt · 2 worth a look.');
+  assert.equal(tallyOf([{ band: 'look' }, { band: 'longshot' }]),
+    'No pay dirt today — 1 worth a look · 1 long shot.');
+  assert.equal(tallyOf([{ band: 'longshot' }]), 'No pay dirt today — 1 long shot.');
 });
 
 test('lowering the gate lets the next tier in, in grade order', () => {
@@ -125,15 +161,29 @@ test('lowering the gate lets the next tier in, in grade order', () => {
 });
 
 test('maxItems is a ceiling, never a target', () => {
-  // The failure this prevents: padding a quiet day to a fixed ten, which is how
-  // a feed teaches people to stop opening it.
-  assert.equal(selectItems(spread, { minZ: 2.0, maxItems: 10, minItems: 0 }).length, 1);
+  // The failure this prevents: padding a quiet day to a fixed ten. Bands make
+  // the bar lower, not absent — the ceiling is what keeps that from being ten.
+  assert.equal(selectItems(spread, { minZ: 2.0, maxItems: 10, minItems: 0 }).length, 2);
   assert.equal(selectItems(spread, { minZ: 0.5, maxItems: 2, minItems: 0 }).length, 2);
 });
 
-test('a day where nothing stands out yields an empty feed, not a filled one', () => {
+test('a day where nothing stands out ships long shots, and says so', () => {
+  /* The rule changed here deliberately. A gate that ships nothing is correct
+     about the day and wrong about the reader: an empty file is what a
+     prospective subscriber sees when they click the link, and it reads as a
+     dead project rather than a quiet morning. The floor ships the floor's worth
+     and every one of them wears a Long shot chip. */
   const flat = [0.60, 0.601, 0.602, 0.599].map((g, i) => ({ arxivId: String(i), grade: g }));
-  assert.equal(selectItems(flat, { minZ: 3.0, maxItems: 15 }).length, 0);
+  const picked = selectItems(flat, { minZ: 3.0, maxItems: 15 });
+  assert.ok(picked.length > 0 && picked.length <= 3, String(picked.length));
+  assert.ok(picked.every((p) => p.band === 'longshot'));
+  assert.match(tallyOf(picked), /^No pay dirt today/);
+});
+
+test('the floor can be shut off by pulling longZ up to the ship line', () => {
+  // Someone who wants the old empty-or-nothing feed still has it, in one number.
+  const flat = [0.60, 0.601, 0.602, 0.599].map((g, i) => ({ arxivId: String(i), grade: g }));
+  assert.equal(selectItems(flat, { minZ: 3.0, softZ: 1.0, longZ: 1.0 }).length, 0);
 });
 
 /* The floor under the gate. Measured 2026-08-15: quantum-machine-learning
@@ -150,9 +200,10 @@ test('a day with a clear top tier but no outlier fills to minItems', () => {
   assert.ok(picked.every((p) => p.z < 2.0 && p.z >= 1.0));
 });
 
-test('the floor never reaches below softZ, so a flat day still ships nothing', () => {
+test('the floor never reaches below longZ', () => {
   const flat = [0.60, 0.601, 0.602, 0.599].map((g, i) => ({ arxivId: String(i), grade: g }));
-  assert.equal(selectItems(flat, { minZ: 2.0, minItems: 3, softZ: 1.0 }).length, 0);
+  const picked = selectItems(flat, { minZ: 2.0, minItems: 3, softZ: 1.0, longZ: 0.5 });
+  assert.ok(picked.every((p) => p.z >= 0.5), JSON.stringify(picked.map((p) => p.z)));
 });
 
 test('the floor tops up only what is missing, and never past maxItems', () => {

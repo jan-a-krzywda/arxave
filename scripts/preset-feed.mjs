@@ -192,6 +192,57 @@ async function vectorize(texts, endpoint) {
 }
 
 
+/* The three bands, and the only place their names are written down. A band is
+   not a second gate: it is the label the reader gets for the confidence the
+   assay actually had, which is what makes shipping past `min_z` honest rather
+   than padding. docs/feeds/feed.xsl paints them and must use the same slugs. */
+export const BAND_LABEL = {
+  paydirt: 'Pay dirt',
+  look: 'Worth a look',
+  longshot: 'Long shot',
+};
+
+export const SELECT_DEFAULTS = {
+  min_z: 2.0, soft_z: 1.0, long_z: 0.5, min_items: 3, max_items: 15,
+};
+
+/**
+ * Which band a z falls in.
+ *
+ * `min_z` is the pay-dirt line and `soft_z` is the ship line; everything under
+ * `soft_z` in a feed got there through the floor, and says so. A null z is the
+ * no-spread day: there is no baseline, so no confidence can be claimed and the
+ * item is a long shot by definition.
+ */
+export function bandOf(z, opts = {}) {
+  const minZ = Number.isFinite(opts.minZ) ? opts.minZ : SELECT_DEFAULTS.min_z;
+  const softZ = Number.isFinite(opts.softZ) ? opts.softZ : SELECT_DEFAULTS.soft_z;
+  if (!Number.isFinite(z)) return 'longshot';
+  if (z >= minZ) return 'paydirt';
+  if (z >= Math.min(softZ, minZ)) return 'look';
+  return 'longshot';
+}
+
+/**
+ * What the day amounted to, in one line.
+ *
+ * An empty top band is information, not absence — a reader who is told "no pay
+ * dirt today" learns that the dig ran and found nothing exceptional, which is a
+ * different message from a feed that looks broken. Rides in the channel so it
+ * is visible before any item is opened.
+ */
+export function tallyOf(items) {
+  if (!items.length) return '';
+  const n = { paydirt: 0, look: 0, longshot: 0 };
+  for (const it of items) n[it.band || 'longshot']++;
+  const rest = [
+    n.look ? `${n.look} worth a look` : '',
+    n.longshot ? `${n.longshot} long shot${n.longshot === 1 ? '' : 's'}` : '',
+  ].filter(Boolean).join(' · ');
+  if (!n.paydirt) return `No pay dirt today${rest ? ' — ' + rest : ''}.`;
+  return [`${n.paydirt} pay dirt`, rest].filter(Boolean).join(' · ') + '.';
+}
+
 /**
  * Which papers make the feed.
  *
@@ -230,17 +281,29 @@ async function vectorize(texts, endpoint) {
  * fits its archive, the harder its own gate bites: a pure relative gate cannot
  * be the only rule.
  *
- * So `minItems` is a floor under the gate. If fewer than that clear `minZ`,
- * top up in grade order from whatever still clears `softZ` — meaningfully above
- * the baseline, just not exceptionally. A flat day still yields nothing,
- * because on a flat day nothing clears `softZ` either; what changes is only the
- * day that had a clear top tier and no outlier.
+ * WHY THE SHIP LINE IS NOT THE PAY-DIRT LINE. A gate that ships only z >= minZ
+ * is one bit of information — in or out — and it spends that bit on the papers
+ * it is least sure about. Three of four presets shipped empty on 2026-08-13,
+ * and an empty file is what a prospective subscriber sees when they click the
+ * feed link before subscribing: the catalogue's own shop window, dark.
+ *
+ * So the feed ships down to `softZ` and *labels* what it shipped. `minZ` stops
+ * being the cut and becomes the pay-dirt line: above it the assay is confident,
+ * between softZ and minZ it is interested, and a reader can skip a "Long shot"
+ * in the second it takes to read the chip. Lowering an unlabelled bar is what
+ * teaches people to stop opening a feed; lowering a labelled one does not,
+ * because the feed never claimed more than it had.
+ *
+ * `minItems` is the floor under all of it: if fewer than that clear `softZ`,
+ * reach down to `longZ` and ship that many as long shots. `maxItems` remains a
+ * ceiling for a rich day, never a target.
  */
 export function selectItems(scored, opts = {}) {
-  const minZ = Number.isFinite(opts.minZ) ? opts.minZ : 2.0;
-  const maxItems = Number.isFinite(opts.maxItems) ? opts.maxItems : 15;
-  const minItems = Number.isFinite(opts.minItems) ? opts.minItems : 3;
-  const softZ = Number.isFinite(opts.softZ) ? opts.softZ : 1.0;
+  const minZ = Number.isFinite(opts.minZ) ? opts.minZ : SELECT_DEFAULTS.min_z;
+  const maxItems = Number.isFinite(opts.maxItems) ? opts.maxItems : SELECT_DEFAULTS.max_items;
+  const minItems = Number.isFinite(opts.minItems) ? opts.minItems : SELECT_DEFAULTS.min_items;
+  const softZ = Number.isFinite(opts.softZ) ? opts.softZ : SELECT_DEFAULTS.soft_z;
+  const longZ = Number.isFinite(opts.longZ) ? opts.longZ : SELECT_DEFAULTS.long_z;
   const ranked = [...scored].sort((a, b) => b.grade - a.grade);
   if (!ranked.length) return [];
 
@@ -251,22 +314,33 @@ export function selectItems(scored, opts = {}) {
 
   /* A degenerate spread (every paper identical, or too few to have one) has no
      baseline to be above. Falling back to the plain top-N keeps the feed
-     working on a day the statistics cannot speak to. */
-  if (!(mad > 0)) return ranked.slice(0, maxItems).map((r) => ({ ...r, z: null }));
+     working on a day the statistics cannot speak to — and every one of those
+     items is a long shot, because there is no spread to be confident against. */
+  if (!(mad > 0)) {
+    return ranked.slice(0, maxItems)
+      .map((r) => ({ ...r, z: null, band: 'longshot' }));
+  }
 
   const withZ = ranked.map((r) => ({ ...r, z: (r.grade - median) / (1.4826 * mad) }));
-  const kept = withZ.filter((r) => r.z >= minZ);
-  /* The floor never overrides the ceiling, and never reaches below softZ, so a
-     day with two good papers ships two — not two plus a padded third. */
-  if (kept.length >= Math.min(minItems, maxItems)) return kept.slice(0, maxItems);
-  return withZ
-    .filter((r) => r.z >= Math.min(softZ, minZ))
-    .slice(0, Math.min(minItems, maxItems));
+  /* The ship line never rises above the pay-dirt line: setting minZ below softZ
+     means a stricter feed, not a feed with a band that cannot be reached. */
+  const shipBar = Math.min(softZ, minZ);
+  const floorN = Math.min(minItems, maxItems);
+  let out = withZ.filter((r) => r.z >= shipBar);
+  if (out.length < floorN) {
+    /* The floor reaches past the ship line and no further than longZ, so a day
+       with nothing on it produces a short list of admitted long shots rather
+       than a file that reads as broken. */
+    out = withZ.filter((r) => r.z >= Math.min(longZ, shipBar)).slice(0, floorN);
+  }
+  return out.slice(0, maxItems)
+    .map((r) => ({ ...r, band: bandOf(r.z, { minZ, softZ }) }));
 }
 
 export function renderFeed({ preset, slug, items, site, builtOn }) {
   const self = new URL(`feeds/${slug}.xml`, site).href;
   const digLink = new URL(`?preset=${encodeURIComponent(slug)}`, site).href;
+  const tally = tallyOf(items);
   /* A browser opening a .xml gets the raw tree and a scolding about missing
      style information; readers ignore the stylesheet entirely. Since the RSS
      link on the page is something people will click before they subscribe,
@@ -290,9 +364,14 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
     `    <title>${xmlEscape('The Dig — ' + (preset.name || slug))}</title>`,
     `    <link>${xmlEscape(digLink)}</link>`,
     `    <atom:link href="${xmlEscape(self)}" rel="self" type="application/rss+xml"/>`,
+    /* The tally rides in the description as well as in its own element: a
+       reader shows the description and never sees arxave:*, and the one thing
+       worth knowing before opening an item is whether the top band is empty. */
     `    <description>${xmlEscape(
       (preset.blurb || '') +
-      ` Today's arXiv announcement, ranked against the ${preset.name || slug} preset.`)}</description>`,
+      ` Today's arXiv announcement, ranked against the ${preset.name || slug} preset.` +
+      (tally ? ' ' + tally : ''))}</description>`,
+    ...(tally ? [`    <arxave:tally>${xmlEscape(tally)}</arxave:tally>`] : []),
     '    <language>en-us</language>',
     `    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>`,
     `    <pubDate>${new Date().toUTCString()}</pubDate>`,
@@ -313,15 +392,19 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
        The abstract stays, last. It is the author's own words and the only part
        of the item nothing generated, which makes it the reader's check on
        everything above it. */
-    const decision = e && (e.verdict || e.kind || e.headline)
-      ? '<p class="verdict">' +
-        (e.verdict ? `<strong>${xmlEscape(titleCase(e.verdict))}</strong>` : '') +
+    /* The band leads the decision line, ahead of the verdict. It is the one
+       field that says how much to trust everything after it, and an unenriched
+       item has nothing else on that line at all — so the band, not the verdict,
+       is what guarantees a first line exists. */
+    const band = it.band || 'longshot';
+    const bandChip = `<strong class="band band-${band}">${xmlEscape(BAND_LABEL[band])}</strong>`;
+    const said = e
+      ? (e.verdict ? xmlEscape(titleCase(e.verdict)) : '') +
         (e.verdict && e.kind ? ' · ' : '') +
         (e.kind ? xmlEscape(e.kind) : '') +
-        (e.headline
-          ? `${e.verdict || e.kind ? ' — ' : ''}${xmlEscape(e.headline)}` : '') +
-        '</p>'
+        (e.headline ? `${e.verdict || e.kind ? ' — ' : ''}${xmlEscape(e.headline)}` : '')
       : '';
+    const decision = `<p class="verdict">${bandChip}${said ? ' ' + said : ''}</p>`;
     const provenance = [
       `<strong>Grade ${it.grade.toFixed(3)}</strong>`,
       Number.isFinite(it.z) ? `${it.z.toFixed(1)}σ above the day's baseline` : '',
@@ -339,6 +422,8 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
       `<p class="abstract"><strong>Abstract.</strong> ${xmlEscape(it.abstract)}</p>` +
       `<p><a href="${xmlEscape(digLink)}">Tune this in the Dig</a></p>`;
     const fields = [
+      `      <arxave:band>${band}</arxave:band>`,
+      `      <arxave:bandname>${xmlEscape(BAND_LABEL[band])}</arxave:bandname>`,
       `      <arxave:grade>${it.grade.toFixed(3)}</arxave:grade>`,
       Number.isFinite(it.z) ? `      <arxave:z>${it.z.toFixed(1)}</arxave:z>` : '',
       it.matched ? `      <arxave:matched>${xmlEscape(it.matched.label)}</arxave:matched>` : '',
@@ -466,6 +551,7 @@ async function main() {
       minZ: preset.select?.min_z,
       minItems: preset.select?.min_items,
       softZ: preset.select?.soft_z,
+      longZ: preset.select?.long_z,
       maxItems: Number.isFinite(preset.select?.max_items) ? preset.select.max_items : top,
     });
     if (!ranked.length) {
@@ -478,15 +564,20 @@ async function main() {
 
     const xml = renderFeed({ preset, slug, items: enriched, site, builtOn });
     await fs.writeFile(path.join(outDir, `${slug}.xml`), xml);
+    /* The manifest carries the pay-dirt count beside the total, because that is
+       what the catalogue's RSS menu should say: "5 today, 1 pay dirt" is a
+       different invitation from "5 today" when four of them are long shots. */
     feeds[slug] = {
       name: preset.name || slug,
       items: enriched.length,
+      paydirt: enriched.filter((it) => it.band === 'paydirt').length,
       updated: builtOn,
     };
     if (ranked.length) {
       console.log(
         `preset-feed: ${slug} — ${ranked.length} of ${scored.length} stones, ` +
-        `grades ${ranked[ranked.length - 1].grade.toFixed(3)}–${ranked[0].grade.toFixed(3)}`);
+        `grades ${ranked[ranked.length - 1].grade.toFixed(3)}–${ranked[0].grade.toFixed(3)}` +
+        ` · ${tallyOf(ranked)}`);
     }
     written++;
   }
