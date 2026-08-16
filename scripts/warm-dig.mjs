@@ -551,6 +551,18 @@ export async function embedChunk(texts, embedUrl, fetchImpl = fetch) {
       throw new Error(`embed HTTP ${resp.status}: ${data?.error ?? ''}`.trim());
     }
 
+    /* The model half of the key matters more here than anywhere else. This job
+       writes rows that everyone else reads as fact, under a key that *asserts*
+       which model produced them — so a stale `embed` deployment answering at
+       the same 768 dims would file another model's vectors under SPECTER2's
+       name, permanently, with every later reader trusting them. Refuse before
+       writing rather than detect afterwards; there is no afterwards. */
+    if (data?.model && data.model !== MODEL) {
+      throw new Error(
+        `the pick is running ${data.model}, but the cache is keyed on ${MODEL}. ` +
+        `Writing these would file one model's vectors under another's name.`,
+      );
+    }
     if (data?.dim && data.dim !== DIM) {
       throw new Error(
         `the pick returned ${data.dim}-dim vectors, but the cache is keyed on ${DIM}. ` +

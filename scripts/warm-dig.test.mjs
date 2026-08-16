@@ -466,12 +466,30 @@ test('a non-warming failure is not retried', async () => {
 });
 
 test('a pick running a different model is refused before anything is written', async () => {
-  // Same dimension would be worse — this is the case dig-spec §5.6 is about.
   const fetchImpl = async () => ({
     ok: true, status: 200,
     json: async () => ({ model: 'other', dim: 384, data: [{ index: 0, embedding: [] }] }),
   });
-  await assert.rejects(() => embedChunk(['a'], 'http://x', fetchImpl), /poison/);
+  await assert.rejects(() => embedChunk(['a'], 'http://x', fetchImpl), /under another/);
+});
+
+test('a different model at the RIGHT dimension is still refused', async () => {
+  /* The case with no other guard anywhere, and not hypothetical: this function
+     served gemini-embedding-001 at 768 dims immediately before it served
+     SPECTER2 at 768 dims, so a stale deployment passes the dimension check.
+     These rows would be written under SPECTER2's key and trusted by everyone
+     who reads them afterwards. */
+  const fetchImpl = async () => ({
+    ok: true, status: 200,
+    json: async () => ({
+      model: 'gemini-embedding-001', dim: DIM,
+      data: [{ index: 0, embedding: new Array(DIM).fill(0.1) }],
+    }),
+  });
+  await assert.rejects(
+    () => embedChunk(['a'], 'http://x', fetchImpl),
+    /gemini-embedding-001.*allenai\/specter2_base/s,
+  );
 });
 
 test('a short reply is an error, not a short night', async () => {

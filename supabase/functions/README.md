@@ -327,10 +327,16 @@ transactional meter is in [`wagon-names.sql`](../wagon-names.sql).
 
 Users who would rather not use this deployment's pick can set
 `window.ARXAVE_EMBED` to any OpenAI-shaped `/v1/embeddings` — their own LM
-Studio, Ollama, or a paid endpoint. It must serve the **same model**: the page
-checks the `dim` in the reply against its own and refuses a mismatch, but two
-different models at 768 dims would pass that check and quietly rank the wrong
-papers first.
+Studio, Ollama, or a paid endpoint. It must serve the **same model**, and both
+the page and the warmer enforce that: they compare the `model` string in the
+reply against their own constant and refuse a mismatch outright.
+
+That check matters more than the dimension one, because the dimension one is
+not enough. This function served `gemini-embedding-001` at 768 dims immediately
+before it served `allenai/specter2_base` at 768 dims — so a stale deployment
+satisfies a dimension check exactly, and would hand back another model's
+vectors to be scored against SPECTER2's, or written into the shared cache under
+SPECTER2's key. Nothing downstream could notice.
 
 `dig-cache` costs nothing but storage: a day of one category set is ~130
 vectors × 768 × 4 B ≈ **400 kB**, and the batch's rolling-window prune
