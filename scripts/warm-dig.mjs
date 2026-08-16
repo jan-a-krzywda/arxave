@@ -2,21 +2,24 @@
  * warm-dig — fill the shared vector cache before anyone asks for it.
  *
  * Runs nightly in CI, after arXiv's announcement. It fetches the same feeds the
- * browser fetches, embeds the same abstracts with the same model, and PUTs the
+ * browser fetches, embeds the same abstracts with the same pick, and PUTs the
  * vectors into `dig-cache`. By the time a human presses "Haul the stones", the
- * minute of embedding has already been paid.
+ * cutting has already been paid for.
  *
- * WHY THIS IS A NODE SCRIPT AND NOT PART OF THE PYTHON BATCH:
- *   The vectors have to come from the *same* model and the *same* quantization
- *   the browser uses, because a haul mixes cached stone vectors with locally
- *   embedded touchstones in one matrix (docs/dig-spec.md §5.6). A Python
- *   embedder would be a different implementation of "bge-small" — close, but
- *   systematically offset, and the offset would land inside the very cosine
- *   margin the ranking lives in. Running transformers.js with `dtype: 'q8'`
- *   here means the warmed vectors are the ones the browser would have computed.
+ * WHY THIS NO LONGER LOADS A MODEL:
+ *   It used to run transformers.js here, with `dtype: 'q8'`, precisely so the
+ *   warmed vectors would be bit-for-bit the ones the browser would have
+ *   computed — because the browser had its own encoder and any difference
+ *   between the two implementations would land inside the cosine margin the
+ *   ranking lives in. The browser has no encoder now: both it and this script
+ *   call the same hosted `embed` function, so there is only one implementation
+ *   left and nothing to keep in step. The 32 MB download, the model cache, the
+ *   retry ladder around a cold HF pull, and the quantization constant all went
+ *   with it.
  *
- * WHY NOT IN THE EDGE FUNCTION: embedding 130 abstracts is ~60 s of pure CPU,
- * far past a Supabase edge isolate's CPU budget. CI has no such limit.
+ * WHY THIS IS STILL A SCRIPT AND NOT THE EDGE FUNCTION ITSELF: a night is
+ * ~870 abstracts across the popular archives, chunked into requests that each
+ * wait on somebody else's CPU. That is a job with a clock, not a request.
  *
  * Usage:
  *   DIG_WRITE_KEY=… node scripts/warm-dig.mjs --categories "quant-ph,cond-mat.mes-hall"
@@ -27,37 +30,37 @@
  *   --max-results  per-category cap on the search-API window (default 400)
  *   --presets      directory of preset claims to warm as well (docs/presets)
  *   --endpoint     dig-cache URL (default: the project's deployed function)
+ *   --embed        embed URL (default: the project's deployed function)
  *   --dry-run      fetch and embed, write nothing
  */
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 import { XMLParser } from 'fast-xml-parser';
-import { env, pipeline } from '@huggingface/transformers';
 
-// Must match docs/assets/filter.js exactly — these three strings are the cache key.
-export const MODEL = 'Xenova/bge-small-en-v1.5';
-export const DIM = 384;
-export const DTYPE = 'q8';
+/* Must match docs/assets/filter.js and supabase/functions/embed/hf.ts exactly —
+   these two strings are the cache key, and a mismatch is not an error but a
+   silent miss on every row the other three wrote. */
+export const MODEL = 'allenai/specter2_base';
+export const DIM = 768;
 
-/* Park the model outside node_modules. transformers.js defaults its Node cache
-   to `node_modules/@huggingface/transformers/.cache/`, which `npm install`
-   recreates on every CI run — so the download can never be cached there, no
-   matter what path the workflow saves. A stable sibling directory can be. */
-env.cacheDir = process.env.HF_CACHE_DIR ||
-  path.join(path.dirname(fileURLToPath(import.meta.url)), '.model-cache');
+/* Texts per embed request. Under the function's MAX_TEXTS (400) with room to
+   spare: a smaller chunk means a failure costs less re-work and the progress
+   line moves, and there is no per-request cost to trade against — the pick
+   bills compute time, not calls. */
+const BATCH = 128;
 
-/* The model is a 32 MB unauthenticated pull from huggingface.co, and CI egress
-   IPs are shared, so a 429 on a cold cache is ordinary rather than exceptional.
-   Retry a few times before giving up — the alternative is a red job for a
-   condition that clears on its own in seconds. */
-const MODEL_LOAD_ATTEMPTS = 4;
-const MODEL_LOAD_BACKOFF_MS = 5_000;
+/* A cold pick takes ~20s to load upstream and answers 503 until it has. That
+   is a wait, not a fault, and the first chunk of a nightly run is exactly when
+   it happens — so retry rather than failing a job for a condition that clears
+   itself. */
+const WARM_ATTEMPTS = 5;
 
-const BATCH = 16;
 const DEFAULT_ENDPOINT =
   'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1/dig-cache';
+export const DEFAULT_EMBED =
+  'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1/embed';
 const PUT_CHUNK = 200;   // stays under the function's MAX_ITEMS
 const READ_CHUNK = 500;  // stays under the function's MAX_SHAS
 
@@ -508,29 +511,70 @@ export function withinCutoff(candidates, cutoff) {
  * after the whole day has been embedded and with nowhere to put it. Resolving
  * and validating up front turns that into an exit(2) in the first second.
  */
-export function resolveEndpoint(flag, env) {
-  const endpoint = flag || env || DEFAULT_ENDPOINT;
+export function resolveEndpoint(flag, env, fallback = DEFAULT_ENDPOINT) {
+  const endpoint = flag || env || fallback;
   try {
     new URL(endpoint);
   } catch {
-    throw new Error(`--endpoint is not a valid URL: ${JSON.stringify(endpoint)}`);
+    throw new Error(`endpoint is not a valid URL: ${JSON.stringify(endpoint)}`);
   }
   return endpoint;
 }
 
-export async function loadModel() {
+/**
+ * One chunk of texts → one unit vector each, in order, from the hosted pick.
+ *
+ * `index` is read rather than assumed: an OpenAI-shaped reply may come back out
+ * of order, and taking it positionally would attach every vector to the wrong
+ * abstract — which writes wrong rows into a shared cache that other people then
+ * read as fact. Nothing downstream could notice.
+ */
+export async function embedChunk(texts, embedUrl, fetchImpl = fetch) {
   for (let attempt = 1; ; attempt++) {
-    try {
-      return await pipeline('feature-extraction', MODEL, { dtype: DTYPE });
-    } catch (err) {
-      if (attempt >= MODEL_LOAD_ATTEMPTS) throw err;
-      const wait = MODEL_LOAD_BACKOFF_MS * attempt;
-      console.warn(
-        `warm-dig: model load failed (${err.message}); ` +
-        `retrying in ${wait / 1000}s (${attempt}/${MODEL_LOAD_ATTEMPTS - 1})`,
-      );
-      await new Promise((r) => setTimeout(r, wait));
+    const resp = await fetchImpl(embedUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input: texts }),
+    });
+
+    let data = null;
+    try { data = await resp.json(); } catch { /* reported via status below */ }
+
+    if (!resp.ok) {
+      if (resp.status === 503 && data?.warming && attempt < WARM_ATTEMPTS) {
+        const wait = Math.max(1, Math.ceil(data.retryAfter ?? 20));
+        console.warn(`warm-dig: the pick is warming up — retrying in ${wait}s ` +
+                     `(${attempt}/${WARM_ATTEMPTS - 1})`);
+        await new Promise((r) => setTimeout(r, wait * 1000));
+        continue;
+      }
+      throw new Error(`embed HTTP ${resp.status}: ${data?.error ?? ''}`.trim());
     }
+
+    if (data?.dim && data.dim !== DIM) {
+      throw new Error(
+        `the pick returned ${data.dim}-dim vectors, but the cache is keyed on ${DIM}. ` +
+        `Writing these would poison every read.`,
+      );
+    }
+    const rows = data?.data ?? [];
+    if (rows.length !== texts.length) {
+      throw new Error(`embed returned ${rows.length} vectors for ${texts.length} texts`);
+    }
+
+    const out = new Array(texts.length);
+    for (let r = 0; r < rows.length; r++) {
+      const at = typeof rows[r].index === 'number' ? rows[r].index : r;
+      if (!(at >= 0 && at < texts.length) || out[at]) {
+        throw new Error(`embed returned a vector with a bad index (${rows[r].index})`);
+      }
+      const v = rows[r].embedding;
+      if (!Array.isArray(v) || v.length !== DIM) {
+        throw new Error(`embed returned ${v?.length} dims, expected ${DIM}`);
+      }
+      out[at] = v;
+    }
+    return out;
   }
 }
 
@@ -542,8 +586,10 @@ async function main() {
     process.exit(2);
   }
   let endpoint;
+  let embedUrl;
   try {
     endpoint = resolveEndpoint(arg('endpoint'), process.env.DIG_CACHE_URL);
+    embedUrl = resolveEndpoint(arg('embed'), process.env.EMBED_URL, DEFAULT_EMBED);
   } catch (err) {
     console.error('warm-dig: ' + err.message);
     process.exit(2);
@@ -684,17 +730,11 @@ async function main() {
   console.log(`warm-dig: ${known.size} already cached, ${todo.length} to embed`);
   if (todo.length === 0) return;
 
-  const extractor = await loadModel();
-
   const items = [];
   for (let i = 0; i < todo.length; i += BATCH) {
     const chunk = todo.slice(i, i + BATCH);
-    const out = await extractor(chunk.map((u) => u.text), { pooling: 'mean', normalize: true });
-    const rows = out.tolist();
+    const rows = await embedChunk(chunk.map((u) => u.text), embedUrl);
     for (let r = 0; r < rows.length; r++) {
-      if (rows[r].length !== DIM) {
-        throw new Error(`model returned ${rows[r].length} dims, expected ${DIM}`);
-      }
       items.push({ sha: chunk[r].sha, vector: toBase64(rows[r]), source: chunk[r].source });
     }
     process.stdout.write(`\rwarm-dig: embedded ${items.length} / ${todo.length}`);

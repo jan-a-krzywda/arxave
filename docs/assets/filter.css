@@ -227,47 +227,6 @@ fieldset legend {
   background: var(--rock-lit);
 }
 
-/* ── The pick gate (top of Stage 2) ───────────────────────────────
-   One-time cost, so it reads as a gate rather than a step: a wide button
-   with the "once" promise sitting under it, and the whole block gone the
-   moment the pick is sharpened. */
-.pick-gate {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.55rem;
-  margin: 0.6rem 0 1rem;
-  padding: 1rem;
-  border: 1px dashed var(--rock-lit);
-  border-radius: 8px;
-  background: rgba(245, 179, 1, 0.05);
-}
-
-.pick-gate-btn {
-  width: 100%;
-  padding: 0.9rem 1.4rem;
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  border-radius: 6px;
-  cursor: pointer;
-  border: 1px solid var(--gold);
-  background: var(--gold);
-  color: #221a00;
-  box-shadow: 0 0 0 1px rgba(245, 179, 1, 0.35),
-              0 6px 22px -8px rgba(245, 179, 1, 0.55);
-  transition: background 0.15s, border-color 0.15s;
-}
-.pick-gate-btn:hover:not(:disabled) { background: #ffc730; }
-.pick-gate-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-
-.pick-gate-say {
-  font-size: 0.88rem;
-  line-height: 1.45;
-  color: var(--text-dim);
-}
-.pick-gate-say strong { color: var(--text); }
-
 /* Whichever stage button is live is the one thing to press next, so it
    carries the ore colour and the others stay rock. */
 #haul-btn:not(:disabled) {
@@ -1744,17 +1703,21 @@ a.feeds-item:hover {
 }
 
 /* ── Setup, at the top of Stage 2 ─────────────────────────────────
-   Sharpening the pick and loading a setup both belong to the same question —
-   what are we filtering for — so they sit inside Stage 2, above the rows they
-   fill. They are also independent and concurrent: sharpening is a 32 MB
-   download, loading a setup is content, and side by side you pick your ground
-   while the model streams.
+   Loading a setup belongs to the same question the rows below it answer —
+   what are we filtering for — so it sits inside Stage 2, above them.
+
+   This was a two-column grid: sharpening the pick on the left, loading a setup
+   on the right, side by side because the 32 MB download and the reading were
+   independent and concurrent. The pick is hosted now, there is no download to
+   read alongside, and one column is left. The rule and the grid stay rather
+   than being unwound into plain flow, because the second column is the obvious
+   place for whatever joins this next.
 
    Already inside a fieldset, so the columns are ruled, not boxed. A panel
    inside a panel is the thing that made this look bolted on. */
 .setup-cols {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 1.25rem;
   align-items: stretch;
 }
@@ -1776,7 +1739,6 @@ a.feeds-item:hover {
   padding-top: 0.8rem;
   border-top: 1px solid var(--rock-edge);
 }
-.setup-col .pick-gate { margin: 0; padding: 0.85rem; }
 .setup-col .claim-bar {
   padding: 0;
   margin: 0;
@@ -1888,9 +1850,10 @@ a.feeds-item:hover {
 .report-note { font-size: 0.85rem; color: var(--text-faint); }
 
 /* ── Narrow and touch ─────────────────────────────────────────────
-   One column, pick first — it is the slow one and should start before you
-   scroll, not after. Controls grow to a 44px touch target and stop being a row
-   of things too small and too close to hit with a thumb. */
+   Controls grow to a 44px touch target and stop being a row of things too
+   small and too close to hit with a thumb. The stacking rules below are inert
+   while the setup grid has one column, and are kept for the same reason the
+   grid is. */
 @media (max-width: 720px) {
   .setup-cols { grid-template-columns: 1fr; gap: 1rem; }
   .setup-col + .setup-col {

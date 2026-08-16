@@ -6,7 +6,7 @@ callable without a JWT — the page is static and has no Supabase session.
 | Function | Why it exists |
 |----------|---------------|
 | `relay`  | arXiv and Scirate send **no** `Access-Control-Allow-Origin` header (measured 2026-07-28, on `export.arxiv.org/api/query`, `rss.arxiv.org` and `scirate.com`). A browser cannot fetch them, with or without a key. This relays the GET server-side, allowlisted to those hosts. |
-| `embed`  | Optional. The page defaults to in-browser embeddings (transformers.js, free), so this only serves people who pick "Hosted" for speed. Deploy it or don't — the page works either way. |
+| `embed`  | **The pick.** Every vector the page uses comes from here. It used to be optional, back when the page carried its own 32 MB encoder and this only served people who chose "Hosted" for speed; the browser has no encoder now, so a deployment without this function is a page that cannot rank anything. |
 | `dig-cache` | The shared vector cache. Embedding a day of abstracts in the browser costs ~60 s; the vectors are ~200 kB. So the *second* person to haul a day downloads instead of re-embedding. Reads are public; writes need `x-dig-key`. |
 | `wagon-name` | Names the train's wagons from their titles. The clustering is local and free; this only says what each cluster is *about*. Cache reads are free and unmetered; a miss spends against a daily budget in Postgres. |
 
@@ -16,8 +16,9 @@ Keyed on the **sha256 of the text**, never on an arXiv id — so one table serve
 abstracts, touchstones and core samples alike, and a revised abstract is a
 different text and therefore a miss rather than a stale hit. `model` and `dim`
 ride in the key for the reason in [dig-spec §5.6](../../docs/dig-spec.md): a
-384-dim bge vector and a 768-dim Gemini one for the same text are not
-interchangeable, and mixing them yields plausible garbage and no error.
+vector from one model and a vector from another are not interchangeable for the
+same text — equal dimension included — and mixing them yields plausible garbage
+and no error.
 
 ```
 POST /dig-cache  { model, dim, sha: ["<hex>", …] }
@@ -33,9 +34,14 @@ model.** A returned vector is unverifiable by the client: it cannot tell a
 correct embedding from a crafted one, and a poisoned vector silently reorders
 someone's ranking rather than failing. So the only writer is the warmer
 ([`scripts/warm-dig.mjs`](../../scripts/warm-dig.mjs)), which holds
-`DIG_WRITE_KEY` and runs the same model and quantization as the browser.
-Opening writes to the page would need a verification story first — quorum
-across independent clients, or server-side embedding — not just a rate limit.
+`DIG_WRITE_KEY` and calls this same `embed` function for its vectors.
+
+That last clause used to read "runs the same model and quantization as the
+browser", and keeping those two implementations in step was a standing hazard.
+There is one implementation now. Note also that *server-side embedding* was
+listed here as something that might let writes open up. It has happened, and it
+does not — the reason writes are closed is that a **client** cannot verify a
+vector, and that is still true.
 
 Every failure is a **miss, never an error**: the page embeds locally when the
 cache is down, empty, or opted out with `window.ARXAVE_DIG_CACHE = false`.
@@ -120,8 +126,15 @@ brew install supabase/tap/supabase        # CLI is not installed yet
 supabase login
 supabase link --project-ref ugxxakguqgpxpdfhgtsb
 
-# embed and wagon-name need a key; relay needs nothing
+# wagon-name needs a Gemini key; relay needs nothing
 supabase secrets set GEMINI_API_KEY="$(grep '^GEMINI_API_KEY=' ../../.env | cut -d= -f2-)"
+
+# embed needs a Hugging Face token. Create one at
+# https://huggingface.co/settings/tokens — fine-grained, with only
+# "Make calls to Inference Providers" ticked. It is the billing identity as
+# much as the credential: a free HF account carries $0.10 of inference credit
+# a month, and the token is how HF knows whose credit to spend.
+supabase secrets set HF_TOKEN="hf_..."
 
 # dig-cache: a write key of your choosing. SUPABASE_URL and
 # SUPABASE_SERVICE_ROLE_KEY are injected by the platform — do not set them.
@@ -175,12 +188,15 @@ curl -is "$BASE/relay?url=$(printf %s 'https://export.arxiv.org/api/query?search
 curl -s "$BASE/relay?url=https://example.com" ; echo
 
 # embed: should return one 768-dim vector
+# Expect "allenai/specter2_base" and 768. The FIRST call after an idle period
+# may come back 503 with warming:true and a retryAfter — that is the upstream
+# loading the model, not a failure. Call it again.
 curl -s -X POST "$BASE/embed" -H 'Content-Type: application/json' \
-  -d '{"input":["silicon spin qubits"]}' | jq '.model, (.data[0].embedding | length)'
+  -d '{"input":["silicon spin qubits"]}' | jq '.model, .dim, (.data[0].embedding | length)'
 
 # dig-cache: a read for a text nobody has cached is a clean miss, not an error
 curl -s -X POST "$BASE/dig-cache" -H 'Content-Type: application/json' \
-  -d '{"model":"Xenova/bge-small-en-v1.5","dim":384,
+  -d '{"model":"allenai/specter2_base","dim":768,
        "sha":["0000000000000000000000000000000000000000000000000000000000000000"]}'
 
 # dig-cache: a write without the key must be refused
@@ -218,8 +234,23 @@ DIG_WRITE_KEY=… node ../../scripts/warm-dig.mjs --categories quant-ph
 
 `relay` only proxies GETs and stays inside free tiers at any plausible traffic
 (Supabase gives 500k function invocations/month; one filter run is ~120
-requests). `embed` is the one that costs money, and is billed to whoever
-deploys it — which is why the page does not use it by default. Caps live at the top of
+requests).
+
+`embed` costs money and is billed to whoever deploys it — and it is no longer
+optional, so that bill is now the price of running the page rather than a
+choice a user made. **HF bills compute time × hardware rate, not tokens**, and
+`hf-inference` is CPU for embedding models. A free HF account carries $0.10 of
+credit a month, PRO $2.00.
+
+The shape of the spend is lopsided and worth understanding before tuning any
+cap. The warmer cuts a whole night — ~870 abstracts across the popular archives
+— in one job; a person's touchstone is one short text. So **the nightly warm is
+most of the bill and the interactive path is a rounding error**, and the cache
+is what keeps it that way: a warmed day costs the readers of it nothing at all.
+If the credit runs out, the warm is the thing to trim (fewer categories, or a
+shorter `--lookback`), not the page.
+
+Caps live at the top of
 [`embed/index.ts`](embed/index.ts): 400 texts per call, 6k chars per text, 800k
 chars per call, and a per-IP hourly budget of 3000 texts. The per-IP bucket is
 in-memory, so an isolate recycle resets it — it is a speed bump, not a
@@ -294,11 +325,15 @@ hauling `quant-ph` on the same morning cluster the same papers. Caps and both
 budgets are at the top of [`wagon-name/index.ts`](wagon-name/index.ts); the
 transactional meter is in [`wagon-names.sql`](../wagon-names.sql).
 
-Users who would rather not use the hosted path can switch the page's embedding
-mode to **Own key** and point it at any OpenAI-compatible `/v1/embeddings`.
+Users who would rather not use this deployment's pick can set
+`window.ARXAVE_EMBED` to any OpenAI-shaped `/v1/embeddings` — their own LM
+Studio, Ollama, or a paid endpoint. It must serve the **same model**: the page
+checks the `dim` in the reply against its own and refuses a mismatch, but two
+different models at 768 dims would pass that check and quietly rank the wrong
+papers first.
 
 `dig-cache` costs nothing but storage: a day of one category set is ~130
-vectors × 384 × 4 B ≈ **200 kB**, and the batch's rolling-window prune
+vectors × 768 × 4 B ≈ **400 kB**, and the batch's rolling-window prune
 (`store.prune_vectors`, keyed on *last wanted*, not on the paper's date) holds
 the table to the retention window. Its reads are the one thing that could get
 hot, which is why they are a single `POST` per haul rather than one request per

@@ -1,22 +1,42 @@
 /**
- * embed — hosted embeddings so the filter page is one click, no key, no
- * LM Studio, no Ollama.
+ * embed — the pick, hosted. One model, server-side, for every text the page
+ * needs a vector for.
  *
- * The key lives here (function secret GEMINI_API_KEY), never in the browser.
- * Request/response are OpenAI-shaped so the page has a single code path
- * whether it talks to this function or to a user's own /v1/embeddings.
+ * WHY THIS IS NOW THE ONLY PICK. The page used to carry its own: 32 MB of
+ * transformers.js and a WASM encoder, downloaded per browser, behind a
+ * "Sharpen the pick" button. That bought independence and cost a minute of
+ * frozen CPU on any day the shared cache had not already covered — and it
+ * pinned the model choice to whatever had an ONNX build small enough to ship,
+ * which is why the pick was a general-purpose text embedder rather than one
+ * that had ever seen a citation graph. Moving the encoder here unpins that:
+ * the browser downloads nothing, and the model becomes a server-side decision
+ * that can change without every visitor re-downloading a pick.
+ *
+ * The model and the answer-shape arithmetic live in `hf.ts`; this file is the
+ * door — validation, caps, and turning failures into something the page can
+ * say out loud.
  *
  *   POST /embed  { "input": ["text", ...] }
- *   → { "model": "...", "data": [{ "index": 0, "embedding": [...] }, ...] }
+ *   → { "model": "...", "dim": 768,
+ *       "data": [{ "index": 0, "embedding": [...] }, ...] }
+ *
+ * Request and response stay OpenAI-shaped, unchanged from when this called
+ * Gemini, so the page has one code path whether it talks to this function or
+ * to a user's own `/v1/embeddings`.
  *
  * This endpoint is public and billed to whoever deploys it, so the caps below
  * are load-bearing, not decoration.
  */
 
-const MODEL = 'gemini-embedding-001';
-const DIMS = 768;                 // 3072 default is needless payload for cosine
-const UPSTREAM = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:batchEmbedContents`;
-const UPSTREAM_BATCH = 100;       // Gemini's per-call request cap
+import {
+  DIM,
+  MODEL,
+  ModelWarmingError,
+  toVectors,
+  UPSTREAM,
+  UPSTREAM_BATCH,
+  warmingSeconds,
+} from './hf.ts';
 
 // ── Abuse caps ──────────────────────────────────────────────────────────
 const MAX_TEXTS = 400;            // a day of arXiv + topics + a fat .bib
@@ -51,47 +71,73 @@ const CORS = {
   'Access-Control-Max-Age': '86400',
 };
 
-function fail(status: number, message: string): Response {
-  return new Response(JSON.stringify({ error: message }), {
+function fail(status: number, message: string, extra: Record<string, unknown> = {}): Response {
+  return new Response(JSON.stringify({ error: message, ...extra }), {
     status,
     headers: { ...CORS, 'Content-Type': 'application/json' },
   });
 }
 
-async function embedChunk(texts: string[], key: string): Promise<number[][]> {
-  const resp = await fetch(`${UPSTREAM}?key=${encodeURIComponent(key)}`, {
+async function embedChunk(texts: string[], token: string): Promise<number[][]> {
+  const resp = await fetch(UPSTREAM, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
-      requests: texts.map((text) => ({
-        model: `models/${MODEL}`,
-        content: { parts: [{ text }] },
-        taskType: 'SEMANTIC_SIMILARITY',
-        outputDimensionality: DIMS,
-      })),
+      inputs: texts,
+      /* Wait rather than 503 on a cold model. A first call after an idle
+         period pays ~20 s of load; without this the page would have to
+         implement the retry itself, and every client would implement it
+         differently. The 503 path below still exists because HF gives up
+         waiting before this function's own timeout does. */
+      options: { wait_for_model: true },
     }),
     signal: AbortSignal.timeout(60_000),
   });
 
   if (!resp.ok) {
-    const detail = (await resp.text()).slice(0, 300);
-    throw new Error(`embedding upstream HTTP ${resp.status}: ${detail}`);
+    const text = await resp.text();
+    let parsed: unknown = null;
+    try { parsed = JSON.parse(text); } catch { /* HF sometimes answers HTML */ }
+
+    /* 503 is the model loading, which is a wait and not a fault — the page
+       says "warming up" and offers the button again rather than showing a
+       stack trace for a condition that clears itself. */
+    if (resp.status === 503) throw new ModelWarmingError(warmingSeconds(parsed));
+
+    /* 401 means the deploy is misconfigured, not that the caller did anything
+       wrong. Say which secret, because the alternative is reading HF's HTML
+       error page out of a browser console. */
+    if (resp.status === 401 || resp.status === 403) {
+      throw new Error(
+        'The embedding upstream refused this deployment\'s credentials. ' +
+        'Check the HF_TOKEN function secret — it needs the ' +
+        '"Make calls to Inference Providers" permission.',
+      );
+    }
+
+    if (resp.status === 402) {
+      throw new Error(
+        'The embedding upstream reports the deployment\'s inference credits are spent.',
+      );
+    }
+
+    throw new Error(`embedding upstream HTTP ${resp.status}: ${text.slice(0, 300)}`);
   }
 
-  const data = await resp.json();
-  const out = (data.embeddings ?? []).map((e: { values: number[] }) => e.values);
-  if (out.length !== texts.length) {
-    throw new Error(`embedding upstream returned ${out.length} vectors for ${texts.length} texts`);
-  }
-  return out;
+  return toVectors(await resp.json(), texts.length, DIM);
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
   if (req.method !== 'POST') return fail(405, 'POST only.');
 
-  const key = Deno.env.get('GEMINI_API_KEY');
-  if (!key) return fail(500, 'Server is missing GEMINI_API_KEY. Set it with `supabase secrets set`.');
+  const token = Deno.env.get('HF_TOKEN');
+  if (!token) {
+    return fail(500, 'Server is missing HF_TOKEN. Set it with `supabase secrets set`.');
+  }
 
   let body: { input?: unknown };
   try {
@@ -128,15 +174,21 @@ Deno.serve(async (req) => {
   const vectors: number[][] = [];
   try {
     for (let i = 0; i < texts.length; i += UPSTREAM_BATCH) {
-      vectors.push(...await embedChunk(texts.slice(i, i + UPSTREAM_BATCH), key));
+      vectors.push(...await embedChunk(texts.slice(i, i + UPSTREAM_BATCH), token));
     }
   } catch (err) {
+    /* A wait and a fault are different answers. 503 + retryAfter is what lets
+       the page say "warming up, about 20s" instead of "something broke". */
+    if (err instanceof ModelWarmingError) {
+      return fail(503, err.message, { retryAfter: Math.ceil(err.retryAfter), warming: true });
+    }
     return fail(502, err instanceof Error ? err.message : String(err));
   }
 
   return new Response(
     JSON.stringify({
       model: MODEL,
+      dim: DIM,
       data: vectors.map((embedding, index) => ({ index, embedding, object: 'embedding' })),
     }),
     { headers: { ...CORS, 'Content-Type': 'application/json' } },

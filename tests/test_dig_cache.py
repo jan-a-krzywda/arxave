@@ -11,7 +11,7 @@ import pytest
 
 from arxave import store
 
-MODEL = 'Xenova/bge-small-en-v1.5'
+MODEL = 'allenai/specter2_base'
 DIM = 4  # small, so the tests read as arithmetic rather than as fixtures
 
 
@@ -76,9 +76,10 @@ def test_miss_is_absent_not_empty(cfg):
 
 
 def test_a_different_model_or_dim_is_a_miss(cfg):
-    """The whole reason model and dim are in the primary key: a 384-dim bge
-    vector and a 768-dim Gemini one for the same text are not interchangeable,
-    and mixing them fails silently rather than loudly."""
+    """The whole reason model and dim are in the primary key: two models'
+    vectors for the same text are not interchangeable, and mixing them fails
+    silently rather than loudly — equal dimension included, which is the case
+    that has no other guard anywhere."""
     sha = store.text_sha('exchange gates')
     with store.connect(cfg.db_path) as conn:
         store.upsert_vector(conn, sha, MODEL, DIM, vec(1, 0, 0, 0))
