@@ -114,17 +114,19 @@ const spread = [0.50, 0.55, 0.58, 0.60, 0.61, 0.62, 0.63, 0.65, 0.70, 0.90]
   .map((g, i) => ({ arxivId: String(i), grade: g }));
 
 test('a paper far above the day baseline is pay dirt, the bulk is not shipped', () => {
-  /* z here is 4.72, 1.35 and 0.51 for the top three. The ship line is softZ, so
-     the second one travels — labelled, not promoted — and the third stays out.
-     The bulk of the night is still nowhere near the feed. */
+  // z here is 4.72, 1.35 and 0.51 for the top three; the default ship line of
+  // 1.5 takes the first and leaves the rest of the night alone.
   const picked = selectItems(spread, { minZ: 2.0, maxItems: 15, minItems: 0 });
-  assert.deepEqual(picked.map((p) => p.grade), [0.90, 0.70]);
-  assert.deepEqual(picked.map((p) => p.band), ['paydirt', 'look']);
+  assert.deepEqual(picked.map((p) => p.grade), [0.90]);
+  assert.deepEqual(picked.map((p) => p.band), ['paydirt']);
 });
 
-test('the ship line is labelled, not silent', () => {
-  // The failure this prevents: shipping a z-1.4 paper that reads like a z-3 one.
-  const picked = selectItems(spread, { minZ: 2.0, maxItems: 15, minItems: 0 });
+test('dropping the ship line lets the next tier in, labelled', () => {
+  /* The failure this prevents: shipping a z-1.4 paper that reads like a z-3
+     one. It travels — but wearing a chip that says what it is. */
+  const picked = selectItems(spread, { minZ: 2.0, softZ: 1.0, maxItems: 15, minItems: 0 });
+  assert.deepEqual(picked.map((p) => p.grade), [0.90, 0.70]);
+  assert.deepEqual(picked.map((p) => p.band), ['paydirt', 'look']);
   assert.ok(picked.every((p) => p.band));
 });
 
@@ -163,7 +165,7 @@ test('lowering the gate lets the next tier in, in grade order', () => {
 test('maxItems is a ceiling, never a target', () => {
   // The failure this prevents: padding a quiet day to a fixed ten. Bands make
   // the bar lower, not absent — the ceiling is what keeps that from being ten.
-  assert.equal(selectItems(spread, { minZ: 2.0, maxItems: 10, minItems: 0 }).length, 2);
+  assert.equal(selectItems(spread, { minZ: 2.0, maxItems: 10, minItems: 0 }).length, 1);
   assert.equal(selectItems(spread, { minZ: 0.5, maxItems: 2, minItems: 0 }).length, 2);
 });
 

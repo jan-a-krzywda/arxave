@@ -251,7 +251,7 @@ async function main() {
     /* Storage is not rewritten on load — the slot is saved on the next edit,
        like every other claim — so the defaults show up on screen first. */
     check('the gate arrives at its defaults',
-      String(d['gate-z'].value) === '2' && String(d['gate-max-items'].value) === '15',
+      String(d['gate-z'].value) === '2' && String(d['gate-max-items'].value) === '8',
       JSON.stringify([d['gate-z'].value, d['gate-max-items'].value]));
     check('the touchstone survived', claims(env)['working'].touchstones.length === 1);
 
@@ -259,7 +259,7 @@ async function main() {
     d['paydirt-n'].fire('input');
     const c = claims(env)['working'];
     check('and the next edit writes the gate into the old claim',
-      c.select && c.select.min_z === 2 && c.select.max_items === 15,
+      c.select && c.select.min_z === 2 && c.select.max_items === 8,
       JSON.stringify(c.select));
     check('without losing the touchstone', c.touchstones.length === 1);
   }

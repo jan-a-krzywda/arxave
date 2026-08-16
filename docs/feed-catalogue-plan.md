@@ -130,6 +130,41 @@ paper and teach people to stop opening them.
 > opening a feed; lowering a labelled one does not, because the feed never
 > claimed more than it had.
 >
+> **What the ship line must not be set to, and why.** A z cut is a cut on the
+> *day's own distribution*, so low down it returns a fixed quantile of the
+> announcement and nothing else. Simulated over four preset shapes — a tight
+> blob, a wide blob, a blob with 2 real hits, a blob with 6 — the counts at each
+> bar are:
+>
+> | shape | z≥1.0 | z≥1.5 | z≥2.0 | z≥2.5 | z≥3.0 |
+> |---|---|---|---|---|---|
+> | pure blob, sd 0.02 | 10 | 4 | 1 | 0 | 0 |
+> | pure blob, sd 0.05 | 12 | 4 | 2 | 0 | 0 |
+> | blob + 2 real hits | 12 | 5 | 2 | **2** | **2** |
+> | blob + 6 real hits | 14 | 8 | 6 | **6** | **6** |
+>
+> At z≥1.0 the count is ~11 whether or not the preset found anything — the bar
+> is inside the bulk, where the normal approximation holds and every preset
+> looks identical. Only past z≈2 does the count start carrying information,
+> because that is where a real cluster of on-topic papers is the *only* thing
+> that produces a tail. **So "how many shipped" is not a quality signal at any
+> low bar and must never be read as one; the band split is.** Measured over the
+> 2026-08-12→16 window at the defaults below, the four live presets ship 8 / 3 /
+> 8 / 8 papers and 5 / 0 / 3 / 2 pay dirt — the counts converge, the pay dirt
+> does not.
+>
+> Ship line was 1.0 for one commit and shipped 14–15 per preset, all four
+> hitting the ceiling: a fixed ~8% slice of the announcement. **1.5 is the
+> default** and the ceiling dropped to 8.
+>
+> **The open problem this does not solve.** z has no absolute anchor, so no
+> setting of it can distinguish "this preset had a good day" from "this preset
+> had a normal day". The anchor that would is already in every preset file: the
+> **core samples are on-topic by construction**, so scoring a preset's cores
+> against its own touchstones gives a per-preset reference for what an on-topic
+> paper scores, fixed across days. Ship against that and a quiet day is quiet
+> because the grades are low, not because the day's own median moved. Not built.
+>
 > `min_items` remains the floor and now reaches down to a fifth number,
 > `long_z` (default 0.5), so a night with nothing on it produces a short list of
 > admitted long shots rather than a file that reads as broken. Setting `long_z`
