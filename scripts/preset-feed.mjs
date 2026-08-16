@@ -27,7 +27,7 @@
  *   --presets   directory of preset claims (required)
  *   --out       directory to write <slug>.xml into (required)
  *   --endpoint  dig-cache URL (default: the project's deployed function)
- *   --top       how many papers per feed (default 15)
+ *   --top       how many papers per feed (default 8)
  *   --site      absolute base URL used for links back into the Dig
  */
 
@@ -203,7 +203,7 @@ export const BAND_LABEL = {
 };
 
 export const SELECT_DEFAULTS = {
-  min_z: 2.0, soft_z: 1.0, long_z: 0.5, min_items: 3, max_items: 15,
+  min_z: 2.0, soft_z: 1.5, long_z: 0.5, min_items: 3, max_items: 8,
 };
 
 /**
@@ -461,7 +461,7 @@ async function main() {
     process.exit(2);
   }
   const site = arg('site') || process.env.ARXAVE_SITE || DEFAULT_SITE;
-  const top = parseInt(arg('top', '15'), 10) || 15;
+  const top = parseInt(arg('top', '8'), 10) || 8;
   let endpoint;
   try {
     endpoint = resolveEndpoint(arg('endpoint'), process.env.DIG_CACHE_URL);
