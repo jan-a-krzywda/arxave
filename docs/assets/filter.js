@@ -253,7 +253,7 @@
   /* The gate's defaults, and the only place they are written down. They match
      `SELECT_DEFAULTS` in scripts/preset-feed.mjs exactly — a claim that says
      nothing about the gate must cut where the feed builder would. */
-  const GATE_DEFAULTS = { min_z: 2.0, min_items: 3, soft_z: 1.0, long_z: 0.5, max_items: 15 };
+  const GATE_DEFAULTS = { min_z: 2.0, min_items: 3, soft_z: 1.5, long_z: 0.5, max_items: 8 };
 
   /* The three bands, mirroring BAND_LABEL in scripts/preset-feed.mjs. Slugs are
      shared with docs/feeds/feed.xsl, so a band means the same thing on the page,
@@ -3725,7 +3725,6 @@
     var gate = renderGate();
     var gateN = gate ? gate.keptCount : 0;
     renderReportBar();
-    refreshOpenReport();
     byId('assay-stats').textContent =
       state.stones.length + ' stones · ' + (F.length - 1) + ' features (1 inactive)';
 
@@ -4114,7 +4113,6 @@
       if (!state.picked) state.picked = {};
       if (box.checked) state.picked[si] = true; else delete state.picked[si];
       renderReportBar();
-      refreshOpenReport();
     };
 
     byId('assay-table-wrap').style.display = '';
@@ -4181,6 +4179,12 @@
       if (!best || c > best.cosine) best = { label: featureRowLabel(r), cosine: c };
     }
     return best && best.label ? best : null;
+  }
+
+  /** Escaped author line for a stone, whose `authors` is a list, not a string. */
+  function authorLine(stone) {
+    var names = shortAuthors(stone && stone.authors);
+    return names ? escapeHtml(names) : '';
   }
 
   var REPORT_LABEL_MAX = 80;
@@ -4321,7 +4325,11 @@
         it.z !== null && isFinite(it.z)
           ? fmtZ(it.z) + 'σ above the night\'s baseline' : '',
         it.matched ? 'matched “' + escapeHtml(clipLabel(it.matched.label)) + '”' : '',
-        s.authors ? escapeHtml(s.authors) : '',
+        /* stone.authors is an array (parseAtomXML builds it that way), so it
+           goes through shortAuthors like every other author list on the page.
+           Handing the array to escapeHtml throws on .replace, which is what
+           made the button do nothing at all. */
+        authorLine(s),
       ].filter(Boolean).join(' · ');
       out += '<article class="report-card' +
         (it.band === 'longshot' ? ' is-longshot' : '') + '">' +
@@ -4361,7 +4369,8 @@
       ].filter(Boolean).join(' · ');
       lines.push(prov);
       lines.push('');
-      if (s.authors) { lines.push(s.authors); lines.push(''); }
+      var who = shortAuthors(s.authors);
+      if (who) { lines.push(who); lines.push(''); }
       if (s.abs_url) { lines.push(s.abs_url); lines.push(''); }
       lines.push(s.abstract || '');
       lines.push('');
@@ -4376,44 +4385,32 @@
     return lines.join('\n');
   }
 
-  var _reportCache = null;
-
-  /* `scroll` is false when the assay re-blended under an open panel: the panel
-     has to follow the weights or it is quietly lying, but yanking the page down
-     on every slider drag is not what the person dragging asked for. */
-  function renderReport(scroll) {
+  /**
+   * Open the report in its own tab.
+   *
+   * It was a panel under the gate, which was wrong twice: a page of papers is
+   * not a thing you read wedged between a slider and a matrix, and a panel
+   * cannot be kept open beside the Dig while you move the weights that produced
+   * it. A tab can be read, saved with ⌘S, printed, and sent to someone.
+   *
+   * A blob URL rather than document.write: the page is already generated as a
+   * standalone file for the same reason, so this is one artifact with one
+   * renderer instead of two that drift.
+   */
+  function openReport() {
     var rep = reportItems();
-    var panel = byId('report-panel');
-    var body = byId('report-body');
-    var title = byId('report-title');
-    if (!panel || !body || !rep || !rep.items.length) return;
-    _reportCache = rep;
-
-    var when = new Date().toISOString().substring(0, 10);
-    if (title) title.textContent = 'The Dig — ' + claimName() + ' · ' + when;
-    body.innerHTML =
-      '<p class="report-tally">' + escapeHtml(reportTally(rep.items)) + ' · ' +
-        rep.items.length + ' of ' + state.stones.length + ' stones.</p>' +
-      '<p class="report-thresholds">' + escapeHtml(reportThresholdLine(rep.source)) + '</p>' +
-      reportCardsHtml(rep.items) +
-      /* The setup travels with the report, so a reader can re-run it rather
-         than take the ranking on trust. Same shape Export writes. */
-      '<details class="report-claim"><summary>The setup that produced this</summary>' +
-      '<pre>' + escapeHtml(JSON.stringify(serializeClaim(claimName()), null, 2)) + '</pre>' +
-      '</details>';
-    panel.style.display = '';
-    if (scroll !== false && panel.scrollIntoView) {
-      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!rep || !rep.items.length) return;
+    var blob = new Blob([reportHtmlFile(rep)], { type: 'text/html' });
+    var url = URL.createObjectURL(blob);
+    var tab = window.open(url, '_blank');
+    if (!tab) {
+      /* Blocked. Say so where the button is rather than failing silently — the
+         previous version of this failing silently is why it looked broken. */
+      setReportNote('Pop-up blocked — allow pop-ups for this site, or use Copy.');
     }
-  }
-
-  /** Keep an open panel honest when the weights move under it. */
-  function refreshOpenReport() {
-    var panel = byId('report-panel');
-    if (!panel || panel.style.display === 'none') return;
-    var rep = reportItems();
-    if (!rep || !rep.items.length) { panel.style.display = 'none'; return; }
-    renderReport(false);
+    /* Revoked late: a tab that has not finished fetching the blob when the URL
+       is revoked gets a blank page. */
+    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
   }
 
   /* A standalone file, styled like a feed's own stylesheet — it is opened away
@@ -4455,19 +4452,13 @@
       '</pre></details></div></body></html>';
   }
 
-  function downloadReport() {
-    var rep = _reportCache || reportItems();
-    if (!rep || !rep.items.length) return;
-    var blob = new Blob([reportHtmlFile(rep)], { type: 'text/html' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = slugify(claimName()) + '-' +
-      new Date().toISOString().substring(0, 10) + '.html';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  var _reportNoteTimer = null;
+  function setReportNote(msg) {
+    var el = byId('report-note');
+    if (!el) return;
+    el.textContent = msg;
+    if (_reportNoteTimer) clearTimeout(_reportNoteTimer);
+    _reportNoteTimer = setTimeout(renderReportBar, 4000);
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -4953,25 +4944,14 @@
   /* The report's own controls. Changing the source only re-counts — building is
      the button, because a report is something you asked for. */
   if (byId('report-source')) {
-    byId('report-source').addEventListener('change', function () {
-      renderReportBar();
-      refreshOpenReport();
-    });
+    byId('report-source').addEventListener('change', renderReportBar);
   }
   if (byId('report-btn')) {
-    byId('report-btn').addEventListener('click', function () { renderReport(true); });
-  }
-  if (byId('report-close')) {
-    byId('report-close').addEventListener('click', function () {
-      byId('report-panel').style.display = 'none';
-    });
-  }
-  if (byId('report-download')) {
-    byId('report-download').addEventListener('click', downloadReport);
+    byId('report-btn').addEventListener('click', openReport);
   }
   if (byId('report-copy')) {
     byId('report-copy').addEventListener('click', function () {
-      var rep = _reportCache || reportItems();
+      var rep = reportItems();
       if (!rep || !rep.items.length) return;
       var btn = this;
       var md = reportMarkdown(rep);
@@ -5074,7 +5054,6 @@
     byId('stage-3').style.display = 'none';
     byId('gate-block').style.display = 'none';
     if (byId('report-bar')) byId('report-bar').style.display = 'none';
-    if (byId('report-panel')) byId('report-panel').style.display = 'none';
     applyWagonAssay();   // drop the gold rings the old assay left on the train
     setClaimStatus('Cleared.');
   });

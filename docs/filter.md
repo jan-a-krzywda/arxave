@@ -46,98 +46,6 @@ permalink: /
     </p>
   </header>
 
-  <!-- ── Before the dig: the two things you do first ──────────────────────
-       They are independent and they are concurrent. Sharpening is a 32 MB
-       download; loading a setup is content. Side by side, you pick your ground
-       while the model streams, instead of watching a spinner.
-
-       The columns also carry a dependency that used to be an unexplained
-       string: a restored claim reaches its core samples before the pick exists,
-       so those rows park reading "waiting for the pick". Left column is
-       visibly the thing the right column is waiting for. -->
-  <div class="setup-cols">
-
-    <!-- Left: the pick. First in the DOM, so the stacked narrow layout puts the
-         slow thing first rather than below the fold. -->
-    <section class="setup-col" id="setup-pick">
-      <h2 class="setup-col-title">Sharpen the pick</h2>
-      <div class="pick-gate" id="pick-gate">
-        <button type="button" id="sharpen-btn" class="pick-gate-btn">⛏ Sharpen the pick</button>
-        <div class="pick-gate-say">
-          <strong>One time only.</strong> ~32 MB, then your browser keeps it — every
-          later dig on this machine skips this. Needed to score your own words;
-          nothing you type leaves this tab.
-        </div>
-        <span class="stage-status" id="sharpen-status"></span>
-        <div class="progress-wrap" id="sharpen-progress-wrap" style="display:none">
-          <progress id="sharpen-progress" value="0" max="100"></progress>
-          <span class="progress-label" id="sharpen-label"></span>
-        </div>
-      </div>
-      <div class="stage-done" id="sharpen-done" style="display:none">
-        Pick sharpened — <code>bge-small-en-v1.5</code>, 384-dim. Done for good on this browser.
-      </div>
-    </section>
-
-    <!-- Right: what to dig for. Two groups, because there are two kinds of
-         setup — ones this repo publishes and ones you made. -->
-    <section class="setup-col" id="setup-claim">
-      <h2 class="setup-col-title">Load a setup</h2>
-
-      <!-- Presets: a curated claim, loaded in one click. Their phrases and core
-           abstracts are warmed nightly, so a preset costs no embedding — which is
-           also why they are offered above your own slots rather than below. -->
-      <div id="presets-group" class="setup-group">
-        <div class="group-label label-with-action">
-          <span>Catalogue <span class="sub">— curated, already cut</span></span>
-          <!-- One RSS control for the whole catalogue, not one per preset: the
-               feeds are a list you browse, and a button beside every chip is what
-               broke the row. Hidden until the feed manifest says what exists. -->
-          <span class="feeds-wrap" id="preset-feeds" style="display:none">
-            <button type="button" id="preset-feeds-btn" class="feeds-btn"
-                    aria-haspopup="true" aria-expanded="false">RSS <span aria-hidden="true">▾</span></button>
-            <div class="feeds-menu" id="preset-feeds-menu" role="menu" style="display:none"></div>
-          </span>
-        </div>
-        <div id="presets-list" class="preset-buttons"></div>
-        <p class="hint" id="presets-hint" style="display:none">
-          <span id="presets-blurb" class="preset-blurb-line"></span>
-          Replaces the rows below. Edit any row afterwards — an edited phrase is
-          yours again, and is cut in this tab like anything else you type.
-        </p>
-      </div>
-
-      <div class="setup-group">
-        <div class="group-label">Mine <span class="sub">— setups you saved</span></div>
-        <div class="claim-bar">
-          <label class="claim-pick">
-            Claim
-            <select id="claim-select"></select>
-          </label>
-          <!-- Clear empties the setup; Delete removes the slot. Two different
-               things, so two buttons — "start over" must not cost you the named
-               claim. Delete sits in the overflow with the file moves: six equal
-               buttons in one row is what made this bar read as clutter. -->
-          <button type="button" id="claim-save-as" class="claim-btn">Save as…</button>
-          <button type="button" id="claim-clear" class="claim-btn">Clear</button>
-          <details class="claim-more">
-            <summary>More</summary>
-            <div class="claim-more-menu">
-              <button type="button" id="claim-export" class="claim-btn">Export…</button>
-              <button type="button" id="claim-import" class="claim-btn">Import…</button>
-              <button type="button" id="claim-delete" class="claim-btn claim-btn-danger" disabled>Delete</button>
-            </div>
-          </details>
-          <input type="file" id="claim-import-input" accept=".json,application/json" style="display:none">
-        </div>
-        <span class="claim-status" id="claim-status"></span>
-        <p class="hint claim-hint">
-          A claim is one dig setup. Edits save themselves. Clear empties the
-          touchstones, cores, and gate — the stones you hauled stay put.
-        </p>
-      </div>
-    </section>
-  </div>
 
   <!-- ── Stage 1: Haul the stones (scout settings live here — they are what
        the haul is about, and nothing else reads them) ── -->
@@ -224,6 +132,101 @@ permalink: /
     <legend>2. Filter</legend>
     <p class="hint">What you care about: a word, a phrase, a sentence — or papers you already like.</p>
 
+    <!-- ── Before the dig: the two things you do first ──────────────────────
+         They are independent and they are concurrent. Sharpening is a 32 MB
+         download; loading a setup is content. Side by side, you pick your ground
+         while the model streams, instead of watching a spinner.
+
+         The columns also carry a dependency that used to be an unexplained
+         string: a restored claim reaches its core samples before the pick exists,
+         so those rows park reading "waiting for the pick". Left column is
+         visibly the thing the right column is waiting for. -->
+    <div class="setup-cols">
+
+      <!-- Left: the pick. First in the DOM, so the stacked narrow layout puts the
+           slow thing first rather than below the fold. -->
+      <section class="setup-col" id="setup-pick">
+        <h2 class="setup-col-title">Sharpen the pick</h2>
+        <div class="pick-gate" id="pick-gate">
+          <button type="button" id="sharpen-btn" class="pick-gate-btn">⛏ Sharpen the pick</button>
+          <div class="pick-gate-say">
+            <strong>One time only.</strong> ~32 MB, then your browser keeps it — every
+            later dig on this machine skips this. Needed to score your own words;
+            nothing you type leaves this tab.
+          </div>
+          <span class="stage-status" id="sharpen-status"></span>
+          <div class="progress-wrap" id="sharpen-progress-wrap" style="display:none">
+            <progress id="sharpen-progress" value="0" max="100"></progress>
+            <span class="progress-label" id="sharpen-label"></span>
+          </div>
+        </div>
+        <div class="stage-done" id="sharpen-done" style="display:none">
+          Pick sharpened — <code>bge-small-en-v1.5</code>, 384-dim. Done for good on this browser.
+        </div>
+      </section>
+
+      <!-- Right: what to dig for. Two groups, because there are two kinds of
+           setup — ones this repo publishes and ones you made. -->
+      <section class="setup-col" id="setup-claim">
+        <h2 class="setup-col-title">Load a setup</h2>
+
+        <!-- Presets: a curated claim, loaded in one click. Their phrases and core
+             abstracts are warmed nightly, so a preset costs no embedding — which is
+             also why they are offered above your own slots rather than below. -->
+        <div id="presets-group" class="setup-group">
+          <div class="group-label label-with-action">
+            <span>Catalogue <span class="sub">— curated, already cut</span></span>
+            <!-- One RSS control for the whole catalogue, not one per preset: the
+                 feeds are a list you browse, and a button beside every chip is what
+                 broke the row. Hidden until the feed manifest says what exists. -->
+            <span class="feeds-wrap" id="preset-feeds" style="display:none">
+              <button type="button" id="preset-feeds-btn" class="feeds-btn"
+                      aria-haspopup="true" aria-expanded="false">RSS <span aria-hidden="true">▾</span></button>
+              <div class="feeds-menu" id="preset-feeds-menu" role="menu" style="display:none"></div>
+            </span>
+          </div>
+          <div id="presets-list" class="preset-buttons"></div>
+          <p class="hint" id="presets-hint" style="display:none">
+            <span id="presets-blurb" class="preset-blurb-line"></span>
+            Replaces the rows below. Edit any row afterwards — an edited phrase is
+            yours again, and is cut in this tab like anything else you type.
+          </p>
+        </div>
+
+        <div class="setup-group">
+          <div class="group-label">Mine <span class="sub">— setups you saved</span></div>
+          <div class="claim-bar">
+            <label class="claim-pick">
+              Claim
+              <select id="claim-select"></select>
+            </label>
+            <!-- Clear empties the setup; Delete removes the slot. Two different
+                 things, so two buttons — "start over" must not cost you the named
+                 claim. Delete sits in the overflow with the file moves: six equal
+                 buttons in one row is what made this bar read as clutter. -->
+            <button type="button" id="claim-save-as" class="claim-btn">Save as…</button>
+            <button type="button" id="claim-clear" class="claim-btn">Clear</button>
+            <details class="claim-more">
+              <summary>More</summary>
+              <div class="claim-more-menu">
+                <button type="button" id="claim-export" class="claim-btn">Export…</button>
+                <button type="button" id="claim-import" class="claim-btn">Import…</button>
+                <button type="button" id="claim-delete" class="claim-btn claim-btn-danger" disabled>Delete</button>
+              </div>
+            </details>
+            <input type="file" id="claim-import-input" accept=".json,application/json" style="display:none">
+          </div>
+          <span class="claim-status" id="claim-status"></span>
+          <p class="hint claim-hint">
+            A claim is one dig setup. Edits save themselves. Clear empties the
+            touchstones, cores, and gate — the stones you hauled stay put.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <hr class="group-rule">
+
     <!-- Touchstones (free text) -->
     <div id="touchstones-group">
       <div class="group-label">Touchstones <span class="sub">— free text, one per row</span></div>
@@ -303,7 +306,7 @@ permalink: /
         <div class="role-grid gate-grid">
           <label>
             Ceiling <span class="sub">max items</span>
-            <input type="number" id="gate-max-items" value="15" min="1" max="50">
+            <input type="number" id="gate-max-items" value="8" min="1" max="50">
           </label>
           <label>
             Floor <span class="sub">min items</span>
@@ -311,7 +314,7 @@ permalink: /
           </label>
           <label>
             Ship line <span class="sub">soft z</span>
-            <input type="number" id="gate-soft-z" value="1" min="0" max="4" step="0.1">
+            <input type="number" id="gate-soft-z" value="1.5" min="0" max="4" step="0.1">
           </label>
           <label>
             Long shot z <span class="sub">how far the floor reaches</span>
@@ -339,20 +342,13 @@ permalink: /
           <option value="picked">hand-picked only</option>
         </select>
       </label>
-      <button type="button" id="report-btn" class="report-btn">Prepare report</button>
+      <!-- A whole page of papers is not a panel wedged under a slider: it opens
+           in its own tab, self-contained, so it can be read beside the Dig,
+           saved with ⌘S, or printed. Copy stays here, where the clipboard
+           works without a permission prompt from a blob-origin page. -->
+      <button type="button" id="report-btn" class="report-btn">Prepare report ↗</button>
+      <button type="button" id="report-copy" class="claim-btn">Copy as Markdown</button>
       <span class="report-note" id="report-note"></span>
-    </div>
-
-    <!-- Rendered into on demand; the same card shape a feed's own stylesheet
-         draws, so a report and a feed item are recognisably one thing. -->
-    <div class="report-panel" id="report-panel" style="display:none">
-      <div class="report-head">
-        <span class="report-title" id="report-title">Report</span>
-        <button type="button" id="report-copy" class="claim-btn">Copy as Markdown</button>
-        <button type="button" id="report-download" class="claim-btn">Download</button>
-        <button type="button" id="report-close" class="claim-btn">Close</button>
-      </div>
-      <div class="report-body" id="report-body"></div>
     </div>
 
     <!-- Matrix view -->

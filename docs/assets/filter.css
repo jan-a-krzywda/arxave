@@ -1743,50 +1743,47 @@ a.feeds-item:hover {
   white-space: nowrap;
 }
 
-/* ── The setup columns, above the stages ──────────────────────────
-   Sharpening the pick and choosing what to dig for are independent and
-   concurrent: the model streams on the left while you pick ground on the
-   right. Two columns say that; one stacked list says "do this, then that",
-   which is the wrong instruction and costs a 32 MB wait. */
+/* ── Setup, at the top of Stage 2 ─────────────────────────────────
+   Sharpening the pick and loading a setup both belong to the same question —
+   what are we filtering for — so they sit inside Stage 2, above the rows they
+   fill. They are also independent and concurrent: sharpening is a 32 MB
+   download, loading a setup is content, and side by side you pick your ground
+   while the model streams.
+
+   Already inside a fieldset, so the columns are ruled, not boxed. A panel
+   inside a panel is the thing that made this look bolted on. */
 .setup-cols {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  align-items: start;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  align-items: stretch;
 }
-.setup-col {
-  min-width: 0;
-  padding: 0.9rem 1rem 1rem;
-  background: var(--rock-deep);
-  border: 1px solid var(--rock-edge);
-  border-radius: 8px;
+.setup-col { min-width: 0; }
+.setup-col + .setup-col {
+  padding-left: 1.25rem;
+  border-left: 1px solid var(--rock-edge);
 }
 .setup-col-title {
-  margin: 0 0 0.6rem;
-  font-size: 1.05rem;
+  margin: 0 0 0.7rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
 }
 .setup-group + .setup-group {
-  margin-top: 1rem;
-  padding-top: 0.9rem;
+  margin-top: 0.9rem;
+  padding-top: 0.8rem;
   border-top: 1px solid var(--rock-edge);
 }
-/* Already inside a panel, so the gate drops its own box and keeps its dash. */
-.setup-col .pick-gate {
-  margin: 0;
-  padding: 0.85rem;
-}
+.setup-col .pick-gate { margin: 0; padding: 0.85rem; }
 .setup-col .claim-bar {
   padding: 0;
   margin: 0;
   background: none;
   border: none;
 }
-.setup-col .claim-hint {
-  margin-bottom: 0;
-}
+.setup-col .claim-hint { margin-bottom: 0; }
 .setup-col .claim-status {
   margin-left: 0;
   display: block;
@@ -1795,16 +1792,13 @@ a.feeds-item:hover {
 
 /* The overflow. Delete, Export and Import are rare and Delete is destructive;
    six equal buttons in one row is what made the bar read as clutter. */
-.claim-more {
-  display: inline-block;
-  position: relative;
-}
+.claim-more { display: inline-block; position: relative; }
 .claim-more > summary {
   list-style: none;
   cursor: pointer;
   border: 1px solid var(--rock-lit);
   color: var(--text-dim);
-  padding: 0.35rem 0.8rem;
+  padding: 0.4rem 0.8rem;
   border-radius: 4px;
   font-size: 0.9rem;
 }
@@ -1827,10 +1821,10 @@ a.feeds-item:hover {
 .claim-more-menu .claim-btn { white-space: nowrap; text-align: left; }
 
 /* ── Bands ────────────────────────────────────────────────────────
-   How sure the assay was, on the page and in a report. Deliberately a ramp
-   rather than three unrelated colours: solid ore, ore outline, plain rock.
-   Colour draining out down the list is confidence draining out. Same slugs as
-   docs/feeds/feed.xsl, so a band reads the same everywhere. */
+   How sure the assay was. Deliberately a ramp rather than three unrelated
+   colours: solid ore, ore outline, plain rock. Colour draining out down a list
+   is confidence draining out. Same slugs as docs/feeds/feed.xsl, so a band
+   reads the same on the page, in a report, and in a raw feed. */
 .band {
   display: inline-block;
   vertical-align: baseline;
@@ -1850,15 +1844,12 @@ a.feeds-item:hover {
 .band-picked { border: 1px solid var(--lamp-dim); color: var(--lamp); }
 
 /* ── Hand-picking, in the table view ─────────────────────────────── */
-.pick-col {
-  width: 2rem;
-  text-align: center;
-}
+.pick-col { width: 2rem; text-align: center; }
 .pick-box { cursor: pointer; }
 
-/* ── The report ───────────────────────────────────────────────────
-   The feed arrives unasked; this is what you ask for once you have moved the
-   weights. Same card shape either way, so they read as one thing. */
+/* ── The report bar ───────────────────────────────────────────────
+   The report itself is a whole page and opens in its own tab; only its
+   controls live here. */
 .report-bar {
   display: flex;
   align-items: center;
@@ -1874,12 +1865,13 @@ a.feeds-item:hover {
   color: var(--text-dim);
 }
 .report-source select {
-  padding: 0.3rem 0.45rem;
+  padding: 0.35rem 0.45rem;
   font-size: 0.9rem;
   border: 1px solid var(--rock-edge);
   border-radius: 4px;
   background: var(--rock);
   color: var(--text);
+  max-width: 100%;
 }
 .report-btn {
   padding: 0.4rem 0.9rem;
@@ -1893,96 +1885,35 @@ a.feeds-item:hover {
 }
 .report-btn:hover:not(:disabled) { background: #ffc730; }
 .report-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.report-note {
-  font-size: 0.85rem;
-  color: var(--text-faint);
-}
+.report-note { font-size: 0.85rem; color: var(--text-faint); }
 
-.report-panel {
-  margin: 1rem 0 0.5rem;
-  border: 1px solid var(--rock-edge);
-  border-radius: 8px;
-  background: var(--cave-air);
+/* ── Narrow and touch ─────────────────────────────────────────────
+   One column, pick first — it is the slow one and should start before you
+   scroll, not after. Controls grow to a 44px touch target and stop being a row
+   of things too small and too close to hit with a thumb. */
+@media (max-width: 720px) {
+  .setup-cols { grid-template-columns: 1fr; gap: 1rem; }
+  .setup-col + .setup-col {
+    padding-left: 0;
+    padding-top: 1rem;
+    border-left: none;
+    border-top: 1px solid var(--rock-edge);
+  }
+  .claim-bar { gap: 0.5rem; }
+  .claim-pick { flex: 1 1 100%; }
+  .claim-pick select { flex: 1; min-width: 0; }
+  .claim-btn,
+  .claim-more > summary,
+  .report-btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .preset-buttons { gap: 0.45rem; }
+  .preset-btn { min-height: 44px; }
+  .report-bar { gap: 0.5rem; }
+  .report-source { flex: 1 1 100%; }
+  .pick-col { width: 2.4rem; }
+  .pick-box { width: 20px; height: 20px; }
 }
-.report-head {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  padding: 0.6rem 0.9rem;
-  border-bottom: 1px solid var(--rock-edge);
-}
-.report-title {
-  font-weight: 700;
-  color: var(--text);
-  margin-right: auto;
-}
-.report-body {
-  padding: 0.9rem;
-  max-height: 70vh;
-  overflow-y: auto;
-}
-.report-tally { margin: 0 0 0.2rem; color: var(--text-dim); }
-.report-thresholds {
-  margin: 0 0 1rem;
-  color: var(--text-faint);
-  font-size: 0.82rem;
-}
-.report-card {
-  background: var(--rock-deep);
-  border: 1px solid var(--rock-edge);
-  border-radius: 6px;
-  padding: 0.9rem 1rem;
-  margin-bottom: 0.8rem;
-}
-/* A long shot is on the page because the floor put it there, so it sits back
-   rather than competing with a paper the assay stood behind. */
-.report-card.is-longshot { opacity: 0.82; }
-.report-card-head {
-  display: flex;
-  gap: 0.7rem;
-  align-items: baseline;
-}
-.report-card .seam {
-  flex: none;
-  width: 1.8rem;
-  height: 1.8rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 3px;
-  border: 1px solid var(--gold-dim);
-  background: var(--ore-2);
-  color: var(--gold);
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-.report-card.is-longshot .seam {
-  background: var(--rock);
-  border-color: var(--rock-edge);
-  color: var(--text-faint);
-}
-.report-card h3 { font-size: 1.02rem; line-height: 1.35; margin: 0; }
-.report-card h3 a { color: var(--text); text-decoration: none; }
-.report-card h3 a:hover { color: var(--gold); }
-.report-card .verdict { margin: 0.6rem 0 0.3rem; }
-.report-card .grade { margin: 0.2rem 0; font-size: 0.84rem; color: var(--text-faint); }
-.report-card .grade strong { color: var(--text-dim); }
-.report-card .abstract { margin: 0.4rem 0 0; font-size: 0.88rem; color: var(--text-dim); }
-.report-claim summary { cursor: pointer; color: var(--text-dim); font-size: 0.88rem; }
-.report-claim pre {
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-size: 0.78rem;
-  background: var(--rock-deep);
-  border: 1px solid var(--rock-edge);
-  border-radius: 4px;
-  padding: 0.6rem;
-  color: var(--text-dim);
-}
-
-/* Stacked, pick first — it is the slow one, and it should start before you
-   scroll rather than after. */
-@media (max-width: 880px) {
-  .setup-cols { grid-template-columns: 1fr; }
 }
