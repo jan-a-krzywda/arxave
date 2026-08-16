@@ -200,6 +200,11 @@
     wagonModalGraph: null,   // live graph handle for the modal canvas
     haulTrain: null,        // live handle for stage 1's mine-train progress
     hauledFromCache: 0,     // stones whose vector came from the shared cache
+    /* Hand-picked stones, by index into state.stones. Runtime, never saved:
+       a claim is a setup and outlives the night, while a hand pick is about
+       these stones and dies with them. Keeping it out of the claim is also what
+       stops a shared setup carrying someone else's ticks. */
+    picked: null,
   };
 
   // ── Persistence ───────────────────────────────────────────────────
@@ -246,9 +251,19 @@
   const LEGACY_WORKING_NAME = 'Working claim';
 
   /* The gate's defaults, and the only place they are written down. They match
-     `selectItems` in scripts/preset-feed.mjs exactly — a claim that says
+     `SELECT_DEFAULTS` in scripts/preset-feed.mjs exactly — a claim that says
      nothing about the gate must cut where the feed builder would. */
-  const GATE_DEFAULTS = { min_z: 2.0, min_items: 3, soft_z: 1.0, max_items: 15 };
+  const GATE_DEFAULTS = { min_z: 2.0, min_items: 3, soft_z: 1.0, long_z: 0.5, max_items: 15 };
+
+  /* The three bands, mirroring BAND_LABEL in scripts/preset-feed.mjs. Slugs are
+     shared with docs/feeds/feed.xsl, so a band means the same thing on the page,
+     in a report, and in a browser looking at the raw feed. */
+  const BAND_LABEL = {
+    paydirt: 'Pay dirt',
+    look: 'Worth a look',
+    longshot: 'Long shot',
+    picked: 'Hand-picked',
+  };
 
   function parseSelect(raw) {
     function num(v, dflt, lo, hi) {
@@ -261,6 +276,7 @@
       min_z: num(s.min_z, GATE_DEFAULTS.min_z, 0, 4),
       min_items: Math.round(num(s.min_items, GATE_DEFAULTS.min_items, 0, 50)),
       soft_z: num(s.soft_z, GATE_DEFAULTS.soft_z, 0, 4),
+      long_z: num(s.long_z, GATE_DEFAULTS.long_z, 0, 4),
       max_items: Math.round(num(s.max_items, GATE_DEFAULTS.max_items, 1, 50)),
     };
   }
@@ -298,6 +314,7 @@
         min_z: state.select.min_z,
         min_items: state.select.min_items,
         soft_z: state.select.soft_z,
+        long_z: state.select.long_z,
         max_items: state.select.max_items,
       },
     };
@@ -2967,6 +2984,10 @@
       statusEl.textContent = 'Scouting arXiv...';
       var stones = await scoutDay();
       state.stones = stones;
+      /* Ticks are indices into the old stones and mean nothing against the new
+         ones. A stale pick would quietly put last night's paper in tonight's
+         report, so a fresh haul drops them. */
+      state.picked = null;
 
       // Embed abstracts
       statusEl.textContent = 'Embedding ' + stones.length + ' abstracts...';
@@ -3519,6 +3540,13 @@
    * quiet night's best paper scores like a busy night's tenth, and a fixed
    * grade bar would either drown you on Tuesday or starve you on Friday.
    *
+   * THE SHIP LINE IS NOT THE PAY-DIRT LINE. A feed ships everything above
+   * `soft_z` and bands it by `min_z`: pay dirt above the line, worth a look
+   * between the two, long shot below. `min_z` still names the papers the assay
+   * stood behind — it just no longer decides alone who travels, because an
+   * empty feed is what a prospective subscriber sees when they click the link.
+   * `min_items` is the floor under all of it and reaches down to `long_z`.
+   *
    * TWO IMPLEMENTATIONS OF ONE RULE, on purpose: the builder is a Node module
    * and this is a browser IIFE with no bundler, so sharing the code means
    * adding a build step to a site that has none. tests/js/gate.test.js runs
@@ -3528,11 +3556,23 @@
 
   /**
    * @returns null when there is nothing to gate, else
-   *   {n, keptCount, hard, z, median, mad, degenerate, floored, softBar, opt}
-   *   where `z` is indexed by stone, like state.grades.
+   *   {n, keptCount, hard, z, median, mad, degenerate, floored, shipBar, opt}
+   *   where `z` is indexed by stone, like state.grades, and `hard` is how many
+   *   of the kept items are pay dirt.
    */
   function gateReport() {
     return gateOver(state.grades, state.order, state.select);
+  }
+
+  /* Mirrors bandOf() in scripts/preset-feed.mjs. A null z is the no-spread
+     night: no baseline, so no confidence to claim. */
+  function bandOf(z, opt) {
+    var minZ = isFinite(opt.min_z) ? opt.min_z : GATE_DEFAULTS.min_z;
+    var softZ = isFinite(opt.soft_z) ? opt.soft_z : GATE_DEFAULTS.soft_z;
+    if (z === null || !isFinite(z)) return 'longshot';
+    if (z >= minZ) return 'paydirt';
+    if (z >= Math.min(softZ, minZ)) return 'look';
+    return 'longshot';
   }
 
   /* Pure, and kept that way so tests/js/gate.test.js can hand it the same
@@ -3554,7 +3594,7 @@
       return {
         n: n, keptCount: Math.min(opt.max_items, n), hard: 0, z: null,
         median: median, mad: 0, degenerate: true, floored: false,
-        softBar: opt.soft_z, opt: opt,
+        shipBar: opt.soft_z, opt: opt,
       };
     }
 
@@ -3570,22 +3610,26 @@
       return c;
     }
 
+    /* The ship line never rises above the pay-dirt line: setting min_z under
+       soft_z is a stricter feed, not a band nothing can reach. */
+    var shipBar = Math.min(opt.soft_z, opt.min_z);
+    var longZ = isFinite(opt.long_z) ? opt.long_z : GATE_DEFAULTS.long_z;
     var hard = clearing(opt.min_z);
+    var ship = clearing(shipBar);
     var floorN = Math.min(opt.min_items, opt.max_items);
-    if (hard >= floorN) {
-      return {
-        n: n, keptCount: Math.min(hard, opt.max_items), hard: hard, z: z,
-        median: median, mad: mad, degenerate: false, floored: false,
-        softBar: opt.soft_z, opt: opt,
-      };
+    var floored = false;
+    if (ship < floorN) {
+      /* The floor reaches past the ship line and no further than long z, so a
+         night with nothing on it produces a few admitted long shots rather than
+         a feed that reads as broken. */
+      ship = Math.min(clearing(Math.min(longZ, shipBar)), floorN);
+      floored = true;
     }
-    /* The floor never overrides the ceiling and never reaches below soft z, so
-       a day with two good papers ships two — not two and a padded third. */
-    var softBar = Math.min(opt.soft_z, opt.min_z);
+    var keptCount = Math.min(ship, opt.max_items);
     return {
-      n: n, keptCount: Math.min(clearing(softBar), floorN), hard: hard, z: z,
-      median: median, mad: mad, degenerate: false, floored: true,
-      softBar: softBar, opt: opt,
+      n: n, keptCount: keptCount, hard: Math.min(hard, keptCount), z: z,
+      median: median, mad: mad, degenerate: false, floored: floored,
+      shipBar: shipBar, opt: opt,
     };
   }
 
@@ -3598,6 +3642,7 @@
     if (byId('gate-max-items')) byId('gate-max-items').value = s.max_items;
     if (byId('gate-min-items')) byId('gate-min-items').value = s.min_items;
     if (byId('gate-soft-z')) byId('gate-soft-z').value = s.soft_z;
+    if (byId('gate-long-z')) byId('gate-long-z').value = s.long_z;
   }
 
   function renderGate() {
@@ -3618,15 +3663,20 @@
     var msg;
     if (r.degenerate) {
       msg = 'No spread tonight — nothing to be an outlier against, so the gate ' +
-        'stands down and the top ' + r.keptCount + ' by grade ship.';
+        'stands down and the top ' + r.keptCount + ' by grade ship, all as long shots.';
     } else if (r.keptCount === 0) {
-      msg = 'Nothing clears z ≥ ' + fmtZ(r.opt.min_z) + ' — this feed is empty today. ' +
-        'Best on the night is z ' + fmtZ(r.z[state.order[0]]) + '.';
+      msg = 'Nothing on the night reaches z ' + fmtZ(Math.min(r.opt.long_z, r.shipBar)) +
+        ' — this feed is empty today. Best is z ' + fmtZ(r.z[state.order[0]]) + '.';
     } else {
-      msg = r.keptCount + ' of ' + r.n + ' would ship';
-      if (r.floored) {
-        msg += ' — only ' + r.hard + ' clear z ≥ ' + fmtZ(r.opt.min_z) +
-          ', so the floor reaches down to z ' + fmtZ(r.softBar);
+      /* The counts, not just the total: "7 would ship" and "7 would ship, 1 of
+         them pay dirt" are different mornings, and the second is the one the
+         reader is actually being promised. */
+      var counts = bandCounts(r);
+      msg = r.keptCount + ' of ' + r.n + ' would ship — ' +
+        (counts.paydirt ? counts.paydirt + ' pay dirt' : 'no pay dirt');
+      if (counts.look) msg += ' · ' + counts.look + ' worth a look';
+      if (counts.longshot) {
+        msg += ' · ' + counts.longshot + ' long shot' + (counts.longshot === 1 ? '' : 's');
       }
       var cut = state.order[r.keptCount - 1];
       msg += ' · last in at z ' + fmtZ(r.z[cut]) +
@@ -3636,6 +3686,16 @@
     out.textContent = msg;
     out.classList.toggle('is-empty', !r.degenerate && r.keptCount === 0);
     return r;
+  }
+
+  /** How the shipped set splits across the bands. */
+  function bandCounts(r) {
+    var n = { paydirt: 0, look: 0, longshot: 0 };
+    for (var i = 0; i < r.keptCount; i++) {
+      var si = state.order[i];
+      n[bandOf(r.z ? r.z[si] : null, r.opt)]++;
+    }
+    return n;
   }
 
   function renderAssay() {
@@ -3664,6 +3724,8 @@
     /* Drawn before the matrix: the column marking the cut reads off it. */
     var gate = renderGate();
     var gateN = gate ? gate.keptCount : 0;
+    renderReportBar();
+    refreshOpenReport();
     byId('assay-stats').textContent =
       state.stones.length + ' stones · ' + (F.length - 1) + ' features (1 inactive)';
 
@@ -3993,8 +4055,9 @@
     var head = byId('assay-table-head');
     var body = byId('assay-table-body');
 
-    // Header
-    var headHTML = '<tr><th>Rank</th><th>Title</th>';
+    // Header. The tick column leads: it is the only cell you act on.
+    var headHTML = '<tr><th class="pick-col" title="Tick to hand-pick for a report">✓</th>' +
+      '<th>Rank</th><th>Title</th>';
     for (var f = 0; f < kk + kp + 1; f++) {
       var flabel;
       if (f >= kk + kp) flabel = 'Rush';
@@ -4020,6 +4083,9 @@
       if (gateN > 0 && n === gateN - 1) rowClasses.push('gate-cut-row');
       var rowCls = rowClasses.length ? ' class="' + rowClasses.join(' ') + '"' : '';
       bodyHTML += '<tr' + rowCls + '>';
+      bodyHTML += '<td class="pick-col"><input type="checkbox" class="pick-box" ' +
+        'data-stone="' + si + '"' + (isPicked(si) ? ' checked' : '') +
+        ' aria-label="Hand-pick this paper for a report"></td>';
       bodyHTML += '<td>' + (n + 1) + '</td>';
       bodyHTML += '<td>' + escapeHtml(stone.title) + '</td>';
       for (var fr = 0; fr < kk + kp + 1; fr++) {
@@ -4038,7 +4104,370 @@
     }
     body.innerHTML = bodyHTML;
 
+    /* Delegated, and rebound each render because the tbody's contents are
+       replaced wholesale. One listener on the container, not one per row. */
+    body.onchange = function (e) {
+      var box = e && e.target;
+      if (!box || !box.className || box.className.indexOf('pick-box') === -1) return;
+      var si = parseInt(box.getAttribute('data-stone'), 10);
+      if (!isFinite(si)) return;
+      if (!state.picked) state.picked = {};
+      if (box.checked) state.picked[si] = true; else delete state.picked[si];
+      renderReportBar();
+      refreshOpenReport();
+    };
+
     byId('assay-table-wrap').style.display = '';
+  }
+
+  function isPicked(si) {
+    return !!(state.picked && state.picked[si]);
+  }
+
+  function pickedIndices() {
+    if (!state.picked || !state.order) return [];
+    var out = [];
+    for (var i = 0; i < state.order.length; i++) {
+      if (isPicked(state.order[i])) out.push(state.order[i]);
+    }
+    return out;   // in grade order, like everything else the page hands out
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // The report — a feed you asked for
+  // ═══════════════════════════════════════════════════════════════════
+  /*
+   * A feed arrives unasked, at the preset's own weights, once a morning. A
+   * report is the other half: this night, these weights, this selection, on
+   * demand. They share a card shape on purpose — a report and a feed item are
+   * recognisably one thing, so nobody has to learn two readings.
+   *
+   * THE BAND RULE HOLDS HERE TOO, and one case matters. A band is the assay's
+   * confidence; a hand-picked paper is the reader's opinion. A hand pick that
+   * clears a band wears that band, and one that clears nothing is marked
+   * `Hand-picked` rather than given a floor-level chip. Dressing an opinion as
+   * a measurement is the one thing this page must not do — a report gets read
+   * by someone who did not set the thresholds, so the header prints them.
+   *
+   * No enrichment: verdict, so-what and caveat come from Gemini in the nightly
+   * job, and nothing on this page calls a model. A report carries what the
+   * browser actually knows — band, z, grade, the row that earned it, abstract.
+   */
+
+  /** Label for feature row `r`: a touchstone's own words, or a core's title. */
+  function featureRowLabel(r) {
+    var kk = state.touchstones.length;
+    if (r < kk) return (state.touchstones[r].text || '').trim();
+    var c = state.cores[r - kk];
+    if (!c) return '';
+    return (c.title || c.doi || '').trim();
+  }
+
+  /**
+   * The feature row this stone matched hardest.
+   *
+   * Mirrors bestRow() in scripts/preset-feed.mjs: the grade alone is a bare
+   * number, and this is what turns 0.612 into a reason — and tells someone
+   * whose setup has drifted which row to go and edit.
+   */
+  function bestRowFor(si) {
+    var F = state.featureVectors;
+    var weights = getWeights();
+    if (!F) return null;
+    var best = null;
+    for (var r = 0; r < F.length; r++) {
+      if (F[r] === null || weights[r] === null || weights[r] <= 0) continue;
+      var c = cosine(state.A[si], F[r]);
+      if (!best || c > best.cosine) best = { label: featureRowLabel(r), cosine: c };
+    }
+    return best && best.label ? best : null;
+  }
+
+  var REPORT_LABEL_MAX = 80;
+  function clipLabel(s) {
+    s = String(s || '').replace(/\s+/g, ' ').trim();
+    if (s.length <= REPORT_LABEL_MAX) return s;
+    return s.slice(0, REPORT_LABEL_MAX - 1).replace(/\s+$/, '') + '…';
+  }
+
+  /**
+   * Which stones a report covers, and what band each one wears.
+   *
+   * Pure, and kept that way for the same reason `gateOver` is: it is the rule
+   * the report makes a promise about, and tests/js/report.test.js drives it
+   * directly rather than through a matrix nobody rendered.
+   *
+   * @param source 'gate' | 'paydirt' | 'picked'
+   * @param order  stone indices, grade descending
+   * @param gate   a gateOver report, or null
+   * @param opt    the claim's `select` block
+   * @param picked map of stone index → true
+   * @returns [{si, z, band}] in grade order
+   */
+  function selectForReport(source, order, gate, opt, paydirtN, picked) {
+    if (!order || !order.length) return [];
+    var idx;
+    if (source === 'picked') {
+      idx = order.filter(function (si) { return !!(picked && picked[si]); });
+    } else if (source === 'paydirt') {
+      idx = order.slice(0, Math.min(paydirtN, order.length));
+    } else {
+      idx = gate ? order.slice(0, gate.keptCount) : [];
+    }
+    return idx.map(function (si) {
+      var z = gate && gate.z ? gate.z[si] : null;
+      var band = bandOf(z, opt);
+      /* Only a hand pick can be an opinion, so only a hand pick can lose its
+         band — everything in the other two selections got there by measurement
+         and keeps whatever the measurement says. A pick that does clear a band
+         keeps it: the reader agreeing with the assay is not a demotion. */
+      if (source === 'picked' && band === 'longshot') band = 'picked';
+      return { si: si, z: z, band: band };
+    });
+  }
+
+  /**
+   * What a report would contain, for the selected source.
+   *
+   * @returns {items, source, gate} or null when there is nothing to report on.
+   */
+  function reportItems() {
+    if (!state.order || !state.grades || !state.stones.length) return null;
+    var sel = byId('report-source');
+    var source = sel ? sel.value : 'gate';
+    var r = gateReport();
+    var items = selectForReport(source, state.order, r, state.select,
+      state.blend.paydirt_n, state.picked).map(function (p) {
+      return {
+        si: p.si, stone: state.stones[p.si], grade: state.grades[p.si],
+        z: p.z, band: p.band, matched: bestRowFor(p.si),
+      };
+    });
+    return { items: items, source: source, gate: r };
+  }
+
+  function renderReportBar() {
+    var bar = byId('report-bar');
+    var note = byId('report-note');
+    var btn = byId('report-btn');
+    if (!bar || !btn) return;
+    var have = !!(state.order && state.grades &&
+      (state.touchstones.length || state.cores.length));
+    bar.style.display = have ? '' : 'none';
+    if (!have) return;
+    var rep = reportItems();
+    var n = rep ? rep.items.length : 0;
+    btn.disabled = n === 0;
+    if (note) {
+      var picks = pickedIndices().length;
+      note.textContent = n === 0
+        ? (rep && rep.source === 'picked'
+          ? 'Nothing ticked yet — tick papers in the table view.'
+          : 'Nothing in this selection tonight.')
+        : n + ' paper' + (n === 1 ? '' : 's') +
+          (rep.source !== 'picked' && picks ? ' · ' + picks + ' ticked' : '');
+    }
+  }
+
+  function bandChipHtml(band) {
+    return '<span class="band band-' + band + '">' +
+      escapeHtml(BAND_LABEL[band] || band) + '</span>';
+  }
+
+  /* What the report was cut with, printed rather than assumed. A report is read
+     by someone who did not move these sliders, and "pay dirt" has to mean a
+     number they can see. */
+  function reportThresholdLine(source) {
+    var s = state.select;
+    if (source === 'paydirt') {
+      return 'Top ' + state.blend.paydirt_n + ' by grade · bands at z ≥ ' +
+        fmtZ(s.min_z) + ' (pay dirt) and z ≥ ' + fmtZ(Math.min(s.soft_z, s.min_z)) +
+        ' (worth a look)';
+    }
+    if (source === 'picked') {
+      return 'Hand-picked · bands at z ≥ ' + fmtZ(s.min_z) + ' (pay dirt) and z ≥ ' +
+        fmtZ(Math.min(s.soft_z, s.min_z)) + ' (worth a look)';
+    }
+    return 'Ship line z ≥ ' + fmtZ(Math.min(s.soft_z, s.min_z)) +
+      ' · pay dirt z ≥ ' + fmtZ(s.min_z) +
+      ' · floor ' + s.min_items + ' down to z ' + fmtZ(s.long_z) +
+      ' · ceiling ' + s.max_items;
+  }
+
+  function reportTally(items) {
+    var n = { paydirt: 0, look: 0, longshot: 0, picked: 0 };
+    for (var i = 0; i < items.length; i++) n[items[i].band]++;
+    var rest = [
+      n.look ? n.look + ' worth a look' : '',
+      n.longshot ? n.longshot + ' long shot' + (n.longshot === 1 ? '' : 's') : '',
+      n.picked ? n.picked + ' hand-picked' : '',
+    ].filter(Boolean).join(' · ');
+    if (!n.paydirt) return 'No pay dirt' + (rest ? ' — ' + rest : '') + '.';
+    return [n.paydirt + ' pay dirt', rest].filter(Boolean).join(' · ') + '.';
+  }
+
+  function claimName() {
+    var map = loadClaims();
+    return (map[state.claimSlug] || {}).name || WORKING_NAME;
+  }
+
+  function reportCardsHtml(items) {
+    var out = '';
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      var s = it.stone;
+      var prov = [
+        '<strong>Grade ' + it.grade.toFixed(3) + '</strong>',
+        it.z !== null && isFinite(it.z)
+          ? fmtZ(it.z) + 'σ above the night\'s baseline' : '',
+        it.matched ? 'matched “' + escapeHtml(clipLabel(it.matched.label)) + '”' : '',
+        s.authors ? escapeHtml(s.authors) : '',
+      ].filter(Boolean).join(' · ');
+      out += '<article class="report-card' +
+        (it.band === 'longshot' ? ' is-longshot' : '') + '">' +
+        '<div class="report-card-head">' +
+          '<span class="seam">' + (i + 1) + '</span>' +
+          '<h3><a href="' + escapeHtml(s.abs_url || '#') + '" target="_blank" rel="noopener">' +
+            escapeHtml(s.title || s.arxiv_id) + '</a></h3>' +
+        '</div>' +
+        '<p class="verdict">' + bandChipHtml(it.band) + '</p>' +
+        '<p class="grade">' + prov + '</p>' +
+        '<p class="abstract"><strong>Abstract.</strong> ' +
+          escapeHtml(s.abstract || '') + '</p>' +
+        '</article>';
+    }
+    return out;
+  }
+
+  function reportMarkdown(rep) {
+    var lines = [];
+    var when = new Date().toISOString().substring(0, 10);
+    lines.push('# The Dig — ' + claimName());
+    lines.push('');
+    lines.push(when + ' · ' + rep.items.length + ' of ' + state.stones.length +
+      ' stones · ' + reportTally(rep.items));
+    lines.push('');
+    lines.push('_' + reportThresholdLine(rep.source) + '_');
+    lines.push('');
+    for (var i = 0; i < rep.items.length; i++) {
+      var it = rep.items[i];
+      var s = it.stone;
+      lines.push('## ' + (i + 1) + '. ' + (s.title || s.arxiv_id));
+      lines.push('');
+      var prov = ['**' + (BAND_LABEL[it.band] || it.band) + '**',
+        'grade ' + it.grade.toFixed(3),
+        it.z !== null && isFinite(it.z) ? 'z ' + fmtZ(it.z) : '',
+        it.matched ? 'matched “' + clipLabel(it.matched.label) + '”' : '',
+      ].filter(Boolean).join(' · ');
+      lines.push(prov);
+      lines.push('');
+      if (s.authors) { lines.push(s.authors); lines.push(''); }
+      if (s.abs_url) { lines.push(s.abs_url); lines.push(''); }
+      lines.push(s.abstract || '');
+      lines.push('');
+    }
+    lines.push('---');
+    lines.push('');
+    lines.push('Setup that produced this report:');
+    lines.push('');
+    lines.push('```json');
+    lines.push(JSON.stringify(serializeClaim(claimName()), null, 2));
+    lines.push('```');
+    return lines.join('\n');
+  }
+
+  var _reportCache = null;
+
+  /* `scroll` is false when the assay re-blended under an open panel: the panel
+     has to follow the weights or it is quietly lying, but yanking the page down
+     on every slider drag is not what the person dragging asked for. */
+  function renderReport(scroll) {
+    var rep = reportItems();
+    var panel = byId('report-panel');
+    var body = byId('report-body');
+    var title = byId('report-title');
+    if (!panel || !body || !rep || !rep.items.length) return;
+    _reportCache = rep;
+
+    var when = new Date().toISOString().substring(0, 10);
+    if (title) title.textContent = 'The Dig — ' + claimName() + ' · ' + when;
+    body.innerHTML =
+      '<p class="report-tally">' + escapeHtml(reportTally(rep.items)) + ' · ' +
+        rep.items.length + ' of ' + state.stones.length + ' stones.</p>' +
+      '<p class="report-thresholds">' + escapeHtml(reportThresholdLine(rep.source)) + '</p>' +
+      reportCardsHtml(rep.items) +
+      /* The setup travels with the report, so a reader can re-run it rather
+         than take the ranking on trust. Same shape Export writes. */
+      '<details class="report-claim"><summary>The setup that produced this</summary>' +
+      '<pre>' + escapeHtml(JSON.stringify(serializeClaim(claimName()), null, 2)) + '</pre>' +
+      '</details>';
+    panel.style.display = '';
+    if (scroll !== false && panel.scrollIntoView) {
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  /** Keep an open panel honest when the weights move under it. */
+  function refreshOpenReport() {
+    var panel = byId('report-panel');
+    if (!panel || panel.style.display === 'none') return;
+    var rep = reportItems();
+    if (!rep || !rep.items.length) { panel.style.display = 'none'; return; }
+    renderReport(false);
+  }
+
+  /* A standalone file, styled like a feed's own stylesheet — it is opened away
+     from this page, so it carries its own colours or it carries none. */
+  function reportHtmlFile(rep) {
+    var when = new Date().toISOString().substring(0, 10);
+    var head = 'The Dig — ' + claimName() + ' · ' + when;
+    return '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+      '<title>' + escapeHtml(head) + '</title><style>' +
+      'body{margin:0;padding:2.5rem 1.2rem 4rem;background:#15181d;color:#d7dbe0;' +
+      'font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}' +
+      '.sheet{max-width:48rem;margin:0 auto}h1{font-size:1.8rem;margin:0 0 .4rem}' +
+      '.report-tally{color:#99a1ad;margin:.2rem 0}' +
+      '.report-thresholds{color:#6d7682;font-size:.85rem;margin:.2rem 0 1.6rem}' +
+      'article{background:#1b1f26;border:1px solid #333a44;border-radius:6px;' +
+      'padding:1rem 1.1rem;margin-bottom:1rem}article.is-longshot{opacity:.82}' +
+      '.report-card-head{display:flex;gap:.7rem;align-items:baseline}' +
+      '.seam{flex:none;width:1.9rem;height:1.9rem;display:flex;align-items:center;' +
+      'justify-content:center;border-radius:3px;border:1px solid #b98a08;' +
+      'background:#5d4a1a;color:#f5b301;font-size:.8rem;font-weight:700}' +
+      'h3{font-size:1.06rem;margin:0}a{color:#f5b301;text-decoration:none}' +
+      'h3 a{color:#d7dbe0}.grade{color:#6d7682;font-size:.85rem}' +
+      '.grade strong{color:#99a1ad}.abstract{color:#99a1ad;font-size:.9rem}' +
+      '.band{display:inline-block;border-radius:3px;padding:.05rem .4rem;' +
+      'font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}' +
+      '.band-paydirt{background:#f5b301;color:#1b1f26}' +
+      '.band-look{border:1px solid #b98a08;color:#b98a08}' +
+      '.band-longshot,.band-picked{border:1px solid #333a44;color:#6d7682}' +
+      'pre{white-space:pre-wrap;word-break:break-word;background:#15181d;' +
+      'border:1px solid #333a44;border-radius:4px;padding:.6rem;font-size:.8rem}' +
+      '</style></head><body><div class="sheet"><h1>' + escapeHtml(head) + '</h1>' +
+      '<p class="report-tally">' + escapeHtml(reportTally(rep.items)) + ' · ' +
+      rep.items.length + ' of ' + state.stones.length + ' stones.</p>' +
+      '<p class="report-thresholds">' + escapeHtml(reportThresholdLine(rep.source)) + '</p>' +
+      reportCardsHtml(rep.items) +
+      '<details><summary>The setup that produced this</summary><pre>' +
+      escapeHtml(JSON.stringify(serializeClaim(claimName()), null, 2)) +
+      '</pre></details></div></body></html>';
+  }
+
+  function downloadReport() {
+    var rep = _reportCache || reportItems();
+    if (!rep || !rep.items.length) return;
+    var blob = new Blob([reportHtmlFile(rep)], { type: 'text/html' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = slugify(claimName()) + '-' +
+      new Date().toISOString().substring(0, 10) + '.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -4272,10 +4701,14 @@
       }
       row.setAttribute('role', 'menuitem');
       var n = f && isFinite(f.items) ? f.items : null;
+      /* "5 today" and "5 today, 1 pay dirt" are different invitations when four
+         of the five are long shots. Older manifests have no pay-dirt count, so
+         the plain form stays the fallback rather than printing a wrong zero. */
+      var pd = f && isFinite(f.paydirt) ? f.paydirt : null;
       var note = !f ? 'builds tonight'
         : n === 0 ? 'nothing today'
-        : n === 1 ? '1 today'
-        : n === null ? '' : n + ' today';
+        : n === null ? ''
+        : n + ' today' + (pd === null ? '' : ', ' + (pd ? pd + ' pay dirt' : 'no pay dirt'));
       row.innerHTML = '<span class="feeds-name">' + escapeHtml(name) + '</span>' +
         '<span class="feeds-note">' + escapeHtml(note) + '</span>';
       menu.appendChild(row);
@@ -4389,6 +4822,51 @@
     /* Catalogue arrives after the claim is already on screen — an autosaved
        preset must light its chip without a click. */
     syncPresetSelection();
+    await openLinkedPreset(list);
+  }
+
+  /**
+   * `?preset=<slug>` — where every "Tune this in the Dig" link in a feed lands.
+   *
+   * Those links were dead: the feed has pointed at this URL since the builder
+   * shipped and nothing on the page read it, so a subscriber clicking through
+   * got the catalogue and had to find the preset by hand.
+   *
+   * IT FORKS RATHER THAN OVERWRITES, unlike clicking a chip. A chip click is
+   * someone at the page deciding to change their setup; a link is arriving from
+   * outside, possibly from someone else's feed, and it must not silently eat
+   * the rows you left here yesterday. So it lands in its own slot, named for
+   * the preset, and your own claim is where you left it.
+   */
+  async function openLinkedPreset(list) {
+    var slug;
+    try {
+      if (typeof URLSearchParams !== 'function' || !window.location) return;
+      slug = new URLSearchParams(window.location.search).get('preset');
+    } catch (_) { return; }
+    if (!slug) return;
+    var known = false;
+    for (var i = 0; i < list.length; i++) if (list[i].slug === slug) known = true;
+    if (!known) return;   // a slug that is not in the catalogue is not a claim
+
+    var name = null;
+    for (var j = 0; j < list.length; j++) if (list[j].slug === slug) name = list[j].name;
+    var target = 'preset-' + slugify(slug);
+    var map = loadClaims();
+    if (!map[target]) {
+      map[target] = serializeClaim(name || slug);
+      writeClaims(map);
+    }
+    state.claimSlug = target;
+    try { localStorage.setItem(CURRENT_KEY, target); } catch (_) {}
+    try {
+      await applyPreset(slug);
+    } catch (_) { return; }   // unreachable preset leaves the page as it was
+    /* The slot keeps the preset's name, not the working slot's — applyPreset
+       autosaves through serializeClaim, which reads the existing name. */
+    renderClaimPicker();
+    syncPresetSelection();
+    setClaimStatus('Opened “' + (name || slug) + '” from the feed.');
   }
 
   renderPresets();
@@ -4470,6 +4948,45 @@
   wireGateControl('gate-max-items', function (v) { state.select.max_items = parseInt(v, 10); });
   wireGateControl('gate-min-items', function (v) { state.select.min_items = parseInt(v, 10); });
   wireGateControl('gate-soft-z', function (v) { state.select.soft_z = parseFloat(v); });
+  wireGateControl('gate-long-z', function (v) { state.select.long_z = parseFloat(v); });
+
+  /* The report's own controls. Changing the source only re-counts — building is
+     the button, because a report is something you asked for. */
+  if (byId('report-source')) {
+    byId('report-source').addEventListener('change', function () {
+      renderReportBar();
+      refreshOpenReport();
+    });
+  }
+  if (byId('report-btn')) {
+    byId('report-btn').addEventListener('click', function () { renderReport(true); });
+  }
+  if (byId('report-close')) {
+    byId('report-close').addEventListener('click', function () {
+      byId('report-panel').style.display = 'none';
+    });
+  }
+  if (byId('report-download')) {
+    byId('report-download').addEventListener('click', downloadReport);
+  }
+  if (byId('report-copy')) {
+    byId('report-copy').addEventListener('click', function () {
+      var rep = _reportCache || reportItems();
+      if (!rep || !rep.items.length) return;
+      var btn = this;
+      var md = reportMarkdown(rep);
+      function said(msg) {
+        btn.textContent = msg;
+        setTimeout(function () { btn.textContent = 'Copy as Markdown'; }, 2000);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(md).then(function () { said('Copied'); },
+          function () { said('Copy failed'); });
+      } else {
+        said('Clipboard unavailable');
+      }
+    });
+  }
 
   byId('table-view-toggle').addEventListener('change', function () {
     var show = this.checked;
@@ -4551,10 +5068,13 @@
     state.order = null;
     state.blend = { paydirt_n: 10 };
     state.select = parseSelect(null);
+    state.picked = null;
     renderClaimIntoDom();
     autosave();
     byId('stage-3').style.display = 'none';
     byId('gate-block').style.display = 'none';
+    if (byId('report-bar')) byId('report-bar').style.display = 'none';
+    if (byId('report-panel')) byId('report-panel').style.display = 'none';
     applyWagonAssay();   // drop the gold rings the old assay left on the train
     setClaimStatus('Cleared.');
   });
@@ -4625,10 +5145,13 @@
   // Initially hide Stage 3
   byId('stage-3').style.display = 'none';
 
-  /* Test hook. The gate is one rule with two implementations — this one and
+  /* Test hooks. The gate is one rule with two implementations — this one and
      `selectItems` in scripts/preset-feed.mjs — and tests/js/gate.test.js runs
      both over the same grades to prove they agree. Nothing on the page reads
-     it, and it exposes a pure function, not state. */
+     them, and they expose pure functions, not state. */
   window.ARXAVE_GATE_OVER = gateOver;
+  window.ARXAVE_BAND_OF = bandOf;
+  window.ARXAVE_REPORT_SELECT = selectForReport;
+  window.ARXAVE_REPORT_TALLY = reportTally;
 
 })();

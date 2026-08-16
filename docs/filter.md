@@ -46,26 +46,98 @@ permalink: /
     </p>
   </header>
 
-  <!-- ── Claim bar ── -->
-  <div class="claim-bar">
-    <label class="claim-pick">
-      Claim
-      <select id="claim-select"></select>
-    </label>
-    <button type="button" id="claim-save-as" class="claim-btn">Save as…</button>
-    <!-- Clear empties the setup; Delete removes the slot. Two different things,
-         so two buttons — "start over" must not cost you the named claim. -->
-    <button type="button" id="claim-clear" class="claim-btn">Clear</button>
-    <button type="button" id="claim-delete" class="claim-btn claim-btn-danger" disabled>Delete</button>
-    <button type="button" id="claim-export" class="claim-btn">Export…</button>
-    <button type="button" id="claim-import" class="claim-btn">Import…</button>
-    <input type="file" id="claim-import-input" accept=".json,application/json" style="display:none">
-    <span class="claim-status" id="claim-status"></span>
+  <!-- ── Before the dig: the two things you do first ──────────────────────
+       They are independent and they are concurrent. Sharpening is a 32 MB
+       download; loading a setup is content. Side by side, you pick your ground
+       while the model streams, instead of watching a spinner.
+
+       The columns also carry a dependency that used to be an unexplained
+       string: a restored claim reaches its core samples before the pick exists,
+       so those rows park reading "waiting for the pick". Left column is
+       visibly the thing the right column is waiting for. -->
+  <div class="setup-cols">
+
+    <!-- Left: the pick. First in the DOM, so the stacked narrow layout puts the
+         slow thing first rather than below the fold. -->
+    <section class="setup-col" id="setup-pick">
+      <h2 class="setup-col-title">Sharpen the pick</h2>
+      <div class="pick-gate" id="pick-gate">
+        <button type="button" id="sharpen-btn" class="pick-gate-btn">⛏ Sharpen the pick</button>
+        <div class="pick-gate-say">
+          <strong>One time only.</strong> ~32 MB, then your browser keeps it — every
+          later dig on this machine skips this. Needed to score your own words;
+          nothing you type leaves this tab.
+        </div>
+        <span class="stage-status" id="sharpen-status"></span>
+        <div class="progress-wrap" id="sharpen-progress-wrap" style="display:none">
+          <progress id="sharpen-progress" value="0" max="100"></progress>
+          <span class="progress-label" id="sharpen-label"></span>
+        </div>
+      </div>
+      <div class="stage-done" id="sharpen-done" style="display:none">
+        Pick sharpened — <code>bge-small-en-v1.5</code>, 384-dim. Done for good on this browser.
+      </div>
+    </section>
+
+    <!-- Right: what to dig for. Two groups, because there are two kinds of
+         setup — ones this repo publishes and ones you made. -->
+    <section class="setup-col" id="setup-claim">
+      <h2 class="setup-col-title">Load a setup</h2>
+
+      <!-- Presets: a curated claim, loaded in one click. Their phrases and core
+           abstracts are warmed nightly, so a preset costs no embedding — which is
+           also why they are offered above your own slots rather than below. -->
+      <div id="presets-group" class="setup-group">
+        <div class="group-label label-with-action">
+          <span>Catalogue <span class="sub">— curated, already cut</span></span>
+          <!-- One RSS control for the whole catalogue, not one per preset: the
+               feeds are a list you browse, and a button beside every chip is what
+               broke the row. Hidden until the feed manifest says what exists. -->
+          <span class="feeds-wrap" id="preset-feeds" style="display:none">
+            <button type="button" id="preset-feeds-btn" class="feeds-btn"
+                    aria-haspopup="true" aria-expanded="false">RSS <span aria-hidden="true">▾</span></button>
+            <div class="feeds-menu" id="preset-feeds-menu" role="menu" style="display:none"></div>
+          </span>
+        </div>
+        <div id="presets-list" class="preset-buttons"></div>
+        <p class="hint" id="presets-hint" style="display:none">
+          <span id="presets-blurb" class="preset-blurb-line"></span>
+          Replaces the rows below. Edit any row afterwards — an edited phrase is
+          yours again, and is cut in this tab like anything else you type.
+        </p>
+      </div>
+
+      <div class="setup-group">
+        <div class="group-label">Mine <span class="sub">— setups you saved</span></div>
+        <div class="claim-bar">
+          <label class="claim-pick">
+            Claim
+            <select id="claim-select"></select>
+          </label>
+          <!-- Clear empties the setup; Delete removes the slot. Two different
+               things, so two buttons — "start over" must not cost you the named
+               claim. Delete sits in the overflow with the file moves: six equal
+               buttons in one row is what made this bar read as clutter. -->
+          <button type="button" id="claim-save-as" class="claim-btn">Save as…</button>
+          <button type="button" id="claim-clear" class="claim-btn">Clear</button>
+          <details class="claim-more">
+            <summary>More</summary>
+            <div class="claim-more-menu">
+              <button type="button" id="claim-export" class="claim-btn">Export…</button>
+              <button type="button" id="claim-import" class="claim-btn">Import…</button>
+              <button type="button" id="claim-delete" class="claim-btn claim-btn-danger" disabled>Delete</button>
+            </div>
+          </details>
+          <input type="file" id="claim-import-input" accept=".json,application/json" style="display:none">
+        </div>
+        <span class="claim-status" id="claim-status"></span>
+        <p class="hint claim-hint">
+          A claim is one dig setup. Edits save themselves. Clear empties the
+          touchstones, cores, and gate — the stones you hauled stay put.
+        </p>
+      </div>
+    </section>
   </div>
-  <p class="hint claim-hint">
-    A claim is one dig setup. Edits save themselves. Clear empties the
-    touchstones, cores, and gate — the stones you hauled stay put.
-  </p>
 
   <!-- ── Stage 1: Haul the stones (scout settings live here — they are what
        the haul is about, and nothing else reads them) ── -->
@@ -152,51 +224,6 @@ permalink: /
     <legend>2. Filter</legend>
     <p class="hint">What you care about: a word, a phrase, a sentence — or papers you already like.</p>
 
-    <!-- The gate: your own words have to be cut in this tab, so the pick is
-         needed here even when the whole night came down already cut. One
-         download, then the browser keeps it. -->
-    <div class="pick-gate" id="pick-gate">
-      <button type="button" id="sharpen-btn" class="pick-gate-btn">⛏ Sharpen the pick</button>
-      <div class="pick-gate-say">
-        <strong>One time only.</strong> ~32 MB, then your browser keeps it — every
-        later dig on this machine skips this. Needed to score your own words;
-        nothing you type leaves this tab.
-      </div>
-      <span class="stage-status" id="sharpen-status"></span>
-      <div class="progress-wrap" id="sharpen-progress-wrap" style="display:none">
-        <progress id="sharpen-progress" value="0" max="100"></progress>
-        <span class="progress-label" id="sharpen-label"></span>
-      </div>
-    </div>
-    <div class="stage-done" id="sharpen-done" style="display:none">
-      Pick sharpened — <code>bge-small-en-v1.5</code>, 384-dim. Done for good on this browser.
-    </div>
-
-    <!-- Presets: a curated claim, loaded in one click. Their phrases and core
-         abstracts are warmed nightly, so a preset costs no embedding — which is
-         also why they are offered above the empty rows rather than below. -->
-    <div id="presets-group">
-      <div class="group-label label-with-action">
-        <span>Start from a preset <span class="sub">— curated, already cut</span></span>
-        <!-- One RSS control for the whole catalogue, not one per preset: the
-             feeds are a list you browse, and a button beside every chip is what
-             broke the row. Hidden until the feed manifest says what exists. -->
-        <span class="feeds-wrap" id="preset-feeds" style="display:none">
-          <button type="button" id="preset-feeds-btn" class="feeds-btn"
-                  aria-haspopup="true" aria-expanded="false">RSS <span aria-hidden="true">▾</span></button>
-          <div class="feeds-menu" id="preset-feeds-menu" role="menu" style="display:none"></div>
-        </span>
-      </div>
-      <div id="presets-list" class="preset-buttons"></div>
-      <p class="hint" id="presets-hint" style="display:none">
-        <span id="presets-blurb" class="preset-blurb-line"></span>
-        Replaces the rows below. Edit any row afterwards — an edited phrase is
-        yours again, and is cut in this tab like anything else you type.
-      </p>
-    </div>
-
-    <hr class="group-rule">
-
     <!-- Touchstones (free text) -->
     <div id="touchstones-group">
       <div class="group-label">Touchstones <span class="sub">— free text, one per row</span></div>
@@ -246,27 +273,31 @@ permalink: /
     </div>
 
     <!-- The gate. Pay dirt above is how much of the matrix is highlighted; the
-         gate is the cut a feed would actually make, and it is on z rather than
-         grade because absolute grades are not comparable between days. The
-         count beside it is measured on the night on screen, not estimated. -->
+         gate is where a feed draws its bands, and it is on z rather than grade
+         because absolute grades are not comparable between days. The counts
+         beside it are measured on the night on screen, not estimated. -->
     <div class="gate-block" id="gate-block" style="display:none">
       <div class="gate-main">
         <label class="gate-label">
-          Gate <span class="sub">z ≥</span>
+          Pay dirt line <span class="sub">z ≥</span>
           <input type="range" id="gate-z" min="0" max="4" step="0.1" value="2">
           <span class="gate-z-value" id="gate-z-value">2.0</span>
         </label>
         <span class="gate-readout" id="gate-readout" role="status"></span>
       </div>
       <details class="gate-adv">
-        <summary>What the gate does <span class="sub">— and the floor under it</span></summary>
+        <summary>What the gate does <span class="sub">— the three bands and the floor</span></summary>
         <p class="hint">
           Every stone gets a <em>z</em>: how far its grade sits above the night's
-          median, in MAD units, over the whole announcement. A cut at z ≥ 2 keeps
-          the papers that stand out against the day they landed in, so a quiet
-          night ships nothing rather than shipping its least-bad paper. The floor
-          is the escape hatch: if fewer than <em>floor</em> stones clear the bar,
-          the gate reaches down to <em>soft z</em> and ships that many — never
+          median, in MAD units, over the whole announcement. A feed ships
+          everything above the <em>ship line</em> and labels it by the
+          <em>pay dirt line</em> — <strong>Pay dirt</strong> above, <strong>Worth
+          a look</strong> between the two, <strong>Long shot</strong> below. The
+          bar is low on purpose and the chip is what makes that honest: an
+          unmarked z-1.2 paper claims to be a z-3 one, a labelled one does not,
+          and a feed nobody can skim is a feed nobody opens. The floor is the
+          escape hatch: if fewer than <em>floor</em> stones reach the ship line,
+          it reaches down to <em>long shot z</em> and ships that many — never
           past the ceiling.
         </p>
         <div class="role-grid gate-grid">
@@ -279,16 +310,49 @@ permalink: /
             <input type="number" id="gate-min-items" value="3" min="0" max="50">
           </label>
           <label>
-            Soft z <span class="sub">how far the floor reaches</span>
+            Ship line <span class="sub">soft z</span>
             <input type="number" id="gate-soft-z" value="1" min="0" max="4" step="0.1">
+          </label>
+          <label>
+            Long shot z <span class="sub">how far the floor reaches</span>
+            <input type="number" id="gate-long-z" value="0.5" min="0" max="4" step="0.1">
           </label>
         </div>
         <p class="hint">
-          These four numbers are the <code>select</code> block of a preset file —
+          These five numbers are the <code>select</code> block of a preset file —
           export this claim and they travel with it, so a feed built from it cuts
-          where you set it here.
+          and bands where you set it here. Pull <em>long shot z</em> up to the
+          ship line to switch the floor off entirely.
         </p>
       </details>
+    </div>
+
+    <!-- The report. The feed is what arrives unasked; this is what you ask for
+         once you have moved the weights, and it says which of the two produced
+         each paper — a band is the assay's confidence, hand-picked is yours. -->
+    <div class="report-bar" id="report-bar" style="display:none">
+      <label class="report-source">
+        Report on
+        <select id="report-source">
+          <option value="gate">what the feed would ship</option>
+          <option value="paydirt">the pay dirt cut (top N)</option>
+          <option value="picked">hand-picked only</option>
+        </select>
+      </label>
+      <button type="button" id="report-btn" class="report-btn">Prepare report</button>
+      <span class="report-note" id="report-note"></span>
+    </div>
+
+    <!-- Rendered into on demand; the same card shape a feed's own stylesheet
+         draws, so a report and a feed item are recognisably one thing. -->
+    <div class="report-panel" id="report-panel" style="display:none">
+      <div class="report-head">
+        <span class="report-title" id="report-title">Report</span>
+        <button type="button" id="report-copy" class="claim-btn">Copy as Markdown</button>
+        <button type="button" id="report-download" class="claim-btn">Download</button>
+        <button type="button" id="report-close" class="claim-btn">Close</button>
+      </div>
+      <div class="report-body" id="report-body"></div>
     </div>
 
     <!-- Matrix view -->

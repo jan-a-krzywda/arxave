@@ -1742,3 +1742,247 @@ a.feeds-item:hover {
   color: var(--text-faint);
   white-space: nowrap;
 }
+
+/* ── The setup columns, above the stages ──────────────────────────
+   Sharpening the pick and choosing what to dig for are independent and
+   concurrent: the model streams on the left while you pick ground on the
+   right. Two columns say that; one stacked list says "do this, then that",
+   which is the wrong instruction and costs a 32 MB wait. */
+.setup-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: start;
+}
+.setup-col {
+  min-width: 0;
+  padding: 0.9rem 1rem 1rem;
+  background: var(--rock-deep);
+  border: 1px solid var(--rock-edge);
+  border-radius: 8px;
+}
+.setup-col-title {
+  margin: 0 0 0.6rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.setup-group + .setup-group {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--rock-edge);
+}
+/* Already inside a panel, so the gate drops its own box and keeps its dash. */
+.setup-col .pick-gate {
+  margin: 0;
+  padding: 0.85rem;
+}
+.setup-col .claim-bar {
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+}
+.setup-col .claim-hint {
+  margin-bottom: 0;
+}
+.setup-col .claim-status {
+  margin-left: 0;
+  display: block;
+  min-height: 1.2em;
+}
+
+/* The overflow. Delete, Export and Import are rare and Delete is destructive;
+   six equal buttons in one row is what made the bar read as clutter. */
+.claim-more {
+  display: inline-block;
+  position: relative;
+}
+.claim-more > summary {
+  list-style: none;
+  cursor: pointer;
+  border: 1px solid var(--rock-lit);
+  color: var(--text-dim);
+  padding: 0.35rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+.claim-more > summary::-webkit-details-marker { display: none; }
+.claim-more > summary:hover { border-color: var(--lamp); color: var(--lamp); }
+.claim-more-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.3rem);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.4rem;
+  background: var(--rock-deep);
+  border: 1px solid var(--rock-edge);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.8);
+}
+.claim-more-menu .claim-btn { white-space: nowrap; text-align: left; }
+
+/* ── Bands ────────────────────────────────────────────────────────
+   How sure the assay was, on the page and in a report. Deliberately a ramp
+   rather than three unrelated colours: solid ore, ore outline, plain rock.
+   Colour draining out down the list is confidence draining out. Same slugs as
+   docs/feeds/feed.xsl, so a band reads the same everywhere. */
+.band {
+  display: inline-block;
+  vertical-align: baseline;
+  border-radius: 3px;
+  padding: 0.05rem 0.4rem;
+  margin-right: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.band-paydirt { background: var(--gold); color: #1b1f26; }
+.band-look { border: 1px solid var(--gold-dim); color: var(--gold-dim); }
+.band-longshot { border: 1px solid var(--rock-edge); color: var(--text-faint); }
+/* A hand pick is the reader's opinion, not the assay's measurement, so it wears
+   the lamp — the page's "you did this" colour — and never an ore chip. */
+.band-picked { border: 1px solid var(--lamp-dim); color: var(--lamp); }
+
+/* ── Hand-picking, in the table view ─────────────────────────────── */
+.pick-col {
+  width: 2rem;
+  text-align: center;
+}
+.pick-box { cursor: pointer; }
+
+/* ── The report ───────────────────────────────────────────────────
+   The feed arrives unasked; this is what you ask for once you have moved the
+   weights. Same card shape either way, so they read as one thing. */
+.report-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin: 0.8rem 0 0.4rem;
+}
+.report-source {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+.report-source select {
+  padding: 0.3rem 0.45rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  background: var(--rock);
+  color: var(--text);
+}
+.report-btn {
+  padding: 0.4rem 0.9rem;
+  border-radius: 4px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--gold);
+  background: var(--gold);
+  color: #221a00;
+}
+.report-btn:hover:not(:disabled) { background: #ffc730; }
+.report-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.report-note {
+  font-size: 0.85rem;
+  color: var(--text-faint);
+}
+
+.report-panel {
+  margin: 1rem 0 0.5rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 8px;
+  background: var(--cave-air);
+}
+.report-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--rock-edge);
+}
+.report-title {
+  font-weight: 700;
+  color: var(--text);
+  margin-right: auto;
+}
+.report-body {
+  padding: 0.9rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.report-tally { margin: 0 0 0.2rem; color: var(--text-dim); }
+.report-thresholds {
+  margin: 0 0 1rem;
+  color: var(--text-faint);
+  font-size: 0.82rem;
+}
+.report-card {
+  background: var(--rock-deep);
+  border: 1px solid var(--rock-edge);
+  border-radius: 6px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.8rem;
+}
+/* A long shot is on the page because the floor put it there, so it sits back
+   rather than competing with a paper the assay stood behind. */
+.report-card.is-longshot { opacity: 0.82; }
+.report-card-head {
+  display: flex;
+  gap: 0.7rem;
+  align-items: baseline;
+}
+.report-card .seam {
+  flex: none;
+  width: 1.8rem;
+  height: 1.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  border: 1px solid var(--gold-dim);
+  background: var(--ore-2);
+  color: var(--gold);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.report-card.is-longshot .seam {
+  background: var(--rock);
+  border-color: var(--rock-edge);
+  color: var(--text-faint);
+}
+.report-card h3 { font-size: 1.02rem; line-height: 1.35; margin: 0; }
+.report-card h3 a { color: var(--text); text-decoration: none; }
+.report-card h3 a:hover { color: var(--gold); }
+.report-card .verdict { margin: 0.6rem 0 0.3rem; }
+.report-card .grade { margin: 0.2rem 0; font-size: 0.84rem; color: var(--text-faint); }
+.report-card .grade strong { color: var(--text-dim); }
+.report-card .abstract { margin: 0.4rem 0 0; font-size: 0.88rem; color: var(--text-dim); }
+.report-claim summary { cursor: pointer; color: var(--text-dim); font-size: 0.88rem; }
+.report-claim pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.78rem;
+  background: var(--rock-deep);
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  padding: 0.6rem;
+  color: var(--text-dim);
+}
+
+/* Stacked, pick first — it is the slow one, and it should start before you
+   scroll rather than after. */
+@media (max-width: 880px) {
+  .setup-cols { grid-template-columns: 1fr; }
+}
