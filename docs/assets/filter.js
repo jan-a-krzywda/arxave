@@ -3165,14 +3165,42 @@
       div.remove();
       removeCore(c.id);
     });
-    div.querySelector('.core-doi').addEventListener('change', function () {
+    var input = div.querySelector('.core-doi');
+    input.addEventListener('change', function () {
       var rec = findCore(c.id);
       if (!rec) return;
       rec.doi = this.value.trim();
+      rec.title = '';
       rec.vector = null;
+      delete this.dataset.doi;
       autosave();
       resolveCore(c.id);
     });
+    /* The field shows the title once the paper is found, but the DOI is still
+       what the field means — put it back while the cursor is in there, and
+       show the title again on the way out if nothing was typed. */
+    input.addEventListener('focus', function () {
+      if (this.dataset.doi) this.value = this.dataset.doi;
+    });
+    input.addEventListener('blur', function () {
+      var rec = findCore(c.id);
+      if (rec && this.dataset.doi && this.value.trim() === rec.doi) {
+        showCoreTitle(rec, this);
+      }
+    });
+    if (c.title) showCoreTitle(c, input);
+  }
+
+  /* A DOI is a label nobody reads. Once the paper behind it is known, the row
+     wears the title and keeps the DOI on the element, so the field still edits
+     as a DOI and a claim still saves one. */
+  function showCoreTitle(rec, input) {
+    var el = input || (coreRowEl(rec.id) ? coreRowEl(rec.id).querySelector('.core-doi') : null);
+    if (!el || !rec.title) return;
+    if (document.activeElement === el) { el.dataset.doi = rec.doi; return; }
+    el.dataset.doi = rec.doi;
+    el.value = rec.title;
+    el.title = rec.doi;
   }
 
   function addCore(doi, weight) {
@@ -3305,8 +3333,11 @@
       rec.abstract = fetched.abstract;
       rec.vector = fetched.vector;
       rec.weak = fetched.weak;
-      rec.status = '✓ ' + (rec.title || rec.doi).substring(0, 40);
-      if (statusEl) statusEl.textContent = rec.status + (rec.weak ? ' (title only)' : '');
+      /* Title moves into the field; the status keeps the DOI, so the row still
+         says which record it resolved to. */
+      showCoreTitle(rec, row ? row.querySelector('.core-doi') : null);
+      rec.status = '✓ ' + rec.doi + (rec.weak ? ' (title only)' : '');
+      if (statusEl) statusEl.textContent = rec.status;
     } catch (err) {
       if (findCore(id) !== rec) return;
       rec.status = '✗ ' + err.message;
