@@ -1068,10 +1068,24 @@
         throw new Error((data && data.error) || ('The pick answered HTTP ' + resp.status));
       }
 
-      /* Guard the cache key's other half. A function deployed with a different
-         model would hand back same-shaped vectors that do not belong in the
-         same matrix as the cached ones — the exact silent mixing §5.6 is about,
-         and the only place the page can still catch it. */
+      /* Guard BOTH halves of the cache key, and the model half is the one that
+         matters. A dimension mismatch is caught by arithmetic soon enough —
+         `dot()` throws on unequal lengths. A *same-dimension* answer from a
+         different model is caught by nothing: it enters the same matrix as the
+         cached vectors, scores plausibly, and ranks the wrong papers first.
+         This is the failure §5.6 exists for, and this is the only place the
+         page can see it.
+         Not hypothetical. This function served `gemini-embedding-001` at 768
+         dims immediately before it served SPECTER2 at 768 dims, so a stale
+         deployment satisfies the dimension check exactly. */
+      if (data && data.model && data.model !== MODEL) {
+        throw new Error(
+          'The pick is running ' + data.model + ', but this page reads ' + MODEL +
+          '. Same-shaped vectors from a different model would score plausibly ' +
+          'and rank the wrong papers — refusing rather than guessing. ' +
+          'Deploy the matching `embed` function, or point window.ARXAVE_EMBED at one.'
+        );
+      }
       if (data && data.dim && data.dim !== DIM) {
         throw new Error(
           'The pick returned ' + data.dim + '-dim vectors, but this page reads ' +
