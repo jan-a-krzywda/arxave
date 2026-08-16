@@ -101,8 +101,18 @@ jobs:
 
       # An unchanged feed is the normal Saturday outcome and not worth a commit;
       # `git diff --staged --quiet` is what keeps this from pushing every run.
+      #
+      # THE REF GUARD IS NOT BELT-AND-BRACES, it is a fix. Measured 2026-08-16:
+      # this job was dispatched on a feature branch to test a warmer change, and
+      # the step below committed the rebuilt feeds, `git pull --rebase`'d onto
+      # main, and pushed — landing a commit whose parent was main on top of the
+      # feature branch and dropping the branch's own commit outright. The work
+      # survived only because it also existed on a laptop. A job with
+      # `contents: write` that rebases onto main must never push to a ref that
+      # is not main; dispatching on a branch is how you test this workflow, and
+      # testing it should not cost you the branch.
       - name: Commit the feeds
-        if: ${{ !inputs.dry_run }}
+        if: ${{ !inputs.dry_run && github.ref == 'refs/heads/main' }}
         run: |
           git config user.name "Arxave Bot"
           git config user.email "arxave-bot@users.noreply.github.com"
@@ -112,5 +122,8 @@ jobs:
             exit 0
           fi
           git commit -m "feeds: $(date -u +%F) preset feeds"
-          git pull --rebase --autostash
-          git push
+          # Explicit about both ends. `git push` with no refspec pushes whatever
+          # the rebase left HEAD pointing at, wherever the branch happens to
+          # track — which is how the incident above got its reach.
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main
