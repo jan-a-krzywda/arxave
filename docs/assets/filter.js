@@ -40,9 +40,10 @@
   const MODEL = 'allenai/specter2_base';
   const DIM = 768;
   /* Texts per request to the pick. Must stay under the function's MAX_TEXTS
-     (400); well under, because a smaller batch means the status line moves
-     more often and a failure costs less work. */
-  const EMBED_CHUNK = 128;
+     (96, measured — see embed/index.ts). 64 sits well under it: the status line
+     moves more often, a failure costs less re-work, and the margin absorbs a
+     day of unusually long abstracts without anyone noticing. */
+  const EMBED_CHUNK = 64;
   const CACHE_READ_CHUNK = 500;   // stays under dig-cache's MAX_SHAS
   const OPENALEX_MAILTO = 'arxiv-filter@example.com';
 

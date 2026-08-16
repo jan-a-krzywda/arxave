@@ -38,12 +38,27 @@ export const UPSTREAM =
 /**
  * How many texts ride in one upstream call.
  *
- * Not a documented cap — HF bills compute time, not requests, so the only
- * thing a bigger batch buys is fewer round trips, and the only thing it risks
- * is a gateway timeout on a slow cold model. 32 keeps a batch well inside the
- * 60 s budget below even at cold-start speeds.
+ * THE BINDING CONSTRAINT IS THE ISOLATE'S MEMORY, NOT TIME, and it took a
+ * measurement to see why. This endpoint answers with the **token grid** —
+ * `[n][tokens][768]` — and leaves the pooling to us (see `toVectors`). So one
+ * upstream response is `batch × tokens × 768` floats, and it is *text length*
+ * that decides whether it fits, not text count.
+ *
+ * Measured 2026-08-16 against the deployed function, ~1.5 kB abstracts:
+ *
+ *     batch 32, short texts (~440 B)   ok
+ *     batch 32, real abstracts         546 WORKER_RESOURCE_LIMIT, in 8 s
+ *
+ * Failing in 8 s is the tell: a timeout would have taken 60. At 512 tokens —
+ * SPECTER2's ceiling — a batch of 32 is ~12.6M floats before it is pooled down
+ * to 24k, and the isolate dies parsing it.
+ *
+ * 8 keeps the worst case (8 × 512 × 768) inside the budget with room for the
+ * response JSON. It costs more round trips, and that is close to free: HF bills
+ * compute time, not requests, and the pooled result the caller accumulates is
+ * small no matter how it was chunked.
  */
-export const UPSTREAM_BATCH = 32;
+export const UPSTREAM_BATCH = 8;
 
 /** Raised when the model is loading upstream. Distinct because it is not a
  *  failure — it is a wait, and the page says so rather than showing an error. */

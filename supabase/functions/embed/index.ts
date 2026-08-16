@@ -39,7 +39,12 @@ import {
 } from './hf.ts';
 
 // ── Abuse caps ──────────────────────────────────────────────────────────
-const MAX_TEXTS = 400;            // a day of arXiv + topics + a fat .bib
+/* Measured 2026-08-16 against the deployed function with ~1.5 kB abstracts:
+   96 texts answered in 26 s, 128 died with 546 WORKER_RESOURCE_LIMIT. This was
+   400 — a number the function could not actually serve, so an honest caller
+   asking for 200 got an opaque platform error instead of a refusal it could
+   read. A cap should describe what the thing does. */
+const MAX_TEXTS = 96;
 const MAX_CHARS_PER_TEXT = 6_000; // an abstract is ~1.5k
 const MAX_TOTAL_CHARS = 800_000;
 const RATE_WINDOW_MS = 60 * 60 * 1000;
@@ -87,6 +92,10 @@ async function embedChunk(texts: string[], token: string): Promise<number[][]> {
     },
     body: JSON.stringify({
       inputs: texts,
+      /* SPECTER2 tops out at 512 tokens. Without this an over-long text is a
+         hard error for the whole batch; with it the tail is cut, which is what
+         the model would have seen anyway. */
+      truncate: true,
       /* Wait rather than 503 on a cold model. A first call after an idle
          period pays ~20 s of load; without this the page would have to
          implement the retry itself, and every client would implement it
