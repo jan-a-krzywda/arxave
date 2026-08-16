@@ -41,8 +41,8 @@ permalink: /
       </li>
     </ol>
     <p class="dig-privacy">
-      Everything runs in this tab — nothing about your topics leaves it.
-      <a href="#small-print">Small print</a>.
+      Runs in this tab. Text you want scored is sent to the pick to be embedded,
+      and is not stored. <a href="#small-print">Small print</a>.
     </p>
   </header>
 
@@ -132,40 +132,18 @@ permalink: /
     <legend>2. Filter</legend>
     <p class="hint">What you care about: a word, a phrase, a sentence — or papers you already like.</p>
 
-    <!-- ── Before the dig: the two things you do first ──────────────────────
-         They are independent and they are concurrent. Sharpening is a 32 MB
-         download; loading a setup is content. Side by side, you pick your ground
-         while the model streams, instead of watching a spinner.
+    <!-- ── Before the dig ───────────────────────────────────────────────────
+         This used to be two columns. The left one was "Sharpen the pick": a
+         32 MB model download, behind a button, with a progress bar and a
+         one-time-only promise, which every visitor paid before their own words
+         could be scored — and which a restored claim's core samples sat
+         waiting on, reading "waiting for the pick".
 
-         The columns also carry a dependency that used to be an unexplained
-         string: a restored claim reaches its core samples before the pick exists,
-         so those rows park reading "waiting for the pick". Left column is
-         visibly the thing the right column is waiting for. -->
+         The pick is hosted now. Nothing downloads, nothing parks, and the
+         column that existed to explain the wait went with the wait. -->
     <div class="setup-cols">
 
-      <!-- Left: the pick. First in the DOM, so the stacked narrow layout puts the
-           slow thing first rather than below the fold. -->
-      <section class="setup-col" id="setup-pick">
-        <h2 class="setup-col-title">Sharpen the pick</h2>
-        <div class="pick-gate" id="pick-gate">
-          <button type="button" id="sharpen-btn" class="pick-gate-btn">⛏ Sharpen the pick</button>
-          <div class="pick-gate-say">
-            <strong>One time only.</strong> ~32 MB, then your browser keeps it — every
-            later dig on this machine skips this. Needed to score your own words;
-            nothing you type leaves this tab.
-          </div>
-          <span class="stage-status" id="sharpen-status"></span>
-          <div class="progress-wrap" id="sharpen-progress-wrap" style="display:none">
-            <progress id="sharpen-progress" value="0" max="100"></progress>
-            <span class="progress-label" id="sharpen-label"></span>
-          </div>
-        </div>
-        <div class="stage-done" id="sharpen-done" style="display:none">
-          Pick sharpened — <code>bge-small-en-v1.5</code>, 384-dim. Done for good on this browser.
-        </div>
-      </section>
-
-      <!-- Right: what to dig for. Two groups, because there are two kinds of
+      <!-- What to dig for. Two groups, because there are two kinds of
            setup — ones this repo publishes and ones you made. -->
       <section class="setup-col" id="setup-claim">
         <h2 class="setup-col-title">Load a setup</h2>
@@ -189,7 +167,7 @@ permalink: /
           <p class="hint" id="presets-hint" style="display:none">
             <span id="presets-blurb" class="preset-blurb-line"></span>
             Replaces the rows below. Edit any row afterwards — an edited phrase is
-            yours again, and is cut in this tab like anything else you type.
+            yours again, and is cut without being cached, like anything else you type.
           </p>
         </div>
 
@@ -425,9 +403,10 @@ permalink: /
 
   <!-- ── Small print ── -->
   <div class="cave-footnote" id="small-print">
-    <p><strong>Where things go.</strong> Touchstones, core samples, and weights stay in this tab. With in-browser embeddings nothing is billed and nothing is sent; only the arXiv fetch leaves, through the relay above.</p>
+    <p><strong>Where things go.</strong> Touchstones, core samples and weights are stored only in this tab — they are never uploaded, and they survive a reload because they sit in your browser, not on a server.</p>
+    <p><strong>What is sent, and what is kept.</strong> The pick — the model that turns text into a vector — runs on a server rather than in your browser, so any text you want scored is sent there to be embedded. It is used for that request and not stored. Published text (arXiv abstracts, core-sample abstracts, and the touchstones this repo ships as presets) additionally goes into a <em>shared vector cache</em>, keyed by a hash of the text, so nobody has to pay for the same cut twice. <strong>A touchstone you typed yourself never enters that cache</strong> — reads on it are public, and a hash of a short phrase is one dictionary away from the phrase. Earlier versions of this page embedded in the browser and promised that nothing you typed left the tab; that is no longer how it works, and this paragraph replaces that promise.</p>
     <p><strong>Touchstone length.</strong> A one-word touchstone and a paragraph-long one are not directly comparable — longer text is more specific. The per-row weights in the assay are the mitigation.</p>
-    <p><strong>What is real today.</strong> Scouting arXiv, embedding abstracts in your browser (staged, with the train as intermediate output), and ranking on touchstone similarity with live re-blending. The rush (Scirate) is parked behind a Cloudflare challenge and stays inactive until a path exists.</p>
+    <p><strong>What is real today.</strong> Scouting arXiv, embedding abstracts through the hosted pick (staged, with the train as intermediate output), and ranking on touchstone similarity with live re-blending. The rush (Scirate) is parked behind a Cloudflare challenge and stays inactive until a path exists.</p>
   </div>
 </div>
 

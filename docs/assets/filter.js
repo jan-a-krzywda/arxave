@@ -3,7 +3,7 @@
  *
  * Three stages, each with its own button, output, and resumable state:
  *   1. Haul the stones   — scout arXiv + embed abstracts + coupling map
- *   2. Filter            — sharpen the pick, then free text + core samples
+ *   2. Filter            — free text + core samples, against the hosted pick
  *   3. Assay             — (k+1)×N matrix with live re-blend
  *
  * Dependencies: none. Runs in the browser, no bundler.
@@ -24,29 +24,25 @@
   const NAME_URL = window.ARXAVE_WAGON_NAME === false ? null
     : (window.ARXAVE_WAGON_NAME || (FUNCTIONS_BASE + '/wagon-name'));
   const NAME_MAX_WAGONS = 24;     // must match MAX_WAGONS in wagon-name/naming.ts
-  const TRANSFORMERS_VERSION = '3.7.6';
-  const TRANSFORMERS_URLS = [
-    'https://cdn.jsdelivr.net/npm/@huggingface/transformers@' + TRANSFORMERS_VERSION,
-    'https://unpkg.com/@huggingface/transformers@' + TRANSFORMERS_VERSION,
-    'https://esm.sh/@huggingface/transformers@' + TRANSFORMERS_VERSION,
-  ];
-  const LOCAL_MODEL = 'Xenova/bge-small-en-v1.5';
-  const LOCAL_DIM = 384;
-  /* Two batch sizes, because the two paths pay for size differently. In the
-     worker the extractor blocks a thread nobody is watching, so batches are
-     sized for throughput alone — bigger is faster per abstract. On the main
-     thread the batch size *is* the length of the freeze (one extractor call is
-     synchronous WASM; nothing paints until it returns), so the fallback trades
-     throughput for a page that still moves. */
-  const WORKER_BATCH = 16;
-  const INLINE_BATCH = 4;
-  /* The worker sits next to this file, wherever this file was served from —
-     read off the script tag rather than hard-coded, so the page works from a
-     Jekyll baseurl, a local server or a file:// checkout alike. */
-  const WORKER_URL = (function () {
-    var src = (document.currentScript && document.currentScript.src) || '';
-    return src ? src.replace(/[^/]*(\?.*)?$/, 'embed-worker.js') : 'assets/embed-worker.js';
-  })();
+  /* The pick, hosted. Set window.ARXAVE_EMBED to point at any OpenAI-shaped
+     /v1/embeddings — your own LM Studio, Ollama, or a paid endpoint — and the
+     page will use that instead. The request and response shapes are identical
+     either way, which is why there is one code path and not two. */
+  const EMBED_URL = window.ARXAVE_EMBED || (FUNCTIONS_BASE + '/embed');
+  /* THESE TWO STRINGS ARE THE CACHE KEY, and they are shared by four files:
+     here, supabase/functions/embed/hf.ts, scripts/warm-dig.mjs and
+     tests/test_dig_cache.py. A haul builds one cosine matrix out of stone
+     vectors, core samples and touchstones together, so every vector in it must
+     come from the same model — two models at the same dimension produce
+     plausible scores and no error at all (docs/dig-spec.md §5.6). Change these
+     and you change all four; the old rows go cold rather than stale, because
+     `model` and `dim` ride in the cache's primary key. */
+  const MODEL = 'allenai/specter2_base';
+  const DIM = 768;
+  /* Texts per request to the pick. Must stay under the function's MAX_TEXTS
+     (400); well under, because a smaller batch means the status line moves
+     more often and a failure costs less work. */
+  const EMBED_CHUNK = 128;
   const CACHE_READ_CHUNK = 500;   // stays under dig-cache's MAX_SHAS
   const OPENALEX_MAILTO = 'arxiv-filter@example.com';
 
@@ -171,8 +167,6 @@
      serializable at all — before this, weights lived only in the DOM and
      died on reload. */
   const state = {
-    extractor: null,        // transformers.js pipeline
-    modelLoaded: false,
     stones: [],             // [{arxiv_id, title, abstract, authors, primary_category, published, abs_url, pdf_url}]
     A: null,                // [N × d] abstract vectors, row-major, L2-normalized
     // ── claim-owned (saved, restored, exportable) ──
@@ -732,208 +726,6 @@
     return (list || []).map(shortAuthor).filter(Boolean).join(', ');
   }
 
-  // ═══════════════════════════════════════════════════════════════════
-  // The pick — loaded on demand, gated at the top of Stage 2
-  // ═══════════════════════════════════════════════════════════════════
-  /*
-   * The pick is loaded when something actually needs it, not before.
-   *
-   * It used to be a gate: 32 MB downloaded up front, with Stage 1 disabled
-   * until it finished. Since the shared cache arrived, a day whose vectors are
-   * already cut needs no model at all — the haul is a lookup, and the coupling map,
-   * which the spec calls the first thing worth looking at, arrives in about a
-   * second. Making everyone pay 32 MB to reach a screen that no longer needs it
-   * is the wrong default.
-   *
-   * So every path that needs the extractor asks for it here, and only a real
-   * need triggers the download:
-   *   * a haul with cache misses (embedTexts, via embedTextsCached);
-   *   * any touchstone, always — touchstones never go through the cache.
-   *
-   * The button now lives at the top of Stage 2, where the need is unavoidable:
-   * your own words are never in the shared cache. It also stays the escape
-   * hatch for core samples parked on a fresh page load.
-   */
-
-  var _pickPromise = null;
-
-  /** The extractor, loading it if this is the first caller. */
-  function ensurePick() {
-    if (state.extractor) return Promise.resolve(state.extractor);
-    if (!_pickPromise) {
-      // Memoized so a haul and a touchstone racing each other download once;
-      // cleared on failure so a retry is possible rather than permanently stuck.
-      _pickPromise = loadPick().catch(function (err) {
-        _pickPromise = null;
-        throw err;
-      });
-    }
-    return _pickPromise;
-  }
-
-  /* The pick in a worker: the same model, cutting on a thread the page is not
-     drawing on. Resolves to a handle — .embed(texts) → vectors, .batch — so the
-     caller cannot tell which of the two paths it got. Rejects if the browser
-     has no workers, if the worker script will not start, or if loading the
-     model inside it fails; loadPick() then falls back to the main thread. */
-  function loadPickInWorker(onProgress) {
-    return new Promise(function (resolve, reject) {
-      if (typeof Worker !== 'function') return reject(new Error('no Worker in this browser'));
-
-      var worker;
-      try {
-        worker = new Worker(WORKER_URL, { type: 'module' });
-      } catch (err) {
-        return reject(err);
-      }
-
-      var settled = false;
-      var nextId = 0;
-      var pending = {};   // id → {resolve, reject} for batches in flight
-
-      worker.onerror = function (e) {
-        var err = new Error('embed worker failed: ' + ((e && e.message) || 'load error'));
-        if (!settled) { settled = true; worker.terminate(); return reject(err); }
-        /* After the handle is out, a worker-level error can no longer be
-           reported by rejecting the load — fail the batches waiting on it
-           instead, or embedTexts hangs forever. */
-        Object.keys(pending).forEach(function (id) { pending[id].reject(err); delete pending[id]; });
-      };
-
-      worker.onmessage = function (e) {
-        var msg = e.data || {};
-
-        if (msg.type === 'progress') return onProgress(msg.file, msg.pct);
-
-        if (msg.type === 'ready') {
-          settled = true;
-          return resolve({
-            batch: WORKER_BATCH,
-            embed: function (texts) {
-              return new Promise(function (res, rej) {
-                var id = ++nextId;
-                pending[id] = { resolve: res, reject: rej };
-                worker.postMessage({ type: 'embed', id: id, texts: texts });
-              });
-            },
-          });
-        }
-
-        if (msg.type === 'vectors') {
-          var got = pending[msg.id];
-          if (got) { delete pending[msg.id]; got.resolve(msg.vectors); }
-          return;
-        }
-
-        if (msg.type === 'error') {
-          var err = new Error(msg.message);
-          if (!settled) { settled = true; worker.terminate(); return reject(err); }
-          var waiting = pending[msg.id];
-          if (waiting) { delete pending[msg.id]; waiting.reject(err); }
-        }
-      };
-
-      worker.postMessage({ type: 'load', urls: TRANSFORMERS_URLS, model: LOCAL_MODEL });
-    });
-  }
-
-  /* The old path, kept as the fallback. Same handle, smaller batches, and a
-     yield around every call — on this thread those are the only frames the
-     page gets. */
-  async function loadPickInline(onProgress) {
-    var mod = null;
-    var failures = [];
-    for (var u = 0; u < TRANSFORMERS_URLS.length && !mod; u++) {
-      try {
-        mod = await import(TRANSFORMERS_URLS[u]);
-      } catch (err) {
-        failures.push(TRANSFORMERS_URLS[u] + ' → ' + (err && err.message ? err.message : String(err)));
-      }
-    }
-    if (!mod) {
-      throw new Error('Could not load transformers.js from any CDN: ' + failures.join(' | '));
-    }
-
-    mod.env.allowLocalModels = false;
-
-    var extractor = await mod.pipeline('feature-extraction', LOCAL_MODEL, {
-      dtype: 'q8',
-      device: 'wasm',
-      progress_callback: function (p) {
-        if (p && p.status === 'progress' && p.file && typeof p.progress === 'number') {
-          onProgress(p.file, Math.round(p.progress));
-        }
-      },
-    });
-
-    return {
-      batch: INLINE_BATCH,
-      embed: async function (texts) {
-        await yieldToPaint();
-        var out = await extractor(texts, { pooling: 'mean', normalize: true });
-        var rows = out.tolist();
-        await yieldToPaint();
-        return rows;
-      },
-    };
-  }
-
-  async function loadPick() {
-    var btn = byId('sharpen-btn');
-    var statusEl = byId('sharpen-status');
-    var progWrap = byId('sharpen-progress-wrap');
-    var progBar = byId('sharpen-progress');
-    var progLabel = byId('sharpen-label');
-    var doneEl = byId('sharpen-done');
-
-    btn.disabled = true;
-    statusEl.textContent = '';
-    progWrap.style.display = 'flex';
-    progBar.value = 0;
-    progLabel.textContent = 'Starting...';
-
-    function onProgress(file, pct) {
-      progBar.value = pct;
-      progLabel.textContent = file + ' — ' + pct + '%';
-    }
-
-    var pick = null;
-    try {
-      pick = await loadPickInWorker(onProgress);
-    } catch (err) {
-      // Not fatal: the main thread can still do it, just less smoothly.
-      console.warn('embed worker unavailable, cutting on the main thread:', err);
-      progBar.value = 0;
-      progLabel.textContent = 'Starting...';
-    }
-
-    if (!pick) {
-      try {
-        pick = await loadPickInline(onProgress);
-      } catch (err) {
-        statusEl.textContent = 'Failed to load from any CDN.';
-        statusEl.style.color = 'var(--ember)';
-        progWrap.style.display = 'none';
-        btn.disabled = false;
-        throw err;
-      }
-    }
-
-    state.extractor = pick;
-    state.modelLoaded = true;
-    progWrap.style.display = 'none';
-    doneEl.style.display = '';
-    /* The whole gate goes, not just its button: once the pick is sharpened the
-       one-time notice is noise, and the done line says what happened. */
-    var gate = byId('pick-gate');
-    if (gate) gate.style.display = 'none';
-    btn.style.display = 'none';
-    statusEl.textContent = '';
-
-    // Core samples restored from a claim parked themselves until now
-    resolveAllCores();
-    return state.extractor;
-  }
 
   // ═══════════════════════════════════════════════════════════════════
   // Scout (shared between stages)
@@ -1228,20 +1020,82 @@
     });
   }
 
+  /**
+   * The pick. Every vector this page uses comes from here or from the cache in
+   * front of it, and both are the same model — see MODEL above for why that is
+   * not negotiable.
+   *
+   * THE ENCODER IS NOT IN THIS TAB ANY MORE. It used to be: 32 MB of
+   * transformers.js behind a "Sharpen the pick" button, then a minute of WASM
+   * per uncached day. What that bought was independence; what it cost was the
+   * minute, the download, and a model chosen for having a small ONNX build
+   * rather than for knowing anything about papers. This is one HTTP call and no
+   * download, and the model on the other end is trained on the citation graph.
+   *
+   * Unlike the cache, a failure here is a real failure. A missing vector is not
+   * a slower haul, it is a paper with no position in the matrix — so this
+   * throws, and the callers say so.
+   */
   async function embedTexts(texts, statusFn) {
-    /* The one place the pick is genuinely required. Everything that embeds
-       locally funnels through here, so asking for it here means no other call
-       site has to remember to — and a path served entirely from the cache never
-       reaches this line, which is the whole point of loading it lazily. */
-    var pick = await ensurePick();
-    var step = pick.batch || INLINE_BATCH;
     var vectors = [];
-    for (var i = 0; i < texts.length; i += step) {
-      var rows = await pick.embed(texts.slice(i, i + step));
-      for (var r = 0; r < rows.length; r++) {
-        normalize(rows[r]);  // defensive: ensure unit vector
-        vectors.push(rows[r]);
+    for (var i = 0; i < texts.length; i += EMBED_CHUNK) {
+      var slice = texts.slice(i, i + EMBED_CHUNK);
+      var resp;
+      try {
+        resp = await fetch(EMBED_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ input: slice }),
+        });
+      } catch (err) {
+        throw new Error('Could not reach the pick: ' + ((err && err.message) || err));
       }
+
+      var data = null;
+      try { data = await resp.json(); } catch (_) { /* fall through to status */ }
+
+      if (!resp.ok) {
+        /* A cold model is a wait, not a fault, and it reads completely
+           differently to someone watching a progress bar. The function marks
+           it so the page can say how long rather than showing an error for a
+           condition that clears itself. */
+        if (resp.status === 503 && data && data.warming) {
+          throw new Error(
+            'The pick is warming up (about ' + (data.retryAfter || 20) +
+            's). This happens on the first cut after a quiet spell — press again shortly.'
+          );
+        }
+        throw new Error((data && data.error) || ('The pick answered HTTP ' + resp.status));
+      }
+
+      /* Guard the cache key's other half. A function deployed with a different
+         model would hand back same-shaped vectors that do not belong in the
+         same matrix as the cached ones — the exact silent mixing §5.6 is about,
+         and the only place the page can still catch it. */
+      if (data && data.dim && data.dim !== DIM) {
+        throw new Error(
+          'The pick returned ' + data.dim + '-dim vectors, but this page reads ' +
+          DIM + '. It is running a different model — the scores would be meaningless.'
+        );
+      }
+
+      var rows = (data && data.data) || [];
+      if (rows.length !== slice.length) {
+        throw new Error('The pick returned ' + rows.length + ' vectors for ' + slice.length + ' texts.');
+      }
+      /* `index` is load-bearing, not decoration: an OpenAI-shaped reply is
+         allowed to come back out of order, and reading it positionally would
+         attach every vector to the wrong abstract with nothing to notice. */
+      var ordered = new Array(slice.length);
+      for (var r = 0; r < rows.length; r++) {
+        var at = typeof rows[r].index === 'number' ? rows[r].index : r;
+        if (at < 0 || at >= slice.length || ordered[at]) {
+          throw new Error('The pick returned a vector with a bad index.');
+        }
+        ordered[at] = normalize(rows[r].embedding.slice());
+      }
+      for (var o = 0; o < ordered.length; o++) vectors.push(ordered[o]);
+
       /* Report what has actually landed, once the batch is back. The train runs
          on its own clock either way — it is only the stones that wait here, and
          a batch that has not returned has not earned any. */
@@ -1252,25 +1106,33 @@
 
   // ── The shared vector cache ───────────────────────────────────────
   /*
-   * Embedding a day of abstracts here costs ~60 s; the vectors are ~200 kB.
-   * So the second person to haul a day downloads instead of re-embedding.
+   * A day of abstracts is ~130 texts and ~400 kB of vectors. The cache means
+   * the second person to haul a day downloads them instead of paying for the
+   * cut, and the warmer means the first person usually does too.
    *
    * The key is the sha256 of the text — never an arXiv id — so one cache
    * serves abstracts, touchstones and core samples alike, and a revised
    * abstract is a *different text* and therefore a miss rather than a stale
    * hit. `model` and `dim` ride in the key for the reason in §5.6 of the spec:
-   * a 384-dim bge vector and a 768-dim one for the same text are not
-   * interchangeable, and mixing them fails silently.
+   * two models' vectors for the same text are not interchangeable, and mixing
+   * them fails silently — equal dimension included.
    *
    * Every failure here is a miss, never an error. The cache is an
    * optimization; the haul must work with it down, empty, or opted out.
    *
-   * ONLY PUBLISHED TEXT GOES THROUGH HERE. Abstracts (arXiv) and core-sample
-   * abstracts (OpenAlex) are already public and already left this tab to be
-   * fetched. Touchstones are the user's own words and are embedded locally,
-   * always — Stage 0 promises "nothing you type leaves this tab", and a sha256
-   * of a short typed phrase is one dictionary away from the phrase itself.
-   * See maybeEmbedFeatures(), which is where the split is enforced.
+   * ONLY PUBLISHED TEXT IS CACHED HERE, and that is a narrower promise than
+   * the page used to make. Abstracts (arXiv) and core-sample abstracts
+   * (OpenAlex) are already public. A touchstone is the user's own words, and it
+   * is still kept out of this table — reads are public, so a sha256 sitting in
+   * a shared cache is one dictionary away from the phrase that made it, and it
+   * would stay there for anyone to test against long after the tab closed.
+   *
+   * What changed is that a touchstone now *is* embedded off-machine, by the
+   * hosted pick. The old wording — "nothing you type leaves this tab" — was
+   * true when the encoder was in the tab and is not true now, so Stage 2 says
+   * what actually happens instead. The distinction that survives is between
+   * text that is *sent* to be embedded and discarded, and text that is
+   * *stored* under a public key. See maybeEmbedFeatures(), which enforces it.
    */
 
   /** Collapse exactly as the server does, so both sides hash the same string. */
@@ -1321,14 +1183,14 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: LOCAL_MODEL, dim: LOCAL_DIM,
+            model: MODEL, dim: DIM,
             sha: unique.slice(c, c + CACHE_READ_CHUNK),
           }),
         });
         if (!resp.ok) return { shas: shas, hits: {} };
         var data = await resp.json();
         Object.keys(data.hits || {}).forEach(function (sha) {
-          try { hits[sha] = decodeVector(data.hits[sha], LOCAL_DIM); } catch (_) {}
+          try { hits[sha] = decodeVector(data.hits[sha], DIM); } catch (_) {}
         });
       }
     } catch (_) {
@@ -1353,10 +1215,12 @@
     }
     var nCached = texts.length - missIdx.length;
     if (statusFn) statusFn(nCached, texts.length);
-    /* Announced before embedding starts, because this is the moment a 32 MB
-       download may be about to happen. A caller that stalls silently here reads
-       as a hang; one that says "12 stones need cutting" reads as work. */
-    if (onMisses) onMisses(missIdx.length, texts.length, state.modelLoaded);
+    /* Announced before embedding starts, because this is the moment the page
+       is about to wait on somebody else's CPU. A caller that stalls silently
+       here reads as a hang; one that says "12 stones need cutting" reads as
+       work. Much shorter a wait than it used to be — this is a round trip now,
+       not a 32 MB download and a minute of WASM — but not instant. */
+    if (onMisses) onMisses(missIdx.length, texts.length);
     if (missIdx.length) {
       var missed = await embedTexts(
         missIdx.map(function (i) { return texts[i]; }),
@@ -1408,8 +1272,20 @@
     return S;
   }
 
-  // Edge threshold and minimum wagon size — shared by the matrix ordering
-  // and the graph view so both draw the same adjacency.
+  /* Edge threshold and minimum wagon size — shared by the matrix ordering
+     and the graph view so both draw the same adjacency.
+
+     THIS NUMBER IS AN ABSOLUTE COSINE AND WAS CALIBRATED ON THE OLD PICK.
+     0.75 was picked against `bge-small-en-v1.5`, whose cosines over arXiv
+     abstracts sat in a high, narrow band. SPECTER2 is a different geometry and
+     there is no reason its useful cut lands in the same place — a threshold
+     that is too low fuses the whole night into one wagon, too high shatters it
+     into singletons, and neither looks like an error.
+
+     Left at 0.75 deliberately rather than guessed at: the right value is a
+     measurement, not an opinion, and the slider above the train exposes it so
+     the shape of the night can be read while someone takes that measurement.
+     Retuning this is the first follow-up. */
   var WAGON_THRESH = 0.75;
   var WAGON_MIN_SIZE = 3;
 
@@ -2995,17 +2871,10 @@
       var vectors = await embedTextsCached(texts, function (done, total) {
         if (state.haulTrain) state.haulTrain.set(done, total);
         progLabel.textContent = 'Stones hauled: ' + done + ' / ' + total;
-      }, function (misses, total, pickLoaded) {
-        if (misses === 0) {
-          statusEl.textContent = 'All ' + total + ' stones already cut — no cutting needed.';
-        } else if (!pickLoaded) {
-          // The one place a 32 MB download starts without the user asking for
-          // it directly. Say so, with the number that justifies it.
-          statusEl.textContent = misses + ' of ' + total +
-            ' stones need cutting — sharpening the pick (~32 MB, once).';
-        } else {
-          statusEl.textContent = 'Cutting ' + misses + ' of ' + total + ' stones...';
-        }
+      }, function (misses, total) {
+        statusEl.textContent = misses === 0
+          ? 'All ' + total + ' stones already cut — no cutting needed.'
+          : 'Cutting ' + misses + ' of ' + total + ' stones...';
       });
       state.A = vectors;
       state.hauledFromCache = vectors.cached || 0;
@@ -3244,16 +3113,6 @@
     reassay();
   }
 
-  /* Every core row that still has no vector — the parked ones from a claim
-     loaded before the pick was sharpened, plus any that errored. */
-  async function resolveAllCores() {
-    for (var i = 0; i < state.cores.length; i++) {
-      if (state.cores[i].doi && !state.cores[i].vector) {
-        await resolveCore(state.cores[i].id);
-      }
-    }
-  }
-
   /* OpenAlex 404s on a bare DOI — `/works/10.1038/nature02693` is not found,
      `/works/doi:10.1038/nature02693` is. The bare form is what everyone types
      and what every corpus record stores, so every core sample entered that way
@@ -3321,7 +3180,7 @@
   /* Fill in a core sample's title/abstract/vector from its DOI. Runtime only —
      none of what this writes is saved in the claim, which is why loading a
      claim has to call it for every row that carries a DOI. */
-  function coreCacheKey(doi) { return doi + '|' + LOCAL_MODEL + '|' + LOCAL_DIM; }
+  function coreCacheKey(doi) { return doi + '|' + MODEL + '|' + DIM; }
 
   async function resolveCore(id) {
     var rec = findCore(id);
@@ -3329,18 +3188,12 @@
     var row = coreRowEl(id);
     var statusEl = row ? row.querySelector('.row-status') : null;
 
-    /* A cache miss ends in embedTexts(), which now loads the pick on demand —
-       and a claim restoring ten core samples on page load must not be what
-       triggers a 32 MB download nobody asked for. So the parking stays: it is
-       about not downloading unprompted, not about the extractor being absent.
-       loadPick() calls resolveAllCores() when the pick does arrive, by any
-       route, including the first touchstone. */
-    if (!state.modelLoaded && !(state._coreCache || {})[coreCacheKey(rec.doi)]) {
-      rec.status = 'waiting for the pick';
-      if (statusEl) statusEl.textContent = rec.status;
-      return;
-    }
-
+    /* Core samples used to park here on a fresh page load, because a claim
+       restoring ten of them would otherwise trigger a 32 MB download nobody
+       asked for. The pick is hosted now, so resolving one costs a round trip
+       and there is nothing left to protect the user from — they resolve
+       straight away, which is what "waiting for the pick" was always standing
+       in for. */
     rec.status = 'loading...';
     rec.vector = null;
     if (statusEl) statusEl.textContent = rec.status;
@@ -3405,29 +3258,33 @@
       return;
     }
 
-    /* Split by provenance, not by convenience. A core sample's abstract is a
-       published paper's text and goes through the shared cache; a touchstone is
-       the user's own words and never does — the page promises "nothing you type
-       leaves this tab", and a sha256 of a short typed phrase is a dictionary
-       lookup away from the phrase. See docs/dig-spec.md §6c.2. */
+    /* Split by provenance, not by convenience — but the split now decides
+       whether a text is *stored*, not where it is *embedded*. Every text below
+       goes to the same hosted pick; the question here is only which of them may
+       be written into a cache whose reads are public.
+       A core sample's abstract is a published paper's text, and a preset
+       touchstone is a phrase this repo published — both are already public, so
+       caching them is free and helps the next person. A touchstone the user
+       typed is not: its sha256 would sit in a public table indefinitely, one
+       dictionary lookup from the phrase that made it, long after the tab
+       closed. So it is embedded and discarded, never keyed.
+       See docs/dig-spec.md §6c.2. */
     var newVectors = new Array(textsToEmbed.length);
-    var localIdx = [], sharedIdx = [];
+    var privateIdx = [], sharedIdx = [];
     for (var p = 0; p < embedMap.length; p++) {
-      /* Core samples are published papers; preset touchstones are phrases this
-         repo published. Both are safe to hash against a server. A touchstone
-         with no preset tag is the user's own words and never is. */
-      var shareable = embedMap[p].type !== 'touchstone' ||
+      var cacheable = embedMap[p].type !== 'touchstone' ||
         !!state.touchstones[embedMap[p].idx].preset;
-      (shareable ? sharedIdx : localIdx).push(p);
+      (cacheable ? sharedIdx : privateIdx).push(p);
     }
     function textAt(i) { return textsToEmbed[i]; }
     if (sharedIdx.length) {
       var shared = await embedTextsCached(sharedIdx.map(textAt), null);
       for (var s = 0; s < sharedIdx.length; s++) newVectors[sharedIdx[s]] = shared[s];
     }
-    if (localIdx.length) {
-      var local = await embedTexts(localIdx.map(textAt), null);
-      for (var l = 0; l < localIdx.length; l++) newVectors[localIdx[l]] = local[l];
+    if (privateIdx.length) {
+      // Straight to the pick, around the cache: embedded, returned, not stored.
+      var priv = await embedTexts(privateIdx.map(textAt), null);
+      for (var l = 0; l < privateIdx.length; l++) newVectors[privateIdx[l]] = priv[l];
     }
 
     for (var e = 0; e < embedMap.length; e++) {
@@ -4460,15 +4317,6 @@
     if (_reportNoteTimer) clearTimeout(_reportNoteTimer);
     _reportNoteTimer = setTimeout(renderReportBar, 4000);
   }
-
-  // ═══════════════════════════════════════════════════════════════════
-  // Event bindings — the pick (Stage 2 gate)
-  // ═══════════════════════════════════════════════════════════════════
-
-  byId('sharpen-btn').addEventListener('click', async function () {
-    try { await ensurePick(); }
-    catch (err) { byId('sharpen-status').textContent = err.message; byId('sharpen-status').style.color = 'var(--ember)'; }
-  });
 
   // ═══════════════════════════════════════════════════════════════════
   // Event bindings — Stage 1

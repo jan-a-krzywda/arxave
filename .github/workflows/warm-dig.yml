@@ -15,9 +15,9 @@ name: Warm the Dig cache
 # A warm that slips two hours is not a warm cache in the morning.
 #
 # `workflow_dispatch` has no such queue. Measured 2026-08-12: created
-# 06:50:44Z, started 06:50:44Z, done 06:51:48Z. The work stayed here — a 32 MB
-# model and ~750 embeddings want a real runner, and the model cache and secrets
-# already live here — and only the trigger left.
+# 06:50:44Z, started 06:50:44Z, done 06:51:48Z. The work stayed here — ~750
+# abstracts is a job with a clock, not a request, and the secrets already live
+# here — and only the trigger left.
 #
 # Both schedules are in the SQL file, with the reasoning for their times.
 # Changing the timing means editing that file, not this one.
@@ -53,17 +53,11 @@ jobs:
         with:
           node-version: '20'
 
-      # The model is 32 MB and never changes. It has to be cached from a path
-      # outside node_modules — transformers.js defaults its Node cache to
-      # `node_modules/@huggingface/transformers/.cache/`, which `npm install`
-      # recreates every run — so the warmer points `env.cacheDir` here.
-      # Unauthenticated huggingface.co pulls from shared CI egress do get 429s,
-      # which is why this matters beyond speed.
-      - name: Cache the embedding model
-        uses: actions/cache@v4
-        with:
-          path: scripts/.model-cache
-          key: hf-bge-small-en-v1.5-q8
+      # There is no model to cache any more. This step used to restore 32 MB
+      # of transformers.js weights from outside node_modules, because an
+      # unauthenticated huggingface.co pull from shared CI egress gets 429s.
+      # The warmer calls the hosted `embed` function now, so the runner
+      # downloads nothing and holds no model.
 
       - name: Install warmer dependencies
         working-directory: scripts
@@ -82,6 +76,9 @@ jobs:
         env:
           DIG_WRITE_KEY: ${{ secrets.DIG_WRITE_KEY }}
           DIG_CACHE_URL: ${{ vars.ARXAVE_DIG_CACHE_URL }}
+          # The pick. No token here: the function holds HF_TOKEN, and the
+          # runner only ever talks to the function.
+          EMBED_URL: ${{ vars.ARXAVE_EMBED_URL }}
         run: |
           node warm-dig.mjs \
             --categories "${{ inputs.categories || vars.ARXAVE_WARM_CATEGORIES || 'quant-ph, cond-mat.mes-hall, cs.AI, cs.LG' }}" \

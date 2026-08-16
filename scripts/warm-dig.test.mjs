@@ -16,9 +16,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  bareArxivId, cacheKeyText, coreEmbedText, cutoffDate, deLatex, doiKey,
-  feedBuildDate, fetchEarlier, parseAtom, parseFeed, presetUnits,
-  reconstructAbstract, resolveEndpoint, withinCutoff,
+  bareArxivId, cacheKeyText, coreEmbedText, cutoffDate, deLatex, DIM, doiKey,
+  embedChunk, feedBuildDate, fetchEarlier, MODEL, parseAtom, parseFeed,
+  presetUnits, reconstructAbstract, resolveEndpoint, withinCutoff,
 } from './warm-dig.mjs';
 
 const DEFAULT = 'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1/dig-cache';
@@ -390,4 +390,101 @@ test('a preset row without a weight assays at 1.0, as an untouched page row does
   assert.equal(row.weight, 1.0);
   const [weighted] = presetUnits({ touchstones: [{ text: 'a', weight: 0.6 }] }, 's');
   assert.equal(weighted.weight, 0.6);
+});
+
+/* ── The hosted pick ──────────────────────────────────────────────────────
+ *
+ * The warmer writes into a cache other people read as fact, and none of the
+ * failures below throw on their own: a reordered reply files every vector
+ * under a neighbour's abstract, and a model change files a whole night under
+ * a key that still looks right. Both come back as bad rankings, not errors.
+ */
+
+/** A stub pick. `order` permutes the reply to model an out-of-order answer. */
+function fakeEmbed(opts = {}) {
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    const texts = JSON.parse(init.body).input;
+    calls.push(texts);
+    if (opts.status && calls.length <= (opts.failFirst ?? Infinity)) {
+      return {
+        ok: false,
+        status: opts.status,
+        json: async () => opts.body ?? {},
+      };
+    }
+    let data = texts.map((t, i) => ({
+      index: i,
+      // A vector whose first entry identifies the text, so a mix-up is visible.
+      embedding: [t.length, ...new Array(DIM - 1).fill(0)],
+    }));
+    if (opts.order) data = opts.order.map((i) => data[i]);
+    return { ok: true, status: 200, json: async () => ({ model: MODEL, dim: DIM, data }) };
+  };
+  return { fetchImpl, calls };
+}
+
+test('the model id is the one the cache is keyed on', () => {
+  // Shared with docs/assets/filter.js, supabase/functions/embed/hf.ts and
+  // tests/test_dig_cache.py. Changing it here alone is a silent full miss.
+  assert.equal(MODEL, 'allenai/specter2_base');
+  assert.equal(DIM, 768);
+});
+
+test('vectors come back in the order the texts went out', async () => {
+  const { fetchImpl } = fakeEmbed();
+  const out = await embedChunk(['a', 'bb', 'ccc'], 'http://x', fetchImpl);
+  assert.deepEqual(out.map((v) => v[0]), [1, 2, 3]);
+});
+
+test('a reply that arrives out of order is put back in order, not read positionally', async () => {
+  // The failure this prevents: every abstract filed under its neighbour's
+  // vector, written into a shared cache, with nothing anywhere to notice.
+  const { fetchImpl } = fakeEmbed({ order: [2, 0, 1] });
+  const out = await embedChunk(['a', 'bb', 'ccc'], 'http://x', fetchImpl);
+  assert.deepEqual(out.map((v) => v[0]), [1, 2, 3]);
+});
+
+test('a duplicate index is an error, not a dropped text', async () => {
+  const { fetchImpl } = fakeEmbed({ order: [0, 0, 1] });
+  await assert.rejects(() => embedChunk(['a', 'bb', 'ccc'], 'http://x', fetchImpl), /bad index/);
+});
+
+test('a warming pick is waited out, not failed', async () => {
+  const { fetchImpl, calls } = fakeEmbed({
+    status: 503, body: { warming: true, retryAfter: 0 }, failFirst: 2,
+  });
+  const out = await embedChunk(['a'], 'http://x', fetchImpl);
+  assert.equal(calls.length, 3);       // two 503s, then the answer
+  assert.equal(out.length, 1);
+});
+
+test('a non-warming failure is not retried', async () => {
+  const { fetchImpl, calls } = fakeEmbed({ status: 502, body: { error: 'upstream fell over' } });
+  await assert.rejects(() => embedChunk(['a'], 'http://x', fetchImpl), /upstream fell over/);
+  assert.equal(calls.length, 1);
+});
+
+test('a pick running a different model is refused before anything is written', async () => {
+  // Same dimension would be worse — this is the case dig-spec §5.6 is about.
+  const fetchImpl = async () => ({
+    ok: true, status: 200,
+    json: async () => ({ model: 'other', dim: 384, data: [{ index: 0, embedding: [] }] }),
+  });
+  await assert.rejects(() => embedChunk(['a'], 'http://x', fetchImpl), /poison/);
+});
+
+test('a short reply is an error, not a short night', async () => {
+  const fetchImpl = async () => ({
+    ok: true, status: 200,
+    json: async () => ({ dim: DIM, data: [{ index: 0, embedding: new Array(DIM).fill(0) }] }),
+  });
+  await assert.rejects(() => embedChunk(['a', 'b'], 'http://x', fetchImpl), /1 vectors for 2 texts/);
+});
+
+test('the embed endpoint falls back independently of the cache endpoint', () => {
+  const EMBED = 'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1/embed';
+  // Same empty-string trap as the cache endpoint: an unset Actions variable.
+  assert.equal(resolveEndpoint('', '', EMBED), EMBED);
+  assert.equal(resolveEndpoint('http://local/embed', '', EMBED), 'http://local/embed');
 });

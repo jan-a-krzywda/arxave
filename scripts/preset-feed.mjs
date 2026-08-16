@@ -28,6 +28,7 @@
  *   --out       directory to write <slug>.xml into (required)
  *   --endpoint  dig-cache URL (default: the project's deployed function)
  *   --top       how many papers per feed (default 8)
+ *   --embed     embed URL (default: the project's deployed function)
  *   --site      absolute base URL used for links back into the Dig
  */
 
@@ -36,13 +37,13 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import {
-  DIM, MODEL, fetchAbstracts, fetchEarlier, loadModel, loadPresets, resolveEndpoint,
-  sha256Hex,
+  DEFAULT_EMBED, DIM, MODEL, embedChunk, fetchAbstracts, fetchEarlier,
+  loadPresets, resolveEndpoint, sha256Hex,
 } from './warm-dig.mjs';
 import { enrichItems } from './enrich.mjs';
 
 const READ_CHUNK = 500;
-const BATCH = 16;
+const BATCH = 128;   // under embed's MAX_TEXTS (400), same as the warmer
 /* Per category, and a window that has to reach a date rather than fill a
    screen — the warmer's number, for the same reason it is not the page's 200:
    quant-ph alone announces enough in a day to bottom the window out mid-run. */
@@ -162,13 +163,13 @@ async function cacheRead(endpoint, shas) {
 }
 
 /**
- * Vectors for every text, cache first and the model for the rest.
+ * Vectors for every text, cache first and the pick for the rest.
  *
  * The feed runs right after the warmer in the same job, so in the normal case
- * every text is a hit and the model is never loaded. Embedding locally is the
- * fallback that keeps a cache outage from emptying the feed.
+ * every text is a hit and the pick is never called. Calling it is the fallback
+ * that keeps a cache outage from emptying the feed.
  */
-async function vectorize(texts, endpoint) {
+async function vectorize(texts, endpoint, embedUrl) {
   const shas = await Promise.all(texts.map(sha256Hex));
   const hits = await cacheRead(endpoint, [...new Set(shas)]);
   const out = new Array(texts.length);
@@ -180,11 +181,9 @@ async function vectorize(texts, endpoint) {
   }
   console.log(`preset-feed: ${texts.length - missing.length}/${texts.length} vectors from the cache`);
   if (missing.length) {
-    const extractor = await loadModel();
     for (let i = 0; i < missing.length; i += BATCH) {
       const chunk = missing.slice(i, i + BATCH);
-      const res = await extractor(chunk.map((m) => texts[m]), { pooling: 'mean', normalize: true });
-      const rows = res.tolist();
+      const rows = await embedChunk(chunk.map((m) => texts[m]), embedUrl);
       for (let r = 0; r < chunk.length; r++) out[chunk[r]] = rows[r];
     }
   }
@@ -247,7 +246,7 @@ export function tallyOf(items) {
  * Which papers make the feed.
  *
  * NOT an absolute grade threshold, and the measured reason is worth keeping:
- * bge-small cosines over arXiv abstracts sit in a high, narrow band. On
+ * cosines over arXiv abstracts sit in a high, narrow band. On
  * 2026-08-12 the 94 cond-mat.mes-hall + quant-ph abstracts scored between
  * 0.498 and 0.735 against the spin-qubits preset, median 0.605. A cut at 0.65
  * kept ten papers, eight of which were generic quant-ph. The absolute number
@@ -258,6 +257,16 @@ export function tallyOf(items) {
  * themselves. Same day, scored this way:
  *
  *     z >= 3.0 -> 1 paper    z >= 2.5 -> 2    z >= 2.0 -> 2    z >= 1.5 -> 5
+ *
+ * EVERY ABSOLUTE NUMBER IN THIS COMMENT WAS MEASURED ON THE OLD PICK
+ * (`bge-small-en-v1.5`, 384-dim) and is stale: the medians, the sigmas, and
+ * the 0.65 that kept ten papers all describe a cosine distribution that no
+ * longer exists. **The gate itself is not stale**, and that is the point of
+ * having built it this way — median and MAD are location- and scale-invariant,
+ * so a z of 2.5 means the same thing under any embedding, and none of the
+ * tuned constants below refer to a raw cosine. Re-measure the tables when
+ * convenient; do not re-tune `minZ`, `softZ` or `longZ` on the assumption that
+ * the model change moved them, because it did not.
  *
  * and the two above 2.5 were exactly the two a spin-qubit reader would want.
  * `maxItems` is a ceiling for an unusually rich day, not a target: a quiet day
@@ -463,8 +472,10 @@ async function main() {
   const site = arg('site') || process.env.ARXAVE_SITE || DEFAULT_SITE;
   const top = parseInt(arg('top', '8'), 10) || 8;
   let endpoint;
+  let embedUrl;
   try {
     endpoint = resolveEndpoint(arg('endpoint'), process.env.DIG_CACHE_URL);
+    embedUrl = resolveEndpoint(arg('embed'), process.env.EMBED_URL, DEFAULT_EMBED);
   } catch (err) {
     console.error('preset-feed: ' + err.message);
     process.exit(2);
@@ -536,7 +547,7 @@ async function main() {
     }
 
     const vectors = await vectorize(
-      stones.map((s) => s.abstract).concat(rows.map((r) => r.text)), endpoint);
+      stones.map((s) => s.abstract).concat(rows.map((r) => r.text)), endpoint, embedUrl);
     const stoneVecs = vectors.slice(0, stones.length);
     const rowVecs = rows.map((r, i) => ({
       weight: r.weight, vector: vectors[stones.length + i], label: rowLabel(r),

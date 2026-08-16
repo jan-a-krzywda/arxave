@@ -57,11 +57,18 @@ design and M2–M4 plan.
 
 Go [here](https://jan-a-krzywda.github.io/arxave/). Type topics. Hit **Dig**.
 
-Page pull today arXiv, embed abstract and your topics **in your browser**
-(transformers.js, WASM), rank by match. Move slider, ranking move live. Your
-topics never leave the tab. Only outside call is arXiv itself — browser cannot
-fetch arXiv direct (no CORS header), so small Supabase `relay` function pass the
-GET through.
+Page pull today arXiv, embed abstract and your topics with **the pick** —
+`allenai/specter2_base`, trained on citation graph, so papers that cite each
+other land near each other. Rank by match. Move slider, ranking move live.
+
+Pick run server-side, in Supabase `embed` function, so browser download nothing.
+Text you want scored get sent there, embed, thrown away. Published text
+(abstracts, and touchstone this repo ship as preset) also go in shared cache so
+nobody pay twice; **touchstone you type never go in that cache** — cache read
+public, and hash of short phrase is one dictionary from phrase.
+
+arXiv fetch also leave, through small Supabase `relay` — browser cannot fetch
+arXiv direct, no CORS header.
 
 For CLI config, edit `config/arxave.yaml` and `.env` by hand — see below. (There
 was a browser form that wrote them for you. It fell behind the CLI and got
