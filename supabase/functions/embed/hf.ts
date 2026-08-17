@@ -60,6 +60,28 @@ export const UPSTREAM =
  */
 export const UPSTREAM_BATCH = 8;
 
+/**
+ * Characters kept from each text before it is sent upstream.
+ *
+ * SPECTER2's positional embeddings stop at 512 tokens and the upstream does not
+ * truncate for us — measured 2026-08-17, a real quant-ph abstract tokenized to
+ * 545 and took its whole batch down with
+ * `The size of tensor a (545) must match the size of tensor b (512)`. One long
+ * paper stopping a 962-abstract warm is not a proportionate failure.
+ *
+ * Asking for truncation is not enough on its own: the flag's spelling depends
+ * on which serving stack is behind the route, and getting it wrong is silent
+ * until a long text arrives. So the text is also clipped here, where the
+ * arithmetic is ours. 2000 characters is ~500 tokens of English prose at the
+ * usual ~4 chars/token, which is the most the model can attend to anyway — the
+ * clip discards only what SPECTER2 would have discarded itself.
+ *
+ * THIS DOES NOT TOUCH THE CACHE KEY. Callers hash the *full* text before they
+ * ever get here (`cacheKeyText` in filter.js and warm-dig.mjs), so clipping is
+ * invisible to the key and cannot cause a miss.
+ */
+export const UPSTREAM_MAX_CHARS = 2_000;
+
 /** Raised when the model is loading upstream. Distinct because it is not a
  *  failure — it is a wait, and the page says so rather than showing an error. */
 export class ModelWarmingError extends Error {

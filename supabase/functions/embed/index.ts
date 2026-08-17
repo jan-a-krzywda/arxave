@@ -35,6 +35,7 @@ import {
   toVectors,
   UPSTREAM,
   UPSTREAM_BATCH,
+  UPSTREAM_MAX_CHARS,
   warmingSeconds,
 } from './hf.ts';
 
@@ -91,11 +92,17 @@ async function embedChunk(texts: string[], token: string): Promise<number[][]> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      inputs: texts,
-      /* SPECTER2 tops out at 512 tokens. Without this an over-long text is a
-         hard error for the whole batch; with it the tail is cut, which is what
-         the model would have seen anyway. */
+      /* Clipped here rather than trusted to the upstream — see
+         UPSTREAM_MAX_CHARS. The caller already hashed the full text, so this
+         cannot move a cache key. */
+      inputs: texts.map((t) => t.slice(0, UPSTREAM_MAX_CHARS)),
+      /* Belt and braces, in both spellings, because which one this route
+         honours depends on the serving stack behind it and an ignored flag is
+         silent until a long text arrives. `truncate` is TEI's; `truncation`
+         is the transformers pipeline's. An unknown key is ignored, a missing
+         one is a 400 halfway through a warm. */
       truncate: true,
+      parameters: { truncation: true },
       /* Wait rather than 503 on a cold model. A first call after an idle
          period pays ~20 s of load; without this the page would have to
          implement the retry itself, and every client would implement it
