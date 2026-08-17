@@ -36,6 +36,7 @@ import {
   UPSTREAM,
   UPSTREAM_BATCH,
   UPSTREAM_MAX_CHARS,
+  isTooLong,
   warmingSeconds,
 } from './hf.ts';
 
@@ -84,7 +85,34 @@ function fail(status: number, message: string, extra: Record<string, unknown> = 
   });
 }
 
+/**
+ * One batch, with a shrinking clip behind it.
+ *
+ * The upstream reports an over-long text as a 400 naming two tensor sizes, and
+ * it fails the *whole batch*, not the offending row. A fixed clip is a guess
+ * about a tokenizer we do not control — measured twice now, and wrong the first
+ * time — so when the guess is beaten the batch is retried at half the budget
+ * rather than surfacing. Two halvings take 1400 chars to 350, which no
+ * tokenizer turns into 512 tokens.
+ *
+ * Only the length error retries. Everything else is a real failure and is
+ * reported as one.
+ */
 async function embedChunk(texts: string[], token: string): Promise<number[][]> {
+  let budget = UPSTREAM_MAX_CHARS;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await embedOnce(texts, token, budget);
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      if (attempt >= 2 || !isTooLong(detail)) throw err;
+      budget = Math.floor(budget / 2);
+      console.warn(`embed: batch exceeded the model window, retrying at ${budget} chars`);
+    }
+  }
+}
+
+async function embedOnce(texts: string[], token: string, budget: number): Promise<number[][]> {
   const resp = await fetch(UPSTREAM, {
     method: 'POST',
     headers: {
@@ -95,7 +123,7 @@ async function embedChunk(texts: string[], token: string): Promise<number[][]> {
       /* Clipped here rather than trusted to the upstream — see
          UPSTREAM_MAX_CHARS. The caller already hashed the full text, so this
          cannot move a cache key. */
-      inputs: texts.map((t) => t.slice(0, UPSTREAM_MAX_CHARS)),
+      inputs: texts.map((t) => t.slice(0, budget)),
       /* Belt and braces, in both spellings, because which one this route
          honours depends on the serving stack behind it and an ignored flag is
          silent until a long text arrives. `truncate` is TEI's; `truncation`
