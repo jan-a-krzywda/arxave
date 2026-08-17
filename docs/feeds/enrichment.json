@@ -174,5 +174,79 @@
   "seen": "2026-08-17",
   "model": "gemini-2.5-flash",
   "shape": 2
+ },
+ "2608.14214": {
+  "fields": {
+   "verdict": "read",
+   "kind": "theory",
+   "headline": "Integrating Loss-DiVincenzo with exchange-only qubits provides a practical route to error detection and fault-tolerant \\u03c0-rotations about three control axes for the singlet-only exchange-only qubit.",
+   "so_what": "This approach converts charge and nuclear noise into erasures, suppressing error propagation and potentially enhancing quantum error-correction schemes for semiconductor-based quantum computing.",
+   "caveat": "",
+   "tools": [
+    "Loss-DiVincenzo qubits",
+    "exchange-only qubits",
+    "spin-shuttling architectures",
+    "quantum error-correction schemes"
+   ]
+  },
+  "seen": "2026-08-17",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.14469": {
+  "fields": {
+   "verdict": "skim",
+   "kind": "new method",
+   "headline": "An additive unravelling of non-additive quantum master equations can reproduce current and fluctuations.",
+   "so_what": "This allows the quantum jump formalism to be applied to a broader class of open quantum systems for characterizing current and fluctuations.",
+   "caveat": "This is possible only when allowing for an imperfect jump detection scenario.",
+   "tools": [
+    "quantum master equation formalism",
+    "Lindblad form",
+    "quantum jump formalism",
+    "Landauer-Büttiker formalism"
+   ]
+  },
+  "seen": "2026-08-17",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.14357": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A multiunimon circuit simulates all twelve different controlled-controlled-NOT gates with a mean fidelity of 99.5%.",
+   "so_what": "This circuit offers a path to highly efficient implementations of near-term quantum algorithms on noisy hardware.",
+   "caveat": "The results are based on simulations and performance is limited by incoherent errors dominated by dielectric loss.",
+   "tools": [
+    "superconducting multimode circuit",
+    "single Josephson junction",
+    "coplanar waveguide structure",
+    "leakage-aware encoding scheme",
+    "sine-squared pulses"
+   ]
+  },
+  "seen": "2026-08-17",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.13627": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A scalable edge-pass Purcell filter achieves average readout fidelities of 99.46(4)% (HPF) and 99.49(3)% (LPF) and average single-qubit gate fidelities of 99.94% (HPF) and 99.93% (LPF).",
+   "so_what": "This filter architecture unifies fast, high-fidelity readout, Purcell protection, and effective reset, enabling more compact designs for large-scale fault-tolerant quantum computation.",
+   "caveat": "Readout fidelities were achieved with 150-ns (HPF) and 130-ns (LPF) pulses.",
+   "tools": [
+    "edge-pass Purcell filter",
+    "high-pass filter (HPF)",
+    "low-pass filter (LPF)",
+    "superconducting qubits",
+    "readout resonators"
+   ]
+  },
+  "seen": "2026-08-17",
+  "model": "gemini-2.5-flash",
+  "shape": 2
  }
 }
