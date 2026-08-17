@@ -43,7 +43,7 @@ import {
 import { enrichItems } from './enrich.mjs';
 
 const READ_CHUNK = 500;
-const BATCH = 128;   // under embed's MAX_TEXTS (400), same as the warmer
+const BATCH = 64;    // under embed's MAX_TEXTS (96, measured), same as the warmer
 /* Per category, and a window that has to reach a date rather than fill a
    screen — the warmer's number, for the same reason it is not the page's 200:
    quant-ph alone announces enough in a day to bottom the window out mid-run. */

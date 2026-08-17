@@ -45,11 +45,11 @@ import { XMLParser } from 'fast-xml-parser';
 export const MODEL = 'allenai/specter2_base';
 export const DIM = 768;
 
-/* Texts per embed request. Under the function's MAX_TEXTS (400) with room to
-   spare: a smaller chunk means a failure costs less re-work and the progress
-   line moves, and there is no per-request cost to trade against — the pick
-   bills compute time, not calls. */
-const BATCH = 128;
+/* Texts per embed request. Under the function's MAX_TEXTS (96, measured) with
+   room to spare: a smaller chunk means a failure costs less re-work and the
+   progress line moves, and there is no per-request cost to trade against — the
+   pick bills compute time, not calls. */
+const BATCH = 64;
 
 /* A cold pick takes ~20s to load upstream and answers 503 until it has. That
    is a wait, not a fault, and the first chunk of a nightly run is exactly when
@@ -647,12 +647,20 @@ async function main() {
   if (stale.length) {
     console.warn(`warm-dig: some feeds are still on ${stale.join(', ')}, not ${today}`);
   }
-  if (stones.length === 0) {
-    console.error('warm-dig: nothing to warm.' + (failures.length ? ' ' + failures.join(' | ') : ''));
-    process.exit(failures.length ? 1 : 0);
-  }
+  /* An empty announcement feed is NOT an empty night's work, and conflating
+     the two made `--lookback` unreachable on exactly the days it is for.
+     arXiv announces Monday to Friday; run this on a Saturday or a Sunday and
+     the feed is legitimately empty while the search API still has Thursday and
+     Friday sitting there uncached. Exiting here skipped the lookback block
+     entirely and reported success, so a weekend warm was a silent no-op.
+     So: only give up once the lookback window has also come back empty. */
   if (failures.length) console.warn('warm-dig: some feeds failed — ' + failures.join(' | '));
-  console.log(`warm-dig: ${stones.length} abstracts from ${categories.join(', ')}`);
+  if (stones.length === 0) {
+    console.warn('warm-dig: tonight\'s feed is empty — arXiv does not announce ' +
+                 'at weekends. Trying the lookback window.');
+  } else {
+    console.log(`warm-dig: ${stones.length} abstracts from ${categories.join(', ')}`);
+  }
 
   /* The earlier days ride on the same model load, and only their misses cost
      anything: a day already warmed by yesterday's run is a cache hit here, so
@@ -667,7 +675,10 @@ async function main() {
      them. Over-fetching is nearly free — the surplus is one cache read that
      hits — while under-fetching is silent, and lands as a cold boundary day. */
   const maxResults = parseInt(arg('max-results', '400'), 10) || 400;
-  if (lookback > 1) {
+  /* Reach for the earlier days whenever there are any to reach for, or
+     whenever tonight brought nothing — the second case is the weekend, where
+     the window is the only source there is. */
+  if (lookback > 1 || stones.length === 0) {
     try {
       const earlier = await fetchEarlier(categories, lookback, maxResults);
       let added = 0;
@@ -682,8 +693,16 @@ async function main() {
         `today, back to ${cutoffDate(new Date(), lookback)}`,
       );
     } catch (err) {
-      console.warn(`warm-dig: the lookback window failed (${err.message}) — tonight is warmed anyway`);
+      console.warn(`warm-dig: the lookback window failed (${err.message})` +
+                   (stones.length ? ' — tonight is warmed anyway' : ''));
     }
+  }
+
+  /* Now the real nothing-to-do: neither tonight nor the window had anything.
+     Still not an error — a quiet archive is a quiet archive. */
+  if (stones.length === 0) {
+    console.error('warm-dig: nothing to warm.' + (failures.length ? ' ' + failures.join(' | ') : ''));
+    process.exit(failures.length ? 1 : 0);
   }
 
   /* Presets ride along with the day's abstracts rather than in their own job:

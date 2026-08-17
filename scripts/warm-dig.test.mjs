@@ -506,3 +506,19 @@ test('the embed endpoint falls back independently of the cache endpoint', () => 
   assert.equal(resolveEndpoint('', '', EMBED), EMBED);
   assert.equal(resolveEndpoint('http://local/embed', '', EMBED), 'http://local/embed');
 });
+
+test('an empty announcement feed does not skip the lookback window', () => {
+  /* arXiv announces Mon-Fri. Run the warmer on a Saturday and tonight's feed
+     is legitimately empty while Thursday and Friday sit uncached in the search
+     API — which is exactly what --lookback is for. The early exit used to fire
+     first, so a weekend warm was a silent no-op that reported success.
+     Pinned as a source check because the ordering lives in main(), which takes
+     the network; the behaviour is verified by --dry-run on a weekend. */
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const src = fs.readFileSync(path.join(here, 'warm-dig.mjs'), 'utf8');
+  const guard = src.indexOf('if (lookback > 1 || stones.length === 0)');
+  const giveUp = src.indexOf("console.error('warm-dig: nothing to warm.'");
+  assert.ok(guard > 0, 'the lookback window must run when tonight brought nothing');
+  assert.ok(giveUp > guard,
+    'giving up must come after the lookback window, not before it');
+});

@@ -251,8 +251,13 @@ If the credit runs out, the warm is the thing to trim (fewer categories, or a
 shorter `--lookback`), not the page.
 
 Caps live at the top of
-[`embed/index.ts`](embed/index.ts): 400 texts per call, 6k chars per text, 800k
-chars per call, and a per-IP hourly budget of 3000 texts. The per-IP bucket is
+[`embed/index.ts`](embed/index.ts): 96 texts per call, 6k chars per text, 800k
+chars per call, and a per-IP hourly budget of 3000 texts. The 96 is measured,
+not chosen: the upstream answers with the **token grid** rather than pooled
+vectors, so one call holds `batch x tokens x 768` floats before pooling, and
+128 real abstracts kill the isolate with `546 WORKER_RESOURCE_LIMIT`. That is
+also why `UPSTREAM_BATCH` is 8 — it is the number that keeps a single upstream
+response inside the isolate's memory. The per-IP bucket is
 in-memory, so an isolate recycle resets it — it is a speed bump, not a
 guarantee. If the page gets traffic, add a durable counter (a Postgres table)
 or put the project's own function rate limits in front.
