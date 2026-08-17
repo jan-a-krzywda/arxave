@@ -100,8 +100,14 @@ permalink: /
         </label>
         <label class="wagon-thresh-label" id="wagon-thresh-label">
           Threshold
-          <input type="range" id="wagon-thresh-slider" min="0.5" max="0.95" step="0.01" value="0.75">
-          <span id="wagon-thresh-value">0.75</span>
+          <!-- Range and step are measured, not conventional. Under SPECTER2 every
+               pair of arXiv abstracts scores above ~0.70, so the whole span below
+               0.85 is one undifferentiated blob and was slider travel that did
+               nothing. The band that separates is 0.92-0.95, so the step is 0.005:
+               at 0.01 a single notch jumps one blob to nine wagons. See
+               WAGON_THRESH in assets/filter.js for the measurement. -->
+          <input type="range" id="wagon-thresh-slider" min="0.85" max="0.99" step="0.005" value="0.93">
+          <span id="wagon-thresh-value">0.93</span>
         </label>
         <!-- Naming is on a button, not automatic: it calls a metered API, and
              the threshold slider re-forms the wagons on every nudge. Settle
