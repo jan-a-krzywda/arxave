@@ -72,15 +72,36 @@ export const UPSTREAM_BATCH = 8;
  * Asking for truncation is not enough on its own: the flag's spelling depends
  * on which serving stack is behind the route, and getting it wrong is silent
  * until a long text arrives. So the text is also clipped here, where the
- * arithmetic is ours. 2000 characters is ~500 tokens of English prose at the
- * usual ~4 chars/token, which is the most the model can attend to anyway — the
- * clip discards only what SPECTER2 would have discarded itself.
+ * arithmetic is ours.
+ *
+ * THE CHARS-PER-TOKEN RATIO IS THE TRAP, and it cost a second failed warm.
+ * 2000 chars was picked as ~500 tokens at the usual ~4 chars/token for English
+ * prose, and a 3396-char prose test passed at exactly that. Real physics
+ * abstracts are denser — LaTeX, subscripts, chemical formulas, units — and
+ * measured 2026-08-17 the same 2000 chars came back as **545 tokens**, or
+ * 3.67 chars/token, failing identically to before the clip existed.
+ *
+ * So 1400, which is 2.7 chars/token at the 512 ceiling and leaves room for
+ * text denser still. A typical arXiv abstract is ~1.2-1.5 kB, so this rarely
+ * bites, and when it does it discards only what SPECTER2 could not have
+ * attended to anyway.
+ *
+ * A fixed number is still a guess about someone else's tokenizer, so it is a
+ * first line and not the only one — `embedChunk` retries a batch that trips the
+ * ceiling with a harder clip. No single pathological paper should be able to
+ * stop a 962-abstract warm.
  *
  * THIS DOES NOT TOUCH THE CACHE KEY. Callers hash the *full* text before they
  * ever get here (`cacheKeyText` in filter.js and warm-dig.mjs), so clipping is
  * invisible to the key and cannot cause a miss.
  */
-export const UPSTREAM_MAX_CHARS = 2_000;
+export const UPSTREAM_MAX_CHARS = 1_400;
+
+/** Does this upstream 400 mean "the text was longer than the model's window"?
+ *  The message is the only signal — there is no code for it. */
+export function isTooLong(detail: string): boolean {
+  return /size of tensor|sequence length|maximum context|too long/i.test(detail);
+}
 
 /** Raised when the model is loading upstream. Distinct because it is not a
  *  failure — it is a wait, and the page says so rather than showing an error. */

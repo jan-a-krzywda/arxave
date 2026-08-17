@@ -7,7 +7,9 @@
  * papers and looks like a ranking opinion.
  */
 import { assertEquals, assertThrows } from 'jsr:@std/assert@1';
-import { DIM, MODEL, normalize, toVectors, warmingSeconds } from './hf.ts';
+import {
+  DIM, MODEL, UPSTREAM_MAX_CHARS, isTooLong, normalize, toVectors, warmingSeconds,
+} from './hf.ts';
 
 /** A dim-length vector whose first entry marks which row it is. */
 function row(marker: number, fill = 0.5): number[] {
@@ -96,4 +98,29 @@ Deno.test('warming time falls back rather than retrying instantly', () => {
   assertEquals(warmingSeconds({}), 20);
   assertEquals(warmingSeconds(null), 20);
   assertEquals(warmingSeconds({ estimated_time: -1 }), 20);
+});
+
+Deno.test('the length error is recognised however the upstream phrases it', () => {
+  /* There is no status code for "your text was longer than my window" — the
+     message is the only signal, and a batch that trips it fails whole. Missing
+     it is what turned one dense abstract into a stopped 962-abstract warm. */
+  assertEquals(isTooLong('The size of tensor a (545) must match the size of tensor b (512)'), true);
+  assertEquals(isTooLong('sequence length is longer than the specified maximum'), true);
+  assertEquals(isTooLong('input is too long for this model'), true);
+  assertEquals(isTooLong('maximum context length exceeded'), true);
+});
+
+Deno.test('an ordinary failure is not mistaken for a length problem', () => {
+  // Retrying these at a smaller clip would just fail again, three times over.
+  assertEquals(isTooLong('Model is currently loading'), false);
+  assertEquals(isTooLong('rate limit exceeded'), false);
+  assertEquals(isTooLong('Unauthorized access'), false);
+});
+
+Deno.test('the clip leaves room for text far denser than prose', () => {
+  /* 2000 chars was ~500 tokens of prose and 545 tokens of physics. The margin,
+     not the average, is what this constant has to survive. */
+  assertEquals(UPSTREAM_MAX_CHARS, 1_400);
+  const worstCaseCharsPerToken = UPSTREAM_MAX_CHARS / 512;
+  assertEquals(worstCaseCharsPerToken < 3.0, true);
 });
