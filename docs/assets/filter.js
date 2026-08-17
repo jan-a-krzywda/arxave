@@ -190,7 +190,7 @@
     wagonNames: {},          // wagon key → {name, gloss}, kept across thresholds
     wagonNaming: false,      // a naming request is in flight
     wagonView: 'table',      // 'table' | 'graph' | 'matrix'
-    wagonThresh: 0.75,       // live-tunable, starts at WAGON_THRESH
+    wagonThresh: 0.93,       // live-tunable, starts at WAGON_THRESH
     wagonGraph: null,        // live graph handle for the inline canvas
     wagonModalGraph: null,   // live graph handle for the modal canvas
     haulTrain: null,        // live handle for stage 1's mine-train progress
@@ -1290,18 +1290,35 @@
   /* Edge threshold and minimum wagon size — shared by the matrix ordering
      and the graph view so both draw the same adjacency.
 
-     THIS NUMBER IS AN ABSOLUTE COSINE AND WAS CALIBRATED ON THE OLD PICK.
-     0.75 was picked against `bge-small-en-v1.5`, whose cosines over arXiv
-     abstracts sat in a high, narrow band. SPECTER2 is a different geometry and
-     there is no reason its useful cut lands in the same place — a threshold
-     that is too low fuses the whole night into one wagon, too high shatters it
-     into singletons, and neither looks like an error.
+     MEASURED, NOT CHOSEN. 0.75 came from `bge-small-en-v1.5` and was carried
+     over unexamined when the pick became SPECTER2; #68 flagged it as probably
+     wrong. It was not probably. SPECTER2 puts *every* pair of arXiv abstracts
+     in a high, narrow band, so 0.75 connects essentially everything.
 
-     Left at 0.75 deliberately rather than guessed at: the right value is a
-     measurement, not an opinion, and the slider above the train exposes it so
-     the shape of the night can be read while someone takes that measurement.
-     Retuning this is the first follow-up. */
-  var WAGON_THRESH = 0.75;
+     Measured 2026-08-17 over 906 warmed vectors, 60k random pairs — the null
+     distribution, i.e. what unrelated papers score:
+
+         min 0.701 | p5 0.770 | p50 0.837 | p95 0.903 | p99 0.924 | max 0.964
+
+     Running the real clustering below over one day's haul (324 stones,
+     WAGON_MIN_SIZE 3) says the same thing far more plainly:
+
+         thresh   wagons   in wagons   largest
+          0.75         1         324       324   <- the entire night, one wagon
+          0.90         1         312       312
+          0.92         8         240       216   <- still one dominant blob
+          0.93         9         148        91   <- readable
+          0.94        11          75        40   <- readable, tighter
+          0.95         4          17         7   <- shattering
+
+     0.93 is the low edge of the readable band: about half the night lands in a
+     wagon and the largest holds a quarter of it. 0.94 is defensible and
+     stricter. Anything at or below 0.92 is one blob wearing a cluster's
+     clothes — and it does not look like an error, which is why this needed
+     measuring rather than eyeballing.
+
+     None of these numbers transfer if the pick changes again. Re-measure. */
+  var WAGON_THRESH = 0.93;
   var WAGON_MIN_SIZE = 3;
 
   /** Count wagons ≥ WAGON_MIN_SIZE at one threshold, and how many stones they
@@ -1337,8 +1354,14 @@
    */
   function bestWagonThresh(S, N) {
     var best = WAGON_THRESH, bestWagons = -1, bestClustered = -1;
-    for (var pct = 50; pct <= 95; pct++) {
-      var t = pct / 100;
+    /* 0.80 to 0.99 in 0.005 steps. The old sweep ran 0.50-0.95 at 0.01, which
+       under SPECTER2 spent four fifths of its passes below the point where
+       anything separates and stopped just as the interesting band opened — the
+       peak measured at 0.94. The step matters as much as the range: 0.92 and
+       0.93 are one blob and nine wagons respectively, and 0.01 can straddle
+       that. */
+    for (var k = 160; k <= 198; k++) {
+      var t = k / 200;
       var r = countWagons(S, N, t);
       if (r.wagons > bestWagons ||
           (r.wagons === bestWagons && r.clustered > bestClustered)) {
