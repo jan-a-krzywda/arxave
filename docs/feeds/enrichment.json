@@ -64,5 +64,115 @@
   "seen": "2026-08-14",
   "model": "gemini-2.5-flash",
   "shape": 2
+ },
+ "2608.14285": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Qu-Trefoil simulated quantum circuits with over 43 qubits, requiring more than 128 TB of memory.",
+   "so_what": "This makes large-scale quantum circuit simulations more accessible and cost-efficient for researchers without supercomputer access.",
+   "caveat": "on a single storage subsystem equipped with one FPGA",
+   "tools": [
+    "FPGA-based platform",
+    "SATA storage subsystems",
+    "HLS-based quantum gates",
+    "HDL-designed modules"
+   ]
+  },
+  "seen": "2026-08-17",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.13975": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Neural decoders for subsystem many-hypercube codes improve decoding performance by utilizing gauge-measurement information, with recurrent neural decoders outperforming fully connected ones.",
+   "so_what": "This work makes subsystem many-hypercube codes more practical for quantum error correction by providing high-performance neural decoders that leverage gauge information.",
+   "caveat": "in a circuit-level noise model",
+   "tools": [
+    "neural-network-based decoders",
+    "recurrent neural decoders",
+    "fully connected neural decoders",
+    "syndrome-measurement sequence"
+   ]
+  },
+  "seen": "2026-08-17",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.13654": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "Under depolarizing noise, heavy output probabilities can be greater than 0.5 while bipartite negativity entanglement is destroyed in quantum volume circuits.",
+   "so_what": "This implies a NISQ computer could pass the Quantum Volume benchmark test threshold of 2/3 without underlying global entanglement.",
+   "caveat": "for small $n$",
+   "tools": [
+    "numerical study",
+    "depolarizing noise model",
+    "bipartite negativity measure",
+    "heavy-output-probability (HOP)"
+   ]
+  },
+  "seen": "2026-08-17",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.14387": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Universal Hamiltonian Eigenvalue Transformation (UHET) can be interpreted as a (randomised) linearisation of Generalised Quantum Signal Processing (GQSP), leading to a new Universal Hamiltonian Singular Value Transformation (UHSVT).",
+   "so_what": "The new Universal Hamiltonian Singular Value Transformation (UHSVT) enables efficient transformation of singular values of any arbitrary matrix encoded in a Hamiltonian, relaxing conditions required by previous QSVT-based approaches.",
+   "caveat": "The algorithm requires the sole condition that the function f vanishes at the origin.",
+   "tools": [
+    "Quantum Signal Processing (QSP)",
+    "Quantum Singular Value Transformation (QSVT)",
+    "Universal Hamiltonian Eigenvalue Transformation (UHET)",
+    "Generalised QSP (GQSP)",
+    "Universal Hamiltonian Singular Value Transformation (UHSVT)"
+   ]
+  },
+  "seen": "2026-08-17",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.13862": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "New quantum algorithms for eigenvalue transforms achieve commutator scaling, lower circuit depth, and require only a single ancillary qubit.",
+   "so_what": "This method offers more resource-efficient quantum algorithms for applications like phase estimation, Green's function evaluation, and measurement distribution estimation.",
+   "caveat": "The method's significantly shallower circuit depths are confirmed in certain parameter regimes and its application is heuristic.",
+   "tools": [
+    "quantum algorithms",
+    "product formulae circuits",
+    "classical postprocessing",
+    "Richardson extrapolation"
+   ]
+  },
+  "seen": "2026-08-17",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.14169": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "Magnitude (attenuating) filters in quantum generative models do not create a quantum-classical separation.",
+   "so_what": "Researchers using spectral filtering for regularization in quantum generative models should note that magnitude filters do not provide a quantum-classical separation, with any such separation inherited from the spectral phase of the input state.",
+   "caveat": "The dichotomy for magnitude filters holds at a fixed affordability threshold.",
+   "tools": [
+    "spectral filtering",
+    "quantum generative models",
+    "quantum Fourier transform",
+    "circuit Born machines",
+    "numerical experiments"
+   ]
+  },
+  "seen": "2026-08-17",
+  "model": "gemini-2.5-flash",
+  "shape": 2
  }
 }
