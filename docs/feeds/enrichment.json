@@ -361,5 +361,98 @@
   "seen": "2026-08-18",
   "model": "gemini-2.5-flash",
   "shape": 2
+ },
+ "2608.14891": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A perturbative gauge-invariant parameterization for small Markovian errors in quantum gate sets is introduced.",
+   "so_what": "Researchers can now characterize small Markovian errors in quantum gate sets using a gauge-invariant parameterization, enabling physically relevant error metrics.",
+   "caveat": "for small Markovian errors and first-order gauge-invariant properties",
+   "tools": [
+    "transfer matrices",
+    "CPTP maps",
+    "superoperators",
+    "density matrix",
+    "quantum gate sets"
+   ]
+  },
+  "seen": "2026-08-18",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.14981": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Qudit-ADAPT-VQE with a counterdiabatic operator pool achieves higher accuracy and lower native gates implementation than fixed ansatz approaches.",
+   "so_what": "This method provides a scalable framework for variational quantum algorithms with qudits, suggesting robustness against barren plateau effects and enabling navigation of local optimization traps.",
+   "caveat": "",
+   "tools": [
+    "Qudit-ADAPT-VQE algorithm",
+    "counterdiabatic operator pool",
+    "adiabatic evolution",
+    "warm-start strategy",
+    "burrowing mechanism"
+   ]
+  },
+  "seen": "2026-08-18",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.15715": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Kraus-Parameterized Belief Reinforcement Learning achieves stable feedback control on a simulated qubit, maintaining a measurement-conditioned belief fidelity of approximately 0.77-0.80.",
+   "so_what": "Physics-informed neural memory provides a practical inductive bias for reliable quantum feedback control, leading to more stable control under measurement inefficiency and abrupt dynamics switches.",
+   "caveat": "Results were obtained on a simulated continuously monitored qubit.",
+   "tools": [
+    "Kraus-Parameterized Belief Reinforcement Learning",
+    "recurrent encoder",
+    "Stiefel manifold",
+    "Proximal Policy Optimization (PPO) actor",
+    "simulated continuously monitored qubit"
+   ]
+  },
+  "seen": "2026-08-18",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.16716": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "Longitudinal exchange in germanium spin qubits can be tuned from positive, through zero, to negative values via magnetic field orientation, enabling a single-pulse baseband iSWAP gate.",
+   "so_what": "This establishes native Hamiltonian engineering, allowing gate sets for quantum simulation and computation to be selected by global magnetic field orientation alone.",
+   "caveat": "The results were obtained using two hole spin qubits in a strained-germanium quantum well.",
+   "tools": [
+    "two hole spin qubits",
+    "strained-germanium quantum well",
+    "full vector magnetic field control",
+    "exchange tensor mapping"
+   ]
+  },
+  "seen": "2026-08-18",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.15993": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "An unheralded method narrows the median optical linewidth of T-centers in silicon p-i-n waveguides 3.5-fold to 0.57(11) GHz, with an optimized emitter reaching 128(22) MHz.",
+   "so_what": "This linewidth narrowing enables coherent optical Rabi oscillations and supports future device optimization for scalable quantum interconnects.",
+   "caveat": "The local electric field and charge-noise width were read out at 15 mK.",
+   "tools": [
+    "lateral p-i-n waveguides",
+    "above-band illumination",
+    "Stark-shift tuning",
+    "analytical model"
+   ]
+  },
+  "seen": "2026-08-18",
+  "model": "gemini-2.5-flash",
+  "shape": 2
  }
 }
