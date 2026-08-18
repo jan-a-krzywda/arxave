@@ -248,5 +248,118 @@
   "seen": "2026-08-17",
   "model": "gemini-2.5-flash",
   "shape": 2
+ },
+ "2608.15760": {
+  "fields": {
+   "verdict": "skim",
+   "kind": "review",
+   "headline": "A survey of machine learning approaches to decoding topological quantum codes focuses on architectural principles, practical performance, and real-time considerations.",
+   "so_what": "This survey consolidates current machine learning approaches for quantum error decoding, offering a framework for understanding their architectural principles and practical implications.",
+   "caveat": "",
+   "tools": [
+    "machine learning",
+    "neural networks",
+    "discriminative learning",
+    "generative learning",
+    "reinforcement learning"
+   ]
+  },
+  "seen": "2026-08-18",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.16857": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "A fault-tolerance theorem is proven for quantum computation against adversarial noise, constructing a circuit on $N=\\text{poly}(\\bar{N})$ physical qudits of depth $\\bar{T}\\cdot\\bar{N}^{o(1)}$ robust against $N^{1-o(1)}$ physical qudit corruptions at each time step.",
+   "so_what": "This demonstrates that fault-tolerant quantum computation is possible under global, worst-case, and non-Markovian noise models, countering concerns that correlated noise could undermine quantum fault tolerance.",
+   "caveat": "",
+   "tools": [
+    "subsystem product codes",
+    "Floquet-like procedure",
+    "local testability of classical tensor codes",
+    "repeated code switching",
+    "hypercubic qudit architecture"
+   ]
+  },
+  "seen": "2026-08-18",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.15963": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A new heuristic approach is proposed for constructing quantum circuits that are hard to classically simulate but efficiently verifiable classically.",
+   "so_what": "This work provides a new avenue toward classically verifiable quantum advantage, avoiding stringent implementation requirements of known approaches.",
+   "caveat": "The protocol is heuristic.",
+   "tools": [
+    "Clifford circuit obfuscation",
+    "quantum circuits",
+    "numerical evidence",
+    "theoretical evidence"
+   ]
+  },
+  "seen": "2026-08-18",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.15161": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A classical algorithm achieves a near-optimal time complexity of $\\mathcal{O}(d\\log d)$ for constructing block encodings of matrix polynomials of degree $d$.",
+   "so_what": "This algorithm provides a direct and stable method for constructing block encodings of matrix polynomials with near-optimal classical time complexity, benefiting quantum algorithm development.",
+   "caveat": "for Hermitian matrices",
+   "tools": [
+    "circuit compiling algorithm",
+    "block encoding",
+    "Hamiltonian simulation",
+    "quantum-state preparation techniques",
+    "interpolation-based QSP framework"
+   ]
+  },
+  "seen": "2026-08-18",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.16568": {
+  "fields": {
+   "verdict": "skim",
+   "kind": "review",
+   "headline": "Quantum computing may offer scientific advantage in chemistry, materials science, and biochemistry by treating correlated active spaces, improving excited-state simulations, and accelerating combinatorial structure space exploration.",
+   "so_what": "This analysis guides researchers on promising directions for quantum computing applications in chemistry, materials science, and biochemistry, emphasizing chemically meaningful gains.",
+   "caveat": "Usefulness claims must be tied to specific quantum computing regimes and demonstrate reduced uncertainty after accounting for full costs.",
+   "tools": [
+    "quantum computing",
+    "classical hardware",
+    "noisy physical devices",
+    "error-mitigated utility experiments",
+    "fault-tolerant quantum computers"
+   ]
+  },
+  "seen": "2026-08-18",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.15528": {
+  "fields": {
+   "verdict": "read",
+   "kind": "theory",
+   "headline": "New rigorous, practical, and global upper bounds and success-probability guarantees are provided for quantum parameter learning.",
+   "so_what": "These new bounds allow researchers to rule out unattainable precision and certify attainable precision beyond standard Fisher-information analysis or binary hypothesis testing, and to characterize learning scheme performance without explicit simulation.",
+   "caveat": "for single-shot quantum parameter learning",
+   "tools": [
+    "quantum metrology",
+    "single-shot quantum parameter learning",
+    "Fisher-information analysis",
+    "binary hypothesis testing",
+    "Rabi-frequency-learning example"
+   ]
+  },
+  "seen": "2026-08-18",
+  "model": "gemini-2.5-flash",
+  "shape": 2
  }
 }
