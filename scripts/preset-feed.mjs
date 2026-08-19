@@ -78,6 +78,106 @@ export function grade(stoneVector, rows) {
   return den > 0 ? num / den : 0;
 }
 
+/* ── The corpus centroid ──────────────────────────────────────────────────
+ *
+ * BYTE-IDENTICAL TO `CORPUS_CENTROID_B64` IN docs/assets/filter.js, and pinned
+ * to it by the parity test. The reasoning lives there; the short version is
+ * that SPECTER2's vectors sit in a cone whose axis carries no information
+ * about the paper, and subtracting it is what makes a cosine over them mean
+ * anything. Measured over 1241 warmed vectors, the axis accounts for 0.913 of
+ * every unit vector's length.
+ *
+ * This file has to carry it because it is the second implementation of the
+ * assay — the one this file's header already names as its standing risk. A
+ * feed grading in the raw space while the page grades in the centred one is
+ * exactly the silent divergence that header is about: both produce plausible
+ * numbers, neither throws, and the feed quietly recommends different papers.
+ *
+ * Re-measure with `node scripts/measure-centroid.mjs` and update BOTH files.
+ */
+const CORPUS_CENTROID_B64 =
+  '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';
+
+export const CORPUS_CENTROID = (() => {
+  const buf = Buffer.from(CORPUS_CENTROID_B64, 'base64');
+  return Array.from(new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4));
+})();
+
+/** L2-normalize a copy. */
+function normalize(v) {
+  let sum = 0;
+  for (const x of v) sum += x * x;
+  const n = Math.sqrt(sum);
+  if (!n || !Number.isFinite(n)) return Array.from(v);
+  return Array.from(v, (x) => x / n);
+}
+
+/**
+ * Out of the cone: subtract the corpus centroid and renormalize. The browser's
+ * `center()` in docs/assets/filter.js, verbatim — applied at the same point in
+ * the pipeline, to the stone vectors and the row vectors together, so that
+ * every cosine either side of the fence is taken in the same space.
+ */
+export function center(v) {
+  if (!v) return v;
+  const u = normalize(v);
+  for (let i = 0; i < u.length; i++) u[i] -= CORPUS_CENTROID[i];
+  return normalize(u);
+}
+
 const LABEL_MAX = 80;
 
 /**
@@ -267,6 +367,20 @@ export function tallyOf(items) {
  * tuned constants below refer to a raw cosine. Re-measure the tables when
  * convenient; do not re-tune `minZ`, `softZ` or `longZ` on the assumption that
  * the model change moved them, because it did not.
+ *
+ * THAT ARGUMENT WAS CHECKED, NOT JUST ASSERTED, when centring arrived. The
+ * grades it reads are now taken in the centred space, which is a change of
+ * both location and scale — precisely what median/MAD is meant to absorb.
+ * Measured 2026-08-19 over one 631-stone day, spin-qubits preset:
+ *
+ *                    grade spread   top-paper z   papers z>=2
+ *     raw                0.115          4.68          92
+ *     centred            0.560          5.46          98
+ *
+ * Five times the grade spread and the z barely moves, which is the invariance
+ * doing its job. So the bands stay where they are. What centring buys the feed
+ * is not a different cut but a defensible one: a z computed over a 0.115-wide
+ * grade window was dividing signal by a MAD of the same order as the noise.
  *
  * and the two above 2.5 were exactly the two a spin-qubit reader would want.
  * `maxItems` is a ceiling for an unusually rich day, not a target: a quiet day
@@ -548,9 +662,13 @@ async function main() {
 
     const vectors = await vectorize(
       stones.map((s) => s.abstract).concat(rows.map((r) => r.text)), endpoint, embedUrl);
-    const stoneVecs = vectors.slice(0, stones.length);
+    /* Centred here, once, before anything scores — the page does the same at
+       the same point (`state.A = vectors.map(center)`). `grade()` itself stays
+       verbatim: the transform is on the inputs, not in the blend, so the
+       function the fixtures pin is still the function the browser runs. */
+    const stoneVecs = vectors.slice(0, stones.length).map(center);
     const rowVecs = rows.map((r, i) => ({
-      weight: r.weight, vector: vectors[stones.length + i], label: rowLabel(r),
+      weight: r.weight, vector: center(vectors[stones.length + i]), label: rowLabel(r),
     }));
 
     const scored = stones.map((s, i) => ({
