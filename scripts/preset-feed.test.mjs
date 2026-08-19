@@ -11,9 +11,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import {
-  bandOf, bestRow, cosine, grade, renderFeed, rowLabel, selectItems, tallyOf,
-  xmlEscape,
+  bandOf, bestRow, center, CORPUS_CENTROID, cosine, grade, renderFeed, rowLabel,
+  selectItems, tallyOf, xmlEscape,
 } from './preset-feed.mjs';
 
 /* Orthonormal basis vectors make the cosines exactly 1, 0 or -1, so every
@@ -380,4 +384,58 @@ test('a label too long for one line is cut, not wrapped into the grade line', ()
   const long = { text: 'x'.repeat(200) };
   assert.equal(rowLabel(long).length, 80);
   assert.ok(rowLabel(long).endsWith('…'));
+});
+
+/* ── The centroid, and the two files that carry it ────────────────────────
+ *
+ * `center()` is the same class of hazard as `grade()` and worse: the page and
+ * the feed each hold their own copy of a 768-float constant, and a divergence
+ * between them is invisible from either side. Both would keep producing unit
+ * vectors, both would keep producing plausible cosines, and the feed would
+ * simply be reading a different space than the page — the failure mode this
+ * file's header exists for, one layer further down.
+ */
+test('the browser carries byte-identical centroid bytes', () => {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const js = fs.readFileSync(path.join(here, '..', 'docs', 'assets', 'filter.js'), 'utf8');
+  const mine = fs.readFileSync(path.join(here, 'preset-feed.mjs'), 'utf8');
+
+  /* Read the literal out of each file rather than importing it: the point is
+     that the *source* agrees, and a getter could paper over a difference. */
+  const literal = (src, where) => {
+    const at = src.indexOf('const CORPUS_CENTROID_B64 =');
+    assert.ok(at > 0, `CORPUS_CENTROID_B64 not found in ${where}`);
+    const end = src.indexOf(';', at);
+    return src.slice(at, end).match(/'([A-Za-z0-9+/=]+)'/g).join('');
+  };
+  assert.equal(literal(js, 'filter.js'), literal(mine, 'preset-feed.mjs'));
+});
+
+test('centering leaves a unit vector, and is not the identity', () => {
+  const v = Array.from({ length: 768 }, (_, i) => Math.sin(i));
+  const c = center(v);
+  const norm = Math.sqrt(c.reduce((s, x) => s + x * x, 0));
+  assert.ok(Math.abs(norm - 1) < 1e-9, `centred vector has norm ${norm}`);
+
+  /* The whole point is that it moves things. A centroid of zeros — the shape a
+     botched decode would produce — would leave every cosine exactly as it was
+     and this branch would be a no-op nobody noticed. */
+  const before = cosine(normalizeForTest(v), normalizeForTest(Array.from({ length: 768 }, (_, i) => Math.cos(i))));
+  const after = cosine(c, center(Array.from({ length: 768 }, (_, i) => Math.cos(i))));
+  assert.ok(Math.abs(before - after) > 1e-6, 'centering changed nothing');
+});
+
+function normalizeForTest(v) {
+  const n = Math.sqrt(v.reduce((s, x) => s + x * x, 0));
+  return v.map((x) => x / n);
+}
+
+/* The constant is a measurement, and a measurement can be truncated in a bad
+   paste. 768 floats, none of them NaN, and a norm near the 0.913 the script
+   reported — anything else means the literal is not what was measured. */
+test('the centroid decodes to a plausible measured direction', () => {
+  const norm = Math.sqrt(CORPUS_CENTROID.reduce((s, x) => s + x * x, 0));
+  assert.equal(CORPUS_CENTROID.length, 768);
+  assert.ok(CORPUS_CENTROID.every(Number.isFinite), 'centroid has a non-finite component');
+  assert.ok(norm > 0.85 && norm < 0.98, `centroid norm ${norm} is not the measured 0.913`);
 });

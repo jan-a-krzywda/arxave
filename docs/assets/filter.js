@@ -43,6 +43,108 @@
      (96, measured — see embed/index.ts). 64 sits well under it: the status line
      moves more often, a failure costs less re-work, and the margin absorbs a
      day of unusually long abstracts without anyone noticing. */
+  /* ── The corpus centroid ────────────────────────────────────────────
+   *
+   * SPECTER2's vectors do not spread over the sphere; they sit in a narrow
+   * cone. Measured 2026-08-19 over 1241 warmed vectors, the mean of the unit
+   * vectors has norm **0.913** — nine tenths of every vector is the same
+   * direction as every other vector, carrying nothing about the paper. Raw
+   * cosine reads that shared direction along with the signal, which is why
+   * every pair of arXiv abstracts scores in a narrow high band and the whole
+   * of what the model actually said is the ordering inside it.
+   *
+   *     pairwise cosine     p5      p50     p95    spread
+   *     raw                0.766   0.832   0.903   0.137
+   *     centered          -0.300  -0.030   0.385   0.685
+   *
+   * Five times the spread, from subtracting a constant. THIS IS NOT A
+   * RE-RANKING — the ordering barely moves, because the shared direction is
+   * shared. What it changes is whether anything downstream can *read* the
+   * ordering: a grade window of 0.115 and a threshold table crammed between
+   * 0.92 and 0.96 were both measuring signal a tenth the size of the offset
+   * sitting on top of it.
+   *
+   * A FIXED VECTOR, NOT THIS HAUL'S MEAN. Centering on the night's own stones
+   * would make a paper's grade depend on what else was announced that night,
+   * and two hauls of the same paper would disagree. The cached vector is keyed
+   * by text alone, so a haul-local transform would also put two geometries
+   * behind one cache key. Measured once, shipped as a literal, a stone's
+   * coordinates stay a property of the stone.
+   *
+   * Base64 float32, little-endian — the same encoding dig-cache uses for a
+   * vector, so it cannot pick up a rounding difference between the two files
+   * that carry it. BYTE-IDENTICAL TO `CORPUS_CENTROID` IN
+   * scripts/preset-feed.mjs, pinned by the parity test.
+   *
+   * RE-MEASURE WHEN THE PICK CHANGES — `node scripts/measure-centroid.mjs`.
+   * This is a property of `allenai/specter2_base` and nothing else. A
+   * different model's cone points somewhere else, and this constant would then
+   * subtract a direction that means nothing, silently, which is exactly how
+   * the threshold constants went wrong. */
+  const CORPUS_CENTROID_B64 =
+    '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';
+
+  /** Decoded once at load: base64 float32 → a plain Array of DIM numbers. */
+  const CORPUS_CENTROID = (function () {
+    var bin = atob(CORPUS_CENTROID_B64);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return Array.prototype.slice.call(new Float32Array(bytes.buffer));
+  })();
+
   const EMBED_CHUNK = 64;
   const CACHE_READ_CHUNK = 500;   // stays under dig-cache's MAX_SHAS
   const OPENALEX_MAILTO = 'arxiv-filter@example.com';
@@ -1254,6 +1356,26 @@
     return s;
   }
 
+  /**
+   * Move a vector out of SPECTER2's cone: subtract the corpus centroid, then
+   * renormalize so the result is a unit vector again and `cosine` still means
+   * cosine. See CORPUS_CENTROID.
+   *
+   * APPLIED ONCE, WHERE THE WORKING ARRAYS ARE BUILT — `state.A` in runHaul()
+   * and the rows in buildFeatureVectors() — and nowhere else. Not inside
+   * `cosine`, which the coupling map calls O(N²) times and which would then
+   * re-centre the same vector nine hundred times a row. Not at cache ingest
+   * either: `decodeVector` and the core-sample localStorage both hold what the
+   * model returned, so a re-measured centroid changes the reading of stored
+   * vectors rather than silently invalidating them.
+   */
+  function center(v) {
+    if (!v) return v;
+    var u = normalize(v.slice());
+    for (var i = 0; i < u.length; i++) u[i] -= CORPUS_CENTROID[i];
+    return normalize(u);
+  }
+
   function cosine(a, b) {
     var d = dot(a, b);
     // Defensive: re-normalize in case of drift
@@ -1261,8 +1383,13 @@
     for (var i = 0; i < a.length; i++) { na += a[i] * a[i]; nb += b[i] * b[i]; }
     na = Math.sqrt(na); nb = Math.sqrt(nb);
     if (na === 0 || nb === 0) return 0;
-    var cos = d / (na * nb);
-    return cos < 0 ? 0 : cos;
+    /* NO FLOOR AT ZERO. This used to `return cos < 0 ? 0 : cos`, which was
+       harmless while every vector sat in the cone — nothing was ever negative,
+       so the clamp never fired. Centred, the median pair scores about -0.03
+       and a p5 pair scores -0.30: roughly half of every coupling map is now
+       negative, and clamping would flatten "unrelated" and "opposite" into one
+       value, throwing away half the separation this branch just bought. */
+    return d / (na * nb);
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -1290,35 +1417,38 @@
   /* Edge threshold and minimum wagon size — shared by the matrix ordering
      and the graph view so both draw the same adjacency.
 
-     MEASURED, NOT CHOSEN. 0.75 came from `bge-small-en-v1.5` and was carried
-     over unexamined when the pick became SPECTER2; #68 flagged it as probably
-     wrong. It was not probably. SPECTER2 puts *every* pair of arXiv abstracts
-     in a high, narrow band, so 0.75 connects essentially everything.
+     MEASURED, NOT CHOSEN, AND MEASURED TWICE. 0.75 came from
+     `bge-small-en-v1.5` and was carried over unexamined when the pick became
+     SPECTER2. #73 re-measured it to 0.93 — correctly, for the space as it
+     then was, which was the raw uncentred one. These stones are centred now
+     (see CORPUS_CENTROID), so the numbers move again, and further than a
+     re-tune: the whole scale changed.
 
-     Measured 2026-08-17 over 906 warmed vectors, 60k random pairs — the null
-     distribution, i.e. what unrelated papers score:
+     Measured 2026-08-19 over one full announcement day — 631 stones across
+     quant-ph, cond-mat.mes-hall, cs.AI and cs.LG, WAGON_MIN_SIZE 3:
 
-         min 0.701 | p5 0.770 | p50 0.837 | p95 0.903 | p99 0.924 | max 0.964
+         RAW (what #73 measured)        CENTRED (this branch)
+         thresh wagons  in  largest     thresh wagons  in  largest
+          0.90       1  620     620      0.45       1  601     601
+          0.92       6  517     497      0.50       5  543     459
+          0.93      12  393     344      0.55      10  434     364
+          0.94      14  219     139      0.60      21  268     104
+          0.95      16   84      16      0.63      26  176      40   <- peak
+          0.96       2    7       4      0.68      14   50       8
 
-     Running the real clustering below over one day's haul (324 stones,
-     WAGON_MIN_SIZE 3) says the same thing far more plainly:
+     The peak moves from 16 wagons holding 84 stones to **26 wagons holding
+     176** — twice the night placed, and half again as many topics found. The
+     largest wagon is 40 rather than 16, which is not a regression: raw 0.95
+     bought its small blobs by leaving 87% of the night lone, and a train of
+     209 lone stones is what prompted this.
 
-         thresh   wagons   in wagons   largest
-          0.75         1         324       324   <- the entire night, one wagon
-          0.90         1         312       312
-          0.92         8         240       216   <- still one dominant blob
-          0.93         9         148        91   <- readable
-          0.94        11          75        40   <- readable, tighter
-          0.95         4          17         7   <- shattering
+     0.63 is the peak and the default. The readable band runs about 0.55-0.68;
+     below 0.50 it fuses, above 0.70 it shatters.
 
-     0.93 is the low edge of the readable band: about half the night lands in a
-     wagon and the largest holds a quarter of it. 0.94 is defensible and
-     stricter. Anything at or below 0.92 is one blob wearing a cluster's
-     clothes — and it does not look like an error, which is why this needed
-     measuring rather than eyeballing.
-
-     None of these numbers transfer if the pick changes again. Re-measure. */
-  var WAGON_THRESH = 0.93;
+     None of these numbers transfer if the pick or the centroid changes.
+     Re-measure — `node scripts/measure-centroid.mjs` reports the pair
+     distribution the sweep has to live inside. */
+  var WAGON_THRESH = 0.63;
   var WAGON_MIN_SIZE = 3;
 
   /** Count wagons ≥ WAGON_MIN_SIZE at one threshold, and how many stones they
@@ -1354,13 +1484,13 @@
    */
   function bestWagonThresh(S, N) {
     var best = WAGON_THRESH, bestWagons = -1, bestClustered = -1;
-    /* 0.80 to 0.99 in 0.005 steps. The old sweep ran 0.50-0.95 at 0.01, which
-       under SPECTER2 spent four fifths of its passes below the point where
-       anything separates and stopped just as the interesting band opened — the
-       peak measured at 0.94. The step matters as much as the range: 0.92 and
-       0.93 are one blob and nine wagons respectively, and 0.01 can straddle
-       that. */
-    for (var k = 160; k <= 198; k++) {
+    /* 0.40 to 0.75 in 0.005 steps — the centred band. The previous sweep ran
+       0.80-0.99, which in the centred space is entirely past the point where
+       the last wagon has already shattered: it would have returned its own
+       floor on every haul, silently, and the train would have looked broken
+       rather than mis-swept. The step stays 0.005 because the peak is sharp —
+       0.60 and 0.63 are 21 wagons and 26. */
+    for (var k = 80; k <= 150; k++) {
       var t = k / 200;
       var r = countWagons(S, N, t);
       if (r.wagons > bestWagons ||
@@ -2914,7 +3044,10 @@
           ? 'All ' + total + ' stones already cut — no cutting needed.'
           : 'Cutting ' + misses + ' of ' + total + ' stones...';
       });
-      state.A = vectors;
+      /* Centred here, once, and every cosine downstream reads the centred
+         space — the coupling map, the grades, the matrix cells. The cache and
+         `vectors` itself keep what the model returned. */
+      state.A = vectors.map(center);
       state.hauledFromCache = vectors.cached || 0;
 
       // Compute coupling map
@@ -3336,15 +3469,19 @@
     buildFeatureVectors();
   }
 
+  /* Feature rows are centred to match `state.A` — the two are compared against
+     each other and a raw row against a centred stone is a cosine between two
+     different spaces. The records keep their raw `.vector`: that is what the
+     claim was saved with and what the cache holds. */
   function buildFeatureVectors() {
     var rows = [];
     for (var ti = 0; ti < state.touchstones.length; ti++) {
       /* Always push — null for touchstones with no vector, so row indices stay
          aligned with getWeights() which reads every DOM row. */
-      rows.push(state.touchstones[ti].vector || null);
+      rows.push(state.touchstones[ti].vector ? center(state.touchstones[ti].vector) : null);
     }
     for (var ci = 0; ci < state.cores.length; ci++) {
-      rows.push(state.cores[ci].vector || null);
+      rows.push(state.cores[ci].vector ? center(state.cores[ci].vector) : null);
     }
     // Rush row: null (inactive)
     rows.push(null);
@@ -3404,17 +3541,46 @@
     state.order = indices;
   }
 
+  /* ── Ramp domains ──────────────────────────────────────────────────
+   *
+   * Both ramps used to map [0.5, 1], which was right for a raw cosine and is
+   * wrong for a centred one — and wrong in the way that hides itself. Every
+   * raw feature cosine landed in 0.78-0.90, i.e. norm 0.56-0.80, i.e. ramp
+   * steps 4 through 6 out of 7: the matrix came out a uniform sheet of gold
+   * whatever the paper, and the reader could not see a difference the numbers
+   * did contain.
+   *
+   * Measured 2026-08-19, centred, over one 631-stone day with the spin-qubits
+   * preset:
+   *
+   *     feature cosine   p5 -0.256   p50  0.014   p95 0.348   p99.9 0.641
+   *     blended grade    p5 -0.266   p50 -0.136   p95 0.294   max   0.465
+   *
+   * So 0.55 and 0.45 as the tops, and zero as the floor for both. Zero is the
+   * honest floor rather than the minimum: centred, a negative cosine means
+   * "points away from this feature", and there is no reader question that
+   * distinguishing -0.05 from -0.25 answers. Everything unrelated is one dark
+   * cell, and the ramp spends all seven of its steps on the range where papers
+   * actually differ.
+   *
+   * A CONSEQUENCE WORTH EXPECTING: on a night with nothing for your preset,
+   * the grade column is now mostly dark. That is the truth about the night,
+   * and it is the same class of thing as the train showing one wagon — the
+   * previous ramp reported every night as a good one. */
+  const ORE_MAX = 0.55;
+  const LAMP_MAX = 0.45;
+
   function getOreColor(val) {
-    // Map [0.5, 1] to ore ramp steps 0..7. Below 0.5 = step 0.
-    var norm = (val - 0.5) / 0.5;
+    // Map [0, ORE_MAX] to ore ramp steps 0..7. At or below 0 = step 0.
+    var norm = val / ORE_MAX;
     if (norm < 0) norm = 0; if (norm > 1) norm = 1;
     var idx = Math.round(norm * 7);
     return 'var(--ore-' + idx + ')';
   }
 
   function getLampColor(val) {
-    // Map [0.5, 1] to lamp ramp steps 0..6. Below 0.5 = step 0.
-    var norm = (val - 0.5) / 0.5;
+    // Map [0, LAMP_MAX] to lamp ramp steps 0..6. At or below 0 = step 0.
+    var norm = val / LAMP_MAX;
     if (norm < 0) norm = 0; if (norm > 1) norm = 1;
     var idx = Math.round(norm * 6);
     return 'var(--lamp-' + idx + ')';
