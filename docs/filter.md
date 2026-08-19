@@ -100,14 +100,15 @@ permalink: /
         </label>
         <label class="wagon-thresh-label" id="wagon-thresh-label">
           Threshold
-          <!-- Range and step are measured, not conventional. Under SPECTER2 every
-               pair of arXiv abstracts scores above ~0.70, so the whole span below
-               0.85 is one undifferentiated blob and was slider travel that did
-               nothing. The band that separates is 0.92-0.95, so the step is 0.005:
-               at 0.01 a single notch jumps one blob to nine wagons. See
-               WAGON_THRESH in assets/filter.js for the measurement. -->
-          <input type="range" id="wagon-thresh-slider" min="0.85" max="0.99" step="0.005" value="0.93">
-          <span id="wagon-thresh-value">0.93</span>
+          <!-- Range and step are measured, not conventional. The stones are
+               centred against the corpus centroid before any cosine, which moves
+               the whole scale down: pairs run about -0.30 to +0.39 rather than
+               0.77 to 0.90, and the band that separates is 0.55-0.68. The step
+               is 0.005 because the peak is sharp — 0.60 and 0.63 are 21 wagons
+               and 26. See CORPUS_CENTROID and WAGON_THRESH in assets/filter.js
+               for both measurements. -->
+          <input type="range" id="wagon-thresh-slider" min="0.40" max="0.80" step="0.005" value="0.63">
+          <span id="wagon-thresh-value">0.63</span>
         </label>
         <!-- Naming is on a button, not automatic: it calls a metered API, and
              the threshold slider re-forms the wagons on every nudge. Settle
@@ -345,18 +346,22 @@ permalink: /
     </div>
 
     <!-- Legend -->
+    <!-- The ends are the ramp domains, not 0..1: a centred cosine tops out
+         well below 1, and labelling the bar 0..1 would say the brightest cell
+         on the page was a perfect match when it was about 0.55. See ORE_MAX
+         and LAMP_MAX in assets/filter.js. -->
     <div class="assay-legends" id="assay-legends">
       <div class="scale-legend" id="ore-legend">
         <span class="legend-label">Feature cells</span>
         <div class="scale-bar ore-scale"></div>
         <span class="legend-end">0</span>
-        <span class="legend-end">1</span>
+        <span class="legend-end">0.55</span>
       </div>
       <div class="scale-legend" id="lamp-legend">
         <span class="legend-label">Grade</span>
         <div class="scale-bar lamp-scale"></div>
         <span class="legend-end">0</span>
-        <span class="legend-end">1</span>
+        <span class="legend-end">0.45</span>
       </div>
     </div>
 
