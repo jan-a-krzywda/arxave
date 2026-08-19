@@ -566,5 +566,96 @@
   "seen": "2026-08-19",
   "model": "gemini-2.5-flash",
   "shape": 2
+ },
+ "2608.17846": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "A new Clifford+$T$ quantum circuit construction achieves a worst-case T-count with leading exponential scaling of $2^{5n/4}$ for general unitary synthesis, improving upon the previous $2^{4n/3}$ scaling.",
+   "so_what": "This result significantly improves the efficiency of synthesizing arbitrary $n$-qubit unitaries in fault-tolerant quantum compilation.",
+   "caveat": "The unitary is approximately implemented to within error $ε$ whenever $\\log(1/ε)=\\operatorname{poly}(n)$.",
+   "tools": [
+    "Clifford+$T$ quantum circuit construction",
+    "block-encoded object",
+    "block flattening",
+    "quantum singular value transformation"
+   ]
+  },
+  "seen": "2026-08-19",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.17582": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A reinforcement-learning framework, AutoQSense, learns quantum circuit architectures that outperform fixed hardware-efficient ansätze using fewer entangling gates.",
+   "so_what": "This framework offers a resource-aware approach to designing adaptive and hardware-compatible quantum sensing circuits, potentially improving precision and efficiency.",
+   "caveat": "Results are based on numerical simulations.",
+   "tools": [
+    "reinforcement learning framework",
+    "Fisher-information-based objectives",
+    "single agent",
+    "subsystem agents",
+    "budgeted agent"
+   ]
+  },
+  "seen": "2026-08-19",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.17020": {
+  "fields": {
+   "verdict": "skim",
+   "kind": "review",
+   "headline": "Superconducting circuits are reviewed as general-purpose quantum laboratories, unifying their capabilities across condensed matter, high energy, and quantum information sciences.",
+   "so_what": "This review unifies the diverse applications and technical evolution of superconducting circuits, providing a comprehensive overview for researchers across multiple quantum science domains.",
+   "caveat": "",
+   "tools": [
+    "superconducting circuits",
+    "superconducting quantum hardware"
+   ]
+  },
+  "seen": "2026-08-19",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.17040": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A local drive activates chirality-changing transitions, providing direct access to the chiral orbital magnetic moment.",
+   "so_what": "This method enables direct measurement of the chiral orbital magnetic moment, which has previously eluded direct measurement.",
+   "caveat": "demonstrated through Lindblad simulations",
+   "tools": [
+    "local spin addressability",
+    "electron spin resonance",
+    "scanning tunneling microscope",
+    "donor spins in silicon",
+    "quantum-dot spin qubits"
+   ]
+  },
+  "seen": "2026-08-19",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.17789": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "Magnetic quantum phase crossovers, including rung-singlet, canted antiferromagnetic, and fully polarized phases, were observed in a half-filled germanium quantum dot array.",
+   "so_what": "This establishes germanium quantum dot arrays as a controllable platform for quantum magnetism, opening routes to investigate unconventional superconductivity in doped ladders.",
+   "caveat": "The observations of higher-order spin correlators were made despite the finite size of the ladder.",
+   "tools": [
+    "germanium quantum dot array",
+    "programmable Heisenberg spin ladder",
+    "Hamiltonian-learning protocols",
+    "equilibrium measurements",
+    "dynamical measurements"
+   ]
+  },
+  "seen": "2026-08-19",
+  "model": "gemini-2.5-flash",
+  "shape": 2
  }
 }
