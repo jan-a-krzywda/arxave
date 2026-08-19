@@ -454,5 +454,117 @@
   "seen": "2026-08-18",
   "model": "gemini-2.5-flash",
   "shape": 2
+ },
+ "2608.17023": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "The Park-n-Ride system enables resource-efficient, high-throughput execution of bivariate bicycle codes on neutral-atom arrays.",
+   "so_what": "This system offers a practical path to implement resource-efficient, high-throughput quantum error correction using bivariate bicycle codes on reconfigurable neutral-atom arrays.",
+   "caveat": "",
+   "tools": [
+    "Park-n-Ride system",
+    "bivariate bicycle codes",
+    "neutral-atom arrays",
+    "hardware-aware compilation",
+    "zoned architectures"
+   ]
+  },
+  "seen": "2026-08-19",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.17870": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Chameleon, a new Clifford deformation compiler, reduces classical computational time from 1.2 days to 3.1 minutes for the BB72 code and achieves maximum logical error rate reductions of 19% for surface codes.",
+   "so_what": "This makes computationally efficient and effective Clifford deformation practical for fault-tolerant quantum computing systems with non-uniform biased noise.",
+   "caveat": "Evaluated using calibration models derived from real superconducting devices, with maximum gains observed on the most strongly biased system.",
+   "tools": [
+    "Chameleon compiler",
+    "Clifford deformation",
+    "analytical LER bound approximation",
+    "calibration models from superconducting devices"
+   ]
+  },
+  "seen": "2026-08-19",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.17136": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "Gate-level implementation of Lackadaisical Quantum Walk Search on $8\\times8$ to $64\\times64$ grids requires 9 to 15 qubits, $3.63\\times10^{5}$ to $4.38\\times10^{6}$ transpiled gates, and $2.13\\times10^{5}$ to $2.56\\times10^{6}$ circuit depth.",
+   "so_what": "This provides concrete resource requirements and practical feasibility insights for implementing Lackadaisical Quantum Walk Search on quantum hardware, addressing a previously unexplored area.",
+   "caveat": "The resource estimates are for grids ranging from $8\\times8$ to $64\\times64$ and fault-tolerant estimates use a surface-code model.",
+   "tools": [
+    "gate-level implementation framework",
+    "qubit registers",
+    "superconducting hardware's noise models",
+    "noise-mitigation techniques",
+    "Microsoft Quantum Resource Estimator"
+   ]
+  },
+  "seen": "2026-08-19",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.17495": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "The amplitude-inspired feature map maintained 100% test accuracy up to an error probability of p = 0.10 across depolarizing, bit-flip, and phase-flip noise channels.",
+   "so_what": "Practitioners can use these results to select more robust feature maps for Quantum Support Vector Machines on Noisy Intermediate-Scale Quantum hardware.",
+   "caveat": "Results were obtained in 52 controlled experiments with error probabilities p = 0.01, 0.05, 0.10, and 0.50.",
+   "tools": [
+    "Z feature map",
+    "ZZ feature map",
+    "Pauli feature map",
+    "amplitude-inspired feature map",
+    "depolarizing noise channel"
+   ]
+  },
+  "seen": "2026-08-19",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.17005": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A new black-box certification protocol achieved a $\\sqrt{\\mathrm{X}}$-gate fidelity certificate of $99.94(3)\\%$ with $99\\%$ confidence.",
+   "so_what": "This protocol enables sound and efficient certification of high-quality quantum gates even with dominant state-preparation and measurement errors, without requiring trusted reference operations.",
+   "caveat": "achieved using $22\\,000$ circuit executions on a $^{40}\\mathrm{Ca}^{+}$ trapped-ion processor.",
+   "tools": [
+    "black-box certification protocol",
+    "fixed deterministic sequences",
+    "rotation eigenvalue analysis",
+    "average gate-fidelity lower bound",
+    "$^{40}\\mathrm{Ca}^{+}$ trapped-ion processor"
+   ]
+  },
+  "seen": "2026-08-19",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.17331": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "Near-floor entangling-zone spacing in neutral-atom processors can produce structured correlated residual van der Waals coupling visible after quantum error correction.",
+   "so_what": "Compilers for neutral-atom processors must consider entangling-zone spacing as a cross-layer reliability-parallelism variable, balancing physical geometry, QEC absorption, and scheduling cost.",
+   "caveat": "results obtained via fixed-schedule residual replay and surface-code simulation.",
+   "tools": [
+    "fixed-schedule residual replay",
+    "surface-code simulation",
+    "matched correlated decoding",
+    "fresh recompilation"
+   ]
+  },
+  "seen": "2026-08-19",
+  "model": "gemini-2.5-flash",
+  "shape": 2
  }
 }
