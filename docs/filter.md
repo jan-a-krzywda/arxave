@@ -358,7 +358,9 @@ permalink: /
     <!-- The ends are the ramp domains, not 0..1: a centred cosine tops out
          well below 1, and labelling the bar 0..1 would say the brightest cell
          on the page was a perfect match when it was about 0.55. See ORE_MAX
-         and LAMP_MAX in assets/filter.js. -->
+         in assets/filter.js. The grade ends are filled in per render — that
+         ramp measures the night it is drawing (lampDomain there) — so the
+         numbers below are only a placeholder until the first assay. -->
     <div class="assay-legends" id="assay-legends">
       <div class="scale-legend" id="ore-legend">
         <span class="legend-label">Feature cells</span>
@@ -369,8 +371,8 @@ permalink: /
       <div class="scale-legend" id="lamp-legend">
         <span class="legend-label">Grade</span>
         <div class="scale-bar lamp-scale"></div>
-        <span class="legend-end">0</span>
-        <span class="legend-end">0.45</span>
+        <span class="legend-end" id="lamp-legend-lo">0</span>
+        <span class="legend-end" id="lamp-legend-hi">0.45</span>
       </div>
     </div>
 

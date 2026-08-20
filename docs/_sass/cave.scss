@@ -45,14 +45,26 @@
   --ore-7: #f5b301;
 
   /* ── LAMP ramp (blue, for grade row only) ───────────────────── */
-  /* 7 steps, sequential, validated against surface #1b1f26 (dark mode) */
-  --lamp-0: #1e242e;
-  --lamp-1: #2c3b57;
-  --lamp-2: #355184;
-  --lamp-3: #3e66aa;
-  --lamp-4: #5080c8;
-  --lamp-5: #7aa2f7;
-  --lamp-6: #a8c3fb;
+  /* 11 steps, sequential, validated against surface #1b1f26 (dark mode).
+     Generated in OKLCH: lightness climbs ~0.064 per step, so every pair of
+     adjacent steps is about equally far apart to the eye — the 7-step ramp this
+     replaces spent its top four steps inside a much smaller lightness range,
+     which is where a grade row lands, so neighbouring grades came out the same
+     colour. Chroma arcs: near-neutral at the floor, so "nothing here" recedes
+     into rock, brightest in the middle where papers actually differ.
+     Step count is the ramp's own business — how a grade maps onto it is
+     getLampColor/lampDomain in assets/filter.js. */
+  --lamp-0: #252930;
+  --lamp-1: #273956;
+  --lamp-2: #2a4a79;
+  --lamp-3: #2f5b9a;
+  --lamp-4: #376db7;
+  --lamp-5: #4481d1;
+  --lamp-6: #5595e6;
+  --lamp-7: #6caaf6;
+  --lamp-8: #88bfff;
+  --lamp-9: #a8d4ff;
+  --lamp-10: #cce8ff;
 }
 
 /* ── Page shell ───────────────────────────────────────────────── */

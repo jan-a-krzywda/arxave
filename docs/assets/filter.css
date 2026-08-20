@@ -1426,7 +1426,8 @@ progress::-moz-progress-bar {
 .lamp-scale {
   background: linear-gradient(to right,
     var(--lamp-0), var(--lamp-1), var(--lamp-2), var(--lamp-3),
-    var(--lamp-4), var(--lamp-5), var(--lamp-6));
+    var(--lamp-4), var(--lamp-5), var(--lamp-6), var(--lamp-7),
+    var(--lamp-8), var(--lamp-9), var(--lamp-10));
 }
 
 /* ── Table view ───────────────────────────────────────────────── */
