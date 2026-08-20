@@ -1457,7 +1457,7 @@
   function countWagons(S, N, thresh) {
     var seen = new Uint8Array(N);
     var stack = new Int32Array(N);
-    var wagons = 0, clustered = 0;
+    var wagons = 0, clustered = 0, largest = 0;
     for (var i = 0; i < N; i++) {
       if (seen[i]) continue;
       var top = 0, size = 0;
@@ -1472,8 +1472,12 @@
         }
       }
       if (size >= WAGON_MIN_SIZE) { wagons++; clustered += size; }
+      /* The biggest component, counted whether or not it is a wagon, because
+         the thing this guards against is one component swallowing the night —
+         and at a low threshold that component is the only one there is. */
+      if (size > largest) largest = size;
     }
-    return { wagons: wagons, clustered: clustered };
+    return { wagons: wagons, clustered: clustered, largest: largest };
   }
 
   /**
@@ -1482,23 +1486,68 @@
    * lone — the count peaks in between, and that peak is the interesting cut.
    * Ties go to the threshold that leaves more stones inside a wagon.
    */
+  /* No wagon may hold more than this share of the night, and the reason is a
+     property of the clustering rather than of the data.
+
+     WAGON COUNT ALONE IS THE WRONG OBJECTIVE. Wagons are connected components
+     under single linkage, so one stone sitting between two topics joins them:
+     A-B-C is one wagon even when A and C have nothing to do with each other.
+     Chaining like that does not reduce the wagon *count* — it produces one
+     swollen component alongside all the genuine small ones — so a sweep that
+     maximises the count actively prefers the threshold just before the blob
+     breaks up. It was choosing the blob on purpose.
+
+     Measured 2026-08-20 over one announcement day, 336 stones across the four
+     warmed categories:
+
+         objective                        thresh  wagons  clustered  largest
+         max wagons (what shipped)         0.565      13        176      104   <- 31% of the night
+         max wagons, largest <= 20%        0.615      13         88       17   <-  5%
+
+     Same thirteen wagons, and the blob is gone. It costs coverage — 88 stones
+     placed rather than 176 — which is the honest trade: the 88 extra were
+     never really in that wagon, they were chained into it.
+
+     20% BECAUSE IT IS A NO-OP WHEN NOTHING IS WRONG. The previous day's haul
+     (631 stones, largest wagon 6% of the night) picks exactly the threshold it
+     picked before, as does a cs.AI-only scout. The cap only speaks when one
+     component has swallowed the night, which is the only case anyone wanted it
+     to speak in.
+
+     The floor of 12 keeps it quiet on small hauls, where 20% is a handful of
+     stones and every threshold would fail it. If nothing clears the cap the
+     sweep falls back to the uncapped answer — a blob is a bad train, but no
+     train at all is worse. */
+  var WAGON_MAX_SHARE = 0.20;
+  var WAGON_MAX_SHARE_FLOOR = 12;
+
   function bestWagonThresh(S, N) {
-    var best = WAGON_THRESH, bestWagons = -1, bestClustered = -1;
     /* 0.40 to 0.75 in 0.005 steps — the centred band. The previous sweep ran
        0.80-0.99, which in the centred space is entirely past the point where
        the last wagon has already shattered: it would have returned its own
        floor on every haul, silently, and the train would have looked broken
        rather than mis-swept. The step stays 0.005 because the peak is sharp —
        0.60 and 0.63 are 21 wagons and 26. */
+    var cap = Math.max(WAGON_MAX_SHARE_FLOOR, Math.round(WAGON_MAX_SHARE * N));
+    var best = -1, bestWagons = -1, bestClustered = -1;
+    var loose = WAGON_THRESH, looseWagons = -1, looseClustered = -1;
+
     for (var k = 80; k <= 150; k++) {
       var t = k / 200;
       var r = countWagons(S, N, t);
+      /* Tracked in parallel rather than in a second sweep: countWagons is the
+         expensive part and this way it runs once per threshold, not twice. */
+      if (r.wagons > looseWagons ||
+          (r.wagons === looseWagons && r.clustered > looseClustered)) {
+        loose = t; looseWagons = r.wagons; looseClustered = r.clustered;
+      }
+      if (r.largest > cap) continue;
       if (r.wagons > bestWagons ||
           (r.wagons === bestWagons && r.clustered > bestClustered)) {
         best = t; bestWagons = r.wagons; bestClustered = r.clustered;
       }
     }
-    return best;
+    return best >= 0 ? best : loose;
   }
 
   /**
