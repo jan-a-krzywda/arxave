@@ -286,6 +286,38 @@ permalink: /
         </label>
         <span class="gate-readout" id="gate-readout" role="status"></span>
       </div>
+      <!-- The three-line pick. Same five numbers as the advanced grid below,
+           just handed over as a stance instead of a spreadsheet — someone who
+           has never heard of a z-score can still say whether they want only
+           the sure things, a middle load, or nothing missed. Clicking one
+           writes the five fields below it; typing in those fields is what
+           breaks a stance back into numbers, and the pick shows no highlight
+           once it no longer matches any of the three. -->
+      <div class="gate-presets" role="group" aria-label="Pick a stance">
+        <button type="button" class="gate-preset" id="gate-preset-shiny" data-preset="shiny">
+          <span class="gate-gem gate-gem-diamond" aria-hidden="true"></span>
+          <span class="gate-preset-text">
+            <span class="gate-preset-name">Most shiny ones</span>
+            <span class="gate-preset-sub">only the sure things — small, hard cut</span>
+          </span>
+        </button>
+        <div class="gate-preset-sep"><span class="gate-gem gate-gem-diamond" aria-hidden="true"></span></div>
+        <button type="button" class="gate-preset" id="gate-preset-carry" data-preset="carry">
+          <span class="gate-gem gate-gem-gold" aria-hidden="true"></span>
+          <span class="gate-preset-text">
+            <span class="gate-preset-name">Reasonable carry</span>
+            <span class="gate-preset-sub">the default balance</span>
+          </span>
+        </button>
+        <div class="gate-preset-sep"><span class="gate-gem gate-gem-gold" aria-hidden="true"></span></div>
+        <button type="button" class="gate-preset" id="gate-preset-any" data-preset="any">
+          <span class="gate-gem gate-gem-copper" aria-hidden="true"></span>
+          <span class="gate-preset-text">
+            <span class="gate-preset-name">Do not miss any</span>
+            <span class="gate-preset-sub">loose lines, floor fills the night's load</span>
+          </span>
+        </button>
+      </div>
       <details class="gate-adv">
         <summary>Where the lines fall <span class="sub">— the three bands and the floor</span></summary>
         <p class="hint">
