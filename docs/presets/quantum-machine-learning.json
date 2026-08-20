@@ -3,19 +3,21 @@
   "preset": "quantum-machine-learning",
   "name": "Quantum machine learning",
   "blurb": "Variational circuits, quantum kernels, and the question of whether any of it beats a laptop.",
-  "saved": "2026-08-13",
+  "saved": "2026-08-20",
   "scout": {
     "categories": "quant-ph",
     "lookback_days": 1,
     "max_results": 200
   },
   "touchstones": [
-    { "text": "variational quantum circuits as trainable models", "weight": 1.0 },
+    { "text": "variational quantum circuits trained on data for classification or regression", "weight": 1.0 },
     { "text": "quantum kernels and feature maps for classification", "weight": 1.0 },
     { "text": "barren plateaus and trainability of parameterized circuits", "weight": 1.0 },
     { "text": "data encoding and the expressivity of quantum models", "weight": 0.8 },
     { "text": "classical shadows and learning from quantum measurements", "weight": 0.8 },
-    { "text": "dequantization and classical simulation of quantum learning claims", "weight": 0.6 }
+    { "text": "dequantization and classical simulation of quantum learning claims", "weight": 0.6 },
+    { "text": "interpretable quantum machine learning with logic-gate or clause-based classifiers, e.g. quantum Tsetlin machines", "weight": 0.8 },
+    { "text": "quantum machine learning models built from interference and oracle algorithms, e.g. Bernstein-Vazirani-style learning networks", "weight": 0.8 }
   ],
   "cores": [
     { "doi": "10.1038/ncomms5213", "weight": 1.0 },
