@@ -360,6 +360,18 @@
      handle the rest. */
   const LOAD_MAX = 25;
 
+  /* The three-line pick, in the same five numbers the advanced grid edits.
+     `null` on min_items means "fill to the ceiling" rather than a fixed
+     count, since the ceiling itself moves with the load slider. */
+  const GATE_PRESETS = {
+    shiny: { min_z: 3.0, soft_z: 2.5, long_z: 1.5, min_items: 0 },
+    carry: {
+      min_z: GATE_DEFAULTS.min_z, soft_z: GATE_DEFAULTS.soft_z,
+      long_z: GATE_DEFAULTS.long_z, min_items: GATE_DEFAULTS.min_items,
+    },
+    any: { min_z: 1.5, soft_z: 1.0, long_z: 0.0, min_items: null },
+  };
+
   /* The three bands, mirroring BAND_LABEL in scripts/preset-feed.mjs. Slugs are
      shared with docs/feeds/feed.xsl, so a band means the same thing on the page,
      in a report, and in a browser looking at the raw feed. */
@@ -3898,6 +3910,46 @@
     if (byId('gate-load')) byId('gate-load').value = Math.min(s.max_items, LOAD_MAX);
     if (byId('gate-strict')) byId('gate-strict').checked = s.min_items === 0;
     renderLoadLabel();
+    renderGatePresets();
+  }
+
+  /* Which of the three lines, if any, the numbers on screen currently match.
+     Typing a field by hand is what breaks the match — there is no fourth
+     "custom" button, the highlight just goes dark, same as a save slot with
+     unsaved edits. */
+  function currentGatePreset() {
+    var s = state.select;
+    for (var name in GATE_PRESETS) {
+      var p = GATE_PRESETS[name];
+      var minItems = p.min_items === null ? s.max_items : p.min_items;
+      if (s.min_z === p.min_z && s.soft_z === p.soft_z &&
+          s.long_z === p.long_z && s.min_items === minItems) {
+        return name;
+      }
+    }
+    return null;
+  }
+
+  function renderGatePresets() {
+    var active = currentGatePreset();
+    for (var name in GATE_PRESETS) {
+      var btn = byId('gate-preset-' + name);
+      if (btn) btn.classList.toggle('is-active', name === active);
+    }
+  }
+
+  function applyGatePreset(name) {
+    var p = GATE_PRESETS[name];
+    if (!p) return;
+    state.select.min_z = p.min_z;
+    state.select.soft_z = p.soft_z;
+    state.select.long_z = p.long_z;
+    state.select.min_items = p.min_items === null
+      ? state.select.max_items : p.min_items;
+    state.select = parseSelect(state.select);
+    renderGateInputs();
+    autosave();
+    if (state.order !== null) renderAssay(); else renderGate();
   }
 
   /* The slider tops out below the ceiling's own limit, so a claim carrying a
@@ -5231,6 +5283,12 @@
   wireGateControl('gate-min-items', function (v) { state.select.min_items = parseInt(v, 10); });
   wireGateControl('gate-soft-z', function (v) { state.select.soft_z = parseFloat(v); });
   wireGateControl('gate-long-z', function (v) { state.select.long_z = parseFloat(v); });
+  for (var gatePresetName in GATE_PRESETS) {
+    (function (name) {
+      var btn = byId('gate-preset-' + name);
+      if (btn) btn.addEventListener('click', function () { applyGatePreset(name); });
+    })(gatePresetName);
+  }
 
   /* The report's own controls. Changing the source only re-counts — building is
      the button, because a report is something you asked for. */
