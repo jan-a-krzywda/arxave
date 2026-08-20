@@ -3179,7 +3179,7 @@
 
       // Compute coupling map
       statusEl.textContent = 'Computing coupling map...';
-      var S = computeWagonMap(vectors);
+      var S = computeWagonMap(state.A);
       state.wagonMap = S;
 
       // Start from the threshold that splits this haul into the most wagons,
