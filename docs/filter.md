@@ -100,24 +100,17 @@ permalink: /
         </label>
         <label class="wagon-thresh-label" id="wagon-thresh-label">
           Threshold
-          <!-- Range and step are measured, not conventional. The stones are
-               centred against the corpus centroid before any cosine, which moves
-               the whole scale down: pairs run about -0.30 to +0.39 rather than
-               0.77 to 0.90, and the band that separates is 0.55-0.68. The step
-               is 0.005 because the peak is sharp — 0.60 and 0.63 are 21 wagons
-               and 26. See CORPUS_CENTROID and WAGON_THRESH in assets/filter.js
-               for both measurements.
-
-               The floor is 0.30 rather than 0.40 so the fused end is reachable
-               and visibly fused. It was 0.40, which is not far enough down to
-               *look* like a floor: a day that fuses at 0.40 (measured, 329 of
-               336 stones in one component) leaves you pushing at the end of the
-               travel with nothing happening, which reads as a stuck control
-               rather than as the bottom of the range. Below ~0.45 the night is
-               one wagon on any day — that is the honest shape of the space, and
-               the slider should be able to show it. -->
-          <input type="range" id="wagon-thresh-slider" min="0.30" max="0.80" step="0.005" value="0.63">
-          <span id="wagon-thresh-value">0.63</span>
+          <!-- Range and step are measured, not conventional. Wagons are
+               average-linkage groups over centred vectors, so the slider is a
+               cut on mean similarity between groups — not an edge weight
+               between two papers, and not on the same scale as either of the
+               numbers this control carried before. Measured band is 0.35-0.55;
+               below 0.25 groups swallow each other, above 0.60 they crumble.
+               The range is a little wider than the band so both ends are
+               visibly ends. See WAGON_THRESH and buildDendrogram in
+               assets/filter.js for the measurements. -->
+          <input type="range" id="wagon-thresh-slider" min="0.20" max="0.70" step="0.005" value="0.46">
+          <span id="wagon-thresh-value">0.46</span>
         </label>
         <!-- Naming is on a button, not automatic: it calls a metered API, and
              the threshold slider re-forms the wagons on every nudge. Settle
