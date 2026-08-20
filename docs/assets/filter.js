@@ -285,6 +285,7 @@
     featureVectors: null,   // [k × d] row-major, unit vectors
     /* featureVectors rows are: touchstones[0..kk-1], then cores[0..kp-1], then rush (null) */
     grades: null,           // [N] blended scores
+    lampDomain: null,       // {lo, hi} for the grade ramp, measured per render
     order: null,            // [N] indices into stones, sorted by grade desc
     wagonOrder: null,        // [N] indices into stones, sorted by cluster
     wagonMap: null,          // [N×N] cosine matrix (upper triangle populated)
@@ -3605,17 +3606,20 @@
    *     feature cosine   p5 -0.256   p50  0.014   p95 0.348   p99.9 0.641
    *     blended grade    p5 -0.266   p50 -0.136   p95 0.294   max   0.465
    *
-   * So 0.55 and 0.45 as the tops, and zero as the floor for both. Zero is the
-   * honest floor rather than the minimum: centred, a negative cosine means
-   * "points away from this feature", and there is no reader question that
-   * distinguishing -0.05 from -0.25 answers. Everything unrelated is one dark
-   * cell, and the ramp spends all seven of its steps on the range where papers
-   * actually differ.
+   * So 0.55 as the feature ramp's top, and zero as its floor. Zero is the honest
+   * floor rather than the minimum: centred, a negative cosine means "points away
+   * from this feature", and there is no reader question that distinguishing
+   * -0.05 from -0.25 answers. Everything unrelated is one dark cell, and the
+   * ramp spends all seven of its steps on the range where papers actually differ.
    *
-   * A CONSEQUENCE WORTH EXPECTING: on a night with nothing for your preset,
-   * the grade column is now mostly dark. That is the truth about the night,
-   * and it is the same class of thing as the train showing one wagon — the
-   * previous ramp reported every night as a good one. */
+   * LAMP_MAX is the same idea for grades, and is now only the fallback top: the
+   * grade ramp measures its domain per night, for the reason set out above
+   * getLampColor. A fixed [0, 0.45] there flattened the whole row.
+   *
+   * A CONSEQUENCE WORTH EXPECTING: on a night with nothing for your preset, the
+   * feature cells are mostly dark. That is the truth about the night, and it is
+   * the same class of thing as the train showing one wagon — the previous ramp
+   * reported every night as a good one. */
   const ORE_MAX = 0.55;
   const LAMP_MAX = 0.45;
 
@@ -3627,12 +3631,62 @@
     return 'var(--ore-' + idx + ')';
   }
 
-  function getLampColor(val) {
-    // Map [0, LAMP_MAX] to lamp ramp steps 0..6. At or below 0 = step 0.
-    var norm = val / LAMP_MAX;
+  /* ── The grade ramp reads the night, the feature ramp does not ─────
+   *
+   * A grade is a weighted MEAN of the feature cosines, and a mean of a dozen
+   * features has nothing like the spread of any one of them: averaging pulls
+   * every stone toward the middle. Handing the grade row a domain the width of
+   * the feature ramp's therefore spent almost all of its steps on values no
+   * paper ever takes, and the whole row landed inside one or two adjacent
+   * steps — a flat blue bar that said nothing, whatever the numbers underneath
+   * it did. This was visible as a grade row of one colour while the feature
+   * cells above it were plainly varied.
+   *
+   * So the grade ramp's domain is measured per render: the fifth percentile of
+   * tonight's grades to the best of them, which is where the row's variation
+   * actually lives. The two guards keep that from becoming a lie:
+   *
+   *   - LAMP_MIN_SPAN, a noise floor. A night whose grades all sit within a hair
+   *     of each other has no structure in this row, and stretching a 0.002
+   *     spread across eleven steps would draw eleven steps of noise. Under the
+   *     floor the row falls back to the absolute [0, LAMP_MAX] domain and reads
+   *     flat, at whatever level those grades actually are.
+   *   - The legend prints the computed ends (renderLampLegend), so the bar is
+   *     always labelled with the numbers it is actually showing. Colour here is
+   *     structure within one night; the absolute judgement — is any of this
+   *     worth shipping — is the gate's z line above, which does not move.
+   */
+  const LAMP_MIN_SPAN = 0.03;
+
+  /** Domain for the grade ramp, measured over tonight's grades. */
+  function lampDomain(grades) {
+    if (!grades || grades.length === 0) return { lo: 0, hi: LAMP_MAX };
+    var sorted = Array.prototype.slice.call(grades).sort(function (a, b) { return a - b; });
+    var lo = sorted[Math.floor(0.05 * (sorted.length - 1))];
+    var hi = sorted[sorted.length - 1];
+    /* Too narrow to be structure — hand the row back to the absolute domain, so
+       a night of identical grades reads at the level those grades actually are
+       rather than being stretched into a rainbow, or parked at the middle of a
+       ramp it never earned. */
+    if (!(hi - lo >= LAMP_MIN_SPAN)) return { lo: 0, hi: LAMP_MAX };
+    return { lo: lo, hi: hi };
+  }
+
+  function getLampColor(val, dom) {
+    // Map [dom.lo, dom.hi] to lamp ramp steps 0..10. At or below lo = step 0.
+    var d = dom || state.lampDomain || { lo: 0, hi: LAMP_MAX };
+    var norm = (val - d.lo) / (d.hi - d.lo);
     if (norm < 0) norm = 0; if (norm > 1) norm = 1;
-    var idx = Math.round(norm * 6);
+    var idx = Math.round(norm * 10);
     return 'var(--lamp-' + idx + ')';
+  }
+
+  /** Print the grade legend's ends, so the bar names its own domain. */
+  function renderLampLegend(dom) {
+    var lo = byId('lamp-legend-lo');
+    var hi = byId('lamp-legend-hi');
+    if (lo) lo.textContent = dom.lo.toFixed(2);
+    if (hi) hi.textContent = dom.hi.toFixed(2);
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -3825,6 +3879,11 @@
     var grades = state.grades;
     var topN = state.blend.paydirt_n;
 
+    /* Measured before the row is drawn, and cached on state so the tooltip and
+       any later redraw colour a grade the same way this render did. */
+    state.lampDomain = lampDomain(grades);
+    renderLampLegend(state.lampDomain);
+
     // Stage 1's graph gains a gold ring per pay-dirt stone, so a re-blend
     // shows immediately which wagons the touchstones are actually picking from
     applyWagonAssay();
@@ -3998,7 +4057,7 @@
       var gv = grades[gsi];
       var gCls = 'matrix-cell grade-cell';
       if (gc < topN) gCls += ' paydirt-col';
-      gridHTML += '<div class="' + gCls + '" style="background:' + getLampColor(gv) +
+      gridHTML += '<div class="' + gCls + '" style="background:' + getLampColor(gv, state.lampDomain) +
         '" data-row="grade" data-col="' + gc +
         '" data-val="' + gv.toFixed(3) + '" tabindex="0"></div>';
     }
