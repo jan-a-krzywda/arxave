@@ -16,8 +16,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  bandOf, bestRow, center, CORPUS_CENTROID, cosine, grade, renderFeed, rowLabel,
-  selectItems, tallyOf, xmlEscape,
+  archiveEntry, archiveIndex, bandOf, bestRow, center, CORPUS_CENTROID, cosine, 
+  grade, mergeMonth, renderFeed, rowLabel, selectItems, tallyOf, xmlEscape,
 } from './preset-feed.mjs';
 
 /* Orthonormal basis vectors make the cosines exactly 1, 0 or -1, so every
@@ -438,4 +438,51 @@ test('the centroid decodes to a plausible measured direction', () => {
   assert.equal(CORPUS_CENTROID.length, 768);
   assert.ok(CORPUS_CENTROID.every(Number.isFinite), 'centroid has a non-finite component');
   assert.ok(norm > 0.85 && norm < 0.98, `centroid norm ${norm} is not the measured 0.913`);
+});
+
+test('archive entry strips abstracts, keeps decision fields', () => {
+  const items = [{
+    arxivId: '1', title: 't', link: 'l', authors: 'A', grade: 0.612, z: 2.1,
+    band: 'paydirt', matched: { label: 'row label' },
+    enrichment: { verdict: 'read', kind: 'new method', headline: 'H.', so_what: 'S.', caveat: 'C.' },
+    abstract: 'long prose nobody browses from a stockpile',
+  }];
+  const entry = archiveEntry(items);
+  assert.equal(entry.length, 1);
+  assert.equal(entry[0].id, '1');
+  assert.equal(entry[0].grade, 0.612);
+  assert.equal(entry[0].z, 2.1);
+  assert.equal(entry[0].matched, 'row label');
+  assert.ok(!('abstract' in entry[0]), 'abstract is dropped');
+  assert.ok(!('enrichment' in entry[0]), 'raw enrichment is not kept');
+  assert.equal(entry[0].so_what, 'S.');
+});
+
+test('merge month replaces old date, keeps others', () => {
+  const prior = { month: '2026-08', days: {
+    '2026-08-19': { 'sq1': { items: [1, 2, 3] } },
+    '2026-08-20': { 'sq1': { items: [4, 5] } },
+  }};
+  const feeds = { 'sq1': { items: [6, 7, 8, 9] } };
+  const merged = mergeMonth(prior, '2026-08-20', feeds);
+  assert.equal(merged.month, '2026-08');
+  assert.equal(Object.keys(merged.days).length, 2);
+  assert.deepEqual(merged.days['2026-08-20'], feeds);
+  assert.deepEqual(merged.days['2026-08-19'], prior.days['2026-08-19']);
+});
+
+test('archive index gathers months, reverses them, counts by band', () => {
+  const months = {
+    '2026-08': {
+      '2026-08-20': { 'sq1': { items: [{ band: 'paydirt' }, { band: 'look' }] } },
+      '2026-08-19': { 'sq1': { items: [{ band: 'paydirt' }] } },
+    },
+  };
+  const idx = archiveIndex(months);
+  assert.equal(idx.months.length, 1);
+  assert.equal(idx.months[0].month, '2026-08');
+  assert.equal(idx.months[0].days.length, 2);
+  assert.equal(idx.months[0].days[0].date, '2026-08-20');
+  assert.equal(idx.months[0].days[0].feeds['sq1'].items, 2);
+  assert.equal(idx.months[0].days[0].feeds['sq1'].paydirt, 1);
 });

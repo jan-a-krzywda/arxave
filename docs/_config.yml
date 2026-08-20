@@ -7,6 +7,8 @@ plugins:
 # The filter page is the site root, reached by the title in the header, so it
 # is not repeated here. filter-moved.md only redirects and stays out of the nav.
 header_pages:
+  - seams.md
+  - stockpile.md
   - briefs.md
 
 collections:

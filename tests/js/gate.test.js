@@ -30,7 +30,8 @@ const IDS = [
   'paydirt-n', 'table-view-toggle', 'assay-stats', 'assay-grid', 'assay-rail',
   'assay-column-titles', 'assay-matrix-wrap', 'assay-legends',
   'assay-table-wrap', 'assay-table-head', 'assay-table-body',
-  'gate-block', 'gate-z', 'gate-z-value', 'gate-readout',
+  'gate-block', 'gate-z', 'gate-readout',
+  'gate-load', 'gate-load-value', 'gate-strict',
   'gate-max-items', 'gate-min-items', 'gate-soft-z', 'gate-long-z',
   'stage-1', 'stage-2', 'stage-3', 'app', 'cors-proxy',
   'wagon-modal', 'wagon-modal-backdrop', 'wagon-modal-close', 'wagon-modal-canvas',
@@ -56,6 +57,7 @@ function fresh(seedStore) {
   d['max-results'].value = '200';
   d['paydirt-n'].value = '10';
   d['gate-z'].value = '2';
+  d['gate-load'].value = '15';
   d['gate-max-items'].value = '15';
   d['gate-min-items'].value = '3';
   d['gate-soft-z'].value = '1';
@@ -208,7 +210,9 @@ async function main() {
     const c = claims(env)['working'];
     check('saved with the claim', c.select && c.select.min_z === 2.6 && c.select.max_items === 7,
       JSON.stringify(c.select));
-    check('the label follows the slider', d['gate-z-value'].textContent === '2.6');
+    check('the load label follows the ceiling',
+      d['gate-load-value'].textContent === '7 a night',
+      JSON.stringify(d['gate-load-value'].textContent));
     check('defaults are the builder\'s defaults',
       c.select.min_items === 3 && c.select.soft_z === 1 && c.select.long_z === 0.5,
       JSON.stringify(c.select));
@@ -233,7 +237,44 @@ async function main() {
     // Out of range is clamped, not trusted.
     d['gate-z'].value = '99';
     d['gate-z'].fire('input');
-    check('z is clamped to the slider\'s range', claims(env)['working'].select.min_z === 4);
+    check('z is clamped to the range', claims(env)['working'].select.min_z === 4);
+  }
+
+  console.log('\n3b. the two plain-language controls write the same two fields');
+  {
+    const env = fresh();
+    const d = env.registry;
+
+    /* The load slider IS the ceiling — one number, two controls. A second
+       number here would drift from the one the feed builder reads. */
+    d['gate-load'].value = '4';
+    d['gate-load'].fire('input');
+    check('the load slider is the ceiling',
+      claims(env)['working'].select.max_items === 4,
+      JSON.stringify(claims(env)['working'].select));
+    check('and the ceiling field follows it',
+      String(d['gate-max-items'].value) === '4');
+    check('a floor above the new ceiling comes down with it',
+      claims(env)['working'].select.min_items === 3 &&
+      String(d['gate-min-items'].value) === '3');
+
+    d['gate-load'].value = '2';
+    d['gate-load'].fire('input');
+    check('the floor never exceeds the load',
+      claims(env)['working'].select.min_items === 2,
+      JSON.stringify(claims(env)['working'].select));
+
+    /* Ticked: no floor at all, so a thin night ships only what cleared the
+       ship line — which may be nothing, and that is the point of the tick. */
+    d['gate-strict'].checked = true;
+    d['gate-strict'].fire('change');
+    check('shipping fewer means no floor',
+      claims(env)['working'].select.min_items === 0);
+    d['gate-strict'].checked = false;
+    d['gate-strict'].fire('change');
+    check('unticking brings the floor back, capped by the load',
+      claims(env)['working'].select.min_items === 2,
+      JSON.stringify(claims(env)['working'].select));
   }
 
   console.log('\n4. a claim from before the gate still loads');

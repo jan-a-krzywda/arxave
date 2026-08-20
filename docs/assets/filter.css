@@ -1000,10 +1000,24 @@ progress::-moz-progress-bar {
   accent-color: var(--lamp);
   width: 140px;
 }
-.gate-z-value {
+.gate-load-value {
   font-variant-numeric: tabular-nums;
   color: var(--text-faint);
-  min-width: 2.2em;
+  min-width: 5.5em;
+}
+/* The thin-night decision sits beside the load, not under Advanced: it is the
+   other half of the same question, and it changes what arrives on the mornings
+   a reader is most likely to give up on the feed. */
+.gate-strict-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  flex: none;
+}
+.gate-strict-label input[type="checkbox"] {
+  accent-color: var(--lamp);
 }
 .gate-readout {
   font-size: 0.9rem;
