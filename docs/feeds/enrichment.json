@@ -657,5 +657,188 @@
   "seen": "2026-08-19",
   "model": "gemini-2.5-flash",
   "shape": 2
+ },
+ "2608.19094": {
+  "fields": {
+   "verdict": "skim",
+   "kind": "new method",
+   "headline": "A new 'appending construction' allows CSS codes to realize target logical diagonal gates via transversal physical Z-rotations.",
+   "so_what": "This method enables systematic extension of any CSS code to support fault-tolerant implementations of multiple desired logical Z-rotations.",
+   "caveat": "The construction may incur a loss in minimum distance and increases physical qubit overhead.",
+   "tools": [
+    "Calderbank-Shor-Steane (CSS) codes",
+    "nested classical codes",
+    "transversal physical Z-rotations",
+    "appending construction",
+    "logical diagonal gates"
+   ]
+  },
+  "seen": "2026-08-20",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.18536": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "Random matching Clifford circuits achieve the quantum Gilbert-Varshamov rate-distance tradeoff with optimal $O(\\log n)$ depth.",
+   "so_what": "This significantly reduces the circuit overhead required for encoding quantum information in fault-tolerant quantum computation.",
+   "caveat": "The construction applies for sufficiently large $n$ and specific code rate and distance conditions, using gate distributions satisfying three regularity conditions.",
+   "tools": [
+    "random matching circuit architecture",
+    "two-qubit Clifford gates",
+    "CNOT gates",
+    "one-qubit Clifford twirls",
+    "reversible Markov chain analysis"
+   ]
+  },
+  "seen": "2026-08-20",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.18961": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "The optimal code-capacity threshold of the Checkerboard code is determined to be 0.107(3), saturating the theoretical limit for CSS codes.",
+   "so_what": "This establishes fracton codes as highly resilient candidates for quantum memories, demonstrating the power of the statistical-mechanical framework and its duality predictions.",
+   "caveat": "The argument extends to CSS codes with zero encoding rate whose X- and Z-noise models map to classically dual spin models.",
+   "tools": [
+    "statistical-mechanical mapping",
+    "subsystem symmetries",
+    "fracton topological order",
+    "Kramers-Wannier-type duality",
+    "classical Ising models"
+   ]
+  },
+  "seen": "2026-08-20",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.18332": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Generalized Pauli Check Sandwiching (PCS) achieves error-mitigated fidelities above 97.5% for qudit-based quantum error detection and mitigation.",
+   "so_what": "This enables quantum error detection and mitigation for quantum information of arbitrary dimension in the Hilbert space.",
+   "caveat": "validated numerically across dimensions d=2 through d=9 under realistic depolarizing error rates.",
+   "tools": [
+    "Pauli Check Sandwiching",
+    "Heisenberg-Weyl operator set",
+    "ancilla qudit",
+    "numerical validation"
+   ]
+  },
+  "seen": "2026-08-20",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.19103": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A new reinforcement learning framework for quantum circuit optimization, RL+CR, removes twice as many gates as standard RL on 20-qubit Clifford+T circuits.",
+   "so_what": "This robust approach could accelerate the compilation and optimization processes for future fault-tolerant and utility-scale quantum systems.",
+   "caveat": "Results are demonstrated on 20-qubit Clifford+T circuits, five times larger than the training circuits.",
+   "tools": [
+    "reinforcement learning framework",
+    "Commutation-and-Reduction (CR) algorithm",
+    "Clifford+T basis",
+    "CNOT+Pauli basis"
+   ]
+  },
+  "seen": "2026-08-20",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.19158": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "Every $t$-query $d$-round parallel quantum algorithm can be simulated on most inputs with $t^{O(d^2)}$ classical queries.",
+   "so_what": "This suggests that superpolynomial quantum speedups for unstructured problems require superconstant depth, and exponential speedups require polynomial depth.",
+   "caveat": "The simulation applies to parallel quantum algorithms and works on most inputs.",
+   "tools": [
+    "quantum complexity theory",
+    "query complexity analysis",
+    "classical simulation techniques"
+   ]
+  },
+  "seen": "2026-08-20",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.18152": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A new Python package, qkabrine-automl, treats quantum machine learning architecture, encoding, model type, and hyperparameters as a single, jointly searchable configuration space.",
+   "so_what": "This framework automates the complex process of building quantum machine learning models by integrating search strategies and trainability diagnostics, potentially simplifying model development.",
+   "caveat": "The authors report a small, fully reproducible illustrative run rather than a benchmark claim.",
+   "tools": [
+    "qkabrine-automl Python package",
+    "Data Quantum Fisher Information Metric (DQFIM) estimate",
+    "gradient-magnitude barren-plateau monitor",
+    "expressibility and entangling-capability characterization",
+    "OpenQASM export"
+   ]
+  },
+  "seen": "2026-08-20",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.18483": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "Uniaxial strain boosts the Rabi frequency of hole spin qubits in Ge/SiGe quantum wells by two orders of magnitude to 40 GHz.",
+   "so_what": "This enables hole spin rotation to be immune to gate control-induced electric noise, simultaneously improving gate speed and fidelity.",
+   "caveat": "The result is achieved under complementary metal-oxide-semiconductor technology-accessible strain in Ge/SiGe quantum wells.",
+   "tools": [
+    "Ge/SiGe quantum wells",
+    "uniaxial strain",
+    "Rashba spin-orbit coupling",
+    "complementary metal-oxide-semiconductor technology"
+   ]
+  },
+  "seen": "2026-08-20",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.18925": {
+  "fields": {
+   "verdict": "skim",
+   "kind": "review",
+   "headline": "A review of ultrafast order-selective electron imaging and spectroscopy techniques for probing non-equilibrium dynamics in quantum materials, nanostructures, and devices.",
+   "so_what": "These techniques provide comprehensive insights into the ultrafast dynamics of electron, lattice, and spin subsystems, opening broad opportunities for understanding non-equilibrium phenomena.",
+   "caveat": "",
+   "tools": [
+    "dark-field electron microscopy",
+    "photoelectron microscopy",
+    "femtosecond photoelectron momentum microscopy",
+    "ultrafast transmission electron microscopy"
+   ]
+  },
+  "seen": "2026-08-20",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.18204": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Quantum dots can form a 'barcode' to discriminate dark matter interaction operators and mediator types.",
+   "so_what": "This new detector concept could enable detailed characterization of dark matter interactions if a signal is detected.",
+   "caveat": "Sensitivity is projected based on ab initio calculations.",
+   "tools": [
+    "quantum dots",
+    "ab initio calculation",
+    "silicon quantum dots",
+    "Skipper CCDs"
+   ]
+  },
+  "seen": "2026-08-20",
+  "model": "gemini-2.5-flash",
+  "shape": 2
  }
 }
