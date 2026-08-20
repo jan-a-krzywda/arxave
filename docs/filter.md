@@ -265,18 +265,29 @@ permalink: /
     <!-- The gate. Pay dirt above is how much of the matrix is highlighted; the
          gate is where a feed draws its bands, and it is on z rather than grade
          because absolute grades are not comparable between days. The counts
-         beside it are measured on the night on screen, not estimated. -->
+         beside it are measured on the night on screen, not estimated.
+
+         THE TWO CONTROLS UP FRONT ARE THE TWO DECISIONS SOMEONE ACTUALLY HAS.
+         How much do you want to read, and what should happen on a thin night —
+         pad the load with weak stones, or send fewer. Both are answerable
+         without knowing what a z is. The z lines are still what does the
+         cutting and they are still editable, one fold down, because they are
+         the thing that travels in a preset file. -->
     <div class="gate-block" id="gate-block" style="display:none">
       <div class="gate-main">
         <label class="gate-label">
-          Pay dirt line <span class="sub">z ≥</span>
-          <input type="range" id="gate-z" min="0" max="4" step="0.1" value="2">
-          <span class="gate-z-value" id="gate-z-value">2.0</span>
+          Carry up
+          <input type="range" id="gate-load" min="1" max="25" step="1" value="8">
+          <span class="gate-load-value" id="gate-load-value">8 a night</span>
+        </label>
+        <label class="gate-strict-label">
+          <input type="checkbox" id="gate-strict">
+          Rather ship fewer than pad with long shots
         </label>
         <span class="gate-readout" id="gate-readout" role="status"></span>
       </div>
       <details class="gate-adv">
-        <summary>What the gate does <span class="sub">— the three bands and the floor</span></summary>
+        <summary>Where the lines fall <span class="sub">— the three bands and the floor</span></summary>
         <p class="hint">
           Every stone gets a <em>z</em>: how far its grade sits above the night's
           median, in MAD units, over the whole announcement. A feed ships
@@ -292,11 +303,15 @@ permalink: /
         </p>
         <div class="role-grid gate-grid">
           <label>
-            Ceiling <span class="sub">max items</span>
+            Pay dirt line <span class="sub">min z</span>
+            <input type="number" id="gate-z" value="2" min="0" max="4" step="0.1">
+          </label>
+          <label>
+            Ceiling <span class="sub">max items — the slider above</span>
             <input type="number" id="gate-max-items" value="8" min="1" max="50">
           </label>
           <label>
-            Floor <span class="sub">min items</span>
+            Floor <span class="sub">min items — 0 when shipping fewer</span>
             <input type="number" id="gate-min-items" value="3" min="0" max="50">
           </label>
           <label>
@@ -311,8 +326,10 @@ permalink: /
         <p class="hint">
           These five numbers are the <code>select</code> block of a preset file —
           export this claim and they travel with it, so a feed built from it cuts
-          and bands where you set it here. Pull <em>long shot z</em> up to the
-          ship line to switch the floor off entirely.
+          and bands where you set it here. The two controls above write two of
+          them: the slider is the ceiling, and the tick-box is the floor going to
+          zero. Pull <em>long shot z</em> up to the ship line to switch the floor
+          off that way instead.
         </p>
       </details>
     </div>

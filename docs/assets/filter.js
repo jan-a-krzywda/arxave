@@ -354,6 +354,12 @@
      nothing about the gate must cut where the feed builder would. */
   const GATE_DEFAULTS = { min_z: 2.0, min_items: 3, soft_z: 1.5, long_z: 0.5, max_items: 8 };
 
+  /* How far the load slider reaches. Not the ceiling's own cap (50): a slider
+     that spends most of its travel on loads nobody reads is a worse control
+     than one that covers the range people live in and lets the number field
+     handle the rest. */
+  const LOAD_MAX = 25;
+
   /* The three bands, mirroring BAND_LABEL in scripts/preset-feed.mjs. Slugs are
      shared with docs/feeds/feed.xsl, so a band means the same thing on the page,
      in a report, and in a browser looking at the raw feed. */
@@ -3879,27 +3885,39 @@
 
   function fmtZ(v) { return (Math.round(v * 100) / 100).toString(); }
 
+  /* The load slider and the ceiling are one number seen twice, and the tick-box
+     is the floor being zero. Neither control adds state: a claim saved before
+     they existed opens with the slider where its ceiling already was. */
   function renderGateInputs() {
     var s = state.select;
     if (byId('gate-z')) byId('gate-z').value = s.min_z;
-    if (byId('gate-z-value')) byId('gate-z-value').textContent = s.min_z.toFixed(1);
     if (byId('gate-max-items')) byId('gate-max-items').value = s.max_items;
     if (byId('gate-min-items')) byId('gate-min-items').value = s.min_items;
     if (byId('gate-soft-z')) byId('gate-soft-z').value = s.soft_z;
     if (byId('gate-long-z')) byId('gate-long-z').value = s.long_z;
+    if (byId('gate-load')) byId('gate-load').value = Math.min(s.max_items, LOAD_MAX);
+    if (byId('gate-strict')) byId('gate-strict').checked = s.min_items === 0;
+    renderLoadLabel();
+  }
+
+  /* The slider tops out below the ceiling's own limit, so a claim carrying a
+     larger ceiling says the number rather than lying at the right-hand end. */
+  function renderLoadLabel() {
+    var el = byId('gate-load-value');
+    if (!el) return;
+    var n = state.select.max_items;
+    el.textContent = n + ' a night' + (n > LOAD_MAX ? ' (set below)' : '');
   }
 
   function renderGate() {
     var block = byId('gate-block');
     var out = byId('gate-readout');
     if (!block || !out) return null;
-    /* The z label, not the inputs: renderGate runs on every keystroke, and
+    /* The load label, not the inputs: renderGate runs on every keystroke, and
        writing a sanitized number back into the field someone is halfway
        through typing takes the field away from them. renderGateInputs is for
        the claim-load path, where nobody is typing. */
-    if (byId('gate-z-value')) {
-      byId('gate-z-value').textContent = state.select.min_z.toFixed(1);
-    }
+    renderLoadLabel();
     var r = gateReport();
     if (!r) { block.style.display = 'none'; out.textContent = ''; return null; }
     block.style.display = '';
@@ -3926,6 +3944,12 @@
       msg += ' · last in at z ' + fmtZ(r.z[cut]) +
         ' (grade ' + state.grades[cut].toFixed(3) + ')' +
         ' · best z ' + fmtZ(r.z[state.order[0]]);
+      /* Why a weak night still arrived full. Without this the floor is
+         invisible and the long shots read as the gate having gone soft. */
+      if (r.floored) {
+        msg += ' — thin night, the floor reached down to z ' +
+          fmtZ(Math.min(r.opt.long_z, r.shipBar)) + ' to fill it.';
+      }
     }
     out.textContent = msg;
     out.classList.toggle('is-empty', !r.degenerate && r.keptCount === 0);
@@ -5176,6 +5200,33 @@
     el.addEventListener('change', renderGateInputs);
   }
   wireGateControl('gate-z', function (v) { state.select.min_z = parseFloat(v); });
+  /* The two plain-language controls, written into the same two fields the
+     advanced grid edits — so there is one gate, seen at two altitudes, and no
+     third number to keep in sync. */
+  wireGateControl('gate-load', function (v) {
+    state.select.max_items = parseInt(v, 10);
+    /* A floor above the ceiling is not a stricter feed, it is an unreachable
+       one: the ceiling wins in selectItems, so follow it down here too and let
+       the number the reader can see be the number that applies. */
+    if (state.select.min_items > state.select.max_items) {
+      state.select.min_items = state.select.max_items;
+    }
+    if (byId('gate-max-items')) byId('gate-max-items').value = state.select.max_items;
+    if (byId('gate-min-items')) byId('gate-min-items').value = state.select.min_items;
+  });
+  if (byId('gate-strict')) {
+    byId('gate-strict').addEventListener('change', function () {
+      /* Ticked: no floor, so a thin night ships only what cleared the ship line
+         — possibly nothing, which is an honest morning. Unticked: the floor
+         comes back at the default, never above the ceiling on screen. */
+      state.select.min_items = this.checked
+        ? 0 : Math.min(GATE_DEFAULTS.min_items, state.select.max_items);
+      state.select = parseSelect(state.select);
+      renderGateInputs();
+      autosave();
+      if (state.order !== null) renderAssay(); else renderGate();
+    });
+  }
   wireGateControl('gate-max-items', function (v) { state.select.max_items = parseInt(v, 10); });
   wireGateControl('gate-min-items', function (v) { state.select.min_items = parseInt(v, 10); });
   wireGateControl('gate-soft-z', function (v) { state.select.soft_z = parseFloat(v); });

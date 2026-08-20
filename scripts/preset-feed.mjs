@@ -343,6 +343,83 @@ export function tallyOf(items) {
 }
 
 /**
+ * One day of one feed, small enough to keep forever.
+ *
+ * THE STOCKPILE IS NOT THE FEED. A feed is a file that gets overwritten every
+ * morning: yesterday's spin-qubits ranking exists only in whatever reader
+ * happened to poll for it, and in git, which is not a place anyone browses.
+ * That loses the one thing a daily assay accumulates — a record of what this
+ * seam actually yielded over a month, which is how someone decides whether to
+ * keep reading it at all.
+ *
+ * So every shipped item is also written flat, by month, with the decision
+ * fields kept and the abstract dropped. The abstract is the big field and it is
+ * one hop away on arXiv; keeping it would multiply the archive by roughly ten
+ * for a paragraph nobody re-reads from a browsing page. Measured on the
+ * 2026-08-20 build: 4 feeds × 15 items ≈ 13 kB a day with abstracts, ≈ 1.4 kB
+ * without, so a year of stockpile is well under a megabyte and the page can
+ * hold a whole month in memory to search it.
+ */
+export function archiveEntry(items) {
+  return items.map((it) => {
+    const e = it.enrichment || null;
+    return {
+      id: it.arxivId,
+      title: it.title || it.arxivId,
+      link: it.link,
+      authors: it.authors || '',
+      grade: Number(it.grade.toFixed(3)),
+      z: Number.isFinite(it.z) ? Number(it.z.toFixed(1)) : null,
+      band: it.band || 'longshot',
+      matched: it.matched ? it.matched.label : '',
+      verdict: e?.verdict || '',
+      kind: e?.kind || '',
+      headline: e?.headline || '',
+      so_what: e?.so_what || '',
+      caveat: e?.caveat || '',
+    };
+  });
+}
+
+/**
+ * Merge one day into one month file, and keep the day idempotent.
+ *
+ * Re-running the builder on the same date REPLACES that date's entry rather
+ * than appending to it — the workflow can be re-run by hand after a failure,
+ * and a stockpile that shows a day twice is worse than one that shows it late.
+ */
+export function mergeMonth(prior, date, feeds) {
+  const days = { ...(prior?.days || {}) };
+  days[date] = feeds;
+  const ordered = {};
+  for (const d of Object.keys(days).sort()) ordered[d] = days[d];
+  return { month: date.slice(0, 7), days: ordered };
+}
+
+/**
+ * The stockpile's table of contents: which months exist, and what each day in
+ * them yielded. The page draws its calendar off this alone, so opening the
+ * stockpile costs one small request and a month file is only fetched when
+ * somebody actually looks at a day inside it.
+ */
+export function archiveIndex(months) {
+  const out = { months: [] };
+  for (const m of Object.keys(months).sort().reverse()) {
+    const days = months[m];
+    out.months.push({
+      month: m,
+      days: Object.keys(days).sort().reverse().map((date) => ({
+        date,
+        feeds: Object.fromEntries(Object.entries(days[date]).map(([slug, f]) => [
+          slug, { items: f.items.length, paydirt: f.items.filter((i) => i.band === 'paydirt').length },
+        ])),
+      })),
+    });
+  }
+  return out;
+}
+
+/**
  * Which papers make the feed.
  *
  * NOT an absolute grade threshold, and the measured reason is worth keeping:
@@ -512,9 +589,13 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
        what turns 0.612 from a bare number into a reason, and it tells someone
        whose feed has drifted which preset row to go and edit.
 
-       The abstract stays, last. It is the author's own words and the only part
-       of the item nothing generated, which makes it the reader's check on
-       everything above it. */
+       The abstract stays, last, and folded. It is the author's own words and
+       the only part of the item nothing generated, which makes it the reader's
+       check on everything above it — but it is also four hundred words of prose
+       written to be skimmed by nobody, and open by default it buries five
+       cards under one. <details> is the compromise: still there, still the
+       author's, one click away. A reader that strips the tag shows the text
+       inline, which is exactly where it was before. */
     /* The band leads the decision line, ahead of the verdict. It is the one
        field that says how much to trust everything after it, and an unenriched
        item has nothing else on that line at all — so the band, not the verdict,
@@ -542,7 +623,8 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
         (e.caveat ? `<p><strong>But.</strong> ${xmlEscape(e.caveat)}</p>` : '') +
         (e.tools?.length ? `<p><strong>Tools.</strong> ${xmlEscape(e.tools.join(' · '))}</p>` : '')
       ) : '') +
-      `<p class="abstract"><strong>Abstract.</strong> ${xmlEscape(it.abstract)}</p>` +
+      `<details class="abstract"><summary>Abstract</summary>` +
+      `<p>${xmlEscape(it.abstract)}</p></details>` +
       `<p><a href="${xmlEscape(digLink)}">Tune this in the Dig</a></p>`;
     const fields = [
       `      <arxave:band>${band}</arxave:band>`,
@@ -611,6 +693,10 @@ async function main() {
     priorFeeds = JSON.parse(await fs.readFile(manifestPath, 'utf8'))?.feeds ?? {};
   } catch (_) { /* first run */ }
   const feeds = {};
+  /* What today added to the stockpile, gathered as the feeds are built and
+     written once at the end — a per-slug write would leave a half-day in the
+     month file if a later preset threw. */
+  const archiveToday = {};
 
   let written = 0;
   for (const [slug, { preset, rows }] of bySlug) {
@@ -702,6 +788,14 @@ async function main() {
       paydirt: enriched.filter((it) => it.band === 'paydirt').length,
       updated: builtOn,
     };
+    /* An empty morning is still a day in the stockpile: "this seam yielded
+       nothing on the 14th" is a fact about the seam, and a calendar with a hole
+       in it reads as a build that failed. */
+    archiveToday[slug] = {
+      name: preset.name || slug,
+      tally: tallyOf(enriched),
+      items: archiveEntry(enriched),
+    };
     if (ranked.length) {
       console.log(
         `preset-feed: ${slug} — ${ranked.length} of ${scored.length} stones, ` +
@@ -717,6 +811,35 @@ async function main() {
   for (const slug of bySlug.keys()) if (feeds[slug]) ordered[slug] = feeds[slug];
   await fs.writeFile(manifestPath,
     JSON.stringify({ built: builtOn, feeds: ordered }, null, 2) + '\n');
+
+  /* The stockpile. By month, because a file per day is a thousand files in
+     three years and a single file is one that grows without bound: a month is
+     the unit the browsing page loads at once, and the index below is what it
+     opens with. Nothing is ever pruned — the whole point of keeping it is that
+     the record goes back further than the feed does. */
+  if (Object.keys(archiveToday).length) {
+    const archiveDir = path.join(outDir, 'archive');
+    await fs.mkdir(archiveDir, { recursive: true });
+    const month = builtOn.slice(0, 7);
+    const monthPath = path.join(archiveDir, `${month}.json`);
+    let priorMonth = null;
+    try { priorMonth = JSON.parse(await fs.readFile(monthPath, 'utf8')); } catch (_) { /* new month */ }
+    const items = Object.fromEntries(
+      Object.entries(archiveToday).map(([slug, entry]) => [slug, entry.items]));
+    const merged = mergeMonth(priorMonth, builtOn, archiveToday);
+    merged.items = { ...(merged.items || {}), [builtOn]: items };
+    await fs.writeFile(monthPath, JSON.stringify(merged) + '\n');
+
+    const indexPath = path.join(archiveDir, 'index.json');
+    let priorIndex = { months: [] };
+    try { priorIndex = JSON.parse(await fs.readFile(indexPath, 'utf8')); } catch (_) { /* first run */ }
+    const summary = archiveIndex({ [month]: merged.days }).months[0];
+    const others = (priorIndex.months || []).filter((m) => m.month !== month);
+    const months = [summary, ...others].sort((a, b) => (a.month < b.month ? 1 : -1));
+    await fs.writeFile(indexPath,
+      JSON.stringify({ built: builtOn, months }, null, 2) + '\n');
+    console.log(`preset-feed: stockpiled ${builtOn} (${Object.keys(archiveToday).length} feed(s))`);
+  }
 
   console.log(`preset-feed: wrote ${written} feed(s)`);
 }

@@ -122,9 +122,42 @@
           .body strong { color: var(--ore-dim); font-weight: 600; }
           .body .grade { color: var(--text-faint); font-size: 0.85rem; }
           .body .grade strong { color: var(--text-dim); }
-          /* The abstract is the long tail of the card; dimming it puts the
-             generated fields first without hiding the author's own words. */
-          .body .abstract { color: var(--text-dim); font-size: 0.9rem; }
+          /* The abstract and the tool list are the long tail of the card, and
+             the page is a list of cards: open by default they bury the next
+             paper under this one's four hundred words of prose. Folded, the
+             page is skimmable and nothing is gone — the summary is the click
+             target, the author's own words are one click under it. */
+          .fold {
+            margin-top: 0.5rem;
+            border-top: 1px solid var(--rock-edge);
+            padding-top: 0.45rem;
+          }
+          .fold > summary {
+            cursor: pointer;
+            list-style: none;
+            color: var(--text-faint);
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 700;
+          }
+          .fold > summary::-webkit-details-marker { display: none; }
+          /* The caret is drawn rather than inherited, because the default
+             marker sits differently in every engine and this one has to line
+             up with a chip row above it. */
+          .fold > summary::before {
+            content: "\25B8";
+            display: inline-block;
+            margin-right: 0.4rem;
+            transition: transform 0.12s ease;
+          }
+          .fold[open] > summary::before { transform: rotate(90deg); }
+          .fold > summary:hover { color: var(--ore-dim); }
+          .fold .fold-body {
+            margin: 0.45rem 0 0;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+          }
           /* The decision line leads the card and is the only text set larger
              than the body. The verdict itself is a flag, not a colour: `read`
              is ore, `skim` is rock, and nothing else on a card competes. */
@@ -292,18 +325,22 @@
                 <xsl:if test="arxave:caveat">
                   <p class="but"><strong>But. </strong><xsl:value-of select="arxave:caveat"/></p>
                 </xsl:if>
+                <!-- Everything below the fold is reference, not decision: the
+                     tool list is jargon you want only once you have decided to
+                     care, and the abstract is the author's own long form. The
+                     "tune this in the Dig" link that used to sit on every card
+                     is gone — it is the same link on all of them, and it lives
+                     once, at the top, where a first-time visitor looks. -->
                 <xsl:if test="arxave:tools">
-                  <p><strong>Tools. </strong><xsl:value-of select="arxave:tools"/></p>
+                  <details class="fold">
+                    <summary>Tools</summary>
+                    <p class="fold-body"><xsl:value-of select="arxave:tools"/></p>
+                  </details>
                 </xsl:if>
-                <p class="abstract">
-                  <strong>Abstract. </strong><xsl:value-of select="arxave:abstract"/>
-                </p>
-                <p>
-                  <a>
-                    <xsl:attribute name="href"><xsl:value-of select="/rss/channel/link"/></xsl:attribute>
-                    Tune this in the Dig
-                  </a>
-                </p>
+                <details class="fold">
+                  <summary>Abstract</summary>
+                  <p class="fold-body"><xsl:value-of select="arxave:abstract"/></p>
+                </details>
               </div>
             </article>
           </xsl:for-each>
