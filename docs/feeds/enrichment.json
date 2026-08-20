@@ -840,5 +840,43 @@
   "seen": "2026-08-20",
   "model": "gemini-2.5-flash",
   "shape": 2
+ },
+ "2608.18699": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "An ultracompact dilution refrigerator completes a full cooldown-warm-up cycle to 70 mK in 2.1 hours when fully equipped, delivering 20 microW of cooling power at 100 mK.",
+   "so_what": "This offers a practical route to high-throughput quantum-hardware development by accelerating the fabricate-measure-redesign loop for superconducting quantum devices.",
+   "caveat": "The relaxation time is limited by the base temperature of the system.",
+   "tools": [
+    "ultracompact dilution refrigerator",
+    "microwave wiring",
+    "two-fluxonium device",
+    "two-tone spectroscopy",
+    "single-qubit control"
+   ]
+  },
+  "seen": "2026-08-20",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.18941": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A universal protocol for noiseless critical sensing achieves a 3.3 dB metrological gain over the SQL in an atomic magnetometer.",
+   "so_what": "This establishes non-equilibrium critical dynamics as a practical and versatile paradigm for surpassing the fundamental limits of quantum sensing.",
+   "caveat": "The result was obtained by engineering a light-driven atomic ensemble near a dynamical critical point.",
+   "tools": [
+    "light-driven atomic ensemble",
+    "atomic magnetometer",
+    "spin system",
+    "non-equilibrium critical dynamics",
+    "dynamical critical point engineering"
+   ]
+  },
+  "seen": "2026-08-20",
+  "model": "gemini-2.5-flash",
+  "shape": 2
  }
 }
