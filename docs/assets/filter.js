@@ -289,6 +289,7 @@
     order: null,            // [N] indices into stones, sorted by grade desc
     wagonOrder: null,        // [N] indices into stones, sorted by cluster
     wagonMap: null,          // [N×N] cosine matrix (upper triangle populated)
+    wagonMerges: null,       // average-linkage merge order, built once per haul
     wagonComponents: null,   // [{indices: [int], centralTitle: string, key, name, gloss}]
     wagonNames: {},          // wagon key → {name, gloss}, kept across thresholds
     wagonNaming: false,      // a naming request is in flight
@@ -1415,63 +1416,161 @@
     return S;
   }
 
-  /* Edge threshold and minimum wagon size — shared by the matrix ordering
-     and the graph view so both draw the same adjacency.
+  /* Merge threshold and minimum wagon size — shared by the matrix ordering
+     and the graph view so both draw the same grouping.
 
-     MEASURED, NOT CHOSEN, AND MEASURED TWICE. 0.75 came from
-     `bge-small-en-v1.5` and was carried over unexamined when the pick became
-     SPECTER2. #73 re-measured it to 0.93 — correctly, for the space as it
-     then was, which was the raw uncentred one. These stones are centred now
-     (see CORPUS_CENTROID), so the numbers move again, and further than a
-     re-tune: the whole scale changed.
+     MEASURED THREE TIMES NOW, and the number moved each time for a different
+     reason. 0.75 came from `bge-small-en-v1.5`. #75 re-measured it to 0.93 for
+     SPECTER2's raw space. #77 centred that space and it became 0.63. This one
+     is not a re-measurement of the same quantity: wagons are average-linkage
+     groups now rather than connected components (see buildDendrogram), and a
+     mean similarity between groups is simply a different number from an edge
+     weight between stones.
 
-     Measured 2026-08-19 over one full announcement day — 631 stones across
-     quant-ph, cond-mat.mes-hall, cs.AI and cs.LG, WAGON_MIN_SIZE 3:
+     Measured 2026-08-20 across three hauls, sweeping the cut:
 
-         RAW (what #73 measured)        CENTRED (this branch)
-         thresh wagons  in  largest     thresh wagons  in  largest
-          0.90       1  620     620      0.45       1  601     601
-          0.92       6  517     497      0.50       5  543     459
-          0.93      12  393     344      0.55      10  434     364
-          0.94      14  219     139      0.60      21  268     104
-          0.95      16   84      16      0.63      26  176      40   <- peak
-          0.96       2    7       4      0.68      14   50       8
+         cut    89 stones   336 stones   631 stones      (wagons)
+         0.30       7           34           56
+         0.40       8           42           69
+         0.45       9           43           84
+         0.46      11           45           89   <- where the sweep lands
+         0.50      10           37           75
+         0.60       3           11           28
+         0.65       1            3           16
 
-     The peak moves from 16 wagons holding 84 stones to **26 wagons holding
-     176** — twice the night placed, and half again as many topics found. The
-     largest wagon is 40 rather than 16, which is not a regression: raw 0.95
-     bought its small blobs by leaving 87% of the night lone, and a train of
-     209 lone stones is what prompted this.
+     0.46 is the default because it is where the sweep lands on all three. The
+     readable band is about 0.35-0.55; below 0.25 the groups start swallowing
+     each other and above 0.60 they crumble.
 
-     0.63 is the peak and the default. The readable band runs about 0.55-0.68;
-     below 0.50 it fuses, above 0.70 it shatters.
-
-     None of these numbers transfer if the pick or the centroid changes.
-     Re-measure — `node scripts/measure-centroid.mjs` reports the pair
-     distribution the sweep has to live inside. */
-  var WAGON_THRESH = 0.63;
+     None of these numbers transfer if the pick, the centroid, or the linkage
+     changes. Re-measure. */
+  var WAGON_THRESH = 0.46;
   var WAGON_MIN_SIZE = 3;
 
-  /** Count wagons ≥ WAGON_MIN_SIZE at one threshold, and how many stones they
-   *  hold. Cheaper than clusterOrder — no ordering, no centrality — because
-   *  the threshold sweep runs this a few dozen times. */
-  function countWagons(S, N, thresh) {
-    var seen = new Uint8Array(N);
-    var stack = new Int32Array(N);
-    var wagons = 0, clustered = 0, largest = 0;
-    for (var i = 0; i < N; i++) {
-      if (seen[i]) continue;
-      var top = 0, size = 0;
-      stack[top++] = i;
-      seen[i] = 1;
-      while (top > 0) {
-        var v = stack[--top];
-        size++;
-        var row = S[v];
-        for (var w = 0; w < N; w++) {
-          if (!seen[w] && w !== v && row[w] >= thresh) { seen[w] = 1; stack[top++] = w; }
-        }
+  /* ── Average linkage, and why the wagons stopped being one wagon ──────
+   *
+   * Wagons used to be connected components at a threshold, which is single
+   * linkage, and single linkage chains: one stone sitting between two topics
+   * joins them, so A-B-C is one wagon even when A and C share nothing. #78
+   * capped how big the resulting blob was allowed to be, which stopped the
+   * sweep *selecting* a blob but could not stop one forming — on a narrow
+   * scout there was nothing else to select.
+   *
+   * Measured 2026-08-20, cond-mat.mes-hall + quant-ph, one night, 89 stones —
+   * a two-category scout of one field, which is the shape that broke:
+   *
+   *     single linkage: 1 wagon holding all 89, at 58 of the slider's 101
+   *                     positions. The best any threshold could do was 4
+   *                     wagons holding 26 stones.
+   *     average linkage: 11 wagons holding 63, largest 13.
+   *
+   * Average linkage merges on the *mean* similarity between two groups, so a
+   * single bridging paper cannot pull two topics together — it is outvoted by
+   * every pair that is not adjacent to it. That is the whole difference, and
+   * it is why this is a change of method rather than another constant.
+   *
+   * Across the other hauls, same objective, single -> average:
+   *
+   *     haul                    n    wagons      clustered (share of night)
+   *     mes-hall + quant-ph    89    4 -> 11      26 -> 63   (29% -> 71%)
+   *     four categories       336   13 -> 45      88 -> 210  (26% -> 63%)
+   *     four categories       631   26 -> 89     176 -> 422  (28% -> 67%)
+   *
+   * More wagons AND more of the night placed, which is the tell that the old
+   * clustering was not trading coverage for purity — it was chaining.
+   *
+   * THE DENDROGRAM IS BUILT ONCE PER HAUL. Agglomerating is O(N^2) with a
+   * per-row best cache; cutting it at a threshold is O(N). Rebuilding per
+   * threshold would make the sweep a hundred agglomerations and the slider a
+   * fresh one on every nudge — 7 ms each at 631 stones, which is fine once and
+   * not fine a hundred times a drag. So the merge order is computed on the
+   * haul and every threshold after that is a cheap cut.
+   */
+  function buildDendrogram(S, N) {
+    /* Working copy: Lance-Williams updates the merged row in place, and the
+       coupling map is the page's own and must survive this. */
+    var D = new Array(N);
+    for (var i = 0; i < N; i++) D[i] = Float64Array.from(S[i]);
+
+    var size = new Int32Array(N);
+    var alive = new Uint8Array(N);
+    for (var a = 0; a < N; a++) { size[a] = 1; alive[a] = 1; }
+    /* bestJ/bestV make the global argmax O(K) instead of O(K^2). Without it
+       this is O(N^3) and a 900-stone night stops being interactive. */
+    var bestJ = new Int32Array(N), bestV = new Float64Array(N);
+
+    function rescan(i) {
+      var bv = -Infinity, bj = -1;
+      for (var j = 0; j < N; j++) {
+        if (!alive[j] || j === i) continue;
+        if (D[i][j] > bv) { bv = D[i][j]; bj = j; }
       }
+      bestJ[i] = bj; bestV[i] = bv;
+    }
+    for (var r = 0; r < N; r++) rescan(r);
+
+    /* Each entry is one merge: the two live representatives joined, and the
+       mean similarity they were joined at. Similarity falls as merging goes
+       on, so a cut at t is "replay every merge whose similarity >= t". */
+    var merges = [];
+    for (;;) {
+      var gv = -Infinity, gi = -1;
+      for (var k = 0; k < N; k++) {
+        if (alive[k] && bestV[k] > gv) { gv = bestV[k]; gi = k; }
+      }
+      if (gi < 0) break;
+      var b = bestJ[gi];
+      if (b < 0) break;
+      merges.push({ a: gi, b: b, sim: gv });
+
+      var na = size[gi], nb = size[b];
+      for (var m = 0; m < N; m++) {
+        if (!alive[m] || m === gi || m === b) continue;
+        var v = (na * D[gi][m] + nb * D[b][m]) / (na + nb);
+        D[gi][m] = v; D[m][gi] = v;
+      }
+      alive[b] = 0;
+      size[gi] = na + nb;
+      rescan(gi);
+      /* Only rows whose favourite just died or just changed need rescanning. */
+      for (var q = 0; q < N; q++) {
+        if (alive[q] && q !== gi && (bestJ[q] === b || bestJ[q] === gi)) rescan(q);
+      }
+    }
+    return merges;
+  }
+
+  /** Cut a dendrogram at `thresh`: union-find over the merges at or above it.
+   *  Returns an array of member-index arrays, largest first. */
+  function cutDendrogram(merges, N, thresh) {
+    var parent = new Int32Array(N);
+    for (var i = 0; i < N; i++) parent[i] = i;
+    function find(x) { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; }
+    for (var m = 0; m < merges.length; m++) {
+      if (merges[m].sim < thresh) continue;
+      var ra = find(merges[m].a), rb = find(merges[m].b);
+      if (ra !== rb) parent[rb] = ra;
+    }
+    var byRoot = {};
+    for (var n = 0; n < N; n++) {
+      var root = find(n);
+      (byRoot[root] || (byRoot[root] = [])).push(n);
+    }
+    var out = [];
+    for (var key in byRoot) if (byRoot.hasOwnProperty(key)) out.push(byRoot[key]);
+    out.sort(function (x, y) { return y.length - x.length; });
+    return out;
+  }
+
+  /** Wagons ≥ WAGON_MIN_SIZE at one threshold, how many stones they hold, and
+   *  the largest component. A cut of the prebuilt dendrogram — no graph walk,
+   *  because the sweep runs this a hundred times and the merge order is
+   *  already known. */
+  function countWagons(merges, N, thresh) {
+    var groups = cutDendrogram(merges, N, thresh);
+    var wagons = 0, clustered = 0, largest = 0;
+    for (var g = 0; g < groups.length; g++) {
+      var size = groups[g].length;
       if (size >= WAGON_MIN_SIZE) { wagons++; clustered += size; }
       /* The biggest component, counted whether or not it is a wagon, because
          the thing this guards against is one component swallowing the night —
@@ -1522,7 +1621,7 @@
   var WAGON_MAX_SHARE = 0.20;
   var WAGON_MAX_SHARE_FLOOR = 12;
 
-  function bestWagonThresh(S, N) {
+  function bestWagonThresh(merges, N) {
     /* 0.40 to 0.75 in 0.005 steps — the centred band. The previous sweep ran
        0.80-0.99, which in the centred space is entirely past the point where
        the last wagon has already shattered: it would have returned its own
@@ -1533,9 +1632,9 @@
     var best = -1, bestWagons = -1, bestClustered = -1;
     var loose = WAGON_THRESH, looseWagons = -1, looseClustered = -1;
 
-    for (var k = 80; k <= 150; k++) {
+    for (var k = 40; k <= 140; k++) {
       var t = k / 200;
-      var r = countWagons(S, N, t);
+      var r = countWagons(merges, N, t);
       /* Tracked in parallel rather than in a second sweep: countWagons is the
          expensive part and this way it runs once per threshold, not twice. */
       if (r.wagons > looseWagons ||
@@ -1552,44 +1651,22 @@
   }
 
   /**
-   * Cluster order: threshold at `thresh` (default WAGON_THRESH), connected
-   * components ≥ WAGON_MIN_SIZE.
+   * Cluster order: cut the dendrogram at `thresh` (default WAGON_THRESH),
+   * keeping groups ≥ WAGON_MIN_SIZE.
    * Returns [order: [indices], components: [{indices:[], centralTitle:string}]]
    */
-  function clusterOrder(stones, S, thresh) {
+  function clusterOrder(stones, S, merges, thresh) {
     var N = stones.length;
     var THRESH = thresh === undefined ? WAGON_THRESH : thresh;
-    var MIN_SIZE = WAGON_MIN_SIZE;
 
-    // Build adjacency for values >= THRESH
-    var adj = new Array(N);
-    for (var i = 0; i < N; i++) adj[i] = [];
-    for (var i = 0; i < N; i++) {
-      for (var j = i + 1; j < N; j++) {
-        if (S[i][j] >= THRESH) {
-          adj[i].push(j);
-          adj[j].push(i);
-        }
-      }
-    }
-
-    // Connected components
-    var visited = new Array(N).fill(false);
+    /* Average-linkage groups, largest first — see buildDendrogram. The
+       coupling map `S` is still needed below to pick each wagon's central
+       stone, which is a question about the stones themselves and not about
+       how they were grouped. */
+    var groups = cutDendrogram(merges, N, THRESH);
     var components = [];
-    for (var i = 0; i < N; i++) {
-      if (visited[i]) continue;
-      var comp = [];
-      var stack = [i];
-      visited[i] = true;
-      while (stack.length > 0) {
-        var v = stack.pop();
-        comp.push(v);
-        for (var a = 0; a < adj[v].length; a++) {
-          var w = adj[v][a];
-          if (!visited[w]) { visited[w] = true; stack.push(w); }
-        }
-      }
-      if (comp.length >= MIN_SIZE) components.push(comp);
+    for (var g = 0; g < groups.length; g++) {
+      if (groups[g].length >= WAGON_MIN_SIZE) components.push(groups[g]);
     }
 
     // Find central member by max sum of within-component similarities
@@ -1597,7 +1674,7 @@
     for (var c = 0; c < components.length; c++) {
       var members = components[c];
       var bestIdx = members[0];
-      var bestSum = -1;
+      var bestSum = -Infinity;
       for (var mi = 0; mi < members.length; mi++) {
         var sum = 0;
         for (var mj = 0; mj < members.length; mj++) {
@@ -1612,8 +1689,8 @@
     var clustered = [];
     var seen = new Set();
     for (var c2 = 0; c2 < components.length; c2++) {
-      for (var mi = 0; mi < components[c2].length; mi++) {
-        var idx = components[c2][mi];
+      for (var m2 = 0; m2 < components[c2].length; m2++) {
+        var idx = components[c2][m2];
         if (!seen.has(idx)) { seen.add(idx); clustered.push(idx); }
       }
     }
@@ -3107,11 +3184,14 @@
 
       // Start from the threshold that splits this haul into the most wagons,
       // rather than a fixed cut that suits one day's papers and not the next.
-      state.wagonThresh = bestWagonThresh(S, stones.length);
+      /* Built once, here: every threshold from now on — the sweep just below
+         and every nudge of the slider — is a cheap cut of this. */
+      state.wagonMerges = buildDendrogram(S, stones.length);
+      state.wagonThresh = bestWagonThresh(state.wagonMerges, stones.length);
       byId('wagon-thresh-slider').value = state.wagonThresh;
       byId('wagon-thresh-value').textContent = state.wagonThresh.toFixed(2);
 
-      var cluster = clusterOrder(stones, S, state.wagonThresh);
+      var cluster = clusterOrder(stones, S, state.wagonMerges, state.wagonThresh);
       state.wagonOrder = cluster.order;
       state.wagonComponents = cluster.components;
       reattachWagonNames();
@@ -4669,9 +4749,9 @@
 
   /** Re-cluster at a new threshold and redraw whichever view is live. */
   function recomputeWagonThresh(thresh) {
-    if (!state.wagonMap || !state.stones.length) return;
+    if (!state.wagonMap || !state.wagonMerges || !state.stones.length) return;
     state.wagonThresh = thresh;
-    var cluster = clusterOrder(state.stones, state.wagonMap, thresh);
+    var cluster = clusterOrder(state.stones, state.wagonMap, state.wagonMerges, thresh);
     state.wagonOrder = cluster.order;
     state.wagonComponents = cluster.components;
     reattachWagonNames();
