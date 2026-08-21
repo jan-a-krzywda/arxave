@@ -1068,5 +1068,115 @@
   "seen": "2026-08-21",
   "model": "gemini-2.5-flash",
   "shape": 2
+ },
+ "2608.19602": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Superconducting qubits achieve single-qubit gate fidelity of 99.915% $\\pm$ 0.005% and two-qubit gate fidelity of 99.676% $\\pm$ 0.041% using an optically-assisted transmission line.",
+   "so_what": "This method addresses the challenge of signal cable density and heat load in dilution refrigerators, enabling the scaling of superconducting quantum systems.",
+   "caveat": "demonstrated on frequency tunable transmon qubits",
+   "tools": [
+    "optically-assisted transmission line",
+    "laser intensities",
+    "photocurrent",
+    "superconducting qubits",
+    "dilution refrigerator"
+   ]
+  },
+  "seen": "2026-08-21",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.19306": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Quantum Gaussian process regression is extended to quantum channels, with an empirical Bayes heuristic restoring learnability for global 64-qubit channels.",
+   "so_what": "This allows for the prediction of Pauli observable expectation values for unknown quantum channels, even for global channels on larger quantum systems.",
+   "caveat": "The original Lebesgue kernel suffers exponential suppression for global channels growing extensively with system size.",
+   "tools": [
+    "Quantum Gaussian process regression",
+    "Empirical Bayes heuristic",
+    "Numerical simulations",
+    "Noisy quantum computer",
+    "Bayesian optimization surrogates"
+   ]
+  },
+  "seen": "2026-08-21",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.20162": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Shallow all-to-all quantum circuits exhibit a sharp learnability transition at depth $d^* \\sim \\log_2 n + \\log_2\\log_2 n$ in the large size limit.",
+   "so_what": "This learnability transition has implications for quantum cryptographic schemes based on the difficulty of circuit learning.",
+   "caveat": "The results are obtained in the large size limit.",
+   "tools": [
+    "iterative local gate inversions",
+    "meta-algorithmic framework",
+    "analytical evidence",
+    "numerical evidence",
+    "lightcone growth analysis"
+   ]
+  },
+  "seen": "2026-08-21",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.20133": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A new protocol enables near-deterministic preparation of Fock states with hundreds of excitations.",
+   "so_what": "This method overcomes the challenge of low heralding probabilities or control-intensive deterministic methods for generating large Fock states, which are crucial for bosonic quantum information and metrology.",
+   "caveat": "The protocol requires a multi-qubit register of up to eight qubits.",
+   "tools": [
+    "quantum nondemolition photon-number encoding",
+    "quantum amplitude amplification",
+    "Quantum Phase Estimation",
+    "multi-qubit register",
+    "dispersive circuit-QED"
+   ]
+  },
+  "seen": "2026-08-21",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.19696": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Phase-modulated concatenated continuous driving extends the oscillation decay time of silicon hole spin qubits compared to conventional methods.",
+   "so_what": "This technique offers a viable route toward noise-robust hole spin qubits, addressing their susceptibility to charge noise and hyperfine interactions.",
+   "caveat": "",
+   "tools": [
+    "silicon hole spin qubits",
+    "phase-modulated concatenated continuous driving (CCD)",
+    "microwave phase modulation"
+   ]
+  },
+  "seen": "2026-08-21",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.19911": {
+  "fields": {
+   "verdict": "read",
+   "kind": "theory",
+   "headline": "A phase diagram for Majorana zero modes is obtained for a new theoretical platform of four quantum dots, where the Green function reveals MZM topology and spatial character.",
+   "so_what": "This theoretical platform provides a new architecture for the search and characterization of Majorana zero modes.",
+   "caveat": "The model neglects spin-conserving hopping and local on-dot superconducting correlations, and is for a short chain of four QDs.",
+   "tools": [
+    "Green function in chiral Majorana representation",
+    "transfer matrix approach",
+    "Hamiltonian formulation"
+   ]
+  },
+  "seen": "2026-08-21",
+  "model": "gemini-2.5-flash",
+  "shape": 2
  }
 }
