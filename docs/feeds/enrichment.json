@@ -878,5 +878,195 @@
   "seen": "2026-08-20",
   "model": "gemini-2.5-flash",
   "shape": 2
+ },
+ "2608.19917": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Disassembling qLDPC codes yields provably optimal or near-optimal CNOT depth for syndrome extraction circuits.",
+   "so_what": "This approach enables more efficient and practical implementation of qLDPC codes for fault-tolerant quantum computing.",
+   "caveat": "The depth-optimal circuits for Quantum Tanner codes were demonstrated on every instance tested, including codes up to nearly 600 data qubits.",
+   "tools": [
+    "qLDPC codes",
+    "syndrome extraction circuits",
+    "Tanner graphs",
+    "Lifted Product and Balanced Product codes",
+    "Quantum Tanner codes"
+   ]
+  },
+  "seen": "2026-08-21",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.20164": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "The ONEX framework achieves 3.7x to 6.1x and 29.8x to 42.1x higher clock rates for hypergraph product (HGP) code memory compared to constructive 1D and general 2D compilers, respectively.",
+   "so_what": "This framework provides provably depth-optimal physical execution plans for quantum product codes, significantly improving the efficiency and scalability of quantum error correction on neutral atom arrays.",
+   "caveat": "The evaluation is performed for hypergraph product (HGP) code memory mapped onto neutral atom arrays, scaling to codes with 2,500 data qubits, and extended to the lifted-product (LP) code family.",
+   "tools": [
+    "ONEX framework",
+    "multi-stage compilation pipeline",
+    "satisfiability modulo theories (SMT) encoding",
+    "neutral atom arrays",
+    "quantum product codes"
+   ]
+  },
+  "seen": "2026-08-21",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.19370": {
+  "fields": {
+   "verdict": "read",
+   "kind": "theory",
+   "headline": "This work develops four interconnected ways of reading a quantum circuit, from operational composition to geometric properties.",
+   "so_what": "This framework offers a unified perspective on quantum circuits, integrating operational, diagrammatic, error-corrected, and geometric aspects.",
+   "caveat": "The geometric interpretation relies on the prospect of physical superconducting circuits emulating negatively-curved lattices.",
+   "tools": [
+    "Quantum circuits",
+    "ZX-calculus",
+    "Knill--Laflamme condition",
+    "Homological surface codes",
+    "Superconducting circuits"
+   ]
+  },
+  "seen": "2026-08-21",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.20250": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A fan-out-based gadget compiler reduces two-qubit circuit depth by up to 2.5-fold for Heisenberg-type NMR Hamiltonian simulations.",
+   "so_what": "This method offers a way to significantly reduce circuit depth for simulating Heisenberg-type NMR Hamiltonians, potentially enabling more complex simulations on depth-limited quantum hardware, especially with improved error rates.",
+   "caveat": "The method's benefits are realized only after post-selection on built-in error detection, once error rates improve by one to one and a half orders of magnitude.",
+   "tools": [
+    "fan-out-based gadget compiler",
+    "repetition-code register",
+    "heavy-hex superconducting architecture",
+    "all-to-all trapped-ion architecture",
+    "classical computation"
+   ]
+  },
+  "seen": "2026-08-21",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.20170": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A new framework detects large-scale entanglement structures in 100-qubit systems with a mean accuracy exceeding 95% in noisy simulations.",
+   "so_what": "This framework offers a scalable alternative to conventional tomography for identifying entanglement structures, overcoming exponential scaling with system size.",
+   "caveat": "Hardware validation is limited to 13 qubits before noise- and depth-induced degradation sets in at larger sizes.",
+   "tools": [
+    "local joint measurements",
+    "local Pauli basis",
+    "noisy simulations",
+    "superconducting quantum processor",
+    "single measurement configuration"
+   ]
+  },
+  "seen": "2026-08-21",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.19247": {
+  "fields": {
+   "verdict": "read",
+   "kind": "theory",
+   "headline": "Phase quantum Fisher information (QFI) can remain positive even when entanglement vanishes, with a residual QFI of $F_φ^\n\\star=1/6$ at maximal input coherence for global and independent local depolarization channels.",
+   "so_what": "This means phase information can still be extracted from quantum states even after they become separable due to post-gate noise.",
+   "caveat": "The results are reference benchmarks for phase-information retention, not a claim of metrological advantage.",
+   "tools": [
+    "CNOT gate",
+    "negativity",
+    "quantum Fisher information",
+    "standard quantum channels",
+    "measurement"
+   ]
+  },
+  "seen": "2026-08-21",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.19243": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "The HALO compiler identifies a topological transition at $t \\approx 0.790$ lattice units with an $18.3 \\pm 2.2\\%$ rupture probability in a mesoscopic lattice.",
+   "so_what": "This enables digital simulation of lattice gauge theories on near-term quantum hardware with constant circuit depth per Trotter step, overcoming a key limitation of standard Trotterization schemes.",
+   "caveat": "The results were obtained for the Quantum Link Model truncation of the Schwinger model on a 16-qubit superconducting transmon processor.",
+   "tools": [
+    "HALO compiler",
+    "Zero-Noise Extrapolation (ZNE)",
+    "superconducting transmon processor",
+    "composite multi-qubit gauge link representation",
+    "constant-depth 2D unit-cell blueprint"
+   ]
+  },
+  "seen": "2026-08-21",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.20155": {
+  "fields": {
+   "verdict": "read",
+   "kind": "theory",
+   "headline": "An intermediate \"learning phase\" precedes quantum chaos, characterized by pronounced nonflatness and sensitivity of readout states, directly controlling ensemble-typical information processing power.",
+   "so_what": "This suggests that features of random quantum dynamics can be leveraged as computational resources for scalable nonlinear computation.",
+   "caveat": "The results are obtained by studying a family of minimally tunable postvariational quantum circuits.",
+   "tools": [
+    "subsystem quantum complexity",
+    "postvariational quantum circuits",
+    "spectral nonflatness",
+    "metrological response",
+    "random quantum dynamics"
+   ]
+  },
+  "seen": "2026-08-21",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.20076": {
+  "fields": {
+   "verdict": "skim",
+   "kind": "incremental",
+   "headline": "Shadow models mitigate finite sampling noise and enable efficient classical reconstruction of quantum machine learning circuits for cloud cover.",
+   "so_what": "Efficient coupling of quantum machine learning models to classical applications and mitigation of finite sampling noise become possible through shadow models.",
+   "caveat": "under certain conditions, and error mitigating effects on quantum hardware are difficult to distinguish from calibration errors.",
+   "tools": [
+    "constructive shadowing processes",
+    "classical interpolation methods",
+    "quantum Fourier model approximation",
+    "discrete Fourier transform",
+    "Euro-Q-Exa quantum system"
+   ]
+  },
+  "seen": "2026-08-21",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.20297": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "The Aaronson and Ambainis conjecture is proven for quantum algorithms that make massively parallel quantum queries.",
+   "so_what": "This suggests that exponential quantum speedups are limited to sufficiently structured inputs under conditions of massively parallel or limited adaptive quantum queries.",
+   "caveat": "The result applies to algorithms with massively parallel quantum queries or constant rounds of adaptivity.",
+   "tools": [
+    "quantum query algorithms",
+    "classical simulation",
+    "coupling theorem",
+    "uniform distribution over oracles",
+    "dense distributions"
+   ]
+  },
+  "seen": "2026-08-21",
+  "model": "gemini-2.5-flash",
+  "shape": 2
  }
 }
