@@ -1271,5 +1271,132 @@
   "seen": "2026-08-24",
   "model": "gemini-2.5-flash",
   "shape": 2
+ },
+ "2608.21166": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A new method synthesizes arbitrary N-node graph states in at most floor(N/2) steps, achieving superior time-slot depth and reduced entanglement resource overhead for denser graphs.",
+   "so_what": "This method allows for more efficient synthesis of arbitrary graph states in quantum networks, especially for high-density graphs, by reducing time-slot depth and resource consumption.",
+   "caveat": "Evaluated through Monte Carlo experiments on Waxman physical topologies with fiber attenuation.",
+   "tools": [
+    "joint Pauli-X measurements",
+    "graph pivot operations",
+    "rank-2 GF(2) reduction",
+    "dual-star concurrent distribution",
+    "heuristic algorithm"
+   ]
+  },
+  "seen": "2026-08-24",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.21361": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Detectability of QED vacuum non-linearity can be significantly improved by using classical or non-classical photon states in detection schemes.",
+   "so_what": "This approach could facilitate the experimental verification of quantum electrodynamics' prediction of vacuum non-linearity.",
+   "caveat": "",
+   "tools": [
+    "classical photon states",
+    "non-classical photon states",
+    "squeezed photon states",
+    "QED vacuum non-linearity detection schemes"
+   ]
+  },
+  "seen": "2026-08-24",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.21258": {
+  "fields": {
+   "verdict": "read",
+   "kind": "incremental",
+   "headline": "Quantum simulations of QCD using a second-order product formula achieve a T-gate cost reduction by a factor of nearly 10^14.",
+   "so_what": "This algorithmic improvement brings the quantum-simulation cost of QCD closer to the capabilities of realistic quantum computers.",
+   "caveat": "The reduction applies to simulations using a second-order product formula in the electric basis.",
+   "tools": [
+    "product-formula decompositions",
+    "exponentiated-Hamiltonian decomposition",
+    "quantum chromodynamics simulation",
+    "T-gate cost estimation",
+    "electric basis"
+   ]
+  },
+  "seen": "2026-08-24",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.20528": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "Nonrelativistic spin splitting (NRSS) governs Rashba spin splitting magnitude in altermagnets, leading to anomalously large charge-to-spin conversion.",
+   "so_what": "Altermagnets could enable spin-orbitronic applications with Néel-vector-tunable spin polarization due to this interplay.",
+   "caveat": "demonstrated using a tight-binding model and first-principles calculations for GdAlSi.",
+   "tools": [
+    "tight-binding model",
+    "first-principles calculations",
+    "noncentrosymmetric altermagnet GdAlSi"
+   ]
+  },
+  "seen": "2026-08-24",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.20833": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Electron-spin-echo envelope modulation (ESEEM) emerges at defect-specific magnetic fields for carbon defects in hexagonal boron nitride, allowing structural identification.",
+   "so_what": "This establishes a structural identification route for carbon-based spin qubits in hexagonal boron nitride, complementary to optical spectroscopy.",
+   "caveat": "The findings are based on first-principles calculations.",
+   "tools": [
+    "first-principles calculations",
+    "electron-spin decoherence",
+    "Hahn-echo dynamics",
+    "isotope-engineered nuclear-spin baths",
+    "analytical model"
+   ]
+  },
+  "seen": "2026-08-24",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.20737": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "The turnover effect is a consequence of total reflection, which a quantum tunneling protocol can avoid to increase maximum current.",
+   "so_what": "This strategy could be used to unleash the full potential of devices based on temperature/chemical potential gradients.",
+   "caveat": "The protocol is a theoretical design.",
+   "tools": [
+    "scattering theory",
+    "quantum tunneling"
+   ]
+  },
+  "seen": "2026-08-24",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.20787": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Quantum phase estimation, implemented via dispersive light-matter interaction, can be used for nondestructive monitoring and Wigner tomography of bosonic fields, achieving near-unity Wigner overlap fidelities.",
+   "so_what": "This protocol provides a unified approach for nondestructive monitoring and state tomography, which is directly relevant for bosonic-state characterization, calibration, and control in superconducting quantum architectures.",
+   "caveat": "Results are based on numerical reconstructions for Fock, coherent, and even/odd Schrödinger cat states.",
+   "tools": [
+    "quantum phase estimation",
+    "dispersive light-matter interaction",
+    "multi-qubit register",
+    "phase-space displacements",
+    "numerical reconstructions"
+   ]
+  },
+  "seen": "2026-08-24",
+  "model": "gemini-2.5-flash",
+  "shape": 2
  }
 }
