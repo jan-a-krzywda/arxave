@@ -472,8 +472,11 @@ permalink: /
   </div>
 </div>
 
-<link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}">
-<link rel="stylesheet" href="{{ '/assets/filter.css' | relative_url }}">
+<!-- ?v=<build time> on every asset below. Without it a browser keeps serving
+     the filter.js it cached on an earlier visit, so a deploy appears to change
+     nothing and the page quietly runs old code against new markup. -->
+<link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}?v={{ site.time | date: '%s' }}">
+<link rel="stylesheet" href="{{ '/assets/filter.css' | relative_url }}?v={{ site.time | date: '%s' }}">
 <!-- Where the preset claims live. Handed over by Jekyll rather than guessed in
      JS: the page's permalink is `/`, so a relative fetch works today and breaks
      the day this site gains a baseurl or moves under a path. -->
@@ -481,4 +484,4 @@ permalink: /
   window.ARXAVE_PRESETS_BASE = "{{ '/presets/' | relative_url }}";
   window.ARXAVE_FEEDS_BASE = "{{ '/feeds/' | relative_url }}";
 </script>
-<script src="{{ '/assets/filter.js' | relative_url }}"></script>
+<script src="{{ '/assets/filter.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>

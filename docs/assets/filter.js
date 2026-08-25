@@ -2129,7 +2129,7 @@
     var nComp = components.length;
     var compSize = new Array(nComp);
     for (var cs = 0; cs < nComp; cs++) compSize[cs] = components[cs].indices.length;
-    function wagonFootprint(sz) { return 26 + 16 * Math.sqrt(sz); }
+    function wagonFootprint(sz) { return 34 + 24 * Math.sqrt(sz); }
     var clusterCap = new Array(nComp);
     for (var cc = 0; cc < nComp; cc++) clusterCap[cc] = wagonFootprint(compSize[cc]) * 1.15;
 
@@ -2175,19 +2175,30 @@
     var hubSumX = new Array(nComp), hubSumY = new Array(nComp), hubSumN = new Array(nComp);
     for (var hp = 0; hp < nComp; hp++) hubPos[hp] = { x: clusterAnchor[hp].x, y: clusterAnchor[hp].y };
 
-    // Seed stones uniformly over their wagon's disk (sqrt(random) radius, not
-    // a handful of discrete radius/angle bands) — the old stepped scheme left
-    // a metastable ring/arc that the simulation's forces were too weak to
-    // fully relax out of, reading as a 1D line hugging the wagon's rim.
+    // Each clustered stone gets its own slot on a Vogel (sunflower) spiral
+    // around its wagon's anchor: radius ∝ sqrt(k/n), angle stepped by the
+    // golden angle. That is an even fill of a disk by construction — random
+    // offsets leave visible clumps and voids at these small counts, and a
+    // shared anchor with mutual repulsion has no 2D solution at all: repelling
+    // points in one central well minimise onto a ring, which is what kept
+    // rendering every wagon as an arc. Stones are seeded directly on their
+    // slot so the layout starts in the shape it should relax into.
+    var GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
     var wagonCount = {};
     var loneAngle = new Array(N);
     for (i = 0; i < N; i++) {
       var c = cid[i];
-      var r, ang, ox, oy;
+      var r, ang, ox, oy, tgx = 0, tgy = 0;
       if (c >= 0) {
         wagonCount[c] = (wagonCount[c] || 0) + 1;
-        ang = Math.random() * Math.PI * 2;
-        r = clusterCap[c] * 0.5 * Math.sqrt(Math.random());
+        var k = wagonCount[c];
+        var n2 = Math.max(1, compSize[c]);
+        // Jitter keeps the spiral from reading as a manufactured pattern
+        // without letting any stone drift far enough to reopen a void.
+        ang = k * GOLDEN_ANGLE + (Math.random() - 0.5) * 0.35;
+        r = clusterCap[c] * 0.78 * Math.sqrt((k - 0.5) / n2)
+          * (0.9 + Math.random() * 0.2);
+        tgx = Math.cos(ang) * r; tgy = Math.sin(ang) * r;
         ox = clusterAnchor[c].x; oy = clusterAnchor[c].y;
       } else {
         ang = Math.random() * Math.PI * 2;
@@ -2199,14 +2210,8 @@
         i: i,
         x: ox + Math.cos(ang) * r,
         y: oy + Math.sin(ang) * r,
-        // Personal offset from the wagon anchor — gravity pulls each stone
-        // toward its own slot, not the shared anchor point. A shared target
-        // plus mutual repulsion settles into a single ring (the minimum-
-        // energy shape for repelling points in a central well) no matter how
-        // they're seeded; distinct per-stone targets are what actually fills
-        // the disk in 2D instead of collapsing to its rim.
-        tx: c >= 0 ? Math.cos(ang) * r : 0,
-        ty: c >= 0 ? Math.sin(ang) * r : 0,
+        tx: tgx,
+        ty: tgy,
         vx: 0, vy: 0,
         r: 2.5 + Math.min(3.5, Math.sqrt(deg[i]) * 0.7)
       };
@@ -2222,20 +2227,38 @@
       var REP = 3200;
       var K = 0.045;
 
-      // Repulsion — O(N²), fine for a day's haul (a few hundred stones)
+      // Repulsion — O(N²), fine for a day's haul (a few hundred stones).
+      //
+      // Long-range repulsion between two stones of the same wagon is what was
+      // shaping the wagons, and it cannot produce a blob: summed over a dozen
+      // neighbours it outran the anchor gravity roughly tenfold, drove every
+      // stone out to the containment clamp, and the clamp — a hard projection
+      // onto the cap radius — laid them along that circle. Cross-wagon
+      // repulsion then crowded them onto the outward-facing side of it, which
+      // is exactly the arc the graph kept drawing. Wagon shape is now set by
+      // the spiral slots alone; inside a wagon repulsion is short-range only,
+      // doing nothing but keeping two stones from sitting on top of each other.
+      //
+      // Between separate wagons it is dropped altogether: the anchor ring is
+      // already spaced so adjacent clamp radii clear with a pad, so two
+      // clustered stones can never collide, and removing that force removes
+      // the outward squash it applied to every blob. Pairs involving a lone
+      // stone keep the full long-range push — those do wander.
+      var COLLIDE_D2 = 26 * 26;
       for (var a = 0; a < N; a++) {
         var na = nodes[a];
         for (var b = a + 1; b < N; b++) {
           var nb = nodes[b];
+          var sameWagon = cid[a] >= 0 && cid[a] === cid[b];
+          var bothClustered = cid[a] >= 0 && cid[b] >= 0;
+          if (bothClustered && !sameWagon) continue;
           var dx = na.x - nb.x, dy = na.y - nb.y;
           var d2 = dx * dx + dy * dy;
           if (d2 < 0.01) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d2 = 0.01; }
-          if (d2 > 160000) continue;              // ignore far pairs
+          if (sameWagon ? d2 > COLLIDE_D2 : d2 > 160000) continue;
           var f = REP / d2;
-          // Push different wagons apart harder, let one wagon's own stones
-          // pack tighter — that's what turns a blurred ring into blobs.
-          if (cid[a] !== cid[b]) f *= 2.8;
-          else if (cid[a] >= 0) f *= 0.55;
+          if (sameWagon) f *= 0.5;
+          else if (cid[a] !== cid[b]) f *= 2.8;
           // Cap any single pair's force. Without this, a big wagon's seed
           // overlaps summed over dozens of close neighbors threw nodes across
           // the canvas each frame — visible as jiggle that took many seconds
@@ -2262,23 +2285,25 @@
         var ddx = q.x - p.x, ddy = q.y - p.y;
         var dd = Math.sqrt(ddx * ddx + ddy * ddy) || 0.01;
         var force = (dd - L) * K * (0.4 + t);
-        if (cid[ed.a] >= 0 && cid[ed.a] === cid[ed.b]) force *= 0.3;
+        if (cid[ed.a] >= 0 && cid[ed.a] === cid[ed.b]) force *= 0.15;
         var fx = (ddx / dd) * force, fy = (ddy / dd) * force;
         p.vx += fx; p.vy += fy;
         q.vx -= fx; q.vy -= fy;
       }
 
-      // Gravity: clustered stones pull toward their own personal slot around
-      // the wagon's anchor — strong enough to dominate the damped intra-wagon
-      // springs above, which is what actually keeps the wagon a filled 2D
-      // blob instead of relaxing back into a ring.
+      // Gravity: each clustered stone pulls toward its own spiral slot around
+      // the wagon's anchor. With intra-wagon repulsion cut to short range,
+      // this is by far the largest force acting inside a wagon — around a
+      // tenfold margin over the damped springs — so the disk the slots
+      // describe is the shape the wagon actually relaxes into. It is kept
+      // gentle enough not to ring against the velocity damping on the way.
       for (var g = 0; g < N; g++) {
         var ndg = nodes[g];
         var cg = cid[g];
         if (cg >= 0) {
           var an = clusterAnchor[cg];
-          ndg.vx += (an.x + ndg.tx - ndg.x) * 0.09;
-          ndg.vy += (an.y + ndg.ty - ndg.y) * 0.09;
+          ndg.vx += (an.x + ndg.tx - ndg.x) * 0.08;
+          ndg.vy += (an.y + ndg.ty - ndg.y) * 0.08;
         } else {
           // Lone stones keep their own seeded angle and sit past every wagon's
           // clamp radius — pulling them toward the origin instead put them
@@ -2304,10 +2329,13 @@
         nd.y += sy;
       }
 
-      // Hard containment: a wagon's own internal repulsion — summed over
-      // every member — can outrun its anchor's pull long before the springs
-      // settle. Without this a big wagon balloons past its ring slice and
-      // bleeds into its neighbor regardless of how the soft forces balance.
+      // Containment backstop: keeps a wagon from bleeding into its neighbour
+      // if a drag or some odd force balance throws a stone out of its slice.
+      // It projects onto a circle, so anything it catches every tick ends up
+      // drawn along that circle — it sat at exactly the radius the stones were
+      // being pushed to, which is why wagons rendered as arcs. The spiral
+      // slots reach only 0.78 of the cap now, so nothing touches this radius
+      // during a normal relaxation and it no longer shapes the wagon.
       for (var cl = 0; cl < N; cl++) {
         var ndc = nodes[cl];
         if (ndc === dragNode) continue;
