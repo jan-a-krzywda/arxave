@@ -224,6 +224,43 @@ export function cosine(a, b) {
 }
 
 /** "read" -> "Read". The verdict is stored lowercase and shown capitalised. */
+/* arXiv stamps its announcement at midnight ET, which is 04:00 UTC, and that is
+   the hour used below. Midnight UTC would be wrong in a way that shows: a
+   reader in New York would render a paper announced on the 25th as the 24th. */
+const ANNOUNCE_HOUR_UTC = 4;
+
+/**
+ * When a paper was announced, as RSS wants it — not when this file was built.
+ *
+ * Every item used to carry `new Date()`. For a preset with lookback_days > 1
+ * that stamped a Friday paper and a Monday paper with the same second, and for
+ * every preset it threw away the one fact a reader's sort column is for.
+ *
+ * `published` is a date, not an instant: arXiv announces a whole day at once,
+ * so all of one day's papers would still tie. The item's rank is folded in as
+ * minutes past the announcement hour, best first. That is cosmetic arithmetic
+ * in service of one thing — the same thing the grade-in-the-body test guards:
+ * **most readers re-sort by date, and that must not destroy the ranking.**
+ * Ranks past 59 flatten onto the same minute rather than spilling into the next
+ * hour; a feed that deep has bigger problems than a tie.
+ *
+ * Falls back to build time when a stone carries no date, which is what every
+ * item did before this existed.
+ */
+/* The newest date in the feed, which is not items[0] — items are ordered by
+   grade, so the top one is regularly an older paper from the lookback window. */
+export function newestOf(items) {
+  return items.reduce((best, it) => (it.published > best ? it.published : best), '');
+}
+
+export function itemDate(published, rank = 0, now = new Date()) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(published || ''))) return now.toUTCString();
+  const when = new Date(`${published}T00:00:00Z`);
+  if (Number.isNaN(when.getTime())) return now.toUTCString();
+  when.setUTCHours(ANNOUNCE_HOUR_UTC, Math.max(0, 59 - Math.min(rank, 59)), 0, 0);
+  return when.toUTCString();
+}
+
 export function titleCase(word) {
   const w = String(word ?? '');
   return w ? w[0].toUpperCase() + w.slice(1) : '';
@@ -372,11 +409,13 @@ export function archiveEntry(items) {
       z: Number.isFinite(it.z) ? Number(it.z.toFixed(1)) : null,
       band: it.band || 'longshot',
       matched: it.matched ? it.matched.label : '',
+      announced: it.published || '',
       verdict: e?.verdict || '',
       kind: e?.kind || '',
-      headline: e?.headline || '',
-      so_what: e?.so_what || '',
-      caveat: e?.caveat || '',
+      result: e?.result || '',
+      question: e?.question || '',
+      prior: e?.prior || '',
+      limits: e?.limits || '',
     };
   });
 }
@@ -574,9 +613,12 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
     ...(tally ? [`    <arxave:tally>${xmlEscape(tally)}</arxave:tally>`] : []),
     '    <language>en-us</language>',
     `    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>`,
-    `    <pubDate>${new Date().toUTCString()}</pubDate>`,
+    /* lastBuildDate is when this file was written; pubDate is when its contents
+       were announced. They are the same on a normal morning and differ on a
+       rebuild, which is the case that makes keeping them separate worth it. */
+    `    <pubDate>${itemDate(newestOf(items), 0)}</pubDate>`,
   ];
-  for (const it of items) {
+  for (const [rank, it] of items.entries()) {
     const e = it.enrichment;
     /* ORDER IS THE DESIGN HERE. Most readers show a list of items truncated to
        roughly their first line, so for a lot of subscribers that line *is* the
@@ -606,7 +648,7 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
       ? (e.verdict ? xmlEscape(titleCase(e.verdict)) : '') +
         (e.verdict && e.kind ? ' · ' : '') +
         (e.kind ? xmlEscape(e.kind) : '') +
-        (e.headline ? `${e.verdict || e.kind ? ' — ' : ''}${xmlEscape(e.headline)}` : '')
+        (e.result ? `${e.verdict || e.kind ? ' — ' : ''}${xmlEscape(e.result)}` : '')
       : '';
     const decision = `<p class="verdict">${bandChip}${said ? ' ' + said : ''}</p>`;
     const provenance = [
@@ -618,15 +660,32 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
     const body =
       decision +
       `<p class="grade">${provenance}</p>` +
+      /* The figure sits under the decision and above the prose, because it is
+         the fastest thing on the card to read. Hotlinked, never copied: the
+         image lives on arxiv.org and this repository stays text. Wrapped in a
+         link to the paper so a tap on it goes somewhere, and given the caption
+         as alt text so a reader that blocks remote images still says what was
+         there. */
+      (e?.figure_url
+        ? `<p class="figure"><a href="${xmlEscape(it.link)}">` +
+          `<img src="${xmlEscape(e.figure_url)}" alt="${xmlEscape(e.figure_caption || 'Figure')}"/>` +
+          `</a></p>`
+        : '') +
       (e ? (
-        (e.so_what ? `<p><strong>So what.</strong> ${xmlEscape(e.so_what)}</p>` : '') +
-        (e.caveat ? `<p><strong>But.</strong> ${xmlEscape(e.caveat)}</p>` : '') +
-        (e.tools?.length ? `<p><strong>Tools.</strong> ${xmlEscape(e.tools.join(' · '))}</p>` : '')
+        (e.question ? `<p><strong>Asks.</strong> ${xmlEscape(e.question)}</p>` : '') +
+        (e.prior ? `<p><strong>Before.</strong> ${xmlEscape(e.prior)}</p>` : '') +
+        (e.limits ? `<p><strong>But.</strong> ${xmlEscape(e.limits)}</p>` : '') +
+        (e.tools?.length ? `<p><strong>Tools.</strong> ${xmlEscape(e.tools.join(' · '))}</p>` : '') +
+        (e.code ? `<p><strong>Code.</strong> <a href="${xmlEscape(e.code)}">${xmlEscape(e.code)}</a></p>` : '')
       ) : '') +
       `<details class="abstract"><summary>Abstract</summary>` +
       `<p>${xmlEscape(it.abstract)}</p></details>` +
       `<p><a href="${xmlEscape(digLink)}">Tune this in the Dig</a></p>`;
     const fields = [
+      /* The same day pubDate carries, in a form a consumer can read without
+         parsing RFC-822 — the XSL below is XSLT 1.0, which has no date
+         arithmetic at all, and the archive wants a sortable key anyway. */
+      it.published ? `      <arxave:announced>${xmlEscape(it.published)}</arxave:announced>` : '',
       `      <arxave:band>${band}</arxave:band>`,
       `      <arxave:bandname>${xmlEscape(BAND_LABEL[band])}</arxave:bandname>`,
       `      <arxave:grade>${it.grade.toFixed(3)}</arxave:grade>`,
@@ -635,9 +694,14 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
       it.authors ? `      <arxave:authors>${xmlEscape(it.authors)}</arxave:authors>` : '',
       e?.verdict ? `      <arxave:verdict>${xmlEscape(e.verdict)}</arxave:verdict>` : '',
       e?.kind ? `      <arxave:kind>${xmlEscape(e.kind)}</arxave:kind>` : '',
-      e?.headline ? `      <arxave:headline>${xmlEscape(e.headline)}</arxave:headline>` : '',
-      e?.so_what ? `      <arxave:sowhat>${xmlEscape(e.so_what)}</arxave:sowhat>` : '',
-      e?.caveat ? `      <arxave:caveat>${xmlEscape(e.caveat)}</arxave:caveat>` : '',
+      e?.result ? `      <arxave:result>${xmlEscape(e.result)}</arxave:result>` : '',
+      e?.question ? `      <arxave:question>${xmlEscape(e.question)}</arxave:question>` : '',
+      e?.prior ? `      <arxave:prior>${xmlEscape(e.prior)}</arxave:prior>` : '',
+      e?.limits ? `      <arxave:limits>${xmlEscape(e.limits)}</arxave:limits>` : '',
+      e?.code ? `      <arxave:code>${xmlEscape(e.code)}</arxave:code>` : '',
+      e?.figure_url ? `      <arxave:figure>${xmlEscape(e.figure_url)}</arxave:figure>` : '',
+      e?.figure_caption
+        ? `      <arxave:figurecaption>${xmlEscape(e.figure_caption)}</arxave:figurecaption>` : '',
       e?.tools?.length
         ? `      <arxave:tools>${xmlEscape(e.tools.join(' · '))}</arxave:tools>` : '',
       `      <arxave:abstract>${xmlEscape(it.abstract)}</arxave:abstract>`,
@@ -648,7 +712,7 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
       `      <title>${xmlEscape(it.title || it.arxivId)}</title>`,
       `      <link>${xmlEscape(it.link)}</link>`,
       `      <guid isPermaLink="false">${xmlEscape(`arxave:${slug}:${builtOn}:${it.arxivId}`)}</guid>`,
-      `      <pubDate>${new Date().toUTCString()}</pubDate>`,
+      `      <pubDate>${itemDate(it.published, rank)}</pubDate>`,
       `      <description>${xmlEscape(body)}</description>`,
       ...fields,
       '    </item>',

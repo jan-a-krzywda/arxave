@@ -44,11 +44,33 @@ function feed(items) {
   return `<?xml version="1.0" encoding="UTF-8"?><rss><channel>${items.join('')}</channel></rss>`;
 }
 
-function item({ id = '2508.00001', announce = 'new', desc = 'Abstract: hello' }) {
+function item({ id = '2508.00001', announce = 'new', desc = 'Abstract: hello',
+                pub = 'Tue, 25 Aug 2026 00:00:00 -0400' }) {
   return `<item><link>https://arxiv.org/abs/${id}</link>` +
     `<arxiv:announce_type>${announce}</arxiv:announce_type>` +
+    (pub ? `<pubDate>${pub}</pubDate>` : '') +
     `<description>${desc}</description></item>`;
 }
+
+/* The announcement date, which the feed then puts on its own items. Before this
+   every item shipped with the build timestamp, so a reader sorting by date —
+   which most of them do — got an order nobody chose. */
+test('a stone carries the night it was announced', () => {
+  const [stone] = parseFeed(feed([item({})]));
+  assert.equal(stone.published, '2026-08-25');
+});
+
+test('midnight Eastern is the same date, not the day before', () => {
+  // The same trap feedBuildDate has to dodge: -0400 midnight is 04:00 UTC on
+  // the *same* day. Sliced off a naive local date it would read as the 24th.
+  const [stone] = parseFeed(feed([item({ pub: 'Mon, 24 Aug 2026 00:00:00 -0400' })]));
+  assert.equal(stone.published, '2026-08-24');
+});
+
+test('an item with no usable date yields an empty string, not a crash', () => {
+  assert.equal(parseFeed(feed([item({ pub: '' })]))[0].published, '');
+  assert.equal(parseFeed(feed([item({ pub: 'not a date' })]))[0].published, '');
+});
 
 /* The build date is how the warmer tells today's listing from yesterday's still
    being served. Getting it wrong is the failure that reports success. */

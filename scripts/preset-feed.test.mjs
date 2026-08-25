@@ -17,7 +17,8 @@ import { fileURLToPath } from 'node:url';
 
 import {
   archiveEntry, archiveIndex, bandOf, bestRow, center, CORPUS_CENTROID, cosine, 
-  grade, mergeMonth, renderFeed, rowLabel, selectItems, tallyOf, xmlEscape,
+  grade, itemDate, mergeMonth, newestOf, renderFeed, rowLabel, selectItems,
+  tallyOf, xmlEscape,
 } from './preset-feed.mjs';
 
 /* Orthonormal basis vectors make the cosines exactly 1, 0 or -1, so every
@@ -87,6 +88,63 @@ test('the guid is stable per paper per day, so a rebuild is not a new item', () 
   }).match(/<guid[^>]*>([^<]+)</)[1];
   assert.equal(of('2608.00001'), 'arxave:s:2026-08-12:2608.00001');
   assert.notEqual(of('2608.00002'), of('2608.00001'));
+});
+
+/* Dates. The companion to the grade-in-the-body test above: that one keeps the
+   ranking readable after a re-sort, these keep the sort itself honest. Every
+   item used to carry the build timestamp, so a Friday paper and a Monday paper
+   in the same lookback window claimed the same second. */
+
+test('an item is stamped with the day it was announced, not the day it was built', () => {
+  assert.match(itemDate('2026-08-25', 0), /^Tue, 25 Aug 2026 /);
+});
+
+test('midnight ET, not midnight UTC, so no reader renders the previous day', () => {
+  // 04:00 UTC is midnight in New York on the same date. At 00:00 UTC a reader
+  // in ET would show a paper announced on the 25th as the 24th.
+  assert.match(itemDate('2026-08-25', 0), / 04:59:00 GMT$/);
+});
+
+test('rank breaks the tie within a day, best first', () => {
+  const at = (rank) => new Date(itemDate('2026-08-25', rank)).getTime();
+  assert.ok(at(0) > at(1) && at(1) > at(2));
+  // Deep ranks flatten rather than spilling into the next hour and the next day.
+  assert.match(itemDate('2026-08-25', 500), /25 Aug 2026 04:00:00 GMT$/);
+});
+
+test('a stone with no date falls back to build time rather than to 1970', () => {
+  const now = new Date('2026-08-25T09:00:00Z');
+  assert.equal(itemDate(undefined, 0, now), now.toUTCString());
+  assert.equal(itemDate('not a date', 0, now), now.toUTCString());
+});
+
+test('the channel is stamped with the newest paper, not the best one', () => {
+  // Items are ordered by grade, so items[0] is regularly from an earlier day.
+  assert.equal(newestOf([{ published: '2026-08-20' }, { published: '2026-08-25' }]), '2026-08-25');
+  assert.equal(newestOf([{}, {}]), '');
+  const xml = renderFeed({
+    preset: { name: 'P' }, slug: 's', site: 'https://e.test/', builtOn: '2026-08-25',
+    items: [
+      { arxivId: '1', title: 't', link: 'l', abstract: 'a', authors: '', grade: 0.9, published: '2026-08-20' },
+      { arxivId: '2', title: 'u', link: 'l', abstract: 'a', authors: '', grade: 0.1, published: '2026-08-25' },
+    ],
+  });
+  assert.match(xml, /<pubDate>Tue, 25 Aug 2026 04:59:00 GMT<\/pubDate>/);
+  // And the low-graded newer paper still sorts below the high-graded older one.
+  const dates = [...xml.matchAll(/<pubDate>([^<]+)</g)].map((m) => m[1]);
+  assert.equal(dates.length, 3);              // channel, then one per item
+  assert.match(dates[1], /20 Aug 2026/);
+  assert.match(dates[2], /25 Aug 2026/);
+  // ISO alongside it, because the XSL is XSLT 1.0 and cannot parse RFC-822.
+  assert.match(xml, /<arxave:announced>2026-08-20<\/arxave:announced>/);
+});
+
+test('an item with no date omits the announced element rather than emptying it', () => {
+  const xml = renderFeed({
+    preset: { name: 'P' }, slug: 's', site: 'https://e.test/', builtOn: '2026-08-25',
+    items: [{ arxivId: '1', title: 't', link: 'l', abstract: 'a', authors: '', grade: 0.1 }],
+  });
+  assert.doesNotMatch(xml, /<arxave:announced>/);
 });
 
 test('the stylesheet reference is relative, so it survives another domain', () => {
@@ -253,18 +311,26 @@ test('items carry structured fields, not only escaped HTML', () => {
       authors: 'A. Author', grade: 0.7, z: 3.5,
       matched: { label: 'valley splitting in silicon quantum dots', cosine: 0.71 },
       enrichment: {
-        verdict: 'read', kind: 'new result', headline: 'T2* of 3.4 ms.',
-        so_what: 'Doubles the usable gate count.', caveat: 'One device, at 10 mK.',
-        tools: ['a', 'b'],
+        verdict: 'read', kind: 'new result', result: 'T2* of 3.4 ms.',
+        question: 'How long can a Si spin hold phase?',
+        prior: 'Was 1.1 ms, same device (Smith 2024).',
+        limits: 'One device, at 10 mK.',
+        tools: ['a', 'b'], code: 'https://github.com/x/y',
+        figure: 'S3.F2', figure_url: 'https://arxiv.org/html/1v1/f2.png',
+        figure_caption: 'Figure 2: Ramsey decay.',
       },
     }],
   });
   assert.match(xml, /xmlns:arxave="https:\/\/arxave\.com\/ns\/feed"/);
   assert.match(xml, /<arxave:verdict>read<\/arxave:verdict>/);
   assert.match(xml, /<arxave:kind>new result<\/arxave:kind>/);
-  assert.match(xml, /<arxave:headline>T2\* of 3\.4 ms\.<\/arxave:headline>/);
-  assert.match(xml, /<arxave:sowhat>Doubles the usable gate count\.<\/arxave:sowhat>/);
-  assert.match(xml, /<arxave:caveat>One device, at 10 mK\.<\/arxave:caveat>/);
+  assert.match(xml, /<arxave:result>T2\* of 3\.4 ms\.<\/arxave:result>/);
+  assert.match(xml, /<arxave:question>How long can a Si spin hold phase\?<\/arxave:question>/);
+  assert.match(xml, /<arxave:prior>Was 1\.1 ms, same device \(Smith 2024\)\.<\/arxave:prior>/);
+  assert.match(xml, /<arxave:limits>One device, at 10 mK\.<\/arxave:limits>/);
+  assert.match(xml, /<arxave:code>https:\/\/github\.com\/x\/y<\/arxave:code>/);
+  assert.match(xml, /<arxave:figure>https:\/\/arxiv\.org\/html\/1v1\/f2\.png<\/arxave:figure>/);
+  assert.match(xml, /<arxave:figurecaption>Figure 2: Ramsey decay\.<\/arxave:figurecaption>/);
   assert.match(xml, /<arxave:tools>a · b<\/arxave:tools>/);
   assert.match(xml, /<arxave:matched>valley splitting in silicon quantum dots<\/arxave:matched>/);
   assert.match(xml, /<arxave:abstract>the abstract<\/arxave:abstract>/);
@@ -282,8 +348,8 @@ test('the decision leads the body, ahead of the grade and the abstract', () => {
       arxivId: '1', title: 't', link: 'l', abstract: 'the abstract', authors: '',
       grade: 0.7, z: 3.5,
       enrichment: {
-        verdict: 'read', kind: 'new method', headline: 'T2* of 3.4 ms.',
-        so_what: 'S.', caveat: 'C.', tools: [],
+        verdict: 'read', kind: 'new method', result: 'T2* of 3.4 ms.',
+        question: 'Q.', prior: 'P.', limits: 'C.', tools: [],
       },
     }],
   });
@@ -291,8 +357,10 @@ test('the decision leads the body, ahead of the grade and the abstract', () => {
   // is the first match in the file.
   const body = xml.match(/<item>[\s\S]*?<description>([\s\S]*?)<\/description>/)[1];
   assert.ok(body.indexOf('Read') < body.indexOf('Grade 0.700'), 'verdict before grade');
-  assert.ok(body.indexOf('Grade 0.700') < body.indexOf('So what'), 'grade before so-what');
-  assert.ok(body.indexOf('So what') < body.indexOf('Abstract'), 'abstract last');
+  assert.ok(body.indexOf('Grade 0.700') < body.indexOf('Asks.'), 'grade before the prose');
+  assert.ok(body.indexOf('Asks.') < body.indexOf('Before.'), 'question before baseline');
+  assert.ok(body.indexOf('Before.') < body.indexOf('But.'), 'baseline before the limit');
+  assert.ok(body.indexOf('But.') < body.indexOf('Abstract'), 'abstract last');
   assert.match(body, /Read.*new method.*T2\* of 3\.4 ms\./);
 });
 
@@ -318,21 +386,22 @@ test('an unenriched item omits the generated elements rather than emptying them'
     }],
   });
   assert.doesNotMatch(xml, /arxave:verdict/);
-  assert.doesNotMatch(xml, /arxave:headline/);
+  assert.doesNotMatch(xml, /arxave:result/);
   assert.doesNotMatch(xml, /arxave:matched/);
   assert.doesNotMatch(xml, /arxave:z/);
   assert.match(xml, /<arxave:abstract>a<\/arxave:abstract>/);
 });
 
-test('a paper with no caveat drops the line instead of printing an empty one', () => {
+test('a paper with no stated limit drops the line instead of printing an empty one', () => {
   const xml = renderFeed({
     preset: { name: 'P' }, slug: 's', site: 'https://arxave.com/', builtOn: '2026-08-12',
     items: [{
       arxivId: '1', title: 't', link: 'l', abstract: 'a', authors: '', grade: 0.7, z: null,
-      enrichment: { verdict: 'skim', kind: '', headline: 'H.', so_what: '', caveat: '', tools: [] },
+      enrichment: { verdict: 'skim', kind: '', result: 'R.', question: '', prior: '', limits: '', tools: [] },
     }],
   });
-  assert.doesNotMatch(xml, /arxave:caveat/);
+  assert.doesNotMatch(xml, /arxave:limits/);
+  assert.doesNotMatch(xml, /arxave:prior/);
   assert.doesNotMatch(xml, /<strong>But\./);
   assert.match(xml, /Skim/);
 });
@@ -444,7 +513,8 @@ test('archive entry strips abstracts, keeps decision fields', () => {
   const items = [{
     arxivId: '1', title: 't', link: 'l', authors: 'A', grade: 0.612, z: 2.1,
     band: 'paydirt', matched: { label: 'row label' },
-    enrichment: { verdict: 'read', kind: 'new method', headline: 'H.', so_what: 'S.', caveat: 'C.' },
+    enrichment: { verdict: 'read', kind: 'new method', result: 'R.', question: 'Q.', prior: 'P.', limits: 'C.' },
+    published: '2026-08-11',
     abstract: 'long prose nobody browses from a stockpile',
   }];
   const entry = archiveEntry(items);
@@ -455,7 +525,8 @@ test('archive entry strips abstracts, keeps decision fields', () => {
   assert.equal(entry[0].matched, 'row label');
   assert.ok(!('abstract' in entry[0]), 'abstract is dropped');
   assert.ok(!('enrichment' in entry[0]), 'raw enrichment is not kept');
-  assert.equal(entry[0].so_what, 'S.');
+  assert.equal(entry[0].prior, 'P.');
+  assert.equal(entry[0].announced, '2026-08-11');
 });
 
 test('merge month replaces old date, keeps others', () => {
