@@ -77,11 +77,16 @@ const CACHE_DAYS = 30;
 /* Longest the API may ask us to wait before we give up and ship the item from
    its abstract. Above this it is a daily allowance, not a per-minute one. */
 const RETRY_CAP_MS = 90_000;
-/* A floor on the gap between calls. Not a rate limiter — the calls are already
-   seconds apart because each one reads a paper — but the cache-miss burst after
-   a SHAPE bump has no such natural spacing, and that is the case that got us
-   rate limited. */
-const MIN_GAP_MS = 2_000;
+/* A floor on the gap between calls, sized to the ceiling it has to stay under.
+   MEASURED 2026-08-25: the free tier's limit is
+   GenerateRequestsPerMinutePerProjectPerModel, and at a 2s gap — 30 a minute —
+   the run was throttled on nearly every call and recovered only by waiting out
+   the delays it was handed. 6.5s is a shade over nine a minute, which clears
+   the published free-tier RPM with room for the retries. It costs a couple of
+   minutes on a full cold start and nothing at all on a normal morning, where
+   almost every item is a cache hit. Override with ARXAVE_ENRICH_GAP_MS on a
+   paid key, where the ceiling is far higher and the pause is pure waiting. */
+const MIN_GAP_MS = Number(process.env.ARXAVE_ENRICH_GAP_MS || 6_500);
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
