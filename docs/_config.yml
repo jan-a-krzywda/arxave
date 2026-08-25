@@ -12,6 +12,10 @@ header_pages:
   - stockpile.md
   - haul.md
 
+# The repo the header's GitHub link points at. Unset means no link at all,
+# so a fork that has not set it does not send its readers here.
+github_repo: https://github.com/jan-a-krzywda/arxave
+
 collections:
   briefs:
     output: true
