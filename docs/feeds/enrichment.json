@@ -1506,5 +1506,228 @@
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
   "shape": 2
+ },
+ "2608.21961": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "A D=4 encoding with spatially dispersed pairing uses 48-49 % fewer molecules than D=2 for a similar per molecule loss rate, at the cost of a 6-10 % increase in sub-threshold logical error.",
+   "so_what": "Optimizing spatial embedding and encoding choices are critical design parameters for achieving efficient quantum error correction in molecular architectures, as single-sector benchmarks may be insufficient when correlated loss has directional structure.",
+   "caveat": "The findings are based on simulations over code distances d = 5, 7, 9, under heralded molecular loss, coherent dipolar exchange, and imperfect heralding.",
+   "tools": [
+    "molecular tweezer arrays",
+    "rotated surface code",
+    "rotational qudit dimensions",
+    "heralded molecular loss",
+    "coherent dipolar exchange"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.22032": {
+  "fields": {
+   "verdict": "skim",
+   "kind": "new method",
+   "headline": "The qiskit-qudits extension simulates d-level qudit circuits for dimensions 2 <= d <= 16, including non-power-of-two d.",
+   "so_what": "Researchers can now simulate qudit circuits with non-power-of-two dimensions directly within the Qiskit framework.",
+   "caveat": "Supports dimensions 2 <= d <= 16 exactly.",
+   "tools": [
+    "Qiskit extension",
+    "qudit circuit simulation",
+    "qubit encoding",
+    "dense unitary synthesis",
+    "numerical verification"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.22470": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "Implementing an $ε$-approximate block-encoding unitary channel of an unknown quantum state requires $Ω(1/ε)$ copies, and recovering a rank-$r$, $d$-dimensional quantum state from its block-encoding requires $Ω((1/λ_{\text{max}}(ρ))\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nH.1. The researcher is a physicist or computer scientist. They are busy. They will decide from your fields alone whether to open the paper, so lead with the decision and the finding, never with methodology. Do not summarize the abstract — it is printed directly below your fields and they can read it themselves. Give them what it makes them dig for: the number, the consequence, and the condition the number is under. Use the paper's own terminology, quote its quantities with units, and never state anything the abstract does not support. Do not editorialize about importance or novelty beyond the two judgements asked of you below.```json\n{",
+   "so_what": "This reveals inherent limitations of block encoding as a representation of unknown quantum states and a separation between learning properties of a quantum state and generating the state itself.",
+   "caveat": "for unknown quantum states",
+   "tools": [
+    "block encoding",
+    "unitary channels",
+    "quantum singular value transformation",
+    "quantum algorithms",
+    "quantum learning"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.23025": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A QNN framework achieves quantum-state fidelity of 0.787 for unknown quantum system emulation using full density matrix trajectory learning.",
+   "so_what": "This framework provides a data-driven pathway for identifying black box quantum systems and emulating them physically, potentially enabling quantum digital twin modeling.",
+   "caveat": "The performance is evaluated using a synthetic dataset of physically admissible Hamiltonians and dissipation parameters.",
+   "tools": [
+    "Quantum Neural Networks",
+    "density matrix trajectory learning",
+    "Lindblad dynamics",
+    "chirped excitation",
+    "randomized initial quantum states"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.23002": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A new Hilbert-space decomposition technique for quantum search attains the simultaneously optimal Θ(√N) oracle and non-oracle gate counts for unstructured search.",
+   "so_what": "This exact state description enables deterministic target state acquisition and independent derivation of oracle and non-oracle costs, providing a new approach for applying and analysing recursion in quantum algorithm design.",
+   "caveat": "The dynamics reduce to a single rotation when initial and target states factorise over the partition.",
+   "tools": [
+    "Hilbert-space decomposition",
+    "recursive decomposition",
+    "search operator from reflections",
+    "scalar recurrence"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.23109": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A novel physics-guided linear mapper (PGLM) achieves a 50.1% RMSE reduction on 3-qubit circuits and 32.3% on 4-qubit circuits, with a 32.6% aggregate improvement using a circuit-size-aware deployment policy.",
+   "so_what": "This provides a data-efficient, interpretable, and low-latency alternative for quantum error mitigation, enabling integration into variational algorithms due to sub-millisecond inference.",
+   "caveat": "Results are simulator-based with idealized noise models.",
+   "tools": [
+    "physics-guided linear mapper",
+    "circuit complexity features",
+    "device calibration data",
+    "simulated benchmark circuits"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.22892": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "Arbitrary spin eigenfunctions can be deterministically prepared.",
+   "so_what": "Researchers can now deterministically prepare a wider range of spin eigenfunctions for quantum chemistry and many-body physics studies.",
+   "caveat": "",
+   "tools": [
+    "Bärtschi and Eidenbenz's algorithms",
+    "branching paths",
+    "binary spin trees",
+    "classical algorithms"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.22404": {
+  "fields": {
+   "verdict": "read",
+   "kind": "theory",
+   "headline": "A theoretical framework systematically characterizes error propagation in variational non-Markovian dynamics, revealing an intrinsic error-backflow mechanism driven by long-lived environmental memory.",
+   "so_what": "This framework establishes a fundamental precision barrier for variational non-Markovian dynamics and offers guidance for designing robust algorithms.",
+   "caveat": "",
+   "tools": [
+    "analytical derivations",
+    "numerical verification",
+    "variational approaches",
+    "neural quantum states",
+    "physics-informed neural networks"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.21647": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "The quantum cost per step, measured as circuit depth multiplied by measurement shots, exceeds the classical cost with increasing grid size in direct quantum simulation of nonlinear waves.",
+   "so_what": "This framework identifies a coherent, measurement-free nonlinear update as the quantitative target that any end-to-end advantage must meet.",
+   "caveat": "The finding applies with increasing grid size.",
+   "tools": [
+    "hybrid split-step solver",
+    "cost-and-error model",
+    "quantum processors",
+    "superconducting hardware"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.23246": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "Enhanced intrinsic spin-orbit driving of a Loss-DiVincenzo qubit near the spin-valley hotspot in Si/SiGe achieves an average single-qubit Clifford fidelity of 98.6 %.",
+   "so_what": "The empirical results provide a basis for refining current theoretical models of spin-valley physics in Si/SiGe heterostructures.",
+   "caveat": "The strong variability of the valley splitting may impede the use of i-SOC-based control as a scalable operational strategy.",
+   "tools": [
+    "Si/SiGe Loss-DiVincenzo qubit",
+    "magnetic field",
+    "quantum dot position",
+    "Rabi frequency characterization",
+    "Chevron patterns"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.21542": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A new spin-p-orbital qubit in Germanium holes is proposed, with estimated relaxation rates comparable to single-hole spin qubits.",
+   "so_what": "This new operational mode offers a pathway to mitigate charge noise, a central obstacle for Germanium hole spin qubits, while retaining strong spin-orbit coupling and all-electrical control.",
+   "caveat": "The qubit is modeled within a four-band Luttinger-Kohn--Bir-Pikus framework.",
+   "tools": [
+    "three-hole quantum dot",
+    "planar Ge/SiGe heterostructure",
+    "four-band Luttinger-Kohn--Bir-Pikus framework",
+    "Landau-Zener state-transfer protocol",
+    "quadrupole-quadrupole Coulomb interaction"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.23433": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "The steady state of a driven-dissipative system connected to a chiral waveguide shows enhanced sensitivity to estimate weak detuning strength, with probe preparation time growing linearly with system size.",
+   "so_what": "This demonstrates a pathway to practical quantum advantages in sensing by harnessing dissipation and controlling sensitivity with chiral waveguides.",
+   "caveat": "The results are derived analytically.",
+   "tools": [
+    "two-level systems",
+    "chiral waveguide",
+    "driven-dissipative system",
+    "analytical methods"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
  }
 }
