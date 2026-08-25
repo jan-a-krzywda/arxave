@@ -70,23 +70,35 @@ import fs from 'node:fs/promises';
 import { fetchFullText } from './fulltext.mjs';
 
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
-const DEFAULT_MODEL = process.env.ARXAVE_ENRICH_MODEL || 'gemini-2.5-flash';
-const TIMEOUT_MS = 60_000;    // a full paper is a longer read than an abstract
+/* gemini-2.5-flash retires 2026-10-16, and its free tier is what forced this
+   change: 250 requests a day is under a cold start plus a re-run. 3.7-flash is
+   the current stable Flash. Overridable, but note that a model from the 2.5
+   line will not understand the request shape built below. */
+const DEFAULT_MODEL = process.env.ARXAVE_ENRICH_MODEL || 'gemini-3.7-flash';
+/* MEASURED 2026-08-25: a full-text call to 3.7-flash aborted at 60s. A 6.2k-token
+   prompt against a model that is regularly answering "high demand" needs more
+   room than an abstract did, and a timeout here costs the whole brief. */
+const TIMEOUT_MS = 150_000;
 const MAX_ABSTRACT = 6_000;   // characters; longer is padding, not signal
 const CACHE_DAYS = 30;
 /* Longest the API may ask us to wait before we give up and ship the item from
    its abstract. Above this it is a daily allowance, not a per-minute one. */
 const RETRY_CAP_MS = 90_000;
+/* Backoff step for a busy model, which is a different failure from a quota. */
+const BUSY_RETRY_MS = 3_000;
 /* A floor on the gap between calls, sized to the ceiling it has to stay under.
    MEASURED 2026-08-25: the free tier's limit is
    GenerateRequestsPerMinutePerProjectPerModel, and at a 2s gap — 30 a minute —
    the run was throttled on nearly every call and recovered only by waiting out
    the delays it was handed. 6.5s is a shade over nine a minute, which clears
-   the published free-tier RPM with room for the retries. It costs a couple of
-   minutes on a full cold start and nothing at all on a normal morning, where
-   almost every item is a cache hit. Override with ARXAVE_ENRICH_GAP_MS on a
-   paid key, where the ceiling is far higher and the pause is pure waiting. */
-const MIN_GAP_MS = Number(process.env.ARXAVE_ENRICH_GAP_MS || 6_500);
+   the published free-tier RPM with room for the retries.
+
+   ON A PAID KEY the ceiling is far higher and that pause is pure waiting, so
+   the default is 1s — enough to keep a burst from arriving as one spike, small
+   enough not to be felt. If this key is ever moved back to the free tier, set
+   ARXAVE_ENRICH_GAP_MS=6500; the retry path will survive it either way, just
+   slowly. */
+const MIN_GAP_MS = Number(process.env.ARXAVE_ENRICH_GAP_MS || 1_000);
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -307,6 +319,38 @@ export function quotaReason(body) {
  * feed that is late is worse than a feed that is honest. The cap decides that
  * without having to parse which quota it was.
  */
+/**
+ * The request body.
+ *
+ * VERIFIED AGAINST THE LIVE API 2026-08-25, because the documentation for the
+ * 3 line describes a shape v1beta does not accept. `response_format` and a
+ * top-level `thinking_level` are both rejected outright —
+ * `Unknown name "thinking_level" at 'generation_config'` — and the 2.5 spelling
+ * below, `responseMimeType` beside `responseSchema`, is still what works on
+ * gemini-3.7-flash. Do not "modernise" this from the docs without making the
+ * call first.
+ *
+ * `thinkingConfig` is the one thing that genuinely arrived with the 3 line, and
+ * it matters because thinking tokens bill as output at five times the input
+ * rate. Measured on a real 6.2k-token full-text prompt, `thinkingLevel: 'low'`
+ * returned `thoughtsTokenCount: 0` and slightly fuller `limits` than
+ * `thinkingBudget: 0` did — so the floor costs nothing here and is not worth
+ * trading quality for. This is an extraction task: the paper states the number
+ * and the model copies it.
+ */
+export function requestBody(prompt) {
+  return {
+    systemInstruction: { parts: [{ text: SYSTEM }] },
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: {
+      temperature: 0.2,
+      thinkingConfig: { thinkingLevel: 'low' },
+      responseMimeType: 'application/json',
+      responseSchema: SCHEMA,
+    },
+  };
+}
+
 async function callGemini(prompt, apiKey, model, { attempts = 3, sleep = wait } = {}) {
   const url = `${ENDPOINT}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
   let last = '';
@@ -315,15 +359,7 @@ async function callGemini(prompt, apiKey, model, { attempts = 3, sleep = wait } 
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(TIMEOUT_MS),
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM }] },
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.2,
-          responseMimeType: 'application/json',
-          responseSchema: SCHEMA,
-        },
-      }),
+      body: JSON.stringify(requestBody(prompt)),
     });
     if (resp.ok) return parseResponse(await resp.json());
 
@@ -334,6 +370,14 @@ async function callGemini(prompt, apiKey, model, { attempts = 3, sleep = wait } 
     last = `HTTP ${resp.status}${reason ? ` ${reason}` : ''}: ` +
       `${String(body?.error?.message || raw).slice(0, 200)}`;
 
+    /* MEASURED 2026-08-25 while probing this model: 503 "experiencing high
+       demand" comes back often enough to lose items to it, and unlike a quota
+       it clears in seconds. It carries no RetryInfo, so the delay is ours. */
+    if (resp.status === 503 && n < attempts - 1) {
+      console.log('enrich: model busy, retrying');
+      await sleep(BUSY_RETRY_MS * (n + 1));
+      continue;
+    }
     if (resp.status !== 429 || n === attempts - 1) break;
     /* MEASURED 2026-08-25: a spent DAILY allowance does not reliably ask for an
        hour. It asked for 13s, then 53s, and the delay is honoured and the call
