@@ -155,8 +155,6 @@ permalink: /
       <!-- What to dig for. Two groups, because there are two kinds of
            setup — ones this repo publishes and ones you made. -->
       <section class="setup-col" id="setup-claim">
-        <h2 class="setup-col-title">Load a setup</h2>
-
         <!-- Presets: a curated claim, loaded in one click. Their phrases and core
              abstracts are warmed nightly, so a preset costs no embedding — which is
              also why they are offered above your own slots rather than below. -->
