@@ -335,11 +335,19 @@ async function callGemini(prompt, apiKey, model, { attempts = 3, sleep = wait } 
       `${String(body?.error?.message || raw).slice(0, 200)}`;
 
     if (resp.status !== 429 || n === attempts - 1) break;
+    /* MEASURED 2026-08-25: a spent DAILY allowance does not reliably ask for an
+       hour. It asked for 13s, then 53s, and the delay is honoured and the call
+       retried and refused again — seventeen items each burning two pointless
+       waits turned a three-minute job into ten. The quota's own name is the
+       only dependable signal, so read that rather than inferring from how long
+       it says to wait: a per-minute limit is worth sitting out, a per-day one
+       is not, whatever number comes attached. */
+    const daily = /PerDay/i.test(quotaReason(body));
     const asked = retryDelayMs(body);
-    if (asked === null || asked > RETRY_CAP_MS) {
-      /* Either the API did not say when to come back, or it said "in an hour",
-         which means the day's allowance is gone rather than the minute's. */
-      last += asked === null ? ' (no retry delay given)' : ` (asked for ${Math.round(asked / 1000)}s — not waiting)`;
+    if (daily || asked === null || asked > RETRY_CAP_MS) {
+      last += daily ? ' (daily allowance — not waiting)'
+        : asked === null ? ' (no retry delay given)'
+        : ` (asked for ${Math.round(asked / 1000)}s — not waiting)`;
       break;
     }
     console.log(`enrich: rate limited, waiting ${Math.round(asked / 1000)}s`);
