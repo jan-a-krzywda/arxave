@@ -1403,221 +1403,288 @@
   "fields": {
    "verdict": "read",
    "kind": "new method",
-   "headline": "A new framework computationally designs physics-inspired quantum codes up to 100 physical qubits and hardware-aware codes for biased noise with lower logical error rates.",
-   "so_what": "This framework enables computational design of quantum error correction codes, potentially leading to more optimized and hardware-specific codes.",
-   "caveat": "Code design is proven to be NP-complete, ruling out efficient general algorithms.",
+   "result": "Designed hardware-aware surface codes have lower logical error rate than XZZX surface code for biased noise. Framework designs physics-inspired codes with up to 100 physical qubits in minutes.",
+   "question": "How to computationally design quantum error correction codes, incorporating physics and hardware constraints?",
+   "prior": "Logical error rate was higher for XZZX surface code. Discovery of a [100,50,4] code was under an hour (Guerrero 2026). Now under five minutes CPU time.",
+   "limits": "Abelian stabilizer codes. Memory experiment in Pauli Z basis. Independent noise model with fixed p_YZ and varying p_X. Codes may not guarantee efficient decoding.",
    "tools": [
-    "Boolean satisfiability (SAT) problem formulation",
+    "Boolean satisfiability (SAT) problem",
     "SAT solvers",
-    "Physics-informed code design",
-    "Hardware-aware code design"
-   ]
+    "symplectic form",
+    "maximum likelihood decoder"
+   ],
+   "figure": "S9.F8",
+   "figure_url": "https://arxiv.org/html/2608.23460v1/ler_vs_eta_heatmap.png",
+   "figure_caption": "Figure 8: Distribution of logical error rate in designed surface codes vs. the bias parameter $\\eta=p_{X}/p_{YZ}$ . The CSS and XZZX codes are shown overlaying the designed codes. Here, $10^{5}$ designed codes are sampled uniformly at random from solutions to the SAT problem, and the colored square show frequencies (probabilities) of codes with the given logical error rate for the given noise bias $\\eta$ . (White squares represent zero.) Each column of the plot represents a probability distribution over the logical error rate for some value of $\\eta$ . As can be seen, many designed codes have a lower logical error rate than the XZZX surface code, which is a current state-of-the-art solution for biased noise.",
+   "code": ""
   },
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
-  "shape": 2
+  "shape": 3,
+  "depth": "full"
  },
  "2608.22017": {
   "fields": {
    "verdict": "read",
-   "kind": "theory",
-   "headline": "Nonstabilizerness of codeword-stabilized codes is quantified by classical codeword collision properties, with a maximum of twice its number of logical qubits.",
-   "so_what": "The search for magic-rich codes and transversal non-Clifford gates is transformed into classical counting problems solvable with additive combinatorics.",
-   "caveat": "",
+   "kind": "new result",
+   "result": "Nonstabilizerness $M_2$ of codeword-stabilized (CWS) code state is $4k-\\log_2E^{(1)}(C)$. $E^{(1)}(C)$ is parallelogram energy of classical code $C$. Kerdock codes have nonstabilizerness $3(m-1)-\\log_2(7\\cdot 2^{m-1}-6)$.",
+   "question": "Develop quantitative theory of nonstabilizerness for codeword-stabilized (CWS) codes.",
+   "prior": "No quantitative theory of nonstabilizerness existed for non-stabilizer codes.",
+   "limits": "Results for code state, uniform superposition of codewords. Diagonal transversal gates for some bounds. Holds for CWS codes.",
    "tools": [
     "additive combinatorics",
-    "codeword-stabilized codes",
-    "Sidon sets",
-    "Kerdock codes"
-   ]
+    "classical binary codes",
+    "graph state formalism",
+    "second-order stabilizer R\\'{e}nyi entropy (SRE)"
+   ],
+   "figure": "S2.F2",
+   "figure_url": "https://arxiv.org/html/2608.22017v1/Fig2.svg",
+   "figure_caption": "Figure 2: Extremes. Left: affine $C$ is a stabilizer code; the whole set is an affine $2$ -plane, so parallelograms are everywhere, $E^{(1)}=2^{4k}$ , and $M_{2}=0$ . Right: the Sidon set $C=\\{000,001,010,100\\}\\subset\\mathbb{F}_{2}^{3}$ ; its six pairwise differences are all distinct, so $A(x)\\in\\{0,2\\}$ and $C$ contains no parallelogram, giving $E^{(1)}=7m^{2}-6m=88$ and $M_{2}=8-\\log_{2}88\\approx 1.54$ . Sidon sets attain the universal bound $M_{2}\\leq 3k-\\log_{2}(7\\cdot 2^{k}-6)<2k$ .",
+   "code": ""
   },
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
-  "shape": 2
+  "shape": 3,
+  "depth": "full"
  },
  "2608.22810": {
   "fields": {
    "verdict": "read",
    "kind": "new result",
-   "headline": "ZX-diagrammatic post-processing removes 26.6-30.1% of total gate count and 18.5-22.2% of T-count from Solovay-Kitaev synthesized circuits.",
-   "so_what": "This optimization significantly reduces the physical cost of fault-tolerant quantum circuits synthesized by the Solovay-Kitaev algorithm without affecting approximation error.",
-   "caveat": "The compile-time cost of the rewriting layer grows sharply with depth and dominates the synthesis itself.",
+   "result": "ZX-calculus post-processing removes 26.6-30.1% of total gate count and 18.5-22.2% of T-count from Solovay-Kitaev synthesized circuits. Absolute saving grows from about 60 to about 1600 gates.",
+   "question": "How much structural redundancy does diagrammatic post-processing recover from Solovay-Kitaev circuits?",
+   "prior": "Unoptimized Solovay-Kitaev output. Reduction is 18.5-22.2% of T-count.",
+   "limits": "Comparison against unoptimized Solovay-Kitaev output only. Reductions specific to full_reduce strategy in PyZX 0.10.5. Timings indicative only, not precise.",
    "tools": [
-    "ZX-diagrams",
-    "automated rewriting",
     "Solovay-Kitaev algorithm",
-    "Clifford+T gate set"
-   ]
+    "ZX-calculus",
+    "automated rewriting",
+    "PyZX 0.10.5"
+   ],
+   "figure": "S5.F8",
+   "figure_url": "https://arxiv.org/html/2608.22810v1/Quantum_Rx_T_Gate_Optimization.png",
+   "figure_caption": "Figure 8: $T$ -count before and after ZX-calculus post-processing for the worked example $R_{x}(2.3)$ , with the achieved error on the right-hand axis, against recursion depth.",
+   "code": ""
   },
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
-  "shape": 2
+  "shape": 3,
+  "depth": "full"
  },
  "2608.23159": {
   "fields": {
    "verdict": "read",
    "kind": "new result",
-   "headline": "A distributed superconducting quantum architecture requires only modest additional resource overhead in both qubit count and execution time compared to a monolithic baseline.",
-   "so_what": "Module capacity can be set by manufacturability and control-packaging constraints, rather than architectural fine-tuning, due to scale-invariant overhead.",
-   "caveat": "Results are estimated under experimentally anchored parameters and realistic superconducting hardware constraints.",
+   "result": "Distributed architecture for RSA-2048 factorization requires about $2.0$ million physical qubits and $4.4$ days runtime. Overhead is nearly scale-invariant across broad module-capacity window.",
+   "question": "Do noisy and slow inter-chip operations impose substantial spacetime overhead or orchestration burdens compared with monolithic architectures?",
+   "prior": "Monolithic architecture requires about $1.3$ million physical qubits and $3.4$ days.",
+   "limits": "Intra-chip two-qubit gate error rate $p=10^{-3}$, inter-chip operations $10\\times$ noisier, inter-chip gates up to $25\\times$ slower, surface-code-based schemes.",
    "tools": [
     "hardware-grounded architectural co-design",
     "resource-estimation protocol",
     "surface-code-based modular processors",
-    "RSA-2048 factorization benchmark"
-   ]
+    "RSA-2048 factorization benchmark",
+    "superconducting chips with nearest-neighbor connectivity"
+   ],
+   "figure": "S0.F1",
+   "figure_url": "https://arxiv.org/html/2608.23159v1/space_cost_and_layout_p_1e-3.png",
+   "figure_caption": "Figure 1: Spacetime overhead of distributed architectures for factoring 2048-bit RSA integers. A hardware-motivated noise model is considered, with physical error rate $10^{-3}$ and $10^{-2}$ for intra-chip and inter-chip operations, respectively. Left: Required number of QPUs as a function of chip capacity (qubits per QPU). The solid black line indicates the monolithic limit and effectively represents a constant total qubit count. Colored lines correspond to distributed architectures with various chip capacities, for different inter-chip operation time factors ( $\\eta$ ) and interface circuit protocols. Variations in chip size have a minimal impact on the total qubit count in the distributed architecture. Inset: Schematic chip layout illustrating the functional partition of the distributed architecture into computation and memory zones. Right: total runtime of the algorithm as a function of the inter-chip operation time factor ( $\\eta$ ). The black star indicates the runtime of the monolithic architecture. The blue and green lines depict the runtime for the latency-dependent protocol and the latency-decoupled protocol, respectively. Shaded areas denote the upper and lower bounds across all searched configurations.",
+   "code": ""
   },
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
-  "shape": 2
+  "shape": 3,
+  "depth": "full"
  },
  "2608.21667": {
   "fields": {
    "verdict": "read",
    "kind": "new method",
-   "headline": "A Multi-Qubit GHZ State-based QKD scheme transfers L classical bits by generating an (L+1)-qubit GHZ state and transmitting one qubit, achieving 100% raw-key fidelity for keys up to 12 bits.",
-   "so_what": "This method significantly reduces the number of qubits transmitted over the quantum channel, easing pressure on bandwidth-limited quantum network resources.",
-   "caveat": "The correctness is verified using the NetSquid quantum network simulator for keys up to 12 bits under assumptions on authenticated classical communication, local reset verification, and bounded-error QND discrimination, with depolarizing noise up to p = 0.005 per round.",
+   "result": "Proposed QKD scheme transfers L classical bits by generating an (L+1)-qubit GHZ state and transferring one qubit. Achieves 100% raw-key fidelity for keys of length up to 12 bits.",
+   "question": "How to reduce the number of qubits transmitted in Quantum Key Distribution (QKD) over quantum channels?",
+   "prior": "",
+   "limits": "Assumes authenticated classical communication, local reset verification, bounded-error QND discrimination. Verified for keys up to 12 bits. Tolerates depolarizing noise up to p = 0.005 per round.",
    "tools": [
-    "Multi-Qubit Greenberger--Horne--Zeilinger (GHZ) state",
+    "Multi-Qubit Greenberger--Horne--Zeilinger (GHZ) State",
     "Quantum Non-Demolition (QND) measurements",
     "NetSquid quantum network simulator"
-   ]
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "code": ""
   },
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
-  "shape": 2
+  "shape": 3,
+  "depth": "abstract"
  },
  "2608.21842": {
   "fields": {
    "verdict": "read",
-   "kind": "theory",
-   "headline": "Noise-symmetry optimization of quantum error correction encodings can enhance metrological sensitivity, achieving standard quantum limit or Heisenberg scaling from codes with vanishing quantum Fisher information.",
-   "so_what": "Researchers can systematically optimize quantum error correction encodings to significantly improve metrological sensitivity by exploiting noise symmetries.",
-   "caveat": "for stabilizer-sum Hamiltonians",
+   "kind": "new method",
+   "result": "Symmetry optimization can convert a quantum error correction code with vanishing quantum Fisher information (QFI) into one achieving the standard quantum limit or Heisenberg scaling.",
+   "question": "How to overcome the limitation of quantum error correction codes not guaranteeing high metrological sensitivity?",
+   "prior": "Was vanishing QFI for some QEC codes.",
+   "limits": "Holds for a fixed set of correctable errors, when correctable noise possesses unitary symmetries, and for stabilizer-sum Hamiltonians.",
    "tools": [
     "Quantum error correction codes",
     "Knill-Laflamme conditions",
-    "unitary symmetries",
-    "quantum Fisher information",
-    "stabilizer-sum Hamiltonians"
-   ]
+    "Unitary symmetries",
+    "Symmetry-based optimization approach"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "code": ""
   },
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
-  "shape": 2
+  "shape": 3,
+  "depth": "abstract"
  },
  "2608.21961": {
   "fields": {
    "verdict": "read",
    "kind": "new result",
-   "headline": "A D=4 encoding with spatially dispersed pairing uses 48-49 % fewer molecules than D=2 for a similar per molecule loss rate, at the cost of a 6-10 % increase in sub-threshold logical error.",
-   "so_what": "Optimizing spatial embedding and encoding choices are critical design parameters for achieving efficient quantum error correction in molecular architectures, as single-sector benchmarks may be insufficient when correlated loss has directional structure.",
-   "caveat": "The findings are based on simulations over code distances d = 5, 7, 9, under heralded molecular loss, coherent dipolar exchange, and imperfect heralding.",
+   "result": "D=4 encoding uses 48-49 % fewer molecules than D=2 at approximately same per molecule loss rate. Spatial embedding yields logical-sector asymmetry of approximately fifty times. Pauli twirl overestimates logical error rate.",
+   "question": "How do molecular encodings and spatial embeddings influence quantum error correction in molecular tweezer arrays?",
+   "prior": "",
+   "limits": "simulated distances (d = 5, 7, 9), imperfect heralding, excitation-conserving interaction structure",
    "tools": [
-    "molecular tweezer arrays",
+    "molecular tweezer array",
     "rotated surface code",
-    "rotational qudit dimensions",
+    "rotational qudit dimensions (D)",
     "heralded molecular loss",
     "coherent dipolar exchange"
-   ]
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "code": ""
   },
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
-  "shape": 2
+  "shape": 3,
+  "depth": "abstract"
  },
  "2608.22032": {
   "fields": {
    "verdict": "skim",
    "kind": "new method",
-   "headline": "The qiskit-qudits extension simulates d-level qudit circuits for dimensions 2 <= d <= 16, including non-power-of-two d.",
-   "so_what": "Researchers can now simulate qudit circuits with non-power-of-two dimensions directly within the Qiskit framework.",
-   "caveat": "Supports dimensions 2 <= d <= 16 exactly.",
+   "result": "qiskit-qudits simulates d-level qudits by encoding each into m = ceil(log_2 d) qubits. Supports dimensions 2 <= d <= 16 exactly. Verified qudit QFT against discrete Fourier transform for power-of-two and non-power-of-two d.",
+   "question": "How to simulate qudit circuits using Qiskit?",
+   "prior": "Underlying theory paper could only be run for d = 2^m.",
+   "limits": "Encoded Hilbert space generally larger than logical one; library uses identity-padding convention. Dimensions 2 <= d <= 16 supported exactly.",
    "tools": [
     "Qiskit extension",
-    "qudit circuit simulation",
-    "qubit encoding",
-    "dense unitary synthesis",
-    "numerical verification"
-   ]
+    "NumPy's array protocol",
+    "qubit gates",
+    "dense unitary synthesis"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "code": ""
   },
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
-  "shape": 2
+  "shape": 3,
+  "depth": "abstract"
  },
  "2608.22470": {
   "fields": {
    "verdict": "read",
    "kind": "new result",
-   "headline": "Implementing an $ε$-approximate block-encoding unitary channel of an unknown quantum state requires $Ω(1/ε)$ copies, and recovering a rank-$r$, $d$-dimensional quantum state from its block-encoding requires $Ω((1/λ_{\text{max}}(ρ))\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nH.1. The researcher is a physicist or computer scientist. They are busy. They will decide from your fields alone whether to open the paper, so lead with the decision and the finding, never with methodology. Do not summarize the abstract — it is printed directly below your fields and they can read it themselves. Give them what it makes them dig for: the number, the consequence, and the condition the number is under. Use the paper's own terminology, quote its quantities with units, and never state anything the abstract does not support. Do not editorialize about importance or novelty beyond the two judgements asked of you below.```json\n{",
-   "so_what": "This reveals inherent limitations of block encoding as a representation of unknown quantum states and a separation between learning properties of a quantum state and generating the state itself.",
-   "caveat": "for unknown quantum states",
+   "result": "Implementing an $\\varepsilon$-approximate block-encoding unitary channel requires $\\Omega(1/\\varepsilon)$ copies of unknown quantum state. Recovering rank-$r$, $d$-dimensional quantum state $\\rho$ from block-encoding query access requires $\\Omega((1/\\lambda_{\\max}(\\rho))\\sqrt{d/r})$ queries.",
+   "question": "What are fundamental limits on converting between unknown quantum states and their block-encoding unitary channels?",
+   "prior": "Was $O(1/\\varepsilon \\log^2(1/\\varepsilon))$ copies (Wang2025a) for sample-to-query conversion. Was $\\widetilde{O}(\\beta\\sqrt{d})$ (Gilyen2019; Wang2025a) for Gibbs-state preparation.",
+   "limits": "Worst case. $\\alpha=\\Theta(1)$ regime. Constant recovery error. Rank-$r$, $d$-dimensional quantum state $\\rho$. Low-temperature regime $\\beta\\geq\\log d$.",
    "tools": [
-    "block encoding",
-    "unitary channels",
-    "quantum singular value transformation",
-    "quantum algorithms",
-    "quantum learning"
-   ]
+    "quantum state discrimination",
+    "hybrid argument"
+   ],
+   "figure": "S1.F1",
+   "figure_url": "https://arxiv.org/html/2608.22470v1/abstract2.png",
+   "figure_caption": "Figure 1: Summary of the results. (a) Sample-to-query conversion: implementing $\\varepsilon$ -approximate block-encoding unitary channels $\\mathcal{U}_{\\rho}$ and $\\mathcal{U}_{\\rho}^{\\dagger}$ given sample access to an unknown quantum state $\\rho$ . We show that $\\Omega\\!\\left(1/\\varepsilon\\right)$ copies of $\\rho$ are required for this task (Theorem 3 ). (b) Query-to-sample conversion: recovering an unknown quantum state $\\rho$ given query access to its block-encoding unitary channels $\\mathcal{U}_{\\rho}$ and $\\mathcal{U}_{\\rho}^{\\dagger}$ . We show that $\\Omega\\!\\left((1/\\lambda_{\\max}(\\rho))\\sqrt{d/r}\\right)$ queries are required for this task, where $\\lambda_{\\max}(\\rho)$ is the maximum eigenvalue of $\\rho$ , and $d$ and $r$ are the dimension and rank of $\\rho$ , respectively (Theorem 4 ). This lower bound reveals an unavoidable dependence on the dimension.",
+   "code": ""
   },
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
-  "shape": 2
+  "shape": 3,
+  "depth": "full"
  },
  "2608.23025": {
   "fields": {
    "verdict": "read",
    "kind": "new method",
-   "headline": "A QNN framework achieves quantum-state fidelity of 0.787 for unknown quantum system emulation using full density matrix trajectory learning.",
-   "so_what": "This framework provides a data-driven pathway for identifying black box quantum systems and emulating them physically, potentially enabling quantum digital twin modeling.",
-   "caveat": "The performance is evaluated using a synthetic dataset of physically admissible Hamiltonians and dissipation parameters.",
+   "result": "Randomized initial conditions improve state-level reconstruction. Fidelity increases to 0.929 for single qubit benchmark, 0.787 for unknown system. Trace distance reduces to 0.124 and 0.316 respectively.",
+   "question": "How to identify and emulate unknown quantum systems using a QNN framework and full density matrix trajectory learning.",
+   "prior": "For unknown Hamiltonian, fidelity was 0.708173 (With Sin. Chirp). Now 0.787372 (Rand.In.Co.). Trace distance was 0.400712 (With Sin. Chirp). Now 0.316218 (Rand.In.Co.).",
+   "limits": "Synthetic dataset. Lindblad dynamics. Two-qubit–bus-resonator architecture in dispersive regime. Agreement degraded as Hamiltonian complexity increased.",
    "tools": [
-    "Quantum Neural Networks",
-    "density matrix trajectory learning",
-    "Lindblad dynamics",
+    "Quantum Neural Network (QNN)",
+    "Lindblad master equation",
+    "QuTiP",
     "chirped excitation",
     "randomized initial quantum states"
-   ]
+   ],
+   "figure": "S2.F1",
+   "figure_url": "https://arxiv.org/html/2608.23025v1/fig1.png",
+   "figure_caption": "Figure 1: Overall workflow of the proposed full-trajectory QNN framework for the identification of an unknown quantum system and the construction of a quantum emulator. (1) An unknown open quantum system is generated by physics-informed random sampling of thirty-two Hamiltonian coefficients together with the dissipation rates $\\kappa$ , $\\gamma_{1}$ and $\\gamma_{2}$ . (2) The corresponding Lindblad dynamics are propagated with QuTiP, and the complete noisy density-matrix trajectory is stored together with the control vector, the randomized initial state and the chirped excitation. (3) A five-layer QNN maps the four-dimensional control vector onto the thirty-two Hamiltonian coefficients, from which a Hermitian Hamiltonian is assembled. (4) The predicted Hamiltonian is propagated by a differentiable open-system solver, and the weighted trajectory loss is minimized with the Adam optimizer through backpropagation. (5) The converged coefficients are projected onto a two-qubit–bus-resonator cQED architecture, which provides a physically realizable emulator, or digital twin, of the unknown system.",
+   "code": ""
   },
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
-  "shape": 2
+  "shape": 3,
+  "depth": "full"
  },
  "2608.23002": {
   "fields": {
    "verdict": "read",
    "kind": "new method",
-   "headline": "A new Hilbert-space decomposition technique for quantum search attains the simultaneously optimal Θ(√N) oracle and non-oracle gate counts for unstructured search.",
-   "so_what": "This exact state description enables deterministic target state acquisition and independent derivation of oracle and non-oracle costs, providing a new approach for applying and analysing recursion in quantum algorithm design.",
-   "caveat": "The dynamics reduce to a single rotation when initial and target states factorise over the partition.",
+   "result": "Attains simultaneously optimal $Θ(\\sqrt{N})$ oracle and non-oracle gate counts for unstructured search. Recovers $O(\\sqrt{N})$ time for spatial search on $d$-dimension grids for $d\\geq3$ and $O\\bigl(\\sqrt{N}(\\log N)^{3/2}\\bigr)$ for $d=2$.",
+   "question": "How to deeply exploit extant structure in the underlying Hilbert space for quantum search?",
+   "prior": "Recovers the $O\\bigl(\\sqrt{N}(\\log N)^{3/2}\\bigr)$ bound of Aaronson and Ambainis for $d=2$ spatial search.",
+   "limits": "Initial and target states factorise over the partition.",
    "tools": [
     "Hilbert-space decomposition",
     "recursive decomposition",
-    "search operator from reflections",
-    "scalar recurrence"
-   ]
+    "reflections over partition"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "code": ""
   },
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
-  "shape": 2
+  "shape": 3,
+  "depth": "abstract"
  },
  "2608.23109": {
   "fields": {
-   "verdict": "read",
+   "verdict": "skim",
    "kind": "new method",
-   "headline": "A novel physics-guided linear mapper (PGLM) achieves a 50.1% RMSE reduction on 3-qubit circuits and 32.3% on 4-qubit circuits, with a 32.6% aggregate improvement using a circuit-size-aware deployment policy.",
-   "so_what": "This provides a data-efficient, interpretable, and low-latency alternative for quantum error mitigation, enabling integration into variational algorithms due to sub-millisecond inference.",
-   "caveat": "Results are simulator-based with idealized noise models.",
+   "result": "Physics-guided linear mapper (PGLM) reduces RMSE by 50.1% on 3-qubit circuits and 32.3% on 4-qubit circuits for quantum error mitigation.",
+   "question": "Can a data-efficient, interpretable, low-latency alternative to black-box machine learning mitigate quantum errors in NISQ devices?",
+   "prior": "",
+   "limits": "Evaluated on 52 simulated benchmark circuits (1--4 qubits); simulator-based with idealized noise models; single-qubit circuits show degraded performance.",
    "tools": [
-    "physics-guided linear mapper",
-    "circuit complexity features",
-    "device calibration data",
-    "simulated benchmark circuits"
-   ]
+    "physics-guided linear mapper (PGLM)",
+    "seven distinct interpretable features",
+    "circuit complexity",
+    "device calibration data"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "code": ""
   },
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
-  "shape": 2
+  "shape": 3,
+  "depth": "abstract"
  },
  "2608.22892": {
   "fields": {
@@ -1658,59 +1725,77 @@
  },
  "2608.21647": {
   "fields": {
-   "verdict": "read",
+   "verdict": "skim",
    "kind": "new method",
-   "headline": "The quantum cost per step, measured as circuit depth multiplied by measurement shots, exceeds the classical cost with increasing grid size in direct quantum simulation of nonlinear waves.",
-   "so_what": "This framework identifies a coherent, measurement-free nonlinear update as the quantitative target that any end-to-end advantage must meet.",
-   "caveat": "The finding applies with increasing grid size.",
+   "result": "Quantum cost per step, measured as circuit depth multiplied by measurement shots, exceeds classical cost with increasing grid size.",
+   "question": "What is the cost of measurement and reload in direct quantum simulation of nonlinear waves?",
+   "prior": "",
+   "limits": "with increasing grid size, in strongly nonlinear regimes",
    "tools": [
     "hybrid split-step solver",
     "cost-and-error model",
-    "quantum processors",
     "superconducting hardware"
-   ]
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "code": ""
   },
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
-  "shape": 2
+  "shape": 3,
+  "depth": "abstract"
  },
  "2608.23246": {
   "fields": {
    "verdict": "read",
    "kind": "new result",
-   "headline": "Enhanced intrinsic spin-orbit driving of a Loss-DiVincenzo qubit near the spin-valley hotspot in Si/SiGe achieves an average single-qubit Clifford fidelity of 98.6 %.",
-   "so_what": "The empirical results provide a basis for refining current theoretical models of spin-valley physics in Si/SiGe heterostructures.",
-   "caveat": "The strong variability of the valley splitting may impede the use of i-SOC-based control as a scalable operational strategy.",
+   "result": "Intrinsic spin-orbit coupling (i-SOC) coupling matrix element is about one order of magnitude larger than previously reported in Si/SiGe. Achieved average single-qubit Clifford fidelity of 98.6 %.",
+   "question": "Can a Si/SiGe Loss-DiVincenzo qubit be driven by intrinsic spin-orbit coupling (i-SOC) near the spin-valley hotspot?",
+   "prior": "Coupling matrix element was an order of magnitude smaller (Refs. 44, 17, 7).",
+   "limits": "Strong variability of valley splitting impedes scalable i-SOC control. Fidelity limited by significant frequency noise and short T2*-time. Hotspot operation leads to deformed Chevron patterns and enhanced nuclear spin effects.",
    "tools": [
-    "Si/SiGe Loss-DiVincenzo qubit",
-    "magnetic field",
-    "quantum dot position",
-    "Rabi frequency characterization",
-    "Chevron patterns"
-   ]
+    "Si/SiGe heterostructure",
+    "Loss-DiVincenzo qubit",
+    "electric spin dipole resonance (EDSR)",
+    "microwave pulses",
+    "single-electron transistor (SET)",
+    "randomized benchmarking"
+   ],
+   "figure": "S3.F2",
+   "figure_url": "https://arxiv.org/html/2608.23246v1/Fig2.WGS.svg",
+   "figure_caption": "Figure 2: (a) Energy level diagram of an electron with two valley states split by $E_{\\mathrm{vs}}$ as a function of Zeeman splitting $E_{B}$ . The spin-valley hotspot is located at $E_{B}=E_{\\mathrm{vs}}$ . Arrow A indicates the transition driven when the qubit is initialized in the $\\ket{v_0, \\downarrow}$ state. (b) Qubit spectra and resonance extraction for various external magnetic fields at $g_{\\mathrm{push}}=$50\\text{\\,}\\mathrm{mV}$$ . Each trace (top axis) shows the normalized SET signal as the microwave frequency is swept around the expected resonance, $h\\delta f_{\\mathrm{res}}=hf_{\\mathrm{res}}-g\\mu_{B}B_{\\mathrm{ext}}$ (left axis), at fixed burst time $t_{\\mathrm{mw}}$ . A second (negative) peak at lower frequencies results from the subtraction of a frequency-detuned reference pulse. The extracted peak positions from Gaussian fits (ruby red) exhibit an anticrossing near $230\\text{\\,}\\mathrm{mT}$ , as expected for a spin-valley hotspot. (c) Anticrossing positions for various $g_{\\mathrm{push}}$ . For each $g_{\\mathrm{push}}$ , the gray dashed line and inner ticks on the right correspond to the zero position of $\\delta f_{\\mathrm{res}}$ ; the outer ticks indicate the scale. Fitting Eq. 2 to the anticrossing traces yields $E_{\\mathrm{vs}}$ and $\\absolutevalue{C}$ and maps $E_{\\mathrm{vs}}$ as a function of $g_{\\mathrm{push}}$ (green dashed line). (d) Rabi frequency $f_{R}$ vs. distance from the spin-valley hotspot $\\Delta E_{\\mathrm{vs}}=E_{\\mathrm{vs}}-E_{B}$ , controlled via $g_{\\mathrm{push}}$ , at several external magnetic fields. $f_{R}$ increases drastically near the hotspot, and has asymmetric flanks. In the region marked in red, no reliable extraction of $f_{R}$ is possible. (e) i-SOC model fit ( Eq. 3 ) to $f_{R}(E_{\\mathrm{vs}})$ at $B_{\\mathrm{ext}}=$187\\text{\\,}\\mathrm{mT}$$ and $B_{\\mathrm{ext}}=$320\\text{\\,}\\mathrm{mT}$$ using an absolute energy axis. The model captures the enhancement near the hotspot but not the strong asymmetry from the high energy tail; possible explanations are discussed in the main text.",
+   "code": ""
   },
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
-  "shape": 2
+  "shape": 3,
+  "depth": "full"
  },
  "2608.21542": {
   "fields": {
    "verdict": "read",
    "kind": "new method",
-   "headline": "A new spin-p-orbital qubit in Germanium holes is proposed, with estimated relaxation rates comparable to single-hole spin qubits.",
-   "so_what": "This new operational mode offers a pathway to mitigate charge noise, a central obstacle for Germanium hole spin qubits, while retaining strong spin-orbit coupling and all-electrical control.",
-   "caveat": "The qubit is modeled within a four-band Luttinger-Kohn--Bir-Pikus framework.",
+   "result": "Propose a spin-$p$-orbital (SpO) qubit in Ge holes. Achieves gate times $t_{f}=4$ ns, two orders of magnitude below charge-noise induced $T_{2}^{*}\\approx 100$ – $200$ ns and four orders below phonon-limited $T_{1}=0.1$ – $1$ ms.",
+   "question": "How to achieve noise-resilient qubit encoding and all-electrical control in Ge hole qubits?",
+   "prior": "Charge noise limits dephasing times to $T_{2}^{*}\\sim 100\\penalty\\ \\mathrm{ns}$ – $10\\penalty\\ \\mu\\mathrm{s}$ for standard Ge hole qubits.",
+   "limits": "Shell-filling approximation neglects hole-hole interactions. Control bandwidth $\\mathrm{BW}=1$ GHz. Operating magnetic fields $B_{\\parallel}=1$ – $2$ T. Confinement anisotropy $|\\varepsilon|\\lesssim 0.5\\%$.",
    "tools": [
     "three-hole quantum dot",
     "planar Ge/SiGe heterostructure",
-    "four-band Luttinger-Kohn--Bir-Pikus framework",
+    "four-band Luttinger-Kohn–Bir-Pikus framework",
     "Landau-Zener state-transfer protocol",
     "quadrupole-quadrupole Coulomb interaction"
-   ]
+   ],
+   "figure": "S4.F3",
+   "figure_url": "https://arxiv.org/html/2608.21542v1/noise.svg",
+   "figure_caption": "Figure 3: Sweet-spot magnetic field and optimal out-of-plane field component. (a) Average $T_{2}^{*}$ as a function of the out-of-plane field component $B_{\\perp}$ for varying in-plane field magnitude $B_{\\parallel}$ , at the isotropic confinement point $\\varepsilon=0$ , $a_{0}=50\\penalty\\ $ nm. The in-plane field is oriented at $45^{\\circ}$ between the $x$ - and $y$ -axes. Each data point is averaged over 100 charge-noise configurations, and shaded regions represent the 95% confidence interval obtained by bootstrapping with replacement. Solid lines are fits to a peaked ansatz with a linear background given by $B_{\\parallel}(B_{\\perp})=c_{0}\\exp(-c_1 |B_\\perp-\\Bperp^{\\rm opt}|)+c_{2}B_{\\perp}$ , identifying the optimal out-of-plane field $B_{\\perp}^{\\rm opt}$ that maximizes coherence for each $B_{\\parallel}$ . (b) Fitted sweet-spot values $B_{\\perp}^{\\rm opt}$ as a function of $B_{\\parallel}$ (circles), together with a linear fit (solid line). The slope yields the optimal magnetic field angle $\\theta^{*}$ between $\\bm{B}$ and the $xy$ -plane.",
+   "code": "https://github.com/y-oda2/ge-qd-lkbp"
   },
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
-  "shape": 2
+  "shape": 3,
+  "depth": "full"
  },
  "2608.23433": {
   "fields": {
