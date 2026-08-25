@@ -101,6 +101,20 @@ body {
   color: var(--lamp);
   text-decoration: none;
 }
+/* The GitHub link sits last in the nav and carries a star outline, because the
+   ask is the star and not the visit. Inline-flex so mark, word and star stay on
+   one line at every width; the mobile menu stacks it like any other page-link. */
+.site-nav .page-link-gh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.site-nav .page-link-gh .gh-star {
+  color: var(--lamp);
+}
+.site-nav .page-link-gh:hover .gh-star {
+  fill: var(--lamp);
+}
 .site-nav .menu-icon > svg path {
   fill: var(--text-dim);
 }
