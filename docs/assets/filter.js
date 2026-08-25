@@ -2123,7 +2123,7 @@
     // distinct blobs instead of melting into one ring under shared gravity.
     var nodes = new Array(N);
     var nComp = components.length;
-    var ANCHOR_R = 130 + nComp * 24;
+    var ANCHOR_R = 170 + nComp * 32;
     var clusterAnchor = new Array(nComp);
     for (var ci = 0; ci < nComp; ci++) {
       var cbase = (ci / Math.max(1, nComp)) * Math.PI * 2;
@@ -2169,12 +2169,12 @@
           var dx = na.x - nb.x, dy = na.y - nb.y;
           var d2 = dx * dx + dy * dy;
           if (d2 < 0.01) { dx = Math.random() - 0.5; dy = Math.random() - 0.5; d2 = 0.01; }
-          if (d2 > 90000) continue;              // ignore far pairs
+          if (d2 > 160000) continue;              // ignore far pairs
           var f = REP / d2;
           // Push different wagons apart harder, let one wagon's own stones
           // pack tighter — that's what turns a blurred ring into blobs.
-          if (cid[a] !== cid[b]) f *= 1.7;
-          else if (cid[a] >= 0) f *= 0.6;
+          if (cid[a] !== cid[b]) f *= 2.8;
+          else if (cid[a] >= 0) f *= 0.55;
           var d = Math.sqrt(d2);
           var ux = dx / d, uy = dy / d;
           na.vx += ux * f; na.vy += uy * f;
@@ -2204,8 +2204,8 @@
         var cg = cid[g];
         if (cg >= 0) {
           var an = clusterAnchor[cg];
-          ndg.vx += (an.x - ndg.x) * 0.020;
-          ndg.vy += (an.y - ndg.y) * 0.020;
+          ndg.vx += (an.x - ndg.x) * 0.034;
+          ndg.vy += (an.y - ndg.y) * 0.034;
         } else {
           ndg.vx -= ndg.x * 0.006;
           ndg.vy -= ndg.y * 0.006;
@@ -2273,6 +2273,8 @@
 
     // ── Interaction state ──
     var hoverNode = null;
+    var hoverAnchor = null;   // index into components — wagon hub under the cursor
+    var HUB_R = 6;
     var pinnedNode = null;
     var dragNode = null;
     var panning = null;
@@ -2306,7 +2308,10 @@
         lit = new Set(nbrs[focus]);
         lit.add(focus);
         if (compareNode !== null) lit.add(compareNode);
+      } else if (hoverAnchor !== null) {
+        lit = new Set(components[hoverAnchor].indices);
       }
+      var anyFocus = focus !== null || hoverAnchor !== null;
 
       // Edges
       for (var e = 0; e < edges.length; e++) {
@@ -2315,7 +2320,7 @@
         var touched = focus !== null && (ed.a === focus || ed.b === focus);
         var t = (ed.w - THRESH) / Math.max(0.001, 1 - THRESH);
         var alphaE = 0.12 + 0.5 * t;
-        if (focus !== null) alphaE = touched ? 0.95 : alphaE * 0.25;
+        if (anyFocus) alphaE = touched ? 0.95 : alphaE * 0.25;
         ctx.globalAlpha = alphaE;
         ctx.strokeStyle = cid[ed.a] >= 0 && cid[ed.a] === cid[ed.b]
           ? nodeColor(ed.a) : '#7c7364';
@@ -2343,9 +2348,49 @@
       // Nodes. Radius follows the zoom a little, so a tight wagon stays a
       // cloud of dots when zoomed out instead of one solid blob.
       var rScale = Math.min(1.3, Math.max(0.5, view.k));
+
+      // Wagon hubs: one small marker at each wagon's anchor point, hoverable
+      // to name the group and light up every stone it holds.
+      for (var ci3 = 0; ci3 < nComp; ci3++) {
+        var hs = toScreen(clusterAnchor[ci3]);
+        var isHubFocus = hoverAnchor === ci3;
+        if (isHubFocus) {
+          for (var hm = 0; hm < components[ci3].indices.length; hm++) {
+            var ms = toScreen(nodes[components[ci3].indices[hm]]);
+            ctx.globalAlpha = 0.55;
+            ctx.strokeStyle = '#f2ede3';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 3]);
+            ctx.beginPath();
+            ctx.moveTo(hs.x, hs.y);
+            ctx.lineTo(ms.x, ms.y);
+            ctx.stroke();
+          }
+          ctx.setLineDash([]);
+        }
+        ctx.globalAlpha = anyFocus && !isHubFocus ? 0.25 : 1;
+        ctx.fillStyle = WAGON_COLORS[ci3 % WAGON_COLORS.length];
+        var hr = (isHubFocus ? HUB_R * 1.5 : HUB_R) * Math.min(1.15, rScale);
+        ctx.save();
+        ctx.translate(hs.x, hs.y);
+        ctx.rotate(Math.PI / 4);
+        ctx.fillRect(-hr, -hr, hr * 2, hr * 2);
+        ctx.restore();
+        if (isHubFocus) {
+          ctx.strokeStyle = '#f2ede3';
+          ctx.lineWidth = 1.4;
+          ctx.save();
+          ctx.translate(hs.x, hs.y);
+          ctx.rotate(Math.PI / 4);
+          ctx.strokeRect(-hr, -hr, hr * 2, hr * 2);
+          ctx.restore();
+        }
+      }
+      ctx.globalAlpha = 1;
+
       for (var n = 0; n < N; n++) {
         var s = toScreen(nodes[n]);
-        var dim = focus !== null && !lit.has(n);
+        var dim = anyFocus && !lit.has(n);
         ctx.globalAlpha = dim ? 0.18 : 1;
         ctx.fillStyle = nodeColor(n);
         ctx.beginPath();
@@ -2405,6 +2450,14 @@
       readoutFn(tipHtml(idx), !!isPinned, evt);
     }
 
+    /** Readout for a hovered wagon hub: its name and how many stones it holds. */
+    function emitWagon(ci4, evt) {
+      if (!readoutFn) return;
+      var n = components[ci4].indices.length;
+      readoutFn('<div class="tt-title">' + escapeHtml(wagonLabel(ci4)) + '</div>' +
+        '<div class="tt-authors">' + n + ' stone' + (n === 1 ? '' : 's') + '</div>', false, evt);
+    }
+
     /** Park the tooltip on the pinned node, clickable, wherever it has drifted. */
     function emitPinnedAnchor() {
       if (!readoutFn || pinnedNode === null) return;
@@ -2428,7 +2481,18 @@
         var hit = hitR * hitR;
         if (d < hit && d < bestD) { bestD = d; best = n; }
       }
-      return { node: best, mx: mx, my: my };
+      var bestAnchor = null, bestAnchorD = Infinity;
+      for (var ci5 = 0; ci5 < nComp; ci5++) {
+        var hs = toScreen(clusterAnchor[ci5]);
+        var hdx = hs.x - mx, hdy = hs.y - my;
+        var hd = hdx * hdx + hdy * hdy;
+        var hHit = (HUB_R * rScale + 6) * (HUB_R * rScale + 6);
+        if (hd < hHit && hd < bestAnchorD) { bestAnchorD = hd; bestAnchor = ci5; }
+      }
+      var node = null, anchor = null;
+      if (best !== null && (bestAnchor === null || bestD <= bestAnchorD)) node = best;
+      else if (bestAnchor !== null) anchor = bestAnchor;
+      return { node: node, anchor: anchor, mx: mx, my: my };
     }
 
     canvas.onmousedown = function (e) {
@@ -2460,15 +2524,19 @@
         return;
       }
       var p = pick(e);
-      canvas.style.cursor = p.node !== null ? 'pointer' : 'grab';
-      if (p.node !== hoverNode) {
+      canvas.style.cursor = (p.node !== null || p.anchor !== null) ? 'pointer' : 'grab';
+      if (p.node !== hoverNode || p.anchor !== hoverAnchor) {
         hoverNode = p.node;
+        hoverAnchor = p.anchor;
+        if (hoverAnchor !== null) emitWagon(hoverAnchor, e);
         // Off every node with something pinned: hand the tooltip back to the
         // pin, parked and clickable, so the pointer can walk over to its link.
-        if (hoverNode === null && pinnedNode !== null) emitPinnedAnchor();
+        else if (hoverNode === null && pinnedNode !== null) emitPinnedAnchor();
         else if (hoverNode !== null && hoverNode === pinnedNode) emitPinnedAnchor();
         else emit(hoverNode, false, e);
         draw();
+      } else if (hoverAnchor !== null) {
+        readoutFn(null, false, e);   // reposition only
       } else if (hoverNode !== null && hoverNode !== pinnedNode) {
         readoutFn(null, false, e);   // reposition only
       }
@@ -2489,6 +2557,7 @@
       dragNode = null;
       panning = null;
       hoverNode = null;
+      hoverAnchor = null;
       // A pinned tooltip has to survive the cursor leaving the canvas — that
       // is exactly the trip the pointer makes to reach its link.
       if (pinnedNode !== null) emitPinnedAnchor();
@@ -2532,6 +2601,7 @@
         canvas.onmouseleave = canvas.onwheel = null;
         pinnedNode = null;
         hoverNode = null;
+        hoverAnchor = null;
         emit(null, false, null);
       },
       reheat: function () { autoFit = true; wake(1); },
