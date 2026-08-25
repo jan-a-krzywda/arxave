@@ -48,7 +48,7 @@ permalink: /stockpile/
   const feedsBase = (window.ARXAVE_FEEDS_BASE || '/feeds/');
   const archivePath = feedsBase + 'archive/index.json';
   
-  let allItems = {};
+  let allItems = { months: [], items: {} };
   let seams = new Set();
   let state = { seam: '', band: '' };
   
@@ -120,16 +120,30 @@ permalink: /stockpile/
       return r.json();
     })
     .then(index => {
-      allItems = index;
+      allItems.months = index.months || [];
       
       // Collect all seams
-      for (const month of (index.months || [])) {
+      for (const month of allItems.months) {
         for (const day of month.days) {
           for (const slug of Object.keys(day.feeds || {})) {
             seams.add(slug);
           }
         }
       }
+      
+      // The index carries the calendar and the counts; the actual items
+      // (needed to filter by band) live in each month's own file, since a
+      // month is the unit the page loads at once.
+      return Promise.all(allItems.months.map(month =>
+        fetch(feedsBase + 'archive/' + month.month + '.json')
+          .then(r => r.ok ? r.json() : null)
+          .then(data => {
+            if (data && data.items) Object.assign(allItems.items, data.items);
+          })
+          .catch(() => {})
+      ));
+    })
+    .then(() => {
       
       // Populate seam filter
       const seamSelect = document.getElementById('stockpile-seam-filter');
