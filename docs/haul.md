@@ -1,11 +1,11 @@
 ---
 layout: page
-title: The Cart
-permalink: /seams/
+title: Haul
+permalink: /haul/
 ---
 
 <div class="status-banner">
-  <strong>Four seams run out of this cave.</strong> Point a reader at one and it
+  <strong>Tonight's haul, split by seam.</strong> Point a reader at one and it
   drops the night's pay dirt on your desk each morning — no fetch, no setup, just
   the papers that matched, ranked by grade.
 </div>
@@ -13,9 +13,9 @@ permalink: /seams/
 <div id="seams-catalogue" style="display:none">
   <div class="seams-intro">
     <p>
-      Below is every seam that this Dig feeds. A reader can subscribe to as many as
-      it wants. The count beside each is tonight's haul, split by band so you can
-      see what a thin morning looks like before you add it.
+      Below is every seam that this Dig feeds. Take as many as you want. The
+      count beside each is tonight's haul, split by band so you can see what a
+      thin morning looks like before you add it.
     </p>
   </div>
 
@@ -73,7 +73,7 @@ permalink: /seams/
           '</div>' +
           '<div class="seam-feed">' +
           '  <a class="seam-link" href="' + feedsBase + slug + '.xml">' +
-          '    📡 Subscribe' +
+          '    📡 Take the feed' +
           '  </a>' +
           '</div>';
         list.appendChild(item);
