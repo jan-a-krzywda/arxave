@@ -2118,34 +2118,75 @@
     }
 
     // Seed positions: each wagon on its own arc, lone stones on an outer ring.
-    // Anchors sit further out than the seed offset — the simulation pulls each
-    // wagon's own stones back to its anchor every tick, so wagons end up as
-    // distinct blobs instead of melting into one ring under shared gravity.
+    // A same-size ring left a fifteen-stone wagon squeezed into the same
+    // angular slice as a three-stone one, and its own internal repulsion —
+    // summed over fourteen neighbors — easily outran the anchor's pull and
+    // bled it into whatever sat next door. The anchor ring below is sized and
+    // ordered from each wagon's own footprint, and a hard radius clamp in the
+    // tick loop backs it up so no wagon can drift past its own slice no
+    // matter how its internal forces balance.
     var nodes = new Array(N);
     var nComp = components.length;
-    var ANCHOR_R = 170 + nComp * 32;
+    var compSize = new Array(nComp);
+    for (var cs = 0; cs < nComp; cs++) compSize[cs] = components[cs].indices.length;
+    function wagonFootprint(sz) { return 26 + 16 * Math.sqrt(sz); }
+    var clusterCap = new Array(nComp);
+    for (var cc = 0; cc < nComp; cc++) clusterCap[cc] = wagonFootprint(compSize[cc]) * 1.15;
+
+    // Largest wagons first, then alternate to the smallest and back — spreads
+    // the big wagons apart around the ring instead of leaving them adjacent.
+    var bySize = [];
+    for (var oi = 0; oi < nComp; oi++) bySize.push(oi);
+    bySize.sort(function (a, b) { return compSize[b] - compSize[a]; });
+    var ring = new Array(nComp);
+    var lo = 0, hi = nComp - 1, pos = 0, front = true;
+    while (lo <= hi) {
+      ring[pos++] = front ? bySize[lo++] : bySize[hi--];
+      front = !front;
+    }
+    var slotOf = new Array(nComp);
+    for (var s = 0; s < nComp; s++) slotOf[ring[s]] = s;
+
+    // Anchor radius: big enough that the worst adjacent pair of clamp radii
+    // (by ring order, not by index) still clears with a pad between them.
+    var maxAdjSum = 0;
+    for (var a1 = 0; a1 < nComp; a1++) {
+      var pairSum = clusterCap[ring[a1]] + clusterCap[ring[(a1 + 1) % nComp]];
+      if (pairSum > maxAdjSum) maxAdjSum = pairSum;
+    }
+    var ANCHOR_R = nComp > 1
+      ? Math.max(200, (maxAdjSum + 40) / (2 * Math.sin(Math.PI / nComp)))
+      : 0;
+    var maxCap = 0;
+    for (var mc = 0; mc < nComp; mc++) if (clusterCap[mc] > maxCap) maxCap = clusterCap[mc];
+    var LONE_R = Math.max(200, ANCHOR_R + maxCap + 70);
+
     var clusterAnchor = new Array(nComp);
     for (var ci = 0; ci < nComp; ci++) {
-      var cbase = (ci / Math.max(1, nComp)) * Math.PI * 2;
+      var cbase = (slotOf[ci] / Math.max(1, nComp)) * Math.PI * 2;
       clusterAnchor[ci] = { x: Math.cos(cbase) * ANCHOR_R, y: Math.sin(cbase) * ANCHOR_R };
     }
+
     var wagonCount = {};
+    var loneAngle = new Array(N);
     for (i = 0; i < N; i++) {
       var c = cid[i];
-      var r, ang;
+      var r, ang, ox, oy;
       if (c >= 0) {
         wagonCount[c] = (wagonCount[c] || 0) + 1;
-        var base = (c / Math.max(1, nComp)) * Math.PI * 2;
-        ang = base + (wagonCount[c] % 17) * 0.37;
-        r = 60 + (wagonCount[c] % 5) * 12;
+        ang = (wagonCount[c] % 17) * 0.37;
+        r = Math.min(clusterCap[c] * 0.5, 20 + (wagonCount[c] % 5) * 10);
+        ox = clusterAnchor[c].x; oy = clusterAnchor[c].y;
       } else {
         ang = Math.random() * Math.PI * 2;
-        r = 190 + Math.random() * 60;
+        loneAngle[i] = ang;
+        r = LONE_R + Math.random() * 90;
+        ox = 0; oy = 0;
       }
       nodes[i] = {
         i: i,
-        x: Math.cos(ang) * r + (c >= 0 ? Math.cos(base) * 130 : 0),
-        y: Math.sin(ang) * r + (c >= 0 ? Math.sin(base) * 130 : 0),
+        x: ox + Math.cos(ang) * r,
+        y: oy + Math.sin(ang) * r,
         vx: 0, vy: 0,
         r: 2.5 + Math.min(3.5, Math.sqrt(deg[i]) * 0.7)
       };
@@ -2207,8 +2248,12 @@
           ndg.vx += (an.x - ndg.x) * 0.034;
           ndg.vy += (an.y - ndg.y) * 0.034;
         } else {
-          ndg.vx -= ndg.x * 0.006;
-          ndg.vy -= ndg.y * 0.006;
+          // Lone stones keep their own seeded angle and sit past every wagon's
+          // clamp radius — pulling them toward the origin instead put them
+          // inside the wagon ring, not outside it.
+          var lx = Math.cos(loneAngle[g]) * LONE_R, ly = Math.sin(loneAngle[g]) * LONE_R;
+          ndg.vx += (lx - ndg.x) * 0.01;
+          ndg.vy += (ly - ndg.y) * 0.01;
         }
       }
 
@@ -2225,6 +2270,26 @@
         if (sp > MAX_STEP) { sx = sx / sp * MAX_STEP; sy = sy / sp * MAX_STEP; }
         nd.x += sx;
         nd.y += sy;
+      }
+
+      // Hard containment: a wagon's own internal repulsion — summed over
+      // every member — can outrun its anchor's pull long before the springs
+      // settle. Without this a big wagon balloons past its ring slice and
+      // bleeds into its neighbor regardless of how the soft forces balance.
+      for (var cl = 0; cl < N; cl++) {
+        var ndc = nodes[cl];
+        if (ndc === dragNode) continue;
+        var ccid = cid[cl];
+        if (ccid < 0) continue;
+        var anc = clusterAnchor[ccid];
+        var cdx = ndc.x - anc.x, cdy = ndc.y - anc.y;
+        var cd = Math.sqrt(cdx * cdx + cdy * cdy);
+        var cap = clusterCap[ccid];
+        if (cd > cap) {
+          var cscale = cap / cd;
+          ndc.x = anc.x + cdx * cscale;
+          ndc.y = anc.y + cdy * cscale;
+        }
       }
 
       alpha *= 0.985;
