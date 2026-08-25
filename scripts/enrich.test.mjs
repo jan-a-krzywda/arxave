@@ -340,22 +340,47 @@ test('a spent daily allowance is refused by name, not by how long it asks for', 
    a free-text verdict reaches the feed, and a thinking level left at its
    default means paying reasoning prices to transcribe a number. */
 
-test('the schema travels in response_format, where the 3 line looks for it', () => {
-  const b = requestBody('p');
-  assert.equal(b.generationConfig.response_format.mime_type, 'application/json');
-  assert.equal(b.generationConfig.response_format.schema.properties.verdict.enum.length, 2);
-  assert.ok(!('responseSchema' in b.generationConfig), 'not the 2.5 spelling');
-  assert.ok(!('responseMimeType' in b.generationConfig), 'nor its sibling');
+test('the schema travels the way v1beta actually accepts it', () => {
+  // VERIFIED AGAINST THE LIVE API 2026-08-25. The docs for the 3 line describe
+  // a `response_format` object and a top-level `thinking_level`; v1beta rejects
+  // both with "Cannot find field", and the 2.5 spelling still works. This test
+  // exists to stop the next reader modernising it back out of the docs.
+  const gc = requestBody('p').generationConfig;
+  assert.equal(gc.responseMimeType, 'application/json');
+  assert.equal(gc.responseSchema.properties.verdict.enum.length, 2);
+  assert.ok(!('response_format' in gc), 'rejected by v1beta');
+  assert.ok(!('thinking_level' in gc), 'also rejected by v1beta');
 });
 
 test('thinking is pinned to the floor, because this is transcription', () => {
-  // Thinking tokens bill as output, at five times the input rate. The default
-  // is "medium"; the paper states the number and the model copies it.
-  assert.equal(requestBody('p').generationConfig.thinking_level, 'low');
+  // Thinking tokens bill as output at five times the input rate. Measured on a
+  // real 6.2k-token full-text prompt, the floor returned thoughtsTokenCount 0.
+  assert.equal(requestBody('p').generationConfig.thinkingConfig.thinkingLevel, 'low');
 });
 
 test('the prompt and the system instruction are still where they were', () => {
   const b = requestBody('PROMPT');
   assert.equal(b.contents[0].parts[0].text, 'PROMPT');
   assert.match(b.systemInstruction.parts[0].text, /brief a working researcher/);
+});
+
+
+test('a busy model is retried, because 503 clears in seconds unlike a quota', async () => {
+  // MEASURED 2026-08-25: "experiencing high demand" came back often enough
+  // while probing this model to lose items to it.
+  const real = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    if (calls < 3) return { ok: false, status: 503, text: async () => '{"error":{"message":"high demand"}}' };
+    return {
+      ok: true, status: 200,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify(full) }] } }] }),
+    };
+  };
+  try {
+    const [it] = await enrichItems([paper('1', 'worth')], { apiKey: 'k' });
+    assert.equal(calls, 3, 'retried twice');
+    assert.equal(it.enrichment.result, full.result);
+  } finally { globalThis.fetch = real; }
 });
