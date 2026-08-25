@@ -9,7 +9,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { cachedFields, parseResponse, promptFor, pruneCache, SHAPE } from './enrich.mjs';
+import {
+  cachedFields, DEEP_MAX, deepSet, enrichItems, parseResponse, promptFor,
+  pruneCache, resolveFigure, SHAPE,
+} from './enrich.mjs';
 
 const wrap = (obj) => ({
   candidates: [{ content: { parts: [{ text: JSON.stringify(obj) }] } }],
@@ -18,10 +21,12 @@ const wrap = (obj) => ({
 const full = {
   verdict: 'read',
   kind: 'new result',
-  headline: 'Single-qubit gate fidelity of 99.9995% in isotopically purified Si.',
-  so_what: 'Puts single-qubit control well below the surface-code threshold.',
-  caveat: 'One device, at 100 mK.',
+  result: 'Single-qubit gate fidelity 99.9995%. Isotopically purified Si.',
+  question: 'How far can gate fidelity go once nuclear spins are removed?',
+  prior: 'Was 99.95% on natural Si, same architecture (Yoneda 2018).',
+  limits: 'One device, at 100 mK.',
   tools: ['spin-locking', 'parity readout'],
+  figure: 'S3.F2',
 };
 
 test('a well-formed response becomes the fields verbatim', () => {
@@ -45,7 +50,8 @@ test('text that is not JSON is null, not a throw', () => {
 
 test('an all-empty payload is null rather than a row of blank headings', () => {
   assert.equal(parseResponse(wrap({
-    verdict: '', kind: '', headline: '', so_what: '', caveat: '', tools: [],
+    verdict: '', kind: '', result: '', question: '', prior: '', limits: '',
+    tools: [], figure: '',
   })), null);
 });
 
@@ -56,19 +62,29 @@ test('labels alone are not an enrichment', () => {
 });
 
 test('a partial payload keeps what is there', () => {
-  const got = parseResponse(wrap({ headline: 'H.', tools: ['a'] }));
+  const got = parseResponse(wrap({ result: 'R.', tools: ['a'] }));
   assert.deepEqual(got, {
-    verdict: '', kind: '', headline: 'H.', so_what: '', caveat: '', tools: ['a'],
+    verdict: '', kind: '', result: 'R.', question: '', prior: '', limits: '',
+    tools: ['a'], figure: '',
   });
 });
 
-test('a missing caveat is kept as absent, not as a sentence', () => {
-  // Plenty of abstracts state no limitation. The feed omits the line; what it
-  // must never do is print an invented one, so an empty string has to survive
-  // as an empty string rather than being filled in downstream.
-  const got = parseResponse(wrap({ ...full, caveat: '' }));
-  assert.equal(got.caveat, '');
-  assert.equal(got.headline, full.headline);
+test('a missing limit is kept as absent, not as a sentence', () => {
+  // Plenty of papers state no limitation. The feed omits the line; what it must
+  // never do is print an invented one, so an empty string has to survive as an
+  // empty string rather than being filled in downstream.
+  const got = parseResponse(wrap({ ...full, limits: '' }));
+  assert.equal(got.limits, '');
+  assert.equal(got.result, full.result);
+});
+
+test('an unnamed baseline stays unnamed rather than being guessed at', () => {
+  // `prior` is the field with the most room to be wrong: a plausible-sounding
+  // "was around 99%" reads exactly like a measured comparison and is not one.
+  // Abstract-tier items have no introduction to read and must simply omit it.
+  const got = parseResponse(wrap({ ...full, prior: '' }));
+  assert.equal(got.prior, '');
+  assert.equal(got.result, full.result);
 });
 
 test('a verdict outside the enum is dropped rather than passed through', () => {
@@ -109,4 +125,132 @@ test('the cache drops what nobody has seen in a month', () => {
     broken: {},
   };
   assert.deepEqual(Object.keys(pruneCache(cache, '2026-08-12')).sort(), ['edge', 'fresh']);
+});
+
+
+/* ── The two tiers ───────────────────────────────────────────────────────────
+ *
+ * The full-text pass is the expensive half of this file, so what it must not do
+ * is run on papers it was not meant to, and what it must not fail to do is
+ * re-run on a paper that has been promoted into the band since it was cached.
+ * Both failures are silent: the first shows up as a bill, the second as a brief
+ * that is quietly missing its two best fields.
+ */
+
+const paper = (id, band) => ({
+  arxivId: id, title: 't', abstract: 'a', authors: '', band,
+});
+
+test('only the top band is read in full', () => {
+  const ids = deepSet([paper('1', 'paydirt'), paper('2', 'worth'), paper('3', 'longshot')]);
+  assert.deepEqual([...ids], ['1']);
+});
+
+test('the fuse holds on an unusually rich morning', () => {
+  const many = Array.from({ length: DEEP_MAX + 5 }, (_, i) => paper(String(i), 'paydirt'));
+  assert.equal(deepSet(many).size, DEEP_MAX);
+});
+
+test('a cached abstract-tier record is a miss once the paper is in the band', () => {
+  // The promotion case. Serving the shallow record would leave the item without
+  // `prior` and `limits` on exactly the day a reader is deciding to spend an
+  // evening on it — and nothing anywhere would say why.
+  const rec = { fields: { result: 'R.' }, shape: SHAPE, depth: 'abstract' };
+  assert.ok(cachedFields(rec, false), 'still fine for the abstract tier');
+  assert.equal(cachedFields(rec, true), null);
+  assert.ok(cachedFields({ ...rec, depth: 'full' }, true));
+});
+
+test('an older field set is a miss at either tier', () => {
+  const rec = { fields: { result: 'R.' }, shape: SHAPE - 1, depth: 'full' };
+  assert.equal(cachedFields(rec, false), null);
+  assert.equal(cachedFields(rec, true), null);
+});
+
+test('the model picks a figure by id; a hallucinated id falls back, not away', () => {
+  const full = { figures: [{ id: 'S2.F1', src: 'a.png' }, { id: 'S4.F2', src: 'b.png' }] };
+  assert.equal(resolveFigure(full, 'S4.F2').src, 'b.png');
+  assert.equal(resolveFigure(full, 'S9.F9').src, 'a.png', 'falls back to the first');
+  assert.equal(resolveFigure({ figures: [] }, 'S2.F1'), null);
+  assert.equal(resolveFigure(null, ''), null);
+});
+
+test('the full text and the figure captions both reach the prompt', () => {
+  const p = promptFor({ title: 'T', abstract: 'A', authors: 'X' }, {
+    text: 'INTRODUCTION and CONCLUSION',
+    figures: [{ id: 'S2.F1', caption: 'Figure 1: the overview' }],
+  });
+  assert.match(p, /Abstract: A/, 'the abstract stays in at the full tier');
+  assert.match(p, /INTRODUCTION and CONCLUSION/);
+  assert.match(p, /S2\.F1: Figure 1: the overview/);
+});
+
+test('without a full text the prompt is the abstract and no figure list', () => {
+  const p = promptFor({ title: 'T', abstract: 'A', authors: '' });
+  assert.match(p, /Abstract: A/);
+  assert.doesNotMatch(p, /FULL TEXT/);
+  assert.doesNotMatch(p, /FIGURES/);
+});
+
+/* End to end through enrichItems, with the network stood in for on both sides:
+   `readFullText` is injected, and the Gemini call is stubbed by pointing the
+   module at a fetch that answers with a canned candidate. */
+
+function stubGemini(reply) {
+  const real = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true, status: 200,
+    json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify(reply) }] }}] }),
+  });
+  return () => { globalThis.fetch = real; };
+}
+
+test('a top-band paper is read in full and keeps the figure it was briefed on', async () => {
+  const restore = stubGemini({ ...full, figure: 'S4.F2' });
+  try {
+    const read = async () => ({
+      text: 'body',
+      figures: [{ id: 'S2.F1', src: 'a.png', caption: 'c1' }, { id: 'S4.F2', src: 'b.png', caption: 'c2' }],
+      code: ['https://github.com/x/y'],
+    });
+    const [it] = await enrichItems([paper('1', 'paydirt')], { apiKey: 'k', readFullText: read });
+    assert.equal(it.enrichment.prior, full.prior);
+    // Resolved off the paper, not generated — and carried on the record so a
+    // cache hit tomorrow renders the same picture without re-fetching the HTML.
+    assert.equal(it.enrichment.figure_url, 'b.png');
+    assert.equal(it.enrichment.figure_caption, 'c2');
+    assert.equal(it.enrichment.code, 'https://github.com/x/y');
+  } finally { restore(); }
+});
+
+test('a lower-band paper is never fetched', async () => {
+  const restore = stubGemini(full);
+  try {
+    let fetched = 0;
+    const read = async () => { fetched++; return null; };
+    await enrichItems([paper('2', 'worth')], { apiKey: 'k', readFullText: read });
+    assert.equal(fetched, 0);
+  } finally { restore(); }
+});
+
+test('a paper with no HTML degrades one step, to its abstract, not to nothing', async () => {
+  const restore = stubGemini(full);
+  try {
+    const read = async () => null;
+    const [it] = await enrichItems([paper('1', 'paydirt')], { apiKey: 'k', readFullText: read });
+    assert.equal(it.enrichment.result, full.result);
+    assert.equal(it.enrichment.figure_url, '');
+  } finally { restore(); }
+});
+
+test('a fetch that throws still leaves the item briefed from its abstract', async () => {
+  // One degradation step, never two: the fetch lives inside the same try as the
+  // call precisely so a malformed HTML page cannot cost the whole brief.
+  const restore = stubGemini(full);
+  try {
+    const read = async () => { throw new Error('ECONNRESET'); };
+    const [it] = await enrichItems([paper('1', 'paydirt')], { apiKey: 'k', readFullText: read });
+    assert.equal(it.enrichment.result, full.result, 'briefed from the abstract instead');
+    assert.equal(it.enrichment.figure_url, '');
+  } finally { restore(); }
 });

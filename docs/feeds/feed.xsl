@@ -113,6 +113,15 @@
             font-size: 0.8rem; font-weight: 700;
           }
           article:first-of-type .seam { background: var(--ore); color: #1b1f26; }
+          /* The announcement day. A feed with lookback_days > 1 mixes several
+             days in one list, and the rank chip says nothing about which. Set
+             quiet and pushed to the end of the line: it is the field you look
+             for, never the field you read first. */
+          .when {
+            margin-left: auto; flex: none;
+            color: var(--text-faint); font-size: 0.8rem;
+            font-variant-numeric: tabular-nums; white-space: nowrap;
+          }
           h2 { font-size: 1.06rem; line-height: 1.35; margin: 0; }
           h2 a { color: var(--text); }
           h2 a:hover { color: var(--ore); }
@@ -120,6 +129,15 @@
           .body { margin-top: 0.7rem; font-size: 0.95rem; }
           .body p { margin: 0.45rem 0; color: var(--text); }
           .body strong { color: var(--ore-dim); font-weight: 600; }
+          /* Figures come off arXiv at whatever size LaTeXML rendered them, and
+             a plot is unreadable below about 20rem, so the cap is generous and
+             the floor is the column. The pale plate matters: most of these are
+             line art on transparent SVG, which on a dark page is invisible. */
+          .figure { margin: 0.8rem 0; }
+          .figure img {
+            display: block; width: 100%; max-width: 34rem; height: auto;
+            border-radius: 3px; background: #f4f1ea; padding: 0.5rem;
+          }
           .body .grade { color: var(--text-faint); font-size: 0.85rem; }
           .body .grade strong { color: var(--text-dim); }
           /* The abstract and the tool list are the long tail of the card, and
@@ -267,6 +285,9 @@
                     <xsl:value-of select="title"/>
                   </a>
                 </h2>
+                <xsl:if test="arxave:announced">
+                  <span class="when"><xsl:value-of select="arxave:announced"/></span>
+                </xsl:if>
               </div>
               <!-- Rendered from the arxave:* elements, never from <description>.
                    description holds escaped HTML for feed readers, and undoing
@@ -277,7 +298,7 @@
                      sort of paper it is, and the finding with its number. The
                      provenance line under it explains the ranking rather than
                      describing the paper, so it is set quiet. -->
-                <xsl:if test="arxave:band or arxave:verdict or arxave:kind or arxave:headline">
+                <xsl:if test="arxave:band or arxave:verdict or arxave:kind or arxave:result">
                   <p class="verdict">
                     <xsl:if test="arxave:band">
                       <span>
@@ -298,8 +319,8 @@
                     <xsl:if test="arxave:kind">
                       <span class="kind"><xsl:value-of select="arxave:kind"/></span>
                     </xsl:if>
-                    <xsl:if test="arxave:headline">
-                      <xsl:text> </xsl:text><xsl:value-of select="arxave:headline"/>
+                    <xsl:if test="arxave:result">
+                      <xsl:text> </xsl:text><xsl:value-of select="arxave:result"/>
                     </xsl:if>
                   </p>
                 </xsl:if>
@@ -319,11 +340,44 @@
                     <xsl:text> · </xsl:text><xsl:value-of select="arxave:authors"/>
                   </xsl:if>
                 </p>
-                <xsl:if test="arxave:sowhat">
-                  <p><strong>So what. </strong><xsl:value-of select="arxave:sowhat"/></p>
+                <!-- The figure, when the model picked one out of the paper it
+                     read. Hotlinked from arxiv.org: this repository stays text,
+                     and the image is already being served next to the paper. It
+                     goes above the prose because it is the fastest thing on the
+                     card to read, and it is the first thing to go on a narrow
+                     screen only in the sense that it scales down with it. -->
+                <xsl:if test="arxave:figure">
+                  <p class="figure">
+                    <a>
+                      <xsl:attribute name="href"><xsl:value-of select="link"/></xsl:attribute>
+                      <img>
+                        <xsl:attribute name="src"><xsl:value-of select="arxave:figure"/></xsl:attribute>
+                        <xsl:attribute name="alt"><xsl:value-of select="arxave:figurecaption"/></xsl:attribute>
+                        <xsl:attribute name="loading">lazy</xsl:attribute>
+                      </img>
+                    </a>
+                  </p>
                 </xsl:if>
-                <xsl:if test="arxave:caveat">
-                  <p class="but"><strong>But. </strong><xsl:value-of select="arxave:caveat"/></p>
+                <xsl:if test="arxave:question">
+                  <p><strong>Asks. </strong><xsl:value-of select="arxave:question"/></p>
+                </xsl:if>
+                <!-- `Before` is the field the whole full-text tier exists for: a
+                     number with nothing to compare it against is not a result
+                     yet. It is absent on abstract-tier items, which is honest —
+                     an abstract rarely names the baseline it beats. -->
+                <xsl:if test="arxave:prior">
+                  <p><strong>Before. </strong><xsl:value-of select="arxave:prior"/></p>
+                </xsl:if>
+                <xsl:if test="arxave:limits">
+                  <p class="but"><strong>But. </strong><xsl:value-of select="arxave:limits"/></p>
+                </xsl:if>
+                <xsl:if test="arxave:code">
+                  <p><strong>Code. </strong>
+                    <a>
+                      <xsl:attribute name="href"><xsl:value-of select="arxave:code"/></xsl:attribute>
+                      <xsl:value-of select="arxave:code"/>
+                    </a>
+                  </p>
                 </xsl:if>
                 <!-- Everything below the fold is reference, not decision: the
                      tool list is jargon you want only once you have decided to

@@ -70,7 +70,7 @@ jobs:
       # feed recommend papers the page would not. Both report success.
       - name: Check the parse and the blend still match the browser's
         working-directory: scripts
-        run: node --test warm-dig.test.mjs preset-feed.test.mjs enrich.test.mjs
+        run: node --test warm-dig.test.mjs preset-feed.test.mjs enrich.test.mjs fulltext.test.mjs
 
       - name: Warm
         working-directory: scripts
@@ -99,6 +99,19 @@ jobs:
           # abstracts and no verdict line — the enricher fails soft by design.
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: node preset-feed.mjs --presets ../docs/presets --out ../docs/feeds
+
+      # The commit step below only ever runs on main, which is right — see the
+      # ref guard there — but it also means a branch dispatch builds the feeds
+      # and then throws them away, leaving only a line of log to judge a change
+      # by. Uploading them makes a branch run inspectable, which is the whole
+      # reason to dispatch one.
+      - name: Keep the built feeds where a branch run can be read
+        if: ${{ !inputs.dry_run && github.ref != 'refs/heads/main' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: feeds-${{ github.run_id }}
+          path: docs/feeds/
+          retention-days: 7
 
       # An unchanged feed is the normal Saturday outcome and not worth a commit;
       # `git diff --staged --quiet` is what keeps this from pushing every run.

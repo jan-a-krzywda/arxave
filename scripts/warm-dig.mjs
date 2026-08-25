@@ -143,6 +143,12 @@ function toBase64(vector) {
   return Buffer.from(floats.buffer, floats.byteOffset, floats.byteLength).toString('base64');
 }
 
+/** 'Tue, 25 Aug 2026 00:00:00 -0400' -> '2026-08-25'; '' when unparseable. */
+function rfcDate(raw) {
+  const when = new Date(String(raw ?? '').trim());
+  return Number.isNaN(when.getTime()) ? '' : when.toISOString().slice(0, 10);
+}
+
 /**
  * One category's announcement feed → the abstracts that will be hauled.
  *
@@ -194,6 +200,13 @@ export function parseFeed(xml) {
       title: cacheKeyText(String(item.title ?? '')),
       authors: cacheKeyText(String(Array.isArray(creators) ? creators.join(', ') : (creators ?? ''))),
       link: link || ('https://arxiv.org/abs/' + arxivId),
+      /* The night this was announced. Every item in one feed carries the same
+         date — arXiv stamps the whole listing at midnight ET — which is exactly
+         what it means. Display only, like title and authors above: `abstract`
+         is still the only hashed field, so this cannot move a cache key. Named
+         `published` to match what parseAtom yields for the earlier days, so a
+         consumer downstream never has to ask which pass a stone came from. */
+      published: rfcDate(item.pubDate),
     });
   }
   return out;
