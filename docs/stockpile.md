@@ -65,43 +65,56 @@ permalink: /stockpile/
       heading.textContent = month.month;
       monthDiv.appendChild(heading);
       
+      const table = document.createElement('table');
+      table.className = 'stockpile-table';
+      
+      const thead = table.createTHead();
+      const hrow = thead.insertRow();
+      ['Date', 'Paper', 'Seam', 'Verdict'].forEach(h => {
+        const th = document.createElement('th');
+        th.textContent = h;
+        hrow.appendChild(th);
+      });
+      
+      const tbody = table.createTBody();
       let monthHasItems = false;
+      
+      // Days already come newest-first from the index; list every matching
+      // paper in that order so the table reads as one chronological feed.
       for (const day of month.days) {
-        let dayHasItems = false;
-        const table = document.createElement('table');
-        table.className = 'stockpile-table';
-        
-        const thead = table.createTHead();
-        const hrow = thead.insertRow();
-        ['Date', 'Seam', 'Items', 'Pay dirt', 'Worth a look'].forEach(h => {
-          const th = document.createElement('th');
-          th.textContent = h;
-          hrow.appendChild(th);
-        });
-        
-        const tbody = table.createTBody();
         for (const [slug, counts] of Object.entries(day.feeds || {})) {
           if (state.seam && slug !== state.seam) continue;
           
           const filtered = filterItems(allItems.items?.[day.date]?.[slug] || [], state.band);
-          if (!filtered.length) continue;
-          dayHasItems = monthHasItems = anyShown = true;
-          
-          const row = tbody.insertRow();
-          row.className = 'band-' + (filtered[0]?.band || 'longshot');
-          row.insertCell().textContent = day.date;
-          row.insertCell().textContent = slug;
-          row.insertCell().textContent = counts.items;
-          row.insertCell().textContent = counts.paydirt || '—';
-          row.insertCell().textContent = counts.items - (counts.paydirt || 0) + ' other';
-        }
-        
-        if (dayHasItems) {
-          monthDiv.appendChild(table);
+          for (const item of filtered) {
+            monthHasItems = anyShown = true;
+            
+            const row = tbody.insertRow();
+            row.className = 'band-' + (item.band || 'longshot');
+            row.insertCell().textContent = day.date;
+            
+            const paperCell = row.insertCell();
+            const link = document.createElement('a');
+            link.href = item.link;
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.textContent = item.title;
+            paperCell.appendChild(link);
+            if (item.headline) {
+              const sub = document.createElement('div');
+              sub.className = 'stockpile-headline';
+              sub.textContent = item.headline;
+              paperCell.appendChild(sub);
+            }
+            
+            row.insertCell().textContent = slug;
+            row.insertCell().textContent = item.verdict || item.band;
+          }
         }
       }
       
       if (monthHasItems) {
+        monthDiv.appendChild(table);
         container.appendChild(monthDiv);
       }
     }
@@ -265,6 +278,12 @@ permalink: /stockpile/
 .stockpile-table tr.band-longshot td:first-child {
   border-left: 3px solid var(--rock-edge);
   opacity: 0.65;
+}
+
+.stockpile-headline {
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
 }
 
 .stockpile-empty {
