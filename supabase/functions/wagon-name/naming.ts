@@ -81,6 +81,10 @@ export interface WagonName {
 
 // ── Caps. This endpoint is public and it spends money; these are load-bearing.
 export const MAX_WAGONS = 24;      // a haul that clusters into more than this is noise
+/* Cache-only lookups never reach a model, so the prompt-size reason for
+   MAX_WAGONS does not apply to them — only the cost of one wider cache read,
+   which a train of this size makes once per haul. */
+export const MAX_LOOKUP_WAGONS = 120;
 export const MAX_MEMBERS = 60;     // titles per wagon; beyond this adds no signal
 export const MAX_TITLE = 400;      // characters; arXiv titles run ~80
 export const MAX_ID = 64;
@@ -279,13 +283,16 @@ export function retryAfterSeconds(header: string | null, body: string): number {
  * Every cap is checked here rather than at the point of use, so index.ts can
  * assume a well-formed request and the caps are all readable in one place.
  */
-export function readWagons(body: Record<string, unknown>): Member[][] | string {
+export function readWagons(
+  body: Record<string, unknown>,
+  maxWagons: number = MAX_WAGONS,
+): Member[][] | string {
   const raw = body.wagons;
   if (!Array.isArray(raw) || raw.length === 0) {
     return 'Field "wagons" must be a non-empty array.';
   }
-  if (raw.length > MAX_WAGONS) {
-    return `Too many wagons: ${raw.length} > ${MAX_WAGONS}.`;
+  if (raw.length > maxWagons) {
+    return `Too many wagons: ${raw.length} > ${maxWagons}.`;
   }
   const out: Member[][] = [];
   for (const w of raw) {

@@ -16,6 +16,10 @@
  * enrichment.
  *
  *   POST /wagon-name  { wagons: [{ members: [{ id, title }, ...] }, ...] }
+ *
+ * With `cacheOnly: true` the request is a pure lookup: it answers from the
+ * name cache and never calls a model, so it spends no budget and may carry up
+ * to MAX_LOOKUP_WAGONS wagons. The page fires one on every haul.
  *     → { names: { "<key>": { name, gloss } }, keys: ["<key>", ...],
  *         cached: n, generated: n, spent: n, budget: { remaining } }
  *
@@ -51,6 +55,7 @@
 import {
   generationConfig,
   ladderFrom,
+  MAX_LOOKUP_WAGONS,
   MAX_WAGONS,
   parseResponse,
   promptFor,
@@ -325,7 +330,14 @@ Deno.serve(async (req) => {
     return fail(400, 'Body must be JSON.');
   }
 
-  const wagons = readWagons(body);
+  /* A cache-only request looks up names and never generates one. The page
+     fires it on every haul so a train whose wagons have been named before
+     arrives already named, with no model call, no budget debit, and nothing
+     for the reader to press. Misses come back as misses — and since no prompt
+     is ever built, it may carry far more wagons than a naming request. */
+  const cacheOnly = body.cacheOnly === true;
+
+  const wagons = readWagons(body, cacheOnly ? MAX_LOOKUP_WAGONS : MAX_WAGONS);
   if (typeof wagons === 'string') return fail(400, wagons);
 
   const keys = await Promise.all(wagons.map(wagonKey));
@@ -354,7 +366,7 @@ Deno.serve(async (req) => {
      groups, the *remaining* wagons go to the next model. Each attempt spends
      exactly one metered call and advances one rung, so a request makes at most
      LADDER.length calls no matter what goes wrong. */
-  if (missing.length && GEMINI_KEY) {
+  if (missing.length && GEMINI_KEY && !cacheOnly) {
     const client = await clientHash(req);
     let pending = missing;
 
@@ -447,6 +459,7 @@ Deno.serve(async (req) => {
        tomorrow, a rate limit is over in a minute, and telling a user to come
        back tomorrow when they could press again shortly is the worse error. */
     retryAfter: rateLimited,
-    limit: MAX_WAGONS,
+    limit: cacheOnly ? MAX_LOOKUP_WAGONS : MAX_WAGONS,
+    cacheOnly,
   });
 });

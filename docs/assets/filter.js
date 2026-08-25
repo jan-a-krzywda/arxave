@@ -24,6 +24,7 @@
   const NAME_URL = window.ARXAVE_WAGON_NAME === false ? null
     : (window.ARXAVE_WAGON_NAME || (FUNCTIONS_BASE + '/wagon-name'));
   const NAME_MAX_WAGONS = 24;     // must match MAX_WAGONS in wagon-name/naming.ts
+  const NAME_MAX_LOOKUP = 120;    // must match MAX_LOOKUP_WAGONS in wagon-name/naming.ts
   /* The pick, hosted. Set window.ARXAVE_EMBED to point at any OpenAI-shaped
      /v1/embeddings — your own LM Studio, Ollama, or a paid endpoint — and the
      page will use that instead. The request and response shapes are identical
@@ -1726,10 +1727,17 @@
    * is one paper's phrasing standing in for a dozen. Naming asks a model to
    * read the titles and say what they share.
    *
-   * ON A BUTTON, NOT ON EVERY RECOMPUTE, and that is the whole cost design.
-   * The threshold slider re-derives components on every input event, so wiring
-   * naming into clusterOrder would turn one drag into dozens of call-sets
-   * against a metered API. The user settles the threshold, then asks.
+   * GENERATING IS ON A BUTTON, NOT ON EVERY RECOMPUTE, and that is the whole
+   * cost design. The threshold slider re-derives components on every input
+   * event, so wiring generation into clusterOrder would turn one drag into
+   * dozens of call-sets against a metered API. The user settles the threshold,
+   * then asks.
+   *
+   * LOOKING UP IS FREE AND SO IT IS AUTOMATIC. Once per haul, at the opening
+   * threshold, the page sends a cache-only request: names already generated
+   * for exactly these wagons come straight back, and misses stay misses. No
+   * model call, no budget debit, and a train that someone has hauled before
+   * arrives named without anyone pressing anything.
    *
    * Names are kept in `state.wagonNames`, keyed by membership rather than by
    * wagon number — so dragging the threshold away and back re-attaches the
@@ -1807,6 +1815,19 @@
    * stale set of names. `clusterOrder` itself is synchronous and always wins;
    * this only ever decorates whatever it left behind.
    */
+  /**
+   * The free half of naming: ask the endpoint only for names it already holds.
+   *
+   * Fired automatically once per haul, at the opening threshold. It costs one
+   * cache read and no model call, so it cannot spend the shared daily budget —
+   * which is exactly why it can run without being asked for. Silent on every
+   * kind of failure, and silent on a miss: an unnamed wagon is the ordinary
+   * case, not a fault worth a status line.
+   */
+  function lookupWagonNames() {
+    nameWagons({ cacheOnly: true }).catch(function () { /* numbers are fine */ });
+  }
+
   var wagonNameGen = 0;
   function reattachWagonNames() {
     var gen = ++wagonNameGen;
@@ -1838,7 +1859,8 @@
    * garnish on a clustering that already happened locally, and it must never
    * be the reason a haul looks broken.
    */
-  async function nameWagons() {
+  async function nameWagons(opts) {
+    var cacheOnly = !!(opts && opts.cacheOnly);
     var comps = state.wagonComponents || [];
     if (!NAME_URL || !comps.length || state.wagonNaming) return;
 
@@ -1846,7 +1868,7 @@
     var pending = [];
     for (var c = 0; c < comps.length; c++) if (!comps[c].name) pending.push(c);
     if (!pending.length) {
-      setNameStatus('Every wagon is named.');
+      if (!cacheOnly) setNameStatus('Every wagon is named.');
       renderWagonPanel();
       return;
     }
@@ -1858,19 +1880,22 @@
        Sorted here rather than assumed: clusterOrder emits components in the
        order its DFS reached them, which is arXiv-listing order and has nothing
        to do with size. */
+    var cap = cacheOnly ? NAME_MAX_LOOKUP : NAME_MAX_WAGONS;
     var overflow = 0;
-    if (pending.length > NAME_MAX_WAGONS) {
+    if (pending.length > cap) {
       pending.sort(function (a, b) {
         return comps[b].indices.length - comps[a].indices.length;
       });
-      overflow = pending.length - NAME_MAX_WAGONS;
-      pending = pending.slice(0, NAME_MAX_WAGONS);
+      overflow = pending.length - cap;
+      pending = pending.slice(0, cap);
     }
 
     state.wagonNaming = true;
-    var btn = byId('wagon-name-btn');
+    var btn = cacheOnly ? null : byId('wagon-name-btn');
     if (btn) btn.disabled = true;
-    setNameStatus('Naming ' + pending.length + ' wagon' + (pending.length === 1 ? '' : 's') + '…');
+    if (!cacheOnly) {
+      setNameStatus('Naming ' + pending.length + ' wagon' + (pending.length === 1 ? '' : 's') + '…');
+    }
 
     try {
       var payload = pending.map(function (c) {
@@ -1884,12 +1909,14 @@
       var resp = await fetch(NAME_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wagons: payload }),
+        body: JSON.stringify({ wagons: payload, cacheOnly: cacheOnly }),
       });
       if (!resp.ok) {
         var detail = '';
         try { detail = (await resp.json()).error || ''; } catch (_) {}
-        setNameStatus(detail || ('Naming failed (HTTP ' + resp.status + ').'), true);
+        /* A failed lookup is not an error the reader asked for: the automatic
+           pass is a free upgrade, and its failure just leaves the numbers. */
+        if (!cacheOnly) setNameStatus(detail || ('Naming failed (HTTP ' + resp.status + ').'), true);
         return;
       }
       var data = await resp.json();
@@ -1903,6 +1930,16 @@
       var tail = overflow
         ? ' The ' + overflow + ' smallest went unasked — name them by raising the threshold.'
         : '';
+
+      /* The automatic pass says nothing unless it found something, and even
+         then only what it found: it never reports misses, because a wagon that
+         has simply never been named is the normal case and not a problem. */
+      if (cacheOnly) {
+        if (named) {
+          setNameStatus(named + ' of ' + comps.length + ' named from cache.');
+        }
+        return;
+      }
 
       /* A rate limit outranks the budget message: it clears in about a minute,
          and the names already generated are cached, so pressing again picks up
@@ -1931,7 +1968,7 @@
           (data.generated ? '' : ' — all from cache') + '.' + tail);
       }
     } catch (err) {
-      setNameStatus('Naming is unavailable right now.', true);
+      if (!cacheOnly) setNameStatus('Naming is unavailable right now.', true);
     } finally {
       state.wagonNaming = false;
       if (btn) btn.disabled = false;
@@ -3401,6 +3438,11 @@
       state.wagonOrder = cluster.order;
       state.wagonComponents = cluster.components;
       reattachWagonNames();
+      /* Names already paid for are free to fetch, so the train arrives named
+         at the threshold it opens on rather than waiting for a button press.
+         Cache-only: a wagon nobody has named yet keeps its number, and the
+         button is still there to name it. */
+      lookupWagonNames();
 
       updateWagonStats();
       byId('wagon-sort-toggle').checked = true;

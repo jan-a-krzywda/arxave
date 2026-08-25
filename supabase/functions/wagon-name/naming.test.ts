@@ -11,6 +11,7 @@ import {
   generationConfig,
   LADDER,
   ladderFrom,
+  MAX_LOOKUP_WAGONS,
   MAX_MEMBERS,
   MAX_TITLES,
   type Member,
@@ -223,6 +224,16 @@ Deno.test('readWagons accepts a well-formed body', () => {
   const got = readWagons({ wagons: [{ members: [A, B] }] });
   assertEquals(Array.isArray(got), true);
   assertEquals((got as Member[][])[0].length, 2);
+});
+
+/* The cache-only path raises the wagon cap, because nothing is prompted with:
+   the 24 ceiling is a prompt-size limit, not a lookup one. */
+Deno.test('readWagons honours a raised wagon cap for lookups', () => {
+  const body = { wagons: Array.from({ length: 40 }, () => ({ members: [A] })) };
+  assertEquals(typeof readWagons(body), 'string');
+  assertEquals(Array.isArray(readWagons(body, MAX_LOOKUP_WAGONS)), true);
+  const over = { wagons: Array.from({ length: MAX_LOOKUP_WAGONS + 1 }, () => ({ members: [A] })) };
+  assertEquals(typeof readWagons(over, MAX_LOOKUP_WAGONS), 'string');
 });
 
 Deno.test('readWagons rejects everything malformed with a message', () => {
