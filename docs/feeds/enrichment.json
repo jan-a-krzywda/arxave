@@ -1403,19 +1403,25 @@
   "fields": {
    "verdict": "read",
    "kind": "new method",
-   "headline": "A new framework computationally designs physics-inspired quantum codes up to 100 physical qubits and hardware-aware codes for biased noise with lower logical error rates.",
-   "so_what": "This framework enables computational design of quantum error correction codes, potentially leading to more optimized and hardware-specific codes.",
-   "caveat": "Code design is proven to be NP-complete, ruling out efficient general algorithms.",
+   "result": "Designed hardware-aware codes for biased noise have lower logical error rate than state-of-the-art surface codes. Physics-inspired codes with up to 100 physical qubits designed in minutes.",
+   "question": "How to computationally design quantum error correction codes considering physics and hardware constraints?",
+   "prior": "Logical error rate was higher for XZZX surface code. Many designed codes have lower logical error rate than XZZX surface code.",
+   "limits": "Restricted to abelian stabilizer codes. Logical error rate not incorporated into design, tested after.",
    "tools": [
-    "Boolean satisfiability (SAT) problem formulation",
+    "Boolean satisfiability (SAT) problem",
     "SAT solvers",
-    "Physics-informed code design",
-    "Hardware-aware code design"
-   ]
+    "computational framework",
+    "maximum likelihood decoder"
+   ],
+   "figure": "S9.F8",
+   "figure_url": "https://arxiv.org/html/2608.23460v1/ler_vs_eta_heatmap.png",
+   "figure_caption": "Figure 8: Distribution of logical error rate in designed surface codes vs. the bias parameter $\\eta=p_{X}/p_{YZ}$ . The CSS and XZZX codes are shown overlaying the designed codes. Here, $10^{5}$ designed codes are sampled uniformly at random from solutions to the SAT problem, and the colored square show frequencies (probabilities) of codes with the given logical error rate for the given noise bias $\\eta$ . (White squares represent zero.) Each column of the plot represents a probability distribution over the logical error rate for some value of $\\eta$ . As can be seen, many designed codes have a lower logical error rate than the XZZX surface code, which is a current state-of-the-art solution for biased noise.",
+   "code": ""
   },
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
-  "shape": 2
+  "shape": 3,
+  "depth": "full"
  },
  "2608.22017": {
   "fields": {
