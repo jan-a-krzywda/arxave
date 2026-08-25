@@ -42,6 +42,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   warm:
@@ -127,3 +128,16 @@ jobs:
           # track — which is how the incident above got its reach.
           git pull --rebase --autostash origin main
           git push origin HEAD:main
+
+      # A commit pushed with GITHUB_TOKEN never fires `on: push` in another
+      # workflow — GitHub blocks that specifically to stop recursive runs.
+      # pages.yml is push-triggered, so without this the site only redeploys
+      # on a human merge to main; the feeds (and the archive/calendar JSON
+      # under docs/feeds/archive/) can go a week+ without ever reaching the
+      # live site even though every commit above lands cleanly on main.
+      # workflow_dispatch via the API is exempt from that block.
+      - name: Redeploy Pages
+        if: ${{ !inputs.dry_run && github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main
