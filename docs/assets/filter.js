@@ -2207,8 +2207,8 @@
         ang = k * GOLDEN_ANGLE + (Math.random() - 0.5) * 0.35;
         // Uniform over the annulus [rHole, rOuter]: equal area per stone.
         var rOuter = clusterCap[c] * 0.82;
-        // 20 ≈ HUB_R * 2.5, spelled out because HUB_R is declared further down.
-        var rHole = Math.min(20, rOuter * 0.45);
+        // 14 ≈ HUB_R * 2.8, spelled out because HUB_R is declared further down.
+        var rHole = Math.min(14, rOuter * 0.45);
         r = Math.sqrt(rHole * rHole
           + (rOuter * rOuter - rHole * rHole) * ((k - 0.5) / n2))
           * (0.94 + Math.random() * 0.12);
@@ -2391,7 +2391,7 @@
     // ── Interaction state ──
     var hoverNode = null;
     var hoverAnchor = null;   // index into components — wagon hub under the cursor
-    var HUB_R = 8;
+    var HUB_R = 5;
     var pinnedNode = null;
     var dragNode = null;
     var panning = null;
@@ -2496,12 +2496,12 @@
         // Dark envelope first, then a pale rim, so the diamond reads against
         // both the stone cloud and the edge haze behind it.
         ctx.fillStyle = '#12151a';
-        ctx.fillRect(-hr - 3, -hr - 3, (hr + 3) * 2, (hr + 3) * 2);
+        ctx.fillRect(-hr - 2, -hr - 2, (hr + 2) * 2, (hr + 2) * 2);
         ctx.fillStyle = WAGON_COLORS[ci3 % WAGON_COLORS.length];
         ctx.fillRect(-hr, -hr, hr * 2, hr * 2);
         ctx.strokeStyle = '#f2ede3';
-        ctx.lineWidth = isHubFocus ? 2 : 1.4;
-        ctx.strokeRect(-hr - 1.5, -hr - 1.5, (hr + 1.5) * 2, (hr + 1.5) * 2);
+        ctx.lineWidth = isHubFocus ? 1.6 : 1.1;
+        ctx.strokeRect(-hr - 1, -hr - 1, (hr + 1) * 2, (hr + 1) * 2);
         ctx.restore();
       }
       ctx.globalAlpha = 1;
