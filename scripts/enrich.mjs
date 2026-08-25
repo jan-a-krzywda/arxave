@@ -70,7 +70,11 @@ import fs from 'node:fs/promises';
 import { fetchFullText } from './fulltext.mjs';
 
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
-const DEFAULT_MODEL = process.env.ARXAVE_ENRICH_MODEL || 'gemini-2.5-flash';
+/* gemini-2.5-flash retires 2026-10-16, and its free tier is what forced this
+   change: 250 requests a day is under a cold start plus a re-run. 3.7-flash is
+   the current stable Flash. Overridable, but note that a model from the 2.5
+   line will not understand the request shape built below. */
+const DEFAULT_MODEL = process.env.ARXAVE_ENRICH_MODEL || 'gemini-3.7-flash';
 const TIMEOUT_MS = 60_000;    // a full paper is a longer read than an abstract
 const MAX_ABSTRACT = 6_000;   // characters; longer is padding, not signal
 const CACHE_DAYS = 30;
@@ -82,11 +86,14 @@ const RETRY_CAP_MS = 90_000;
    GenerateRequestsPerMinutePerProjectPerModel, and at a 2s gap — 30 a minute —
    the run was throttled on nearly every call and recovered only by waiting out
    the delays it was handed. 6.5s is a shade over nine a minute, which clears
-   the published free-tier RPM with room for the retries. It costs a couple of
-   minutes on a full cold start and nothing at all on a normal morning, where
-   almost every item is a cache hit. Override with ARXAVE_ENRICH_GAP_MS on a
-   paid key, where the ceiling is far higher and the pause is pure waiting. */
-const MIN_GAP_MS = Number(process.env.ARXAVE_ENRICH_GAP_MS || 6_500);
+   the published free-tier RPM with room for the retries.
+
+   ON A PAID KEY the ceiling is far higher and that pause is pure waiting, so
+   the default is 1s — enough to keep a burst from arriving as one spike, small
+   enough not to be felt. If this key is ever moved back to the free tier, set
+   ARXAVE_ENRICH_GAP_MS=6500; the retry path will survive it either way, just
+   slowly. */
+const MIN_GAP_MS = Number(process.env.ARXAVE_ENRICH_GAP_MS || 1_000);
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -307,6 +314,35 @@ export function quotaReason(body) {
  * feed that is late is worse than a feed that is honest. The cap decides that
  * without having to parse which quota it was.
  */
+/**
+ * The request, in the shape the Gemini 3 line takes.
+ *
+ * TWO THINGS MOVED WITH THE MODEL, and neither is optional.
+ *
+ * The schema is no longer `generationConfig.responseSchema` with a sibling
+ * `responseMimeType`; it is a `response_format` object carrying its own mime
+ * type and schema. The enums are the reason this matters — they are what stops
+ * a verdict arriving as "worth a skim" — and they are enforced server-side or
+ * not at all.
+ *
+ * `thinking_level` is new and defaults to "medium". Thinking tokens are billed
+ * as output, at five times the input rate, and this is an extraction task: the
+ * paper states the number, the model copies it. "low" is the floor the 3 line
+ * offers — it cannot be switched off — and leaving it at the default would be
+ * paying reasoning prices to transcribe.
+ */
+export function requestBody(prompt) {
+  return {
+    systemInstruction: { parts: [{ text: SYSTEM }] },
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: {
+      temperature: 0.2,
+      thinking_level: 'low',
+      response_format: { type: 'text', mime_type: 'application/json', schema: SCHEMA },
+    },
+  };
+}
+
 async function callGemini(prompt, apiKey, model, { attempts = 3, sleep = wait } = {}) {
   const url = `${ENDPOINT}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
   let last = '';
@@ -315,15 +351,7 @@ async function callGemini(prompt, apiKey, model, { attempts = 3, sleep = wait } 
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(TIMEOUT_MS),
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM }] },
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.2,
-          responseMimeType: 'application/json',
-          responseSchema: SCHEMA,
-        },
-      }),
+      body: JSON.stringify(requestBody(prompt)),
     });
     if (resp.ok) return parseResponse(await resp.json());
 

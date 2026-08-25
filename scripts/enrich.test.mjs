@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 
 import {
   cachedFields, DEEP_MAX, deepSet, enrichItems, parseResponse, promptFor,
-  pruneCache, quotaReason, resolveFigure, retryDelayMs, SHAPE,
+  pruneCache, quotaReason, requestBody, resolveFigure, retryDelayMs, SHAPE,
 } from './enrich.mjs';
 
 const wrap = (obj) => ({
@@ -332,4 +332,30 @@ test('a spent daily allowance is refused by name, not by how long it asks for', 
     assert.ok(Date.now() - started < 2_000, 'and not waited on');
     assert.equal(it.enrichment, null, 'the item ships unenriched, and the feed still builds');
   } finally { globalThis.fetch = real; }
+});
+
+
+/* The request shape. It changed with the model, and both changes are silent if
+   wrong: a schema in the wrong place means the enums stop being enforced and
+   a free-text verdict reaches the feed, and a thinking level left at its
+   default means paying reasoning prices to transcribe a number. */
+
+test('the schema travels in response_format, where the 3 line looks for it', () => {
+  const b = requestBody('p');
+  assert.equal(b.generationConfig.response_format.mime_type, 'application/json');
+  assert.equal(b.generationConfig.response_format.schema.properties.verdict.enum.length, 2);
+  assert.ok(!('responseSchema' in b.generationConfig), 'not the 2.5 spelling');
+  assert.ok(!('responseMimeType' in b.generationConfig), 'nor its sibling');
+});
+
+test('thinking is pinned to the floor, because this is transcription', () => {
+  // Thinking tokens bill as output, at five times the input rate. The default
+  // is "medium"; the paper states the number and the model copies it.
+  assert.equal(requestBody('p').generationConfig.thinking_level, 'low');
+});
+
+test('the prompt and the system instruction are still where they were', () => {
+  const b = requestBody('PROMPT');
+  assert.equal(b.contents[0].parts[0].text, 'PROMPT');
+  assert.match(b.systemInstruction.parts[0].text, /brief a working researcher/);
 });
