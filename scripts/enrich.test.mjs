@@ -312,22 +312,23 @@ test('a rate limit is waited out and the call retried', async () => {
   } finally { globalThis.fetch = real; }
 });
 
-test('a spent daily allowance is not waited out for an hour', async () => {
-  // The delay a daily quota asks for is longer than a morning. A feed that is
-  // late is worse than a feed that is honest about being unenriched.
+test('a spent daily allowance is refused by name, not by how long it asks for', async () => {
+  // MEASURED 2026-08-25: a daily quota asked for 13s and then 53s — well inside
+  // the retry cap — so every item burned two pointless waits and a three-minute
+  // job took ten. The quota's own name is the only dependable signal.
   const real = globalThis.fetch;
   let calls = 0;
   globalThis.fetch = async () => {
     calls++;
     return {
       ok: false, status: 429,
-      text: async () => JSON.stringify(quota429('GenerateRequestsPerDayPerProjectPerModel-FreeTier', '3600s')),
+      text: async () => JSON.stringify(quota429('GenerateRequestsPerDayPerProjectPerModel-FreeTier', '13s')),
     };
   };
   try {
     const started = Date.now();
     const [it] = await enrichItems([paper('1', 'worth')], { apiKey: 'k' });
-    assert.equal(calls, 1, 'not retried');
+    assert.equal(calls, 1, 'not retried, despite a delay well inside the cap');
     assert.ok(Date.now() - started < 2_000, 'and not waited on');
     assert.equal(it.enrichment, null, 'the item ships unenriched, and the feed still builds');
   } finally { globalThis.fetch = real; }
