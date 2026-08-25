@@ -1398,5 +1398,113 @@
   "seen": "2026-08-24",
   "model": "gemini-2.5-flash",
   "shape": 2
+ },
+ "2608.23460": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A new framework computationally designs physics-inspired quantum codes up to 100 physical qubits and hardware-aware codes for biased noise with lower logical error rates.",
+   "so_what": "This framework enables computational design of quantum error correction codes, potentially leading to more optimized and hardware-specific codes.",
+   "caveat": "Code design is proven to be NP-complete, ruling out efficient general algorithms.",
+   "tools": [
+    "Boolean satisfiability (SAT) problem formulation",
+    "SAT solvers",
+    "Physics-informed code design",
+    "Hardware-aware code design"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.22017": {
+  "fields": {
+   "verdict": "read",
+   "kind": "theory",
+   "headline": "Nonstabilizerness of codeword-stabilized codes is quantified by classical codeword collision properties, with a maximum of twice its number of logical qubits.",
+   "so_what": "The search for magic-rich codes and transversal non-Clifford gates is transformed into classical counting problems solvable with additive combinatorics.",
+   "caveat": "",
+   "tools": [
+    "additive combinatorics",
+    "codeword-stabilized codes",
+    "Sidon sets",
+    "Kerdock codes"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.22810": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "ZX-diagrammatic post-processing removes 26.6-30.1% of total gate count and 18.5-22.2% of T-count from Solovay-Kitaev synthesized circuits.",
+   "so_what": "This optimization significantly reduces the physical cost of fault-tolerant quantum circuits synthesized by the Solovay-Kitaev algorithm without affecting approximation error.",
+   "caveat": "The compile-time cost of the rewriting layer grows sharply with depth and dominates the synthesis itself.",
+   "tools": [
+    "ZX-diagrams",
+    "automated rewriting",
+    "Solovay-Kitaev algorithm",
+    "Clifford+T gate set"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.23159": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "headline": "A distributed superconducting quantum architecture requires only modest additional resource overhead in both qubit count and execution time compared to a monolithic baseline.",
+   "so_what": "Module capacity can be set by manufacturability and control-packaging constraints, rather than architectural fine-tuning, due to scale-invariant overhead.",
+   "caveat": "Results are estimated under experimentally anchored parameters and realistic superconducting hardware constraints.",
+   "tools": [
+    "hardware-grounded architectural co-design",
+    "resource-estimation protocol",
+    "surface-code-based modular processors",
+    "RSA-2048 factorization benchmark"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.21667": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "headline": "A Multi-Qubit GHZ State-based QKD scheme transfers L classical bits by generating an (L+1)-qubit GHZ state and transmitting one qubit, achieving 100% raw-key fidelity for keys up to 12 bits.",
+   "so_what": "This method significantly reduces the number of qubits transmitted over the quantum channel, easing pressure on bandwidth-limited quantum network resources.",
+   "caveat": "The correctness is verified using the NetSquid quantum network simulator for keys up to 12 bits under assumptions on authenticated classical communication, local reset verification, and bounded-error QND discrimination, with depolarizing noise up to p = 0.005 per round.",
+   "tools": [
+    "Multi-Qubit Greenberger--Horne--Zeilinger (GHZ) state",
+    "Quantum Non-Demolition (QND) measurements",
+    "NetSquid quantum network simulator"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
+ },
+ "2608.21842": {
+  "fields": {
+   "verdict": "read",
+   "kind": "theory",
+   "headline": "Noise-symmetry optimization of quantum error correction encodings can enhance metrological sensitivity, achieving standard quantum limit or Heisenberg scaling from codes with vanishing quantum Fisher information.",
+   "so_what": "Researchers can systematically optimize quantum error correction encodings to significantly improve metrological sensitivity by exploiting noise symmetries.",
+   "caveat": "for stabilizer-sum Hamiltonians",
+   "tools": [
+    "Quantum error correction codes",
+    "Knill-Laflamme conditions",
+    "unitary symmetries",
+    "quantum Fisher information",
+    "stabilizer-sum Hamiltonians"
+   ]
+  },
+  "seen": "2026-08-25",
+  "model": "gemini-2.5-flash",
+  "shape": 2
  }
 }
