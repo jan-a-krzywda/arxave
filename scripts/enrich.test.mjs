@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 
 import {
   cachedFields, DEEP_MAX, deepSet, enrichItems, parseResponse, promptFor,
-  pruneCache, resolveFigure, SHAPE,
+  pruneCache, quotaReason, resolveFigure, retryDelayMs, SHAPE,
 } from './enrich.mjs';
 
 const wrap = (obj) => ({
@@ -253,4 +253,82 @@ test('a fetch that throws still leaves the item briefed from its abstract', asyn
     assert.equal(it.enrichment.result, full.result, 'briefed from the abstract instead');
     assert.equal(it.enrichment.figure_url, '');
   } finally { restore(); }
+});
+
+
+/* ── Rate limits ─────────────────────────────────────────────────────────────
+ *
+ * MEASURED 2026-08-25: the SHAPE bump invalidated every cached record at once,
+ * so a morning that normally makes a handful of calls made twenty-four back to
+ * back and was rate limited after six. Two thirds of the feed shipped
+ * unenriched, and the log could not say why, because the error body was
+ * truncated before the part that names the quota.
+ */
+
+const quota429 = (id, delay) => ({
+  error: {
+    code: 429,
+    message: 'You exceeded your current quota.',
+    details: [
+      { '@type': 'type.googleapis.com/google.rpc.QuotaFailure',
+        violations: [{ quotaId: id, quotaMetric: 'generate_content_free_tier_requests' }] },
+      ...(delay ? [{ '@type': 'type.googleapis.com/google.rpc.RetryInfo', retryDelay: delay }] : []),
+    ],
+  },
+});
+
+test('the quota that was hit is named, because 429 alone does not say', () => {
+  // Per-minute clears on its own; per-day does not. Same status code.
+  assert.match(quotaReason(quota429('GenerateRequestsPerMinutePerProjectPerModel-FreeTier')),
+    /PerMinute/);
+  assert.equal(quotaReason({ error: { code: 429 } }), '');
+  assert.equal(quotaReason(null), '');
+});
+
+test('the delay the API asks for is read, in ms', () => {
+  assert.equal(retryDelayMs(quota429('q', '27s')), 27_000);
+  assert.equal(retryDelayMs(quota429('q', '1.5s')), 1_500);
+  assert.equal(retryDelayMs(quota429('q')), null, 'no RetryInfo is not zero');
+  assert.equal(retryDelayMs(null), null);
+});
+
+test('a rate limit is waited out and the call retried', async () => {
+  const real = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    if (calls === 1) {
+      return { ok: false, status: 429, text: async () => JSON.stringify(quota429('perMinute', '3s')) };
+    }
+    return {
+      ok: true, status: 200,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify(full) }] } }] }),
+    };
+  };
+  try {
+    const [it] = await enrichItems([paper('1', 'worth')], { apiKey: 'k' });
+    assert.equal(calls, 2, 'retried once');
+    assert.equal(it.enrichment.result, full.result);
+  } finally { globalThis.fetch = real; }
+});
+
+test('a spent daily allowance is not waited out for an hour', async () => {
+  // The delay a daily quota asks for is longer than a morning. A feed that is
+  // late is worse than a feed that is honest about being unenriched.
+  const real = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    return {
+      ok: false, status: 429,
+      text: async () => JSON.stringify(quota429('GenerateRequestsPerDayPerProjectPerModel-FreeTier', '3600s')),
+    };
+  };
+  try {
+    const started = Date.now();
+    const [it] = await enrichItems([paper('1', 'worth')], { apiKey: 'k' });
+    assert.equal(calls, 1, 'not retried');
+    assert.ok(Date.now() - started < 2_000, 'and not waited on');
+    assert.equal(it.enrichment, null, 'the item ships unenriched, and the feed still builds');
+  } finally { globalThis.fetch = real; }
 });

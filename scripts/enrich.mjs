@@ -74,6 +74,16 @@ const DEFAULT_MODEL = process.env.ARXAVE_ENRICH_MODEL || 'gemini-2.5-flash';
 const TIMEOUT_MS = 60_000;    // a full paper is a longer read than an abstract
 const MAX_ABSTRACT = 6_000;   // characters; longer is padding, not signal
 const CACHE_DAYS = 30;
+/* Longest the API may ask us to wait before we give up and ship the item from
+   its abstract. Above this it is a daily allowance, not a per-minute one. */
+const RETRY_CAP_MS = 90_000;
+/* A floor on the gap between calls. Not a rate limiter — the calls are already
+   seconds apart because each one reads a paper — but the cache-miss burst after
+   a SHAPE bump has no such natural spacing, and that is the case that got us
+   rate limited. */
+const MIN_GAP_MS = 2_000;
+
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* Which papers are read in full. The top band only — that is a handful a day,
    and the band is exactly the set where a reader is deciding whether to spend
@@ -255,24 +265,82 @@ export function parseResponse(body) {
   return fields;
 }
 
-async function callGemini(prompt, apiKey, model) {
+/**
+ * How long the API says to wait, in ms, or null if it did not say.
+ *
+ * A 429 carries a RetryInfo detail with a `retryDelay` like "27s". Honouring it
+ * is the difference between a rate limit (which clears on its own) and a spent
+ * daily quota (which does not) — and the two are the same status code, so
+ * without this there is no way to tell them apart from a log.
+ */
+export function retryDelayMs(body) {
+  const info = (body?.error?.details || [])
+    .find((d) => String(d['@type'] || '').endsWith('RetryInfo'));
+  const m = String(info?.retryDelay || '').match(/^([\d.]+)s$/);
+  return m ? Math.ceil(parseFloat(m[1]) * 1000) : null;
+}
+
+/** What a 429 was actually about — "quota exceeded" alone does not say. */
+export function quotaReason(body) {
+  const fail = (body?.error?.details || [])
+    .find((d) => String(d['@type'] || '').endsWith('QuotaFailure'));
+  const v = fail?.violations?.[0];
+  return v ? `${v.quotaId || 'quota'} (${v.quotaMetric || '?'})` : '';
+}
+
+/**
+ * One call, retried while the API is willing to say when to come back.
+ *
+ * MEASURED 2026-08-25, and the reason this exists: the SHAPE bump invalidated
+ * every cached record at once, so a morning that normally makes a handful of
+ * calls made twenty-four back to back and was rate-limited after six. Two
+ * thirds of the feed shipped unenriched. The burst is a one-off — tomorrow is
+ * cache hits again — but a job that cannot survive its own migration will not
+ * survive the next one either.
+ *
+ * A spent daily quota is not waited out: the delay it asks for is hours, and a
+ * feed that is late is worse than a feed that is honest. The cap decides that
+ * without having to parse which quota it was.
+ */
+async function callGemini(prompt, apiKey, model, { attempts = 3, sleep = wait } = {}) {
   const url = `${ENDPOINT}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM }] },
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.2,
-        responseMimeType: 'application/json',
-        responseSchema: SCHEMA,
-      },
-    }),
-  });
-  if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${(await resp.text()).slice(0, 160)}`);
-  return parseResponse(await resp.json());
+  let last = '';
+  for (let n = 0; n < attempts; n++) {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM }] },
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.2,
+          responseMimeType: 'application/json',
+          responseSchema: SCHEMA,
+        },
+      }),
+    });
+    if (resp.ok) return parseResponse(await resp.json());
+
+    const raw = await resp.text();
+    let body = null;
+    try { body = JSON.parse(raw); } catch { /* not JSON; the raw text is the message */ }
+    const reason = quotaReason(body);
+    last = `HTTP ${resp.status}${reason ? ` ${reason}` : ''}: ` +
+      `${String(body?.error?.message || raw).slice(0, 200)}`;
+
+    if (resp.status !== 429 || n === attempts - 1) break;
+    const asked = retryDelayMs(body);
+    if (asked === null || asked > RETRY_CAP_MS) {
+      /* Either the API did not say when to come back, or it said "in an hour",
+         which means the day's allowance is gone rather than the minute's. */
+      last += asked === null ? ' (no retry delay given)' : ` (asked for ${Math.round(asked / 1000)}s — not waiting)`;
+      break;
+    }
+    console.log(`enrich: rate limited, waiting ${Math.round(asked / 1000)}s`);
+    await sleep(asked);
+  }
+  throw new Error(last);
 }
 
 /** Drop entries nobody has seen in a month, so the committed cache stays small. */
@@ -352,6 +420,7 @@ export async function enrichItems(items, { cachePath, apiKey, model = DEFAULT_MO
   let hits = 0;
   let failed = 0;
   let read = 0;
+  let lastCall = 0;
   for (const item of items) {
     const wantDeep = deep.has(item.arxivId);
     const cached = cache[item.arxivId];
@@ -376,6 +445,11 @@ export async function enrichItems(items, { cachePath, apiKey, model = DEFAULT_MO
       }
     }
     try {
+      /* Spaced from the previous call, not from the previous item: a cache hit
+         costs nothing and should not be charged a pause. */
+      const since = Date.now() - lastCall;
+      if (called && since < MIN_GAP_MS) await wait(MIN_GAP_MS - since);
+      lastCall = Date.now();
       const fields = await callGemini(promptFor(item, full), key, model);
       called++;
       if (fields) {
