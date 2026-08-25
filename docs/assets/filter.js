@@ -2166,7 +2166,19 @@
       var cbase = (slotOf[ci] / Math.max(1, nComp)) * Math.PI * 2;
       clusterAnchor[ci] = { x: Math.cos(cbase) * ANCHOR_R, y: Math.sin(cbase) * ANCHOR_R };
     }
+    // Hub marker position: the wagon's live centroid, recomputed every tick
+    // in the simulation loop below. Anchor gravity keeps a wagon's stones
+    // near clusterAnchor, but cross-wagon repulsion skews the actual blob
+    // off that point — tracking the centroid keeps the diamond marker inside
+    // the cloud of dots it names instead of pinned to one edge of it.
+    var hubPos = new Array(nComp);
+    var hubSumX = new Array(nComp), hubSumY = new Array(nComp), hubSumN = new Array(nComp);
+    for (var hp = 0; hp < nComp; hp++) hubPos[hp] = { x: clusterAnchor[hp].x, y: clusterAnchor[hp].y };
 
+    // Seed stones uniformly over their wagon's disk (sqrt(random) radius, not
+    // a handful of discrete radius/angle bands) — the old stepped scheme left
+    // a metastable ring/arc that the simulation's forces were too weak to
+    // fully relax out of, reading as a 1D line hugging the wagon's rim.
     var wagonCount = {};
     var loneAngle = new Array(N);
     for (i = 0; i < N; i++) {
@@ -2174,8 +2186,8 @@
       var r, ang, ox, oy;
       if (c >= 0) {
         wagonCount[c] = (wagonCount[c] || 0) + 1;
-        ang = (wagonCount[c] % 17) * 0.37;
-        r = Math.min(clusterCap[c] * 0.5, 20 + (wagonCount[c] % 5) * 10);
+        ang = Math.random() * Math.PI * 2;
+        r = clusterCap[c] * 0.5 * Math.sqrt(Math.random());
         ox = clusterAnchor[c].x; oy = clusterAnchor[c].y;
       } else {
         ang = Math.random() * Math.PI * 2;
@@ -2216,6 +2228,11 @@
           // pack tighter — that's what turns a blurred ring into blobs.
           if (cid[a] !== cid[b]) f *= 2.8;
           else if (cid[a] >= 0) f *= 0.55;
+          // Cap any single pair's force. Without this, a big wagon's seed
+          // overlaps summed over dozens of close neighbors threw nodes across
+          // the canvas each frame — visible as jiggle that took many seconds
+          // to damp out instead of a clean settle.
+          if (f > 260) f = 260;
           var d = Math.sqrt(d2);
           var ux = dx / d, uy = dy / d;
           na.vx += ux * f; na.vy += uy * f;
@@ -2290,6 +2307,15 @@
           ndc.x = anc.x + cdx * cscale;
           ndc.y = anc.y + cdy * cscale;
         }
+      }
+
+      for (var hc0 = 0; hc0 < nComp; hc0++) { hubSumX[hc0] = 0; hubSumY[hc0] = 0; hubSumN[hc0] = 0; }
+      for (var hi = 0; hi < N; hi++) {
+        var hcid = cid[hi];
+        if (hcid >= 0) { hubSumX[hcid] += nodes[hi].x; hubSumY[hcid] += nodes[hi].y; hubSumN[hcid]++; }
+      }
+      for (var hc1 = 0; hc1 < nComp; hc1++) {
+        if (hubSumN[hc1] > 0) { hubPos[hc1].x = hubSumX[hc1] / hubSumN[hc1]; hubPos[hc1].y = hubSumY[hc1] / hubSumN[hc1]; }
       }
 
       alpha *= 0.985;
@@ -2417,7 +2443,7 @@
       // Wagon hubs: one small marker at each wagon's anchor point, hoverable
       // to name the group and light up every stone it holds.
       for (var ci3 = 0; ci3 < nComp; ci3++) {
-        var hs = toScreen(clusterAnchor[ci3]);
+        var hs = toScreen(hubPos[ci3]);
         var isHubFocus = hoverAnchor === ci3;
         if (isHubFocus) {
           for (var hm = 0; hm < components[ci3].indices.length; hm++) {
@@ -2548,7 +2574,7 @@
       }
       var bestAnchor = null, bestAnchorD = Infinity;
       for (var ci5 = 0; ci5 < nComp; ci5++) {
-        var hs = toScreen(clusterAnchor[ci5]);
+        var hs = toScreen(hubPos[ci5]);
         var hdx = hs.x - mx, hdy = hs.y - my;
         var hd = hdx * hdx + hdy * hdy;
         var hHit = (HUB_R * rScale + 6) * (HUB_R * rScale + 6);
