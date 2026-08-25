@@ -1738,13 +1738,13 @@ details.advanced input[type="text"] {
   font-weight: 400;
 }
 .feeds-btn {
-  padding: 0.2rem 0.5rem;
+  padding: 0.4rem 0.9rem;
   background: none;
   border: 1px solid var(--rock-lit);
-  border-radius: 3px;
+  border-radius: 4px;
   color: var(--text-dim);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 1rem;
   letter-spacing: 0.04em;
   cursor: pointer;
 }
@@ -1815,17 +1815,6 @@ a.feeds-item:hover {
 .setup-col + .setup-col {
   padding-left: 1.25rem;
   border-left: 1px solid var(--rock-edge);
-}
-/* A quiet section label, not a headline: the rows under it carry the weight.
-   Sized and coloured like the other small labels in this stage, so it reads as
-   the top of a column rather than shouting over the fieldset legend. */
-.setup-col-title {
-  margin: 0 0 0.7rem;
-  font-size: 0.78rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-faint);
 }
 .setup-group + .setup-group {
   margin-top: 0.9rem;
