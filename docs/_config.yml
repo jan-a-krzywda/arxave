@@ -4,12 +4,13 @@ theme: minima
 plugins:
   - jekyll-feed
 
-# The filter page is the site root, reached by the title in the header, so it
-# is not repeated here. filter-moved.md only redirects and stays out of the nav.
+# Three items, in the order the work runs: Dig (the filter, at the site root),
+# Stockpile (everything kept), Haul (tonight's, as feeds). filter-moved.md and
+# seams-moved.md only redirect and stay out of the nav.
 header_pages:
-  - seams.md
+  - filter.md
   - stockpile.md
-  - briefs.md
+  - haul.md
 
 collections:
   briefs:
