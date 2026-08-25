@@ -2207,8 +2207,8 @@
         ang = k * GOLDEN_ANGLE + (Math.random() - 0.5) * 0.35;
         // Uniform over the annulus [rHole, rOuter]: equal area per stone.
         var rOuter = clusterCap[c] * 0.82;
-        // 16 ≈ HUB_R * 2.6, spelled out because HUB_R is declared further down.
-        var rHole = Math.min(16, rOuter * 0.45);
+        // 20 ≈ HUB_R * 2.5, spelled out because HUB_R is declared further down.
+        var rHole = Math.min(20, rOuter * 0.45);
         r = Math.sqrt(rHole * rHole
           + (rOuter * rOuter - rHole * rHole) * ((k - 0.5) / n2))
           * (0.94 + Math.random() * 0.12);
@@ -2391,7 +2391,7 @@
     // ── Interaction state ──
     var hoverNode = null;
     var hoverAnchor = null;   // index into components — wagon hub under the cursor
-    var HUB_R = 6;
+    var HUB_R = 8;
     var pinnedNode = null;
     var dragNode = null;
     var panning = null;
@@ -2486,22 +2486,23 @@
           ctx.setLineDash([]);
         }
         ctx.globalAlpha = anyFocus && !isHubFocus ? 0.25 : 1;
-        ctx.fillStyle = WAGON_COLORS[ci3 % WAGON_COLORS.length];
-        var hr = (isHubFocus ? HUB_R * 1.5 : HUB_R) * Math.min(1.15, rScale);
+        // Hub size is fixed in SCREEN pixels, not scaled with the zoom: a
+        // wagon marker that shrank with its stones vanished into the cloud
+        // exactly when you needed it, on a zoomed-out AI-sized graph.
+        var hr = isHubFocus ? HUB_R * 1.5 : HUB_R;
         ctx.save();
         ctx.translate(hs.x, hs.y);
         ctx.rotate(Math.PI / 4);
+        // Dark envelope first, then a pale rim, so the diamond reads against
+        // both the stone cloud and the edge haze behind it.
+        ctx.fillStyle = '#12151a';
+        ctx.fillRect(-hr - 3, -hr - 3, (hr + 3) * 2, (hr + 3) * 2);
+        ctx.fillStyle = WAGON_COLORS[ci3 % WAGON_COLORS.length];
         ctx.fillRect(-hr, -hr, hr * 2, hr * 2);
+        ctx.strokeStyle = '#f2ede3';
+        ctx.lineWidth = isHubFocus ? 2 : 1.4;
+        ctx.strokeRect(-hr - 1.5, -hr - 1.5, (hr + 1.5) * 2, (hr + 1.5) * 2);
         ctx.restore();
-        if (isHubFocus) {
-          ctx.strokeStyle = '#f2ede3';
-          ctx.lineWidth = 1.4;
-          ctx.save();
-          ctx.translate(hs.x, hs.y);
-          ctx.rotate(Math.PI / 4);
-          ctx.strokeRect(-hr, -hr, hr * 2, hr * 2);
-          ctx.restore();
-        }
       }
       ctx.globalAlpha = 1;
 
@@ -2603,7 +2604,7 @@
         var hs = toScreen(hubPos[ci5]);
         var hdx = hs.x - mx, hdy = hs.y - my;
         var hd = hdx * hdx + hdy * hdy;
-        var hHit = (HUB_R * rScale + 6) * (HUB_R * rScale + 6);
+        var hHit = (HUB_R + 6) * (HUB_R + 6);
         if (hd < hHit && hd < bestAnchorD) { bestAnchorD = hd; bestAnchor = ci5; }
       }
       var node = null, anchor = null;
@@ -2689,7 +2690,7 @@
       var mx = e.clientX - rect.left, my = e.clientY - rect.top;
       var before = toWorld(mx, my);
       var factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
-      view.k = Math.max(0.15, Math.min(6, view.k * factor));
+      view.k = Math.max(0.02, Math.min(6, view.k * factor));
       var after = toWorld(mx, my);
       view.tx += (after.x - before.x) * view.k;
       view.ty += (after.y - before.y) * view.k;
