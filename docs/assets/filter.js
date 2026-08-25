@@ -2199,6 +2199,14 @@
         i: i,
         x: ox + Math.cos(ang) * r,
         y: oy + Math.sin(ang) * r,
+        // Personal offset from the wagon anchor — gravity pulls each stone
+        // toward its own slot, not the shared anchor point. A shared target
+        // plus mutual repulsion settles into a single ring (the minimum-
+        // energy shape for repelling points in a central well) no matter how
+        // they're seeded; distinct per-stone targets are what actually fills
+        // the disk in 2D instead of collapsing to its rim.
+        tx: c >= 0 ? Math.cos(ang) * r : 0,
+        ty: c >= 0 ? Math.sin(ang) * r : 0,
         vx: 0, vy: 0,
         r: 2.5 + Math.min(3.5, Math.sqrt(deg[i]) * 0.7)
       };
@@ -2262,8 +2270,8 @@
         var cg = cid[g];
         if (cg >= 0) {
           var an = clusterAnchor[cg];
-          ndg.vx += (an.x - ndg.x) * 0.034;
-          ndg.vy += (an.y - ndg.y) * 0.034;
+          ndg.vx += (an.x + ndg.tx - ndg.x) * 0.034;
+          ndg.vy += (an.y + ndg.ty - ndg.y) * 0.034;
         } else {
           // Lone stones keep their own seeded angle and sit past every wagon's
           // clamp radius — pulling them toward the origin instead put them
