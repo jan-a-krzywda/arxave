@@ -2248,7 +2248,12 @@
         }
       }
 
-      // Springs — stronger, shorter for higher cosine
+      // Springs — stronger, shorter for higher cosine. A wagon's own members
+      // are usually a near-complete subgraph with similar target lengths,
+      // and a complete graph of equal-length springs wants to be a regular
+      // polygon — that's what was pulling every wagon back into a thin ring
+      // no matter how the seed or gravity target was arranged. Damping
+      // intra-wagon springs lets the per-stone gravity target (below) win.
       for (var e = 0; e < edges.length; e++) {
         var ed = edges[e];
         var p = nodes[ed.a], q = nodes[ed.b];
@@ -2257,21 +2262,23 @@
         var ddx = q.x - p.x, ddy = q.y - p.y;
         var dd = Math.sqrt(ddx * ddx + ddy * ddy) || 0.01;
         var force = (dd - L) * K * (0.4 + t);
+        if (cid[ed.a] >= 0 && cid[ed.a] === cid[ed.b]) force *= 0.3;
         var fx = (ddx / dd) * force, fy = (ddy / dd) * force;
         p.vx += fx; p.vy += fy;
         q.vx -= fx; q.vy -= fy;
       }
 
-      // Gravity: clustered stones pull toward their own wagon's anchor point,
-      // not the shared centre — that's what keeps wagons apart at rest instead
-      // of drifting back into one ring once the springs settle.
+      // Gravity: clustered stones pull toward their own personal slot around
+      // the wagon's anchor — strong enough to dominate the damped intra-wagon
+      // springs above, which is what actually keeps the wagon a filled 2D
+      // blob instead of relaxing back into a ring.
       for (var g = 0; g < N; g++) {
         var ndg = nodes[g];
         var cg = cid[g];
         if (cg >= 0) {
           var an = clusterAnchor[cg];
-          ndg.vx += (an.x + ndg.tx - ndg.x) * 0.034;
-          ndg.vy += (an.y + ndg.ty - ndg.y) * 0.034;
+          ndg.vx += (an.x + ndg.tx - ndg.x) * 0.09;
+          ndg.vy += (an.y + ndg.ty - ndg.y) * 0.09;
         } else {
           // Lone stones keep their own seeded angle and sit past every wagon's
           // clamp radius — pulling them toward the origin instead put them
