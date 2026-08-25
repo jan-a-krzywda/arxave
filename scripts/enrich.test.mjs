@@ -384,3 +384,43 @@ test('a busy model is retried, because 503 clears in seconds unlike a quota', as
     assert.equal(it.enrichment.result, full.result);
   } finally { globalThis.fetch = real; }
 });
+
+
+test('a timed-out call is retried, not lost', async () => {
+  // MEASURED 2026-08-25 on the first paid run: four items were lost to
+  // "The operation was aborted due to timeout". The abort rejects the fetch
+  // promise, so it escaped the retry loop entirely — a hung request got none of
+  // the retries a 503 gets, though from here the two are the same thing.
+  const real = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    if (calls === 1) {
+      const err = new Error('The operation was aborted due to timeout');
+      err.name = 'TimeoutError';
+      throw err;
+    }
+    return {
+      ok: true, status: 200,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify(full) }] } }] }),
+    };
+  };
+  try {
+    const [it] = await enrichItems([paper('1', 'worth')], { apiKey: 'k' });
+    assert.equal(calls, 2, 'retried once');
+    assert.equal(it.enrichment.result, full.result);
+  } finally { globalThis.fetch = real; }
+});
+
+test('a call that times out every time reports the timeout, not a silent null', async () => {
+  const real = globalThis.fetch;
+  globalThis.fetch = async () => {
+    const err = new Error('The operation was aborted due to timeout');
+    err.name = 'TimeoutError';
+    throw err;
+  };
+  try {
+    const [it] = await enrichItems([paper('1', 'worth')], { apiKey: 'k' });
+    assert.equal(it.enrichment, null, 'ships unenriched, and the feed still builds');
+  } finally { globalThis.fetch = real; }
+});
