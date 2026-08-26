@@ -1844,15 +1844,15 @@
   "fields": {
    "verdict": "read",
    "kind": "new result",
-   "result": "Constructs quantum CSS codes with strict transversal T gates achieving constant rate and growing distance, as well as overhead exponent gamma -> 0 for magic state distillation.",
-   "question": "Can CSS codes with strictly transversal T gates achieve constant rate with growing distance, or broader polynomial rate-distance scaling?",
-   "prior": "Parameters unchanged since Hastings and Haah (2017) and Haah (2018); no prior transversal-T code achieved constant rate and growing distance, nor gamma -> 0.",
-   "limits": "Asymptotic code families; physical T applied to all physical qubits without Clifford corrections.",
+   "result": "Constructs quantum CSS codes with strict transversal T on all logical qubits that achieve constant rate with growing distance, and codes with magic state distillation overhead exponent gamma -> 0.",
+   "question": "Can asymptotic families of quantum CSS codes with strictly transversal T gates achieve constant rate and growing distance or better polynomial rate-distance scaling?",
+   "prior": "Parameters unchanged since Hastings and Haah (2017) and Haah (2018); constant rate with growing distance previously unachieved even allowing Clifford corrections.",
+   "limits": "Asymptotic code families; analytical construction with randomized selection step.",
    "tools": [
     "divisible decreasing monomial codes",
-    "puncturing at downward-closed sets",
+    "puncturing at downward-closed sets on Boolean hypercube",
     "weighted Reed-Muller codes",
-    "randomized hypercube puncturing"
+    "randomised puncturing"
    ],
    "figure": "",
    "figure_url": "",
@@ -2019,6 +2019,54 @@
     "Rytova-Keldysh potential",
     "hyperspherical harmonics method",
     "high-magnetic-field regime analysis"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "code": ""
+  },
+  "seen": "2026-08-26",
+  "model": "gemini-3.7-flash",
+  "shape": 3,
+  "depth": "abstract"
+ },
+ "2608.24229": {
+  "fields": {
+   "verdict": "read",
+   "kind": "theory",
+   "result": "Derives a statistical learning theory with a noise-order purity parameter explaining finite-noise optima via competition between reduced generalization gap (lower model complexity) and increased prediction bias. Shows the finite-noise optimum depends on learning setup and can vanish in the large-sample limit.",
+   "question": "How do microscopic noise processes dictate macroscopic learning performance and produce non-monotonic generalization error with a finite-noise optimum?",
+   "prior": "",
+   "limits": "Analyzed via surrogate model; finite-noise optimum can disappear in the large-sample limit.",
+   "tools": [
+    "statistical learning theory",
+    "surrogate model analysis",
+    "noise-order purity parameter",
+    "numerical circuit simulations"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "code": ""
+  },
+  "seen": "2026-08-26",
+  "model": "gemini-3.7-flash",
+  "shape": 3,
+  "depth": "abstract"
+ },
+ "2608.23711": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "result": "Observed coherent electron spin exchange dynamics between Rydberg atoms driven by spin-orbit coupling via second-order dipole perturbation. Validated anisotropic XXZ spin dynamics in 1D chains and demonstrated interaction tuning via magnetic fields and microwave dressing.",
+   "question": "Can direct electron spin-spin interactions between Rydberg atoms be observed and engineered for quantum simulation?",
+   "prior": "",
+   "limits": "Demonstrated in 1D atomic chains under applied magnetic fields and microwave fields.",
+   "tools": [
+    "Rydberg atom arrays",
+    "microwave dressing",
+    "external magnetic fields",
+    "1D multi-atom chains"
    ],
    "figure": "",
    "figure_url": "",
