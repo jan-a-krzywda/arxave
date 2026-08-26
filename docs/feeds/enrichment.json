@@ -1814,5 +1814,220 @@
   "seen": "2026-08-25",
   "model": "gemini-2.5-flash",
   "shape": 2
+ },
+ "2608.23819": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "result": "CircLS lowers arbitrary Pauli product measurement sequences to physical Stim circuits via linear-time stabilizer construction rules with dynamic patch allocation, cutting allocated spacetime volume by 5.5x and logical error rate by 14x.",
+   "question": "How can Pauli product measurement sequences for lattice surgery be compiled down to fault-tolerant physical circuits and realistically verified rather than evaluated via isolated logical-level formulas?",
+   "prior": "Static patch allocation toolchains (DASCOT, lsqecc) emitting runnable circuits; logical error formulas deviated from physical circuit measurements by up to 6.8x.",
+   "limits": "Evaluated at surface code distances d from 3 to 11 under circuit-level noise rates p=5e-4 and p=1e-3, with some benchmarks restricted by decoder compute budgets or missing catalytic Y-state replay protocols.",
+   "tools": [
+    "CircLS compiler",
+    "Stim",
+    "Lattice surgery",
+    "Surface codes",
+    "Dynamic patch allocation"
+   ],
+   "figure": "S1.F1",
+   "figure_url": "https://arxiv.org/html/2608.23819v1/overview.svg",
+   "figure_caption": "Figure 1. (a) Lowering the PPM $\\bar{X}_{1}\\bar{X}_{2}$ : CircLS constructs the stabilizers that measure the product, then emits the physical circuit. (b) Under static allocation a data patch holds its tile from start to end, so it collects extra noise before its first use and after its last use. CircLS allocates the patch at its first use and frees it at its last use, and the freed span is open for ancilla path reuse. (c) and (d) Freeing shortens ancilla paths: patches 1 and 3 are jointly measured. With patch 2 still allocated, the ancilla path detours through five tiles. With patch 2 freed, it runs straight through three tiles.",
+   "code": "https://github.com/John-YuehanZhang/CircLS"
+  },
+  "seen": "2026-08-26",
+  "model": "gemini-3.7-flash",
+  "shape": 3,
+  "depth": "full"
+ },
+ "2608.24000": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "result": "Constructs quantum CSS codes with strict transversal T gates achieving constant rate and growing distance, as well as overhead exponent gamma -> 0 for magic state distillation.",
+   "question": "Can CSS codes with strictly transversal T gates achieve constant rate with growing distance, or broader polynomial rate-distance scaling?",
+   "prior": "Parameters unchanged since Hastings and Haah (2017) and Haah (2018); no prior transversal-T code achieved constant rate and growing distance, nor gamma -> 0.",
+   "limits": "Asymptotic code families; physical T applied to all physical qubits without Clifford corrections.",
+   "tools": [
+    "divisible decreasing monomial codes",
+    "puncturing at downward-closed sets",
+    "weighted Reed-Muller codes",
+    "randomized hypercube puncturing"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "code": ""
+  },
+  "seen": "2026-08-26",
+  "model": "gemini-3.7-flash",
+  "shape": 3,
+  "depth": "abstract"
+ },
+ "2608.24370": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "result": "Standardized benchmark suite and infrastructure (ABSTRACTS) for classical Clifford+T circuit simulators with fixed circuit dataset and standardized virtual hardware.",
+   "question": "How to fairly compare runtime and resource efficiency across disparate classical simulators of non-Clifford quantum circuits?",
+   "prior": "Simulators tested on ad-hoc, author-chosen circuits and disparate local hardware without canonical benchmarks.",
+   "limits": "Focuses specifically on Clifford+T / non-Clifford classical quantum circuit simulation methods.",
+   "tools": [
+    "Clifford+T circuit dataset",
+    "virtual hardware execution environment",
+    "stabilizer decomposition",
+    "tensor network contraction"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "code": ""
+  },
+  "seen": "2026-08-26",
+  "model": "gemini-3.7-flash",
+  "shape": 3,
+  "depth": "abstract"
+ },
+ "2608.24084": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new method",
+   "result": "AshN native two-qubit gate scheme reduces two-qubit gate counts by geometric means of 45.2% (1D) and 43.7% (2D) versus CZ-based compilation across seven benchmark circuits; prepares eight-qubit two-excitation Dicke state with fidelity 0.736 and certified genuine multipartite entanglement, which fails under CZ compilation.",
+   "question": "Can native continuous-angle two-qubit gate engineering merge routing with logical operations to overcome sparse physical connectivity in superconducting processors?",
+   "prior": "Standard controlled-Z (CZ) based compilation on constrained 1D/2D lattices requires extensive SWAP routing overhead.",
+   "limits": "Tested on benchmark circuits up to eight qubits and 1D/2D layouts with up to three connectivity defects.",
+   "tools": [
+    "AshN two-qubit control scheme",
+    "Superconducting quantum processor (1D and 2D lattices)",
+    "Fully positive-partial-transpose (PPT) entanglement witness",
+    "Dicke state preparation"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "code": ""
+  },
+  "seen": "2026-08-26",
+  "model": "gemini-3.7-flash",
+  "shape": 3,
+  "depth": "abstract"
+ },
+ "2608.24781": {
+  "fields": {
+   "verdict": "skim",
+   "kind": "new method",
+   "result": "Introduces Graphix, an open-source Python framework for compiling, optimizing, and simulating measurement-based quantum computing (MBQC) protocols and pattern workflows.",
+   "question": "How to create a unified software library bridging theoretical MBQC formulations with standard quantum computing workflows and classical simulation tools?",
+   "prior": "",
+   "limits": "Software tool paper; performance and scale limited by backend classical quantum simulators.",
+   "tools": [
+    "Python",
+    "MBQC pattern compilation",
+    "graph states",
+    "classical quantum circuit simulators"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "code": ""
+  },
+  "seen": "2026-08-26",
+  "model": "gemini-3.7-flash",
+  "shape": 3,
+  "depth": "abstract"
+ },
+ "2608.24832": {
+  "fields": {
+   "verdict": "read",
+   "kind": "theory",
+   "result": "Proves unconditional security of Yamakawa-Zhandry certified randomness protocol against adversaries making up to o(\\log \\lambda) adaptive quantum queries to random oracle, without Aaronson-Ambainis conjecture.",
+   "question": "Can the Yamakawa-Zhandry certified randomness conjecture be proven unconditionally without assuming the Aaronson-Ambainis conjecture?",
+   "prior": "Yamakawa and Zhandry (J. ACM 2024) proved security only conditionally assuming the unproven Aaronson-Ambainis conjecture.",
+   "limits": "Restricted to shallow quantum adversaries making at most o(\\log \\lambda) adaptive quantum queries to the random oracle.",
+   "tools": [
+    "quantum random oracle model (QROM)",
+    "query complexity",
+    "adaptive query depth analysis"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "code": ""
+  },
+  "seen": "2026-08-26",
+  "model": "gemini-3.7-flash",
+  "shape": 3,
+  "depth": "abstract"
+ },
+ "2608.24533": {
+  "fields": {
+   "verdict": "skim",
+   "kind": "theory",
+   "result": "Monolayer jacutingaite (Pt2HgSe3) tunnel barrier irradiated by off-resonant circularly polarized light achieves near-perfect valley filtering (|P_v| ~ 100%) and spin polarization |P_s| ~ 70%.",
+   "question": "How does off-resonant circularly polarized light combined with exchange and staggered potentials control spin- and valley-resolved quantum transport in monolayer jacutingaite tunnel junctions?",
+   "prior": "",
+   "limits": "Theoretical calculation in the off-resonant high-frequency regime; ballistically transport with step-function junction profiles.",
+   "tools": [
+    "Floquet-Bloch theory",
+    "effective Dirac-like Hamiltonian",
+    "Landauer-Büttiker transport formalism",
+    "transfer matrix / scattering theory"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "code": ""
+  },
+  "seen": "2026-08-26",
+  "model": "gemini-3.7-flash",
+  "shape": 3,
+  "depth": "abstract"
+ },
+ "2608.23832": {
+  "fields": {
+   "verdict": "read",
+   "kind": "new result",
+   "result": "WSe2-NiPS3 p-n heterostructures yield circularly polarized photocurrent with spin polarization reaching 80% near Neel temperature and persisting at 30% at room temperature without external magnetic fields or ferromagnetic contacts.",
+   "question": "Can magnetic van der Waals heterostructures generate and spectrally control spin-polarized photocurrents without external magnetic fields or ferromagnetic contacts?",
+   "prior": "",
+   "limits": "Spin polarization drops to 30% at room temperature; requires optical excitation via circularly polarized light under an electric field.",
+   "tools": [
+    "WSe2-NiPS3 van der Waals heterostructure p-n diode",
+    "polarization-resolved photogalvanic spectroscopy",
+    "first-principles DFT calculations"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "code": ""
+  },
+  "seen": "2026-08-26",
+  "model": "gemini-3.7-flash",
+  "shape": 3,
+  "depth": "abstract"
+ },
+ "2608.24581": {
+  "fields": {
+   "verdict": "skim",
+   "kind": "theory",
+   "result": "Intervalley trions with equal electron and hole effective masses allow exact separation of center-of-mass and internal motions. Trion binding energy increases monotonically with perpendicular electric and magnetic fields, yielding strongest binding in silicene, followed by stanene and germanene.",
+   "question": "How do combined perpendicular electric and magnetic fields influence the center-of-mass and internal dynamics of intervalley trions in buckled 2D Xene monolayers?",
+   "prior": "",
+   "limits": "Theoretical/numerical calculation only, assumes equal electron and hole effective masses for exact center-of-mass separation, high-magnetic-field regime.",
+   "tools": [
+    "effective-mass approximation",
+    "Rytova-Keldysh potential",
+    "hyperspherical harmonics method",
+    "high-magnetic-field regime analysis"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "code": ""
+  },
+  "seen": "2026-08-26",
+  "model": "gemini-3.7-flash",
+  "shape": 3,
+  "depth": "abstract"
  }
 }

@@ -1,23 +1,23 @@
 {
-  "built": "2026-08-25",
+  "built": "2026-08-26",
   "feeds": {
     "error-correction": {
       "name": "Quantum error correction",
-      "items": 8,
-      "paydirt": 5,
-      "updated": "2026-08-25"
+      "items": 4,
+      "paydirt": 2,
+      "updated": "2026-08-26"
     },
     "quantum-machine-learning": {
       "name": "Quantum machine learning",
-      "items": 8,
-      "paydirt": 3,
-      "updated": "2026-08-25"
+      "items": 3,
+      "paydirt": 0,
+      "updated": "2026-08-26"
     },
     "spin-qubits": {
       "name": "Spin qubits",
       "items": 3,
-      "paydirt": 2,
-      "updated": "2026-08-25"
+      "paydirt": 0,
+      "updated": "2026-08-26"
     }
   }
 }
