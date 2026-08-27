@@ -19,7 +19,6 @@ const wrap = (obj) => ({
 });
 
 const full = {
-  verdict: 'read',
   kind: 'new result',
   result: 'Single-qubit gate fidelity 99.9995%. Isotopically purified Si.',
   question: 'How far can gate fidelity go once nuclear spins are removed?',
@@ -27,6 +26,7 @@ const full = {
   limits: 'One device, at 100 mK.',
   tools: ['spin-locking', 'parity readout'],
   figure: 'S3.F2',
+  gloss: 'Gate fidelity against nuclear-spin concentration; the purified device sits an order of magnitude above the rest.',
 };
 
 test('a well-formed response becomes the fields verbatim', () => {
@@ -50,22 +50,22 @@ test('text that is not JSON is null, not a throw', () => {
 
 test('an all-empty payload is null rather than a row of blank headings', () => {
   assert.equal(parseResponse(wrap({
-    verdict: '', kind: '', result: '', question: '', prior: '', limits: '',
-    tools: [], figure: '',
+    kind: '', result: '', question: '', prior: '', limits: '',
+    tools: [], figure: '', gloss: '',
   })), null);
 });
 
-test('labels alone are not an enrichment', () => {
-  // "Skim · incremental" over a bare abstract says nothing the abstract does
-  // not, and costs the reader a line to find that out.
-  assert.equal(parseResponse(wrap({ verdict: 'skim', kind: 'incremental' })), null);
+test('a label alone is not an enrichment', () => {
+  // "incremental" over a bare abstract says nothing the abstract does not, and
+  // costs the reader a line to find that out.
+  assert.equal(parseResponse(wrap({ kind: 'incremental' })), null);
 });
 
 test('a partial payload keeps what is there', () => {
   const got = parseResponse(wrap({ result: 'R.', tools: ['a'] }));
   assert.deepEqual(got, {
-    verdict: '', kind: '', result: 'R.', question: '', prior: '', limits: '',
-    tools: ['a'], figure: '',
+    kind: '', result: 'R.', question: '', prior: '', limits: '',
+    tools: ['a'], figure: '', gloss: '',
   });
 });
 
@@ -87,12 +87,11 @@ test('an unnamed baseline stays unnamed rather than being guessed at', () => {
   assert.equal(got.result, full.result);
 });
 
-test('a verdict outside the enum is dropped rather than passed through', () => {
-  // The schema is enforced server-side, but a model that answers "worth a
-  // skim" must not reach the stylesheet, which switches on the exact string.
-  assert.equal(parseResponse(wrap({ ...full, verdict: 'worth a skim' })).verdict, '');
-  assert.equal(parseResponse(wrap({ ...full, verdict: 'READ' })).verdict, 'read');
+test('a kind outside the enum is dropped rather than passed through', () => {
+  // The schema is enforced server-side, but a model that answers
+  // "groundbreaking" must not reach the stylesheet, which prints it as a chip.
   assert.equal(parseResponse(wrap({ ...full, kind: 'groundbreaking' })).kind, '');
+  assert.equal(parseResponse(wrap({ ...full, kind: 'New Result' })).kind, 'new result');
 });
 
 test('tools that are not an array do not become one', () => {
@@ -102,7 +101,7 @@ test('tools that are not an array do not become one', () => {
 
 test('a cached record from an older field set is a miss, not a half-item', () => {
   // The 2026-08 cache holds {research_question, tools, summary}. Serving those
-  // would render a card with no verdict next to cards that have one, and
+  // would render a card with no finding next to cards that have one, and
   // nothing in the feed would say why.
   assert.equal(cachedFields({ fields: { research_question: 'Q?' }, seen: '2026-08-12' }), null);
   assert.equal(cachedFields({ fields: full, seen: '2026-08-12', shape: SHAPE }), full);
@@ -219,7 +218,28 @@ test('a top-band paper is read in full and keeps the figure it was briefed on', 
     // cache hit tomorrow renders the same picture without re-fetching the HTML.
     assert.equal(it.enrichment.figure_url, 'b.png');
     assert.equal(it.enrichment.figure_caption, 'c2');
+    // The gloss is what the card prints; the paper's own caption is kept only
+    // as the fallback, and the raw `gloss` key never reaches the cache.
+    assert.equal(it.enrichment.figure_gloss, full.gloss);
+    assert.ok(!('gloss' in it.enrichment));
     assert.equal(it.enrichment.code, 'https://github.com/x/y');
+  } finally { restore(); }
+});
+
+test('a gloss about a figure that is not the one shown is dropped', async () => {
+  // resolveFigure falls back to the first figure when the model names an id
+  // that is not in the list. The gloss it wrote is then about a plot nobody is
+  // looking at, which is worse than showing the author's own caption.
+  const restore = stubGemini({ ...full, figure: 'S9.F9' });
+  try {
+    const read = async () => ({
+      text: 'body',
+      figures: [{ id: 'S2.F1', src: 'a.png', caption: 'c1' }],
+    });
+    const [it] = await enrichItems([paper('1', 'paydirt')], { apiKey: 'k', readFullText: read });
+    assert.equal(it.enrichment.figure_url, 'a.png');
+    assert.equal(it.enrichment.figure_gloss, '');
+    assert.equal(it.enrichment.figure_caption, 'c1');
   } finally { restore(); }
 });
 
@@ -335,9 +355,50 @@ test('a spent daily allowance is refused by name, not by how long it asks for', 
 });
 
 
+test('a busy model hands the paper to the understudy rather than dropping it', async () => {
+  // A 503 is capacity, not a bad request: the same prompt on another model of
+  // the same family is the one retry with a real chance of a different answer.
+  const real = globalThis.fetch;
+  const asked = [];
+  globalThis.fetch = async (url) => {
+    asked.push(String(url).match(/models\/([^:]+):/)[1]);
+    if (asked.length <= 5) {
+      return { ok: false, status: 503, text: async () => JSON.stringify({ error: { message: 'high demand' } }) };
+    }
+    return {
+      ok: true, status: 200,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify(full) }] } }] }),
+    };
+  };
+  try {
+    const [it] = await enrichItems([paper('1', 'worth')], { apiKey: 'k' });
+    assert.equal(it.enrichment.result, full.result, 'the item ships enriched');
+    // Five attempts on the primary — a spike outlasts three — then the fallback.
+    assert.equal(asked.length, 6);
+    assert.ok(asked.slice(0, 5).every((m) => m === 'gemini-3.7-flash'));
+    assert.equal(asked[5], 'gemini-3.6-flash');
+  } finally { globalThis.fetch = real; }
+});
+
+test('a bad request is not asked twice, of two different models', async () => {
+  // A 400 is a request this account cannot make; a 429 is an allowance that
+  // belongs to the key, not the model. Neither is worth a second model's time.
+  const real = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    return { ok: false, status: 400, text: async () => JSON.stringify({ error: { message: 'bad field' } }) };
+  };
+  try {
+    const [it] = await enrichItems([paper('1', 'worth')], { apiKey: 'k' });
+    assert.equal(calls, 1);
+    assert.equal(it.enrichment, null);
+  } finally { globalThis.fetch = real; }
+});
+
 /* The request shape. It changed with the model, and both changes are silent if
-   wrong: a schema in the wrong place means the enums stop being enforced and
-   a free-text verdict reaches the feed, and a thinking level left at its
+   wrong: a schema in the wrong place means the enum stops being enforced and
+   a free-text kind reaches the feed, and a thinking level left at its
    default means paying reasoning prices to transcribe a number. */
 
 test('the schema travels the way v1beta actually accepts it', () => {
@@ -347,7 +408,7 @@ test('the schema travels the way v1beta actually accepts it', () => {
   // exists to stop the next reader modernising it back out of the docs.
   const gc = requestBody('p').generationConfig;
   assert.equal(gc.responseMimeType, 'application/json');
-  assert.equal(gc.responseSchema.properties.verdict.enum.length, 2);
+  assert.equal(gc.responseSchema.properties.kind.enum.length, 5);
   assert.ok(!('response_format' in gc), 'rejected by v1beta');
   assert.ok(!('thinking_level' in gc), 'also rejected by v1beta');
 });

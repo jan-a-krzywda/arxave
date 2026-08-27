@@ -10,8 +10,6 @@
  * to be worth the reader's eye, and it never is. So nothing here restates the
  * paper: every field is something the abstract makes the reader dig for.
  *
- *   verdict   read or skim — the decision itself, first, because most readers
- *             truncate an item to its first line and that line has to carry it.
  *   kind      new result / new method / theory / review / incremental. One
  *             phrase that catches the case grading cannot see: the third paper
  *             this year from the same group on the same device.
@@ -31,6 +29,11 @@
  *             invented to fill the slot.
  *   figure    which figure to show. The model names one, because it has read
  *             the paper and Figure 1 is very often only the schematic.
+ *   gloss     that figure's caption, rewritten for someone who has not read the
+ *             paper. The author's own caption is written for a reader forty
+ *             pages in — "(b) as in Fig. 3, with \u03b4 = 0" — and on a feed card,
+ *             stripped of that context, it says nothing. So the model writes
+ *             the caption the card needs: what is plotted, and what it shows.
  *
  * TWO TIERS, AND WHY. `prior` and `limits` are stated in the introduction and
  * the discussion and nowhere else; from an abstract alone the model either
@@ -84,8 +87,20 @@ const CACHE_DAYS = 30;
 /* Longest the API may ask us to wait before we give up and ship the item from
    its abstract. Above this it is a daily allowance, not a per-minute one. */
 const RETRY_CAP_MS = 90_000;
-/* Backoff step for a busy model, which is a different failure from a quota. */
-const BUSY_RETRY_MS = 3_000;
+/* Backoff step for a busy model, which is a different failure from a quota.
+   MEASURED 2026-08-27: three attempts spaced 3s and 6s give up nine seconds
+   into a spike, and a spike lasts longer than that — a rebuild of one morning
+   lost seven of nineteen papers to 503s while every retry was still inside the
+   first ten seconds. The steps are multiples of this, so five attempts sit out
+   about fifty seconds before the fallback below is asked. */
+const BUSY_RETRY_MS = 5_000;
+const BUSY_ATTEMPTS = 5;
+/* The understudy. A 503 is this model being full, not the request being wrong,
+   so the same prompt on another model of the same family is the one retry with
+   a real chance of a different answer. VERIFIED 2026-08-27: 3.6-flash accepts
+   the identical v1beta request shape — schema, mime type and thinking level —
+   and answers the same prompt in the same JSON. Set empty to switch off. */
+const FALLBACK_MODEL = process.env.ARXAVE_ENRICH_FALLBACK ?? 'gemini-3.6-flash';
 /* A floor on the gap between calls, sized to the ceiling it has to stay under.
    MEASURED 2026-08-25: the free tier's limit is
    GenerateRequestsPerMinutePerProjectPerModel, and at a 2s gap — 30 a minute —
@@ -112,17 +127,16 @@ export const DEEP_MAX = 12;
 
 /* Bumped whenever the field set changes. A cached record from an older shape is
    treated as a miss and re-generated, because the alternative is a feed where
-   some items have a verdict and some have a "Question." heading, with nothing
+   some items carry a figure gloss and some a raw LaTeX caption, with nothing
    in the code saying which era an item came from. */
-export const SHAPE = 3;
+export const SHAPE = 4;
 
-export const VERDICTS = ['read', 'skim'];
 export const KINDS = ['new result', 'new method', 'theory', 'review', 'incremental'];
 
 const SYSTEM = [
   'You brief a working researcher on physics and computer science preprints.',
   'They decide from your fields alone whether to open the paper, so lead with',
-  'the decision and the finding, never with methodology.',
+  'the finding, never with methodology.',
   'Do not summarize the paper — its abstract is printed directly below your',
   'fields and they can read it themselves. Give them what it makes them dig',
   'for: the number, what the number was before, and the conditions it holds',
@@ -137,23 +151,16 @@ const SYSTEM = [
   'Vague-but-short is a failure; an empty field is better than a padded one.',
   '',
   'Never state anything the text does not support, and do not editorialize about',
-  'importance or novelty beyond the two judgements asked of you below.',
+  'importance or novelty beyond the one judgement asked of you below.',
 ].join('\n');
 
 /* An explicit schema rather than "reply in JSON": the API enforces it, so a
    malformed response is a transport error rather than a parse surprise. The
-   enums matter most — a free-text verdict would arrive as "worth a skim" and
+   enum matters most — a free-text `kind` would arrive as "a new-ish method" and
    every consumer downstream would have to guess. */
 const SCHEMA = {
   type: 'object',
   properties: {
-    verdict: {
-      type: 'string',
-      enum: VERDICTS,
-      description:
-        '"read" if a researcher in this area should open the paper today; ' +
-        '"skim" if the fields above are enough unless it touches their exact problem.',
-    },
     kind: {
       type: 'string',
       enum: KINDS,
@@ -204,11 +211,21 @@ const SCHEMA = {
         'necessarily Figure 1, which is often only a schematic. Empty string ' +
         'if no figures were listed or none of them shows the finding.',
     },
+    gloss: {
+      type: 'string',
+      description:
+        'A caption for that figure, written for someone who has not read the ' +
+        'paper. Say what is plotted on each axis and what the figure shows, in ' +
+        'one or two clipped sentences. Do not copy the paper\'s own caption and ' +
+        'do not refer to panels, equations, other figures or symbols the reader ' +
+        'has not been given ("as in Fig. 3", "for the Hamiltonian of Eq. 2"). ' +
+        'Empty string when the figure field is empty.',
+    },
   },
-  required: ['verdict', 'kind', 'result', 'question', 'prior', 'tools', 'limits', 'figure'],
+  required: ['kind', 'result', 'question', 'prior', 'tools', 'limits', 'figure', 'gloss'],
   /* Gemini emits properties in this order, which is also the order the feed
      renders them — handy when reading raw responses while tuning the prompt. */
-  propertyOrdering: ['verdict', 'kind', 'result', 'question', 'prior', 'tools', 'limits', 'figure'],
+  propertyOrdering: ['kind', 'result', 'question', 'prior', 'tools', 'limits', 'figure', 'gloss'],
 };
 
 /**
@@ -260,7 +277,6 @@ export function parseResponse(body) {
     return null;
   }
   const fields = {
-    verdict: oneOf(parsed.verdict, VERDICTS),
     kind: oneOf(parsed.kind, KINDS),
     result: String(parsed.result ?? '').trim(),
     question: String(parsed.question ?? '').trim(),
@@ -274,10 +290,11 @@ export function parseResponse(body) {
       ? parsed.tools.map((t) => String(t).trim()).filter(Boolean)
       : [],
     figure: String(parsed.figure ?? '').trim(),
+    gloss: String(parsed.gloss ?? '').trim(),
   };
-  /* The verdict and the kind are labels on a paper, not a description of it. A
-     record carrying only those says nothing, and rendering "Skim ·
-     incremental" over a bare abstract is worse than rendering the abstract. */
+  /* The kind is a label on a paper, not a description of it. A record carrying
+     only that says nothing, and rendering "incremental" over a bare abstract is
+     worse than rendering the abstract. */
   if (!fields.result && !fields.question && !fields.tools.length) return null;
   return fields;
 }
@@ -351,7 +368,7 @@ export function requestBody(prompt) {
   };
 }
 
-async function callGemini(prompt, apiKey, model, { attempts = 3, sleep = wait } = {}) {
+async function callGemini(prompt, apiKey, model, { attempts = BUSY_ATTEMPTS, sleep = wait } = {}) {
   const url = `${ENDPOINT}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
   let last = '';
   for (let n = 0; n < attempts; n++) {
@@ -476,6 +493,7 @@ export async function enrichItems(items, { cachePath, apiKey, model = DEFAULT_MO
   let called = 0;
   let hits = 0;
   let failed = 0;
+  let fellBack = 0;
   let read = 0;
   let lastCall = 0;
   for (const item of items) {
@@ -507,7 +525,21 @@ export async function enrichItems(items, { cachePath, apiKey, model = DEFAULT_MO
       const since = Date.now() - lastCall;
       if (called && since < MIN_GAP_MS) await wait(MIN_GAP_MS - since);
       lastCall = Date.now();
-      const fields = await callGemini(promptFor(item, full), key, model);
+      const prompt = promptFor(item, full);
+      let usedModel = model;
+      let fields;
+      try {
+        fields = await callGemini(prompt, key, model);
+      } catch (err) {
+        /* Only for a busy model. A 400 is a request this account cannot make
+           and asking a second model would fail the same way a second time; a
+           429 is an allowance that belongs to the key, not to the model. */
+        if (!FALLBACK_MODEL || FALLBACK_MODEL === model || !/HTTP 503/.test(err.message)) throw err;
+        console.warn(`enrich: ${item.arxivId} — ${model} busy, asking ${FALLBACK_MODEL}`);
+        fields = await callGemini(prompt, key, FALLBACK_MODEL);
+        usedModel = FALLBACK_MODEL;
+        fellBack++;
+      }
       called++;
       if (fields) {
         /* The figure and the repository links are read off the paper, not
@@ -515,13 +547,22 @@ export async function enrichItems(items, { cachePath, apiKey, model = DEFAULT_MO
            tomorrow would render the brief without the picture it was written
            around, and re-fetching the HTML to recover them would undo the
            saving the cache exists for. */
-        const fig = resolveFigure(full, fields.figure);
+        const named = fields.figure;
+        const fig = resolveFigure(full, named);
         fields.figure = fig?.id || '';
         fields.figure_url = fig?.src || '';
         fields.figure_caption = fig?.caption || '';
+        /* The gloss was written about the figure the model *named*. When that
+           id did not match and resolveFigure fell back to the first figure, the
+           gloss now describes a plot nobody is looking at, which is worse than
+           no caption at all — so it is dropped and the author's own caption
+           carries the card. */
+        fields.figure_gloss = fig && fig.id === named ? fields.gloss : '';
+        delete fields.gloss;
         fields.code = full?.code?.[0] || '';
         cache[item.arxivId] = {
-          fields, seen: today, model, shape: SHAPE, depth: full ? 'full' : 'abstract',
+          fields, seen: today, model: usedModel, shape: SHAPE,
+          depth: full ? 'full' : 'abstract',
         };
       }
       out.push({ ...item, enrichment: fields });
@@ -531,7 +572,8 @@ export async function enrichItems(items, { cachePath, apiKey, model = DEFAULT_MO
       out.push({ ...item, enrichment: null });
     }
   }
-  console.log(`enrich: ${hits} cached, ${called} generated (${read} read in full), ${failed} failed`);
+  console.log(`enrich: ${hits} cached, ${called} generated (${read} read in full` +
+    `${fellBack ? `, ${fellBack} on ${FALLBACK_MODEL}` : ''}), ${failed} failed`);
 
   if (cachePath) {
     try {

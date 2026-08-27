@@ -311,18 +311,18 @@ test('items carry structured fields, not only escaped HTML', () => {
       authors: 'A. Author', grade: 0.7, z: 3.5,
       matched: { label: 'valley splitting in silicon quantum dots', cosine: 0.71 },
       enrichment: {
-        verdict: 'read', kind: 'new result', result: 'T2* of 3.4 ms.',
+        kind: 'new result', result: 'T2* of 3.4 ms.',
         question: 'How long can a Si spin hold phase?',
         prior: 'Was 1.1 ms, same device (Smith 2024).',
         limits: 'One device, at 10 mK.',
         tools: ['a', 'b'], code: 'https://github.com/x/y',
         figure: 'S3.F2', figure_url: 'https://arxiv.org/html/1v1/f2.png',
         figure_caption: 'Figure 2: Ramsey decay.',
+        figure_gloss: 'Phase coherence against wait time; the decay is ten times slower than the earlier device.',
       },
     }],
   });
   assert.match(xml, /xmlns:arxave="https:\/\/arxave\.com\/ns\/feed"/);
-  assert.match(xml, /<arxave:verdict>read<\/arxave:verdict>/);
   assert.match(xml, /<arxave:kind>new result<\/arxave:kind>/);
   assert.match(xml, /<arxave:result>T2\* of 3\.4 ms\.<\/arxave:result>/);
   assert.match(xml, /<arxave:question>How long can a Si spin hold phase\?<\/arxave:question>/);
@@ -330,38 +330,74 @@ test('items carry structured fields, not only escaped HTML', () => {
   assert.match(xml, /<arxave:limits>One device, at 10 mK\.<\/arxave:limits>/);
   assert.match(xml, /<arxave:code>https:\/\/github\.com\/x\/y<\/arxave:code>/);
   assert.match(xml, /<arxave:figure>https:\/\/arxiv\.org\/html\/1v1\/f2\.png<\/arxave:figure>/);
-  assert.match(xml, /<arxave:figurecaption>Figure 2: Ramsey decay\.<\/arxave:figurecaption>/);
+  // The gloss, not the paper's own caption: the card is read by someone who
+  // has not opened the paper, and "Figure 2: Ramsey decay." tells them nothing.
+  assert.match(xml, /<arxave:figurecaption>Phase coherence against wait time/);
+  assert.doesNotMatch(xml, /Figure 2: Ramsey decay/);
   assert.match(xml, /<arxave:tools>a · b<\/arxave:tools>/);
   assert.match(xml, /<arxave:matched>valley splitting in silicon quantum dots<\/arxave:matched>/);
   assert.match(xml, /<arxave:abstract>the abstract<\/arxave:abstract>/);
   assert.match(xml, /<arxave:z>3\.5<\/arxave:z>/);
 });
 
-test('the decision leads the body, ahead of the grade and the abstract', () => {
+test('the finding leads the body, and everything under it is folded', () => {
   /* Most readers truncate an item to its first line in the list view, so
      whatever leads is the whole item for a large share of subscribers. If the
-     grade line or the abstract drifts back above the verdict, that share sees a
-     number instead of a recommendation, and nothing throws. */
+     grade line or the abstract drifts back above the finding, that share sees a
+     number instead of a result, and nothing throws.
+
+     The folds are the other half of the shape: six drawers in a fixed order,
+     none of them open, so a reader's list stays a list. */
   const xml = renderFeed({
     preset: { name: 'P' }, slug: 's', site: 'https://arxave.com/', builtOn: '2026-08-12',
     items: [{
       arxivId: '1', title: 't', link: 'l', abstract: 'the abstract', authors: '',
       grade: 0.7, z: 3.5,
       enrichment: {
-        verdict: 'read', kind: 'new method', result: 'T2* of 3.4 ms.',
-        question: 'Q.', prior: 'P.', limits: 'C.', tools: [],
+        kind: 'new method', result: 'T2* of 3.4 ms.',
+        question: 'Q.', prior: 'P.', limits: 'C.', tools: ['a'],
+        figure_url: 'f.png', figure_gloss: 'G.',
       },
     }],
   });
   // The item's description, not the channel's — the channel has one too, and it
   // is the first match in the file.
   const body = xml.match(/<item>[\s\S]*?<description>([\s\S]*?)<\/description>/)[1];
-  assert.ok(body.indexOf('Read') < body.indexOf('Grade 0.700'), 'verdict before grade');
-  assert.ok(body.indexOf('Grade 0.700') < body.indexOf('Asks.'), 'grade before the prose');
-  assert.ok(body.indexOf('Asks.') < body.indexOf('Before.'), 'question before baseline');
-  assert.ok(body.indexOf('Before.') < body.indexOf('But.'), 'baseline before the limit');
-  assert.ok(body.indexOf('But.') < body.indexOf('Abstract'), 'abstract last');
-  assert.match(body, /Read.*new method.*T2\* of 3\.4 ms\./);
+  const at = (label) => body.indexOf(`&lt;summary&gt;${label}&lt;/summary&gt;`);
+  assert.ok(body.indexOf('T2* of 3.4 ms.') < body.indexOf('Grade 0.700'), 'finding before grade');
+  assert.ok(body.indexOf('Grade 0.700') < at('Figure'), 'grade before the drawers');
+  assert.ok(at('Figure') < at('Asks'), 'figure first');
+  assert.ok(at('Asks') < at('Before'), 'question before baseline');
+  assert.ok(at('Before') < at('But'), 'baseline before the limit');
+  assert.ok(at('But') < at('Tools'), 'the limit before the jargon');
+  assert.ok(at('Tools') < at('Abstract'), 'abstract last');
+  assert.doesNotMatch(body, /&lt;details[^&]*open/, 'nothing is open at rest');
+  assert.match(body, /new method.*T2\* of 3\.4 ms\./);
+});
+
+test('the author\'s TeX is rendered, not printed at the reader', () => {
+  /* Every field on a card comes from arXiv's own TeX or from a model told to
+     copy the paper's terms exactly. Raw, that is backslashes on the page — in
+     the browser and in a feed reader, which is why it is fixed in the file. */
+  const xml = renderFeed({
+    preset: { name: 'P' }, slug: 's', site: 'https://arxave.com/', builtOn: '2026-08-12',
+    items: [{
+      arxivId: '1',
+      title: 'Fault-tolerant $|\\sqrt{ \\mathrm{T} }\\rangle$ state preparation',
+      link: 'l', abstract: 'Coherence $T_{2}^{*}$ at $p=5*10^{-4}$.',
+      authors: 'M. M\\"uller', grade: 0.7, z: null,
+      enrichment: {
+        kind: 'new result', result: 'Under 12% at $p_{\\rm CNOT}=5*10^{-4}$.',
+        question: '', prior: '', limits: '', tools: ['$\\ket{\\psi}$ injection'],
+      },
+    }],
+  });
+  assert.match(xml, /Fault-tolerant \|√T⟩ state preparation/);
+  assert.match(xml, /Under 12% at p_CNOT=5\*10⁻⁴\./);
+  assert.match(xml, /M\. Müller/);
+  assert.match(xml, /T₂\^\* at p=5\*10⁻⁴/);
+  assert.match(xml, /\|ψ⟩ injection/);
+  assert.doesNotMatch(xml, /\\rangle|\\mathrm|\\rm /);
 });
 
 test('the grade line names the row that earned the grade', () => {
@@ -385,7 +421,7 @@ test('an unenriched item omits the generated elements rather than emptying them'
       enrichment: null, matched: null,
     }],
   });
-  assert.doesNotMatch(xml, /arxave:verdict/);
+  assert.doesNotMatch(xml, /arxave:kind/);
   assert.doesNotMatch(xml, /arxave:result/);
   assert.doesNotMatch(xml, /arxave:matched/);
   assert.doesNotMatch(xml, /arxave:z/);
@@ -397,13 +433,15 @@ test('a paper with no stated limit drops the line instead of printing an empty o
     preset: { name: 'P' }, slug: 's', site: 'https://arxave.com/', builtOn: '2026-08-12',
     items: [{
       arxivId: '1', title: 't', link: 'l', abstract: 'a', authors: '', grade: 0.7, z: null,
-      enrichment: { verdict: 'skim', kind: '', result: 'R.', question: '', prior: '', limits: '', tools: [] },
+      enrichment: { kind: '', result: 'R.', question: '', prior: '', limits: '', tools: [] },
     }],
   });
   assert.doesNotMatch(xml, /arxave:limits/);
   assert.doesNotMatch(xml, /arxave:prior/);
-  assert.doesNotMatch(xml, /<strong>But\./);
-  assert.match(xml, /Skim/);
+  // Not an empty drawer either: a fold that promises a caveat and opens on
+  // nothing is worse than one fewer drawer.
+  assert.doesNotMatch(xml, /summary&gt;But/);
+  assert.match(xml, /<arxave:result>R\.<\/arxave:result>/);
 });
 
 /* The matched row. Not part of grade(), which mirrors the browser verbatim. */
@@ -509,11 +547,19 @@ test('the centroid decodes to a plausible measured direction', () => {
   assert.ok(norm > 0.85 && norm < 0.98, `centroid norm ${norm} is not the measured 0.913`);
 });
 
-test('archive entry strips abstracts, keeps decision fields', () => {
+test('an archive entry is the whole card, abstract included', () => {
+  // The stockpile is where a paper is read once it has left the feed, so it
+  // holds everything the card held — including the abstract, which used to be
+  // dropped for size and is the one field a browsing page cannot go without.
   const items = [{
     arxivId: '1', title: 't', link: 'l', authors: 'A', grade: 0.612, z: 2.1,
     band: 'paydirt', matched: { label: 'row label' },
-    enrichment: { verdict: 'read', kind: 'new method', result: 'R.', question: 'Q.', prior: 'P.', limits: 'C.' },
+    enrichment: {
+      kind: 'new method', result: 'R.', question: 'Q.', prior: 'P.', limits: 'C.',
+      tools: ['a', 'b'], code: 'https://github.com/x/y',
+      figure_url: 'f.png', figure_caption: 'Figure 2: Ramsey decay.',
+      figure_gloss: 'G.',
+    },
     published: '2026-08-11',
     abstract: 'long prose nobody browses from a stockpile',
   }];
@@ -523,10 +569,30 @@ test('archive entry strips abstracts, keeps decision fields', () => {
   assert.equal(entry[0].grade, 0.612);
   assert.equal(entry[0].z, 2.1);
   assert.equal(entry[0].matched, 'row label');
-  assert.ok(!('abstract' in entry[0]), 'abstract is dropped');
+  assert.equal(entry[0].abstract, 'long prose nobody browses from a stockpile');
+  assert.equal(entry[0].tools, 'a · b');
+  assert.equal(entry[0].code, 'https://github.com/x/y');
+  assert.equal(entry[0].figure, 'f.png');
+  assert.equal(entry[0].caption, 'G.', 'the gloss, not the paper\'s own caption');
   assert.ok(!('enrichment' in entry[0]), 'raw enrichment is not kept');
+  assert.ok(!('verdict' in entry[0]), 'read/skim is gone from the record too');
   assert.equal(entry[0].prior, 'P.');
   assert.equal(entry[0].announced, '2026-08-11');
+});
+
+test('the archive stores rendered text, not the raw TeX', () => {
+  // The stockpile has no build step of its own: whatever is in the file is what
+  // the page prints.
+  const [entry] = archiveEntry([{
+    arxivId: '1', title: '$\\ket{\\psi}$ injection', link: 'l', authors: 'M\\"uller',
+    grade: 0.5, z: null, band: 'look', matched: null, published: '2026-08-11',
+    abstract: 'At $10^{-4}$.',
+    enrichment: { kind: '', result: 'Was $\\mu$s.', question: '', prior: '', limits: '', tools: [] },
+  }]);
+  assert.equal(entry.title, '|ψ⟩ injection');
+  assert.equal(entry.authors, 'Müller');
+  assert.equal(entry.abstract, 'At 10⁻⁴.');
+  assert.equal(entry.result, 'Was μs.');
 });
 
 test('merge month replaces old date, keeps others', () => {

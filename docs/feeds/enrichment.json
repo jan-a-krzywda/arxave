@@ -2080,218 +2080,243 @@
  },
  "2608.25027": {
   "fields": {
-   "verdict": "read",
    "kind": "new result",
-   "result": "Real-time fault-tolerant decoding on 12 CPU cores stretches total computation by under 0.3% at p_CNOT=10^-4 and under 12% at p_CNOT=5*10^-4 for workloads up to 408 logical qubits and >10^6 T gates.",
-   "question": "Can an end-to-end decoding stack for a universal fault-tolerant trapped-ion quantum computer execute millions of logical operations across hundreds of logical qubits in real time on a single commodity CPU?",
-   "prior": "Streaming decoding was demonstrated for 15 logical qubits/27 logical measurements (magic-state factory) and for random logical Pauli measurements over 100 distance-5 surface codes using an FPGA network.",
-   "limits": "Trapped-ion circuit-level noise simulation with tau_SEC between 1 ms and 5 ms; p_CNOT between 10^-4 and 5*10^-4; tested up to 408 logical qubits and 11,680 physical qubits.",
+   "result": "Real-time decoding stack executed on 12 cores of a single Apple M4 Max CPU decodes up to 408 logical qubits across >1,000,000 logical gates with decoding delay computation stretch <0.3% at p_CNOT = 10^-4 and <12% at p_CNOT = 5 * 10^-4.",
+   "question": "Can an end-to-end decoding stack perform real-time error correction and dynamic detector error model generation for universal fault-tolerant quantum computing at MegaQuOp scale using a single CPU?",
+   "prior": "Streaming decoding was demonstrated for 15 logical qubits with 27 logical measurements, and for 100 distance-5 surface codes using an FPGA network.",
+   "limits": "Circuit-level noise model with noisy syndrome extraction and cat measurements; assumes 1 ms/SEC for 102 logical qubits and 5 ms/SEC for 408 logical qubits; physical noise rate p_CNOT from 10^-4 to 5 * 10^-4.",
    "tools": [
     "Walking cat architecture (WCA)",
-    "Dual sliding-window beam search decoder",
-    "On-the-fly detector error model (DEM) generation",
-    "Apple M4 Max CPU (12 cores used)"
+    "Beam search decoder",
+    "Dual sliding-window decoder (error and outcome decoders)",
+    "Online detector error model (DEM) generation",
+    "Single 2024 Apple M4 Max CPU (12 cores)"
    ],
    "figure": "",
    "figure_url": "",
    "figure_caption": "",
+   "figure_gloss": "",
    "code": ""
   },
   "seen": "2026-08-27",
   "model": "gemini-3.7-flash",
-  "shape": 3,
+  "shape": 4,
   "depth": "full"
  },
  "2608.25797": {
   "fields": {
-   "verdict": "read",
    "kind": "new method",
-   "result": "Flag fault-tolerant preparation of logical $|\\sqrt{\\mathrm{T}}\\rangle$ magic states on 3D tetrahedral color code and morphed variant reduces average space-time cost of synthesizing Haar-random single-qubit unitaries by ~20-30% relative to Clifford+T.",
-   "question": "Can fault-tolerant preparation and injection of $|\\sqrt{\\mathrm{T}}\\rangle$ magic states reduce compilation overhead for single-qubit quantum circuits under circuit-level noise?",
-   "prior": "Clifford+T gate set synthesis baselines without direct $|\\sqrt{\\mathrm{T}}\\rangle$ state injection.",
-   "limits": "Numerical simulations under circuit-level noise; synthesis costs evaluated on Haar-random single-qubit unitaries.",
+   "result": "Access to fault-tolerantly prepared |√T⟩ magic states reduces average space-time cost of synthesizing Haar-random single-qubit unitaries by approximately 20-30% relative to Clifford+T.",
+   "question": "Can fault-tolerant preparation of |√T⟩ magic states reduce circuit synthesis compilation overhead under circuit-level noise?",
+   "prior": "Standard synthesis uses the Clifford+T gate set.",
+   "limits": "Numerical circuit-level Pauli noise simulations, post-selection on verification/flag outcomes, Haar-random single-qubit target unitaries.",
    "tools": [
+    "flag fault-tolerant protocols",
     "3D tetrahedral color code",
-    "morphed tetrahedral color code",
-    "flag fault-tolerant state preparation",
-    "logical process tomography",
-    "circuit-level noise simulation"
+    "morphed 3D color code",
+    "circuit-level noise simulations",
+    "logical process tomography"
    ],
    "figure": "",
    "figure_url": "",
    "figure_caption": "",
+   "figure_gloss": "",
    "code": ""
   },
   "seen": "2026-08-27",
   "model": "gemini-3.7-flash",
-  "shape": 3,
+  "shape": 4,
   "depth": "abstract"
  },
  "2608.25959": {
   "fields": {
-   "verdict": "read",
    "kind": "new method",
-   "result": "Dissipatively stabilized 0-n Fock qubit suppresses bit-flip errors exponentially with n; achieves CX bit-flip probabilities approaching 10^-8 for n >= 9 and logical error rate in megaquop regime with repetition code distance d = 9.",
-   "question": "How to preserve noise bias during two-qubit gate operations when interacting with non-biased control/ancilla qubits?",
+   "result": "Dissipatively stabilized 0-n Fock qubit in a nonlinear multi-level system suppresses bit-flip errors exponentially with level count n. Yields bit-flip probability approaching 10⁻⁸ in controlled-X gates on cat qubits at n ≥ 9 and logical error rates in the megaquop regime for a d=9 repetition code.",
+   "question": "How to design a noise-biased control ancilla qubit that preserves bias during gate operations with target noise-biased qubits?",
    "prior": "",
-   "limits": "Numerical simulations using realistic experimental parameter models rather than physical hardware implementation.",
+   "limits": "Numerical simulations under realistic superconducting circuit parameters rather than experimental demonstration; requires multi-mode frequency-selective dissipative filtering.",
    "tools": [
-    "multi-level nonlinear systems (transmons)",
-    "frequency-selective dissipative stabilization",
+    "nonlinear multi-level system (transmon)",
+    "dissipative stabilization via decay and gain",
     "multi-mode lossy filter",
-    "repetition code simulations"
+    "numerical Lindblad simulation"
    ],
    "figure": "",
    "figure_url": "",
    "figure_caption": "",
+   "figure_gloss": "",
    "code": ""
   },
   "seen": "2026-08-27",
   "model": "gemini-3.7-flash",
-  "shape": 3,
+  "shape": 4,
   "depth": "abstract"
  },
  "2608.24923": {
   "fields": {
-   "verdict": "skim",
-   "kind": "theory",
-   "result": "Identified and corrected three indexing, delta-function, and complex-conjugation errors in the explicit Fourier coefficient derivation of quantum kernels (Theorem 1 proof in arXiv:2101.11020v2); confirmed validity of the original theorem is unaffected.",
-   "question": "Are the explicit algebraic steps for computing Fourier representations of quantum kernels in Appendix A of Schuld (2021) mathematically sound?",
-   "prior": "Derivation in Schuld (arXiv:2101.11020v2) had reversed matrix indices in Eq. (A5), missing delta terms $\\delta_{j_{N},k_{N}}$, swapped conjugations on $w$, and an offsetting sign/index error in Example A.1.",
-   "limits": "Applies to time-evolution encoding embeddings $S(\\boldsymbol{x}) = W^{(N+1)}e^{-ix_{N}G}\\ldots e^{-ix_{1}G}W^{(1)}$ for quantum machine learning models.",
+   "kind": "incremental",
+   "result": "Identified index-order, missing Kronecker delta ($\\delta_{j_N,k_N}$), and conjugation errors in proof of Theorem 1 in Schuld (arXiv:2101.11020v2) Appendix A; provided exact corrected Fourier expansion for quantum kernels.",
+   "question": "Are the explicit Fourier coefficient derivations for quantum kernels in Appendix A of Schuld (2021) mathematically correct?",
+   "prior": "Derivation in Schuld (2021, arXiv:2101.11020v2) had reversed index ordering, missing overlap deltas, and swapped conjugate labels in explicit Fourier expressions.",
+   "limits": "Purely analytical correction. Does not alter the validity of Theorem 1 itself.",
    "tools": [
     "matrix algebra",
-    "quantum kernel methods",
-    "Fourier series expansion"
+    "Fourier analysis of quantum embeddings",
+    "kernel methods"
    ],
    "figure": "",
    "figure_url": "",
    "figure_caption": "",
+   "figure_gloss": "",
    "code": ""
   },
   "seen": "2026-08-27",
   "model": "gemini-3.7-flash",
-  "shape": 3,
+  "shape": 4,
   "depth": "full"
  },
  "2608.26061": {
   "fields": {
-   "verdict": "read",
    "kind": "new result",
-   "result": "Query complexity to purify unknown d-dimensional unitary subject to depolarizing noise of strength p to leading-order infidelity ε is Θ(d^2 p / ε), achieved by an SU(d)-covariant parallel strategy.",
-   "question": "What is the fundamental optimal fidelity and query complexity for universally purifying an unknown d-dimensional noisy unitary channel under arbitrary adaptive sequential strategies?",
-   "prior": "Naive combination of optimal state purification and channel storage-and-retrieval yields suboptimal scaling.",
-   "limits": "Asymptotic regime in low-noise limit (p -> 0) and large channel uses; depolarizing noise model.",
+   "result": "Analytically derived the leading-order optimal fidelity for universal purification of an unknown d-dimensional unitary subject to depolarizing noise of strength p; achieves query complexity Θ(d^2p/ε) for target infidelity ε via an explicit SU(d)-covariant parallel strategy.",
+   "question": "What is the optimal fidelity and query complexity achievable by arbitrary adaptive superchannels for universally purifying an unknown noisy unitary channel in arbitrary dimension d?",
+   "prior": "Prior naive approach combining optimal state purification and channel storage-and-retrieval yielded worse scaling in query complexity.",
+   "limits": "Leading-order in low-noise strength p and large channel uses N (asymptotic regime). Noise model restricted to depolarizing noise.",
    "tools": [
     "quantum superchannels",
-    "SU(d)-covariant strategies",
-    "representation theory",
-    "semidefinite programming bounds"
+    "SU(d)-covariant parallel strategies",
+    "adaptive sequential channel protocols",
+    "representation theory of unitary groups"
    ],
    "figure": "",
    "figure_url": "",
    "figure_caption": "",
+   "figure_gloss": "",
    "code": ""
   },
   "seen": "2026-08-27",
   "model": "gemini-3.7-flash",
-  "shape": 3,
+  "shape": 4,
   "depth": "abstract"
  },
  "2608.25042": {
   "fields": {
-   "verdict": "skim",
    "kind": "new method",
-   "result": "Unified framework optimizes measurement allocation for operator backpropagation by grouping backpropagated observables into qubit-wise commuting (QWC) groups and managing trade-offs among backpropagation error, truncation error, and shot noise.",
-   "question": "How to integrate operator backpropagation with observable measurement protocols to minimize measurement shots for a target accuracy under cumulative errors?",
+   "result": "Unified framework matches operator backpropagation with optimal measurement protocols based on the number of qubit-wise commuting (QWC) groups, balancing backpropagation error, truncation error, and shot noise to minimize total measurement shots.",
+   "question": "How to integrate operator backpropagation with observable measurement protocols to minimize total measurements under fixed target accuracy.",
    "prior": "",
-   "limits": "Analyzes backpropagation error, truncation error, and shot noise; performance depends on the number of generated QWC groups.",
+   "limits": "Analyzed for backpropagation algorithms subject to truncation errors and shot noise variation.",
    "tools": [
-    "operator backpropagation",
-    "qubit-wise commuting (QWC) grouping",
-    "observable truncation",
-    "shot noise analysis"
+    "Operator backpropagation",
+    "Qubit-wise commuting (QWC) grouping",
+    "Observable truncation",
+    "Error accumulation analysis"
    ],
    "figure": "",
    "figure_url": "",
    "figure_caption": "",
+   "figure_gloss": "",
    "code": ""
   },
   "seen": "2026-08-27",
   "model": "gemini-3.7-flash",
-  "shape": 3,
+  "shape": 4,
   "depth": "abstract"
  },
  "2608.25151": {
   "fields": {
-   "verdict": "read",
    "kind": "theory",
-   "result": "Universal margin for quadratic-Majorana encoding compressing $m=\\Theta(n^2)$ binary variables into $n$ qubits is exactly $\\Delta_{\\rm Maj}(n)=\\tan(\\pi/(4n))=\\Theta(1/n)$, versus $\\Theta(1/\\sqrt{n})$ for random signs. Arbitrary states and fermionic Gaussian states yield identical quadratic-Majorana covariance bodies.",
-   "question": "What fundamental resource tradeoffs and margin limits arise when compressing classical optimization variables into quantum expectation values on fewer qubits?",
+   "result": "Universal margin for complete quadratic-Majorana encoding of $m=\\Theta(n^2)$ variables on $n$ qubits is exactly $\\Delta_{\\rm Maj}(n)=\\tan(\\frac{\\pi}{4n})=\\Theta(1/n)$, while uniformly random sign assignments achieve $\\Theta(1/\\sqrt{n})$. General families of $m$ binary observables on $n$ qubits have universal margin at most $\\sqrt{(2\\ln2\\;n/m)}$ and require sample-qubit product $nN=\\Omega(m)$ for constant-bias recovery.",
+   "question": "What resource tradeoffs and margin limits are incurred when compressing classical optimization variables into quantum correlators on fewer qubits?",
    "prior": "",
-   "limits": "Bounds hold for complete quadratic-Majorana encodings and fixed families of $m$ designated binary observables under smooth sign decoding.",
+   "limits": "Worst-case $1/n$ bound is Majorana-specific; non-Gaussian states cannot expand the two-point Majorana covariance body beyond fermionic Gaussian states.",
    "tools": [
     "quadratic-Majorana encoding",
     "fermionic Gaussian states",
     "quantum random access codes (QRAC)",
-    "covariance body geometry"
+    "information-theoretic bounds"
    ],
    "figure": "",
    "figure_url": "",
    "figure_caption": "",
+   "figure_gloss": "",
    "code": ""
   },
   "seen": "2026-08-27",
   "model": "gemini-3.7-flash",
-  "shape": 3,
+  "shape": 4,
   "depth": "abstract"
  },
  "2608.25914": {
   "fields": {
-   "verdict": "read",
    "kind": "theory",
-   "result": "A bilayer Ge heterostructure with Si0.50Ge0.35Sn0.15 barriers allows gate-switchable heavy-hole to light-hole spin qubits, identifying an operation sweet spot at ~25% heavy-hole character with Rabi frequency on the order of 100 MHz and dephasing time T2* = 217.6 μs.",
-   "question": "Can heavy-hole and light-hole advantages be combined in a single switchable spin qubit using heterostructure engineering?",
+   "result": "Proposes a switchable heavy-hole/light-hole spin qubit in a bilayer Ge heterostructure with SiGeSn barriers, showing a charge-noise sweet spot with Rabi frequencies around 100 MHz and a dephasing time of T2* = 217.6 μs.",
+   "question": "Can a heterostructure combine the fast spin-orbit driving of light holes with the long coherence of heavy holes in a single, gate-switchable spin qubit?",
    "prior": "",
-   "limits": "Purely theoretical and simulated. Assumes Luttinger parameters of Ge throughout, harmonic in-plane confinement, noise amplitude σ(t = 1 μs) = 10 μV with cutoff ω_ir/2π = 10^-2 Hz, and neglects hyperfine interactions.",
+   "limits": "Theoretical simulation assuming zero hyperfine interaction (pure spin-zero isotopes), an approximate continuous compositional profile (sigma = 0.8 nm), and Ge Luttinger parameters across the entire heterostructure.",
    "tools": [
     "6-band Luttinger-Kohn-Bir-Pikus (LKBP) Hamiltonian",
-    "Bilayer Ge/SiGeSn heterostructure modeling",
-    "2nd-order quasistatic 1/f charge noise model",
-    "Schrieffer-Wolff transformation"
+    "bilayer Ge heterostructure with unstrained Si0.50Ge0.35Sn0.15 barriers",
+    "electric-dipole spin resonance (EDSR) modeling",
+    "second-order 1/f charge noise model"
    ],
    "figure": "S6.F14",
    "figure_url": "https://arxiv.org/html/2608.25914v1/noise.svg",
    "figure_caption": "Figure 14: Calculated dephasing time as a function of plunger gate voltage. The barrier width is $d=3$ nm, the confinement frequencies are $\\hbar\\omega_{x}=2$ meV and $\\hbar\\omega_{y}=2.6$ meV. (a) The dephasing time is calculated using Eqs. ( 18 ), ( 22 ) and ( 24 ), assuming an infrared cutoff frequency $\\omega_{\\mathrm{ir}}/2\\pi=10^{-2}$ Hz and $\\sigma(t=1\\hskip 2.84526pt\\mu\\mathrm{s})=10$ $\\mu$ V. The magnetic field is along $y$ , $B_{y}=0.1$ T. Two peaks appear close to the HH-LH resonance. (b) Detailed view of the two dephasing time peaks shown in (a). (c) Corresponding effective $g$ -factor as a function of gate voltage. The dashed lines show the positions of the dephasing time peaks shown in (a) and (b).",
+   "figure_gloss": "Calculated dephasing time T2* (a, b) and effective g-factor (c) versus plunger gate voltage Vg. Shows first-order charge-noise sweet spots near the heavy-hole/light-hole resonance where T2* peaks above 200 μs.",
    "code": ""
   },
   "seen": "2026-08-27",
   "model": "gemini-3.7-flash",
-  "shape": 3,
+  "shape": 4,
   "depth": "full"
  },
  "2608.26018": {
   "fields": {
-   "verdict": "read",
    "kind": "new result",
-   "result": "Engineered noise bias in a standard transmon using a single microwave tone on $|\\mathrm{g}\\rangle-|\\mathrm{f}\\rangle$ encoding with frequency-selective gain channel. Yields order-of-magnitude enhancement in relaxation time compared to $|\\mathrm{g}\\rangle-|\\mathrm{e}\\rangle$ encoding with factor-of-two decrease in echo-coherence time.",
-   "question": "Can noise bias be engineered in a standard transmon-readout resonator circuit without adding physical hardware complexity?",
-   "prior": "Standard $|\\mathrm{g}\\rangle-|\\mathrm{e}\\rangle$ transmon encoding.",
-   "limits": "Suffers a factor-of-two decrease in echo-coherence time.",
+   "result": "Engineered noise bias in a standard transmon-resonator circuit using a single continuous microwave drive on the readout resonator, yielding an order-of-magnitude enhancement in relaxation time for |g⟩-|f⟩ encoding while conceding only a 2x reduction in echo coherence time.",
+   "question": "Can noise bias be engineered in standard superconducting transmon architectures without physical hardware modifications by adding simple microwave drives?",
+   "prior": "Standard transmon encoding (|g⟩-|e⟩) suffers from unsuppressed relaxation from single-photon loss without noise bias.",
+   "limits": "Demonstrated on a single transmon-resonator node; trades off a factor of 2 in echo-coherence time ($T_{2e}$) to achieve the relaxation boost.",
    "tools": [
-    "transmon-readout resonator circuit",
-    "single microwave pump tone",
+    "standard transmon coupled to readout resonator",
     "frequency-selective gain engineering",
-    "$|\\mathrm{g}\\rangle-|\\mathrm{f}\\rangle$ subspace encoding"
+    "continuous-wave microwave drive",
+    "|g⟩ and |f⟩ state subspace encoding"
    ],
    "figure": "",
    "figure_url": "",
    "figure_caption": "",
+   "figure_gloss": "",
    "code": ""
   },
   "seen": "2026-08-27",
   "model": "gemini-3.7-flash",
-  "shape": 3,
+  "shape": 4,
   "depth": "abstract"
+ },
+ "2608.25852": {
+  "fields": {
+   "kind": "theory",
+   "result": "Tensile-strained SiGe quantum wells lattice-matched to Ge host light-hole spin qubits with transition dipole moments three orders of magnitude larger and quality factors an order of magnitude higher than conventional strained-Ge heavy-hole qubits.",
+   "question": "Can a light-hole ground state spin qubit be engineered using only SiGe heterostructures lattice-matched to a Ge substrate without metamorphic buffers or Sn integration?",
+   "prior": "Conventional strained-Ge heavy-hole qubits on metamorphic SiGe buffers suffer from large g-tensor anisotropy (g*_|| ≈ 0.1, g*_⊥ ≈ 15) and substrate-induced dislocation noise.",
+   "limits": "Purely theoretical and numerical simulation; noise analysis assumes charge noise is dominated by vertical electric field fluctuations with fixed amplitude 10 kV/m.",
+   "tools": [
+    "6-band k·p Hamiltonian diagonalization",
+    "envelope function approximation",
+    "electric-dipole spin resonance model",
+    "tensile-strained SiGe/Ge heterostructures"
+   ],
+   "figure": "S0.F4",
+   "figure_url": "https://arxiv.org/html/2608.25852v1/bilayer_overview_2x2_v2.png",
+   "figure_caption": "Figure 4: (a) Computed dipole moment as the transition matrix element of the position operator between the two computational states $d=\\bra{0}x\\ket{1}$ , expressed in nm, for a planar confinement $L_{X_{0}}=35$ nm, barrier composition $\\text{Si}_{70}\\text{Ge}_{30}$ , vertical electric field $F_{z}=1.2$ MV/m and magnetic field amplitude $15$ mT. Overlayed in black is the dipole moment of the $\\varepsilon$ -Ge HH heterostructure utilized for comparison. (b) Ratio of Quality factors $Q=T_{2}^{*}d_{\\text{eff}}eE_{\\text{AC}}/\\hbar$ for a Light-Hole ground state in the tensile strained SiGe well ( $Q_{LH}$ ) and a $\\varepsilon$ -Ge HH hole spin qubit ( $Q_{HH}$ ) computed for fluctuations around a vertical field of $1.2$ MV/m. (c)-(d) Proposed heterostructure to achieve a HH-LH bilayer for $0.25$ MV/m and $1.35$ MV/m respectively, showing the transition from HH to LH ground state. The grey insets at the top of each layer represent the Ge concentration in each SiGe alloy, with the underlying substrate not shown but kept fixed at pure Ge like the monolayer study. (e) Linear SOC parameter extracted as a function of out-of-plane electric field. Around $1.25$ MV/m we observe the sudden transition with a large boost in the strength of $\\alpha$ . Finally (f) shows the evolution of the g-factor for the same parameter range with the typical anisotropy inversion expected between HH and LH ground states.",
+   "figure_gloss": "Dipole moment and quality factor ratio between light-hole and heavy-hole qubits versus quantum well thickness and composition, alongside electrical switching of ground-state character in a SiGe/Ge bilayer.",
+   "code": ""
+  },
+  "seen": "2026-08-27",
+  "model": "gemini-3.7-flash",
+  "shape": 4,
+  "depth": "full"
  }
 }
