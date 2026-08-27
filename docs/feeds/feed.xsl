@@ -132,24 +132,66 @@
           /* Figures come off arXiv at whatever size LaTeXML rendered them, and
              a plot is unreadable below about 20rem, so the cap is generous and
              the floor is the column. The pale plate matters: most of these are
-             line art on transparent SVG, which on a dark page is invisible. */
-          .figure { margin: 0.8rem 0; }
+             line art on transparent SVG, which on a dark page is invisible.
+             Centred, because a figure narrower than the column ragged-left
+             reads as a mistake rather than as a plate. */
+          .figure { margin: 0.8rem 0; text-align: center; }
           .figure img {
-            display: block; width: 100%; max-width: 34rem; height: auto;
+            display: inline-block; width: 100%; max-width: 34rem; height: auto;
             border-radius: 3px; background: #f4f1ea; padding: 0.5rem;
+            cursor: zoom-in;
+          }
+          /* The caption is the model's gloss, not the paper's own — written for
+             someone who has not read the paper. Set under the plate, quiet and
+             narrower than the column so it reads as a caption and not as the
+             next paragraph of the brief. */
+          .figure-caption {
+            margin: 0.5rem auto 0; max-width: 34rem;
+            color: var(--text-dim); font-size: 0.85rem; line-height: 1.5;
+            text-align: center;
+          }
+          /* A plot at 34rem on a dark card is a thumbnail of a plot: the axis
+             labels in these are set for a printed page. Clicking one throws it
+             up full-screen on its own plate, which is the only way some of them
+             are legible at all. Click anywhere, or Escape, to put it back. */
+          .lightbox {
+            display: none; position: fixed; inset: 0; z-index: 50;
+            background: rgba(10, 12, 15, 0.94);
+            padding: 2rem; cursor: zoom-out;
+            flex-direction: column; align-items: center; justify-content: center;
+          }
+          .lightbox.open { display: flex; }
+          .lightbox img {
+            max-width: 100%; max-height: 86vh; width: auto; height: auto;
+            border-radius: 4px; background: #f4f1ea; padding: 1rem;
+          }
+          .lightbox p {
+            margin: 1rem 0 0; max-width: 48rem; text-align: center;
+            color: var(--text-dim); font-size: 0.9rem;
           }
           .body .grade { color: var(--text-faint); font-size: 0.85rem; }
           .body .grade strong { color: var(--text-dim); }
-          /* The abstract and the tool list are the long tail of the card, and
-             the page is a list of cards: open by default they bury the next
-             paper under this one's four hundred words of prose. Folded, the
-             page is skimmable and nothing is gone — the summary is the click
-             target, the author's own words are one click under it. */
-          .fold {
-            margin-top: 0.5rem;
+          /* EVERYTHING BUT THE FINDING IS FOLDED. A card open is most of a
+             screen; a page of them is not a list any more, and the list is the
+             product. So a card at rest is its title, its authors and one line
+             of finding, and the six drawers under it — figure, asks, before,
+             but, tools, abstract — are each one click, opened on the one paper
+             a reader actually wants them for. Nothing is gone and nothing is
+             behind a fetch: it is all in this file, closed.
+
+             The drawers sit in a row rather than stacked, because six stacked
+             summaries are taller than the card they belong to. */
+          .folds {
+            display: flex; flex-wrap: wrap; gap: 0.35rem 0.5rem;
+            margin-top: 0.6rem;
             border-top: 1px solid var(--rock-edge);
-            padding-top: 0.45rem;
+            padding-top: 0.5rem;
           }
+          /* A closed drawer is a chip in the row; an open one takes the whole
+             width and pushes the rest down, so two open drawers never end up
+             side by side reading as columns. */
+          .fold { flex: none; }
+          .fold[open] { flex: 1 0 100%; }
           .fold > summary {
             cursor: pointer;
             list-style: none;
@@ -158,6 +200,7 @@
             text-transform: uppercase;
             letter-spacing: 0.06em;
             font-weight: 700;
+            padding: 0.1rem 0.1rem;
           }
           .fold > summary::-webkit-details-marker { display: none; }
           /* The caret is drawn rather than inherited, because the default
@@ -176,21 +219,47 @@
             color: var(--text-dim);
             font-size: 0.9rem;
           }
-          /* The decision line leads the card and is the only text set larger
-             than the body. The verdict itself is a flag, not a colour: `read`
-             is ore, `skim` is rock, and nothing else on a card competes. */
-          .body .verdict {
-            font-size: 1rem; line-height: 1.5; margin: 0 0 0.5rem;
+          .fold[open] > summary { color: var(--ore-dim); }
+          /* "Open everything on this card" — one control, on the card, because
+             the alternative is six clicks to read one paper properly. It is a
+             toggle: the same button closes them again. Set as the quietest
+             thing in the row, since it is a convenience and not a field. */
+          .unfold {
+            flex: none; margin-left: auto;
+            background: none; border: 1px solid var(--rock-edge);
+            border-radius: 3px; padding: 0.1rem 0.45rem;
+            color: var(--text-faint); font: inherit;
+            font-size: 0.78rem; text-transform: uppercase;
+            letter-spacing: 0.06em; font-weight: 700;
+            cursor: pointer;
           }
-          .flag, .kind {
+          .unfold:hover { color: var(--ore-dim); border-color: var(--ore-dim); }
+          /* Authors are their own line now, under the title: they used to ride
+             the end of the grade line, where a ten-author collaboration pushed
+             the grade and the matched row off the visible width. */
+          .byline {
+            margin: 0.35rem 0 0; color: var(--text-dim); font-size: 0.85rem;
+          }
+          /* The finding is the one thing a closed card says about the paper, so
+             it is centred and given its own line — the eye goes title, authors,
+             finding, and stops, which is exactly the first-look this page is
+             for. */
+          .body .result {
+            margin: 0.7rem auto 0; max-width: 42rem;
+            text-align: center; font-size: 1rem; line-height: 1.55;
+          }
+          /* The chip line: how sure the assay was, and what sort of paper it
+             is. No read/skim flag — the band already says how much to trust the
+             card, and a second verdict on top of it was one label too many. */
+          .body .chips {
+            font-size: 1rem; line-height: 1.5; margin: 0 0 0.2rem;
+          }
+          .kind {
             display: inline-block; vertical-align: baseline;
             border-radius: 3px; padding: 0.05rem 0.4rem; margin-right: 0.35rem;
             font-size: 0.72rem; font-weight: 700;
             text-transform: uppercase; letter-spacing: 0.06em;
           }
-          .flag-read { background: var(--ore); color: #1b1f26; }
-          .flag-skim { background: var(--rock); color: var(--text-dim);
-                       border: 1px solid var(--rock-edge); }
           /* The band is how sure the assay was, and it is deliberately a ramp
              rather than three unrelated colours: solid ore for pay dirt, ore
              outline for worth-a-look, plain rock for a long shot. Read down the
@@ -294,12 +363,13 @@
                    that escaping needs disable-output-escaping, which no browser
                    implements — it printed the tags on screen instead. -->
               <div class="body">
-                <!-- The decision first, as in the feed itself: verdict, what
-                     sort of paper it is, and the finding with its number. The
-                     provenance line under it explains the ranking rather than
-                     describing the paper, so it is set quiet. -->
-                <xsl:if test="arxave:band or arxave:verdict or arxave:kind or arxave:result">
-                  <p class="verdict">
+                <!-- The authors, on their own line under the title. One of the
+                     three things a closed card shows. -->
+                <xsl:if test="arxave:authors">
+                  <p class="byline"><xsl:value-of select="arxave:authors"/></p>
+                </xsl:if>
+                <xsl:if test="arxave:band or arxave:kind">
+                  <p class="chips">
                     <xsl:if test="arxave:band">
                       <span>
                         <xsl:attribute name="class">
@@ -308,96 +378,162 @@
                         <xsl:value-of select="arxave:bandname"/>
                       </span>
                     </xsl:if>
-                    <xsl:if test="arxave:verdict">
-                      <span>
-                        <xsl:attribute name="class">
-                          <xsl:text>flag flag-</xsl:text><xsl:value-of select="arxave:verdict"/>
-                        </xsl:attribute>
-                        <xsl:value-of select="arxave:verdict"/>
-                      </span>
-                    </xsl:if>
                     <xsl:if test="arxave:kind">
                       <span class="kind"><xsl:value-of select="arxave:kind"/></span>
                     </xsl:if>
-                    <xsl:if test="arxave:result">
-                      <xsl:text> </xsl:text><xsl:value-of select="arxave:result"/>
-                    </xsl:if>
                   </p>
+                </xsl:if>
+                <!-- The finding: centred, on its own line, and the last thing
+                     visible before the drawers. -->
+                <xsl:if test="arxave:result">
+                  <p class="result"><xsl:value-of select="arxave:result"/></p>
                 </xsl:if>
                 <p class="grade">
                   <strong>Grade <xsl:value-of select="arxave:grade"/></strong>
                   <xsl:if test="arxave:z">
-                    <xsl:text> · </xsl:text>
+                    <xsl:text> &#183; </xsl:text>
                     <xsl:value-of select="arxave:z"/>
-                    <xsl:text>&#963; above the day's baseline</xsl:text>
+                    <xsl:text>&#963; above the day&#8217;s baseline</xsl:text>
                   </xsl:if>
                   <xsl:if test="arxave:matched">
-                    <xsl:text> · matched &#8220;</xsl:text>
+                    <xsl:text> &#183; matched &#8220;</xsl:text>
                     <xsl:value-of select="arxave:matched"/>
                     <xsl:text>&#8221;</xsl:text>
                   </xsl:if>
-                  <xsl:if test="arxave:authors">
-                    <xsl:text> · </xsl:text><xsl:value-of select="arxave:authors"/>
-                  </xsl:if>
                 </p>
-                <!-- The figure, when the model picked one out of the paper it
-                     read. Hotlinked from arxiv.org: this repository stays text,
-                     and the image is already being served next to the paper. It
-                     goes above the prose because it is the fastest thing on the
-                     card to read, and it is the first thing to go on a narrow
-                     screen only in the sense that it scales down with it. -->
-                <xsl:if test="arxave:figure">
-                  <p class="figure">
-                    <a>
-                      <xsl:attribute name="href"><xsl:value-of select="link"/></xsl:attribute>
-                      <img>
-                        <xsl:attribute name="src"><xsl:value-of select="arxave:figure"/></xsl:attribute>
-                        <xsl:attribute name="alt"><xsl:value-of select="arxave:figurecaption"/></xsl:attribute>
-                        <xsl:attribute name="loading">lazy</xsl:attribute>
-                      </img>
-                    </a>
-                  </p>
-                </xsl:if>
-                <xsl:if test="arxave:question">
-                  <p><strong>Asks. </strong><xsl:value-of select="arxave:question"/></p>
-                </xsl:if>
-                <!-- `Before` is the field the whole full-text tier exists for: a
-                     number with nothing to compare it against is not a result
-                     yet. It is absent on abstract-tier items, which is honest —
-                     an abstract rarely names the baseline it beats. -->
-                <xsl:if test="arxave:prior">
-                  <p><strong>Before. </strong><xsl:value-of select="arxave:prior"/></p>
-                </xsl:if>
-                <xsl:if test="arxave:limits">
-                  <p class="but"><strong>But. </strong><xsl:value-of select="arxave:limits"/></p>
-                </xsl:if>
-                <xsl:if test="arxave:code">
-                  <p><strong>Code. </strong>
-                    <a>
-                      <xsl:attribute name="href"><xsl:value-of select="arxave:code"/></xsl:attribute>
-                      <xsl:value-of select="arxave:code"/>
-                    </a>
-                  </p>
-                </xsl:if>
-                <!-- Everything below the fold is reference, not decision: the
-                     tool list is jargon you want only once you have decided to
-                     care, and the abstract is the author's own long form. The
-                     "tune this in the Dig" link that used to sit on every card
-                     is gone — it is the same link on all of them, and it lives
-                     once, at the top, where a first-time visitor looks. -->
-                <xsl:if test="arxave:tools">
-                  <details class="fold">
-                    <summary>Tools</summary>
-                    <p class="fold-body"><xsl:value-of select="arxave:tools"/></p>
-                  </details>
-                </xsl:if>
-                <details class="fold">
-                  <summary>Abstract</summary>
-                  <p class="fold-body"><xsl:value-of select="arxave:abstract"/></p>
-                </details>
+                <!-- SIX DRAWERS, in the order a reader wants them: the picture
+                     first because it is the fastest thing on the card to read,
+                     then the question, then what it beats, then what it costs,
+                     then the jargon, then the author&#8217;s own words. -->
+                <div class="folds">
+                  <!-- The figure is hotlinked from arxiv.org: this repository
+                       stays text, and the image is already being served next to
+                       the paper. Clicking it opens the lightbox rather than the
+                       paper — the paper is one line up, in the title. -->
+                  <xsl:if test="arxave:figure">
+                    <details class="fold">
+                      <summary>Figure</summary>
+                      <div class="fold-body">
+                        <p class="figure">
+                          <img>
+                            <xsl:attribute name="src"><xsl:value-of select="arxave:figure"/></xsl:attribute>
+                            <xsl:attribute name="alt"><xsl:value-of select="arxave:figurecaption"/></xsl:attribute>
+                            <xsl:attribute name="data-caption"><xsl:value-of select="arxave:figurecaption"/></xsl:attribute>
+                            <xsl:attribute name="loading">lazy</xsl:attribute>
+                          </img>
+                        </p>
+                        <xsl:if test="arxave:figurecaption">
+                          <p class="figure-caption"><xsl:value-of select="arxave:figurecaption"/></p>
+                        </xsl:if>
+                      </div>
+                    </details>
+                  </xsl:if>
+                  <xsl:if test="arxave:question">
+                    <details class="fold">
+                      <summary>Asks</summary>
+                      <p class="fold-body"><xsl:value-of select="arxave:question"/></p>
+                    </details>
+                  </xsl:if>
+                  <!-- `Before` is the field the whole full-text tier exists for:
+                       a number with nothing to compare it against is not a
+                       result yet. Absent when the paper states none, or when
+                       arXiv has no HTML rendering to read — an abstract rarely
+                       names the baseline it beats. -->
+                  <xsl:if test="arxave:prior">
+                    <details class="fold">
+                      <summary>Before</summary>
+                      <p class="fold-body"><xsl:value-of select="arxave:prior"/></p>
+                    </details>
+                  </xsl:if>
+                  <!-- The caveat is the field that makes the rest credible. -->
+                  <xsl:if test="arxave:limits">
+                    <details class="fold">
+                      <summary>But</summary>
+                      <p class="fold-body but"><xsl:value-of select="arxave:limits"/></p>
+                    </details>
+                  </xsl:if>
+                  <xsl:if test="arxave:tools or arxave:code">
+                    <details class="fold">
+                      <summary>Tools</summary>
+                      <div class="fold-body">
+                        <xsl:if test="arxave:tools">
+                          <p><xsl:value-of select="arxave:tools"/></p>
+                        </xsl:if>
+                        <xsl:if test="arxave:code">
+                          <p><strong>Code. </strong>
+                            <a>
+                              <xsl:attribute name="href"><xsl:value-of select="arxave:code"/></xsl:attribute>
+                              <xsl:value-of select="arxave:code"/>
+                            </a>
+                          </p>
+                        </xsl:if>
+                      </div>
+                    </details>
+                  </xsl:if>
+                  <xsl:if test="arxave:abstract">
+                    <details class="fold">
+                      <summary>Abstract</summary>
+                      <p class="fold-body"><xsl:value-of select="arxave:abstract"/></p>
+                    </details>
+                  </xsl:if>
+                  <button class="unfold" type="button">Unfold all</button>
+                </div>
               </div>
             </article>
           </xsl:for-each>
+
+          <!-- One overlay for the whole page, filled on click. A per-card
+               overlay would mean one hidden copy of every figure in the DOM. -->
+          <div class="lightbox" id="lightbox">
+            <img id="lightbox-img" src="" alt=""/>
+            <p id="lightbox-caption"></p>
+          </div>
+
+          <!-- SCRIPT IN AN XSL TEMPLATE. This is a stylesheet the browser
+               applies to the RSS before painting it, so the output is an
+               ordinary document and ordinary script runs in it. Feed readers
+               never reach this branch at all: they parse the XML and ignore the
+               stylesheet, so nothing here can break a subscription. Everything
+               below is a convenience over markup that already works without it
+               — the drawers are <details>, which open on their own. -->
+          <script>
+            <xsl:text disable-output-escaping="yes">/*<![CDATA[*/
+            (function () {
+              /* "Unfold all" is per card and is a toggle: if anything on this
+                 card is still closed, open everything; otherwise close it. */
+              document.addEventListener('click', function (ev) {
+                var btn = ev.target.closest('.unfold');
+                if (!btn) return;
+                var row = btn.parentNode;
+                var folds = row.querySelectorAll('details.fold');
+                var anyClosed = false;
+                folds.forEach(function (f) { if (!f.open) anyClosed = true; });
+                folds.forEach(function (f) { f.open = anyClosed; });
+                btn.textContent = anyClosed ? 'Fold all' : 'Unfold all';
+              });
+
+              /* A figure at column width is a thumbnail of a plot — these are
+                 drawn for a printed page. Click throws it up full-screen. */
+              var box = document.getElementById('lightbox');
+              var boxImg = document.getElementById('lightbox-img');
+              var boxCap = document.getElementById('lightbox-caption');
+              function close() { box.classList.remove('open'); boxImg.src = ''; }
+              document.addEventListener('click', function (ev) {
+                var img = ev.target.closest('.figure img');
+                if (!img) return;
+                ev.preventDefault();
+                boxImg.src = img.src;
+                boxImg.alt = img.alt || '';
+                boxCap.textContent = img.getAttribute('data-caption') || '';
+                box.classList.add('open');
+              });
+              box.addEventListener('click', close);
+              document.addEventListener('keydown', function (ev) {
+                if (ev.key === 'Escape') close();
+              });
+            })();
+            /*]]>*/</xsl:text>
+          </script>
 
           <footer>
             Built <xsl:value-of select="channel/lastBuildDate"/> · ranked in the

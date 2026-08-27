@@ -19,7 +19,6 @@ const wrap = (obj) => ({
 });
 
 const full = {
-  verdict: 'read',
   kind: 'new result',
   result: 'Single-qubit gate fidelity 99.9995%. Isotopically purified Si.',
   question: 'How far can gate fidelity go once nuclear spins are removed?',
@@ -27,6 +26,7 @@ const full = {
   limits: 'One device, at 100 mK.',
   tools: ['spin-locking', 'parity readout'],
   figure: 'S3.F2',
+  gloss: 'Gate fidelity against nuclear-spin concentration; the purified device sits an order of magnitude above the rest.',
 };
 
 test('a well-formed response becomes the fields verbatim', () => {
@@ -50,22 +50,22 @@ test('text that is not JSON is null, not a throw', () => {
 
 test('an all-empty payload is null rather than a row of blank headings', () => {
   assert.equal(parseResponse(wrap({
-    verdict: '', kind: '', result: '', question: '', prior: '', limits: '',
-    tools: [], figure: '',
+    kind: '', result: '', question: '', prior: '', limits: '',
+    tools: [], figure: '', gloss: '',
   })), null);
 });
 
-test('labels alone are not an enrichment', () => {
-  // "Skim · incremental" over a bare abstract says nothing the abstract does
-  // not, and costs the reader a line to find that out.
-  assert.equal(parseResponse(wrap({ verdict: 'skim', kind: 'incremental' })), null);
+test('a label alone is not an enrichment', () => {
+  // "incremental" over a bare abstract says nothing the abstract does not, and
+  // costs the reader a line to find that out.
+  assert.equal(parseResponse(wrap({ kind: 'incremental' })), null);
 });
 
 test('a partial payload keeps what is there', () => {
   const got = parseResponse(wrap({ result: 'R.', tools: ['a'] }));
   assert.deepEqual(got, {
-    verdict: '', kind: '', result: 'R.', question: '', prior: '', limits: '',
-    tools: ['a'], figure: '',
+    kind: '', result: 'R.', question: '', prior: '', limits: '',
+    tools: ['a'], figure: '', gloss: '',
   });
 });
 
@@ -87,12 +87,11 @@ test('an unnamed baseline stays unnamed rather than being guessed at', () => {
   assert.equal(got.result, full.result);
 });
 
-test('a verdict outside the enum is dropped rather than passed through', () => {
-  // The schema is enforced server-side, but a model that answers "worth a
-  // skim" must not reach the stylesheet, which switches on the exact string.
-  assert.equal(parseResponse(wrap({ ...full, verdict: 'worth a skim' })).verdict, '');
-  assert.equal(parseResponse(wrap({ ...full, verdict: 'READ' })).verdict, 'read');
+test('a kind outside the enum is dropped rather than passed through', () => {
+  // The schema is enforced server-side, but a model that answers
+  // "groundbreaking" must not reach the stylesheet, which prints it as a chip.
   assert.equal(parseResponse(wrap({ ...full, kind: 'groundbreaking' })).kind, '');
+  assert.equal(parseResponse(wrap({ ...full, kind: 'New Result' })).kind, 'new result');
 });
 
 test('tools that are not an array do not become one', () => {
@@ -102,7 +101,7 @@ test('tools that are not an array do not become one', () => {
 
 test('a cached record from an older field set is a miss, not a half-item', () => {
   // The 2026-08 cache holds {research_question, tools, summary}. Serving those
-  // would render a card with no verdict next to cards that have one, and
+  // would render a card with no finding next to cards that have one, and
   // nothing in the feed would say why.
   assert.equal(cachedFields({ fields: { research_question: 'Q?' }, seen: '2026-08-12' }), null);
   assert.equal(cachedFields({ fields: full, seen: '2026-08-12', shape: SHAPE }), full);
@@ -128,33 +127,40 @@ test('the cache drops what nobody has seen in a month', () => {
 });
 
 
-/* ── The two tiers ───────────────────────────────────────────────────────────
+/* ── What gets read in full ──────────────────────────────────────────────────
  *
- * The full-text pass is the expensive half of this file, so what it must not do
- * is run on papers it was not meant to, and what it must not fail to do is
- * re-run on a paper that has been promoted into the band since it was cached.
- * Both failures are silent: the first shows up as a bill, the second as a brief
- * that is quietly missing its two best fields.
+ * Everything in the feed does. The full-text pass is the expensive half of this
+ * file, so what it must not do is run on papers the ranking already dropped,
+ * and what it must not fail to do is re-run on a paper cached from its abstract
+ * back when only the top band was read. Both failures are silent: the first
+ * shows up as a bill, the second as a brief quietly missing its two best
+ * fields.
  */
 
 const paper = (id, band) => ({
   arxivId: id, title: 't', abstract: 'a', authors: '', band,
 });
 
-test('only the top band is read in full', () => {
-  const ids = deepSet([paper('1', 'paydirt'), paper('2', 'worth'), paper('3', 'longshot')]);
-  assert.deepEqual([...ids], ['1']);
+test('every paper in the feed is read in full, whatever its band', () => {
+  // A long shot is the paper a reader knows least about, and "no baseline
+  // given" on it must not mean "nobody showed the model the introduction".
+  const ids = deepSet([paper('1', 'paydirt'), paper('2', 'look'), paper('3', 'longshot')]);
+  assert.deepEqual([...ids], ['1', '2', '3']);
+});
+
+test('a band nobody has heard of is read, not quietly demoted', () => {
+  assert.deepEqual([...deepSet([paper('1', undefined), paper('2', 'new-band')])], ['1', '2']);
 });
 
 test('the fuse holds on an unusually rich morning', () => {
-  const many = Array.from({ length: DEEP_MAX + 5 }, (_, i) => paper(String(i), 'paydirt'));
+  const many = Array.from({ length: DEEP_MAX + 5 }, (_, i) => paper(String(i), 'longshot'));
   assert.equal(deepSet(many).size, DEEP_MAX);
 });
 
-test('a cached abstract-tier record is a miss once the paper is in the band', () => {
-  // The promotion case. Serving the shallow record would leave the item without
-  // `prior` and `limits` on exactly the day a reader is deciding to spend an
-  // evening on it — and nothing anywhere would say why.
+test('a cached abstract-tier record is a miss now that everything is read', () => {
+  // The migration case. Serving the shallow record would leave the item without
+  // `prior` and `limits` for as long as it stayed in the cache, and nothing
+  // anywhere would say why.
   const rec = { fields: { result: 'R.' }, shape: SHAPE, depth: 'abstract' };
   assert.ok(cachedFields(rec, false), 'still fine for the abstract tier');
   assert.equal(cachedFields(rec, true), null);
@@ -219,17 +225,38 @@ test('a top-band paper is read in full and keeps the figure it was briefed on', 
     // cache hit tomorrow renders the same picture without re-fetching the HTML.
     assert.equal(it.enrichment.figure_url, 'b.png');
     assert.equal(it.enrichment.figure_caption, 'c2');
+    // The gloss is what the card prints; the paper's own caption is kept only
+    // as the fallback, and the raw `gloss` key never reaches the cache.
+    assert.equal(it.enrichment.figure_gloss, full.gloss);
+    assert.ok(!('gloss' in it.enrichment));
     assert.equal(it.enrichment.code, 'https://github.com/x/y');
   } finally { restore(); }
 });
 
-test('a lower-band paper is never fetched', async () => {
+test('a gloss about a figure that is not the one shown is dropped', async () => {
+  // resolveFigure falls back to the first figure when the model names an id
+  // that is not in the list. The gloss it wrote is then about a plot nobody is
+  // looking at, which is worse than showing the author's own caption.
+  const restore = stubGemini({ ...full, figure: 'S9.F9' });
+  try {
+    const read = async () => ({
+      text: 'body',
+      figures: [{ id: 'S2.F1', src: 'a.png', caption: 'c1' }],
+    });
+    const [it] = await enrichItems([paper('1', 'paydirt')], { apiKey: 'k', readFullText: read });
+    assert.equal(it.enrichment.figure_url, 'a.png');
+    assert.equal(it.enrichment.figure_gloss, '');
+    assert.equal(it.enrichment.figure_caption, 'c1');
+  } finally { restore(); }
+});
+
+test('a long shot is read in full too, not briefed from its abstract', async () => {
   const restore = stubGemini(full);
   try {
-    let fetched = 0;
-    const read = async () => { fetched++; return null; };
-    await enrichItems([paper('2', 'worth')], { apiKey: 'k', readFullText: read });
-    assert.equal(fetched, 0);
+    const read = [];
+    const readFullText = async (id) => { read.push(id); return { text: 'body', figures: [] }; };
+    await enrichItems([paper('2', 'longshot')], { apiKey: 'k', readFullText });
+    assert.deepEqual(read, ['2']);
   } finally { restore(); }
 });
 
@@ -295,7 +322,10 @@ test('the delay the API asks for is read, in ms', () => {
 test('a rate limit is waited out and the call retried', async () => {
   const real = globalThis.fetch;
   let calls = 0;
-  globalThis.fetch = async () => {
+  /* Only the model's own endpoint is counted. Every item is read in full now,
+     so a bare counter here would also be counting the fetch of arXiv's HTML. */
+  globalThis.fetch = async (url) => {
+    if (!String(url).includes('generativelanguage')) return { ok: false, status: 404, text: async () => '' };
     calls++;
     if (calls === 1) {
       return { ok: false, status: 429, text: async () => JSON.stringify(quota429('perMinute', '3s')) };
@@ -318,7 +348,8 @@ test('a spent daily allowance is refused by name, not by how long it asks for', 
   // job took ten. The quota's own name is the only dependable signal.
   const real = globalThis.fetch;
   let calls = 0;
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (url) => {
+    if (!String(url).includes('generativelanguage')) return { ok: false, status: 404, text: async () => '' };
     calls++;
     return {
       ok: false, status: 429,
@@ -335,9 +366,52 @@ test('a spent daily allowance is refused by name, not by how long it asks for', 
 });
 
 
+test('a busy model hands the paper to the understudy rather than dropping it', async () => {
+  // A 503 is capacity, not a bad request: the same prompt on another model of
+  // the same family is the one retry with a real chance of a different answer.
+  const real = globalThis.fetch;
+  const asked = [];
+  globalThis.fetch = async (url) => {
+    if (!String(url).includes('generativelanguage')) return { ok: false, status: 404, text: async () => '' };
+    asked.push(String(url).match(/models\/([^:]+):/)[1]);
+    if (asked.length <= 5) {
+      return { ok: false, status: 503, text: async () => JSON.stringify({ error: { message: 'high demand' } }) };
+    }
+    return {
+      ok: true, status: 200,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify(full) }] } }] }),
+    };
+  };
+  try {
+    const [it] = await enrichItems([paper('1', 'worth')], { apiKey: 'k' });
+    assert.equal(it.enrichment.result, full.result, 'the item ships enriched');
+    // Five attempts on the primary — a spike outlasts three — then the fallback.
+    assert.equal(asked.length, 6);
+    assert.ok(asked.slice(0, 5).every((m) => m === 'gemini-3.7-flash'));
+    assert.equal(asked[5], 'gemini-3.6-flash');
+  } finally { globalThis.fetch = real; }
+});
+
+test('a bad request is not asked twice, of two different models', async () => {
+  // A 400 is a request this account cannot make; a 429 is an allowance that
+  // belongs to the key, not the model. Neither is worth a second model's time.
+  const real = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async (url) => {
+    if (!String(url).includes('generativelanguage')) return { ok: false, status: 404, text: async () => '' };
+    calls++;
+    return { ok: false, status: 400, text: async () => JSON.stringify({ error: { message: 'bad field' } }) };
+  };
+  try {
+    const [it] = await enrichItems([paper('1', 'worth')], { apiKey: 'k' });
+    assert.equal(calls, 1);
+    assert.equal(it.enrichment, null);
+  } finally { globalThis.fetch = real; }
+});
+
 /* The request shape. It changed with the model, and both changes are silent if
-   wrong: a schema in the wrong place means the enums stop being enforced and
-   a free-text verdict reaches the feed, and a thinking level left at its
+   wrong: a schema in the wrong place means the enum stops being enforced and
+   a free-text kind reaches the feed, and a thinking level left at its
    default means paying reasoning prices to transcribe a number. */
 
 test('the schema travels the way v1beta actually accepts it', () => {
@@ -347,7 +421,7 @@ test('the schema travels the way v1beta actually accepts it', () => {
   // exists to stop the next reader modernising it back out of the docs.
   const gc = requestBody('p').generationConfig;
   assert.equal(gc.responseMimeType, 'application/json');
-  assert.equal(gc.responseSchema.properties.verdict.enum.length, 2);
+  assert.equal(gc.responseSchema.properties.kind.enum.length, 5);
   assert.ok(!('response_format' in gc), 'rejected by v1beta');
   assert.ok(!('thinking_level' in gc), 'also rejected by v1beta');
 });

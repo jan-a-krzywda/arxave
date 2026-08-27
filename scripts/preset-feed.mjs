@@ -37,10 +37,11 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import {
-  DEFAULT_EMBED, DIM, MODEL, embedChunk, fetchAbstracts, fetchEarlier,
+  DEFAULT_EMBED, DIM, MODEL, deLatex, embedChunk, fetchAbstracts, fetchEarlier,
   loadPresets, resolveEndpoint, sha256Hex,
 } from './warm-dig.mjs';
 import { enrichItems } from './enrich.mjs';
+import { deMath } from './demath.mjs';
 
 const READ_CHUNK = 500;
 const BATCH = 64;    // under embed's MAX_TEXTS (96, measured), same as the warmer
@@ -223,7 +224,6 @@ export function cosine(a, b) {
   return s;
 }
 
-/** "read" -> "Read". The verdict is stored lowercase and shown capitalised. */
 /* arXiv stamps its announcement at midnight ET, which is 04:00 UTC, and that is
    the hour used below. Midnight UTC would be wrong in a way that shows: a
    reader in New York would render a paper announced on the 25th as the 24th. */
@@ -261,9 +261,57 @@ export function itemDate(published, rank = 0, now = new Date()) {
   return when.toUTCString();
 }
 
-export function titleCase(word) {
-  const w = String(word ?? '');
-  return w ? w[0].toUpperCase() + w.slice(1) : '';
+/**
+ * Text on its way to a human, from a source that writes TeX.
+ *
+ * arXiv hands over the author's own source — `M\"uller`, `$|\sqrt{\mathrm{T}}
+ * \rangle$`, `10^{-4}` — and every field on a card comes from it, either
+ * directly or through a model that was told to copy the paper's terms exactly
+ * and does. Rendering it raw prints backslashes at a reader, in the browser and
+ * in a feed reader alike, which is why the fix is here and not a maths library
+ * on the page: a feed reader runs no script.
+ *
+ * Two passes, and they are separate on purpose. `deLatex` is the accent and
+ * Greek pass, byte-identical to a copy in filter.js because the two hash
+ * abstracts against each other; `deMath` is display-only and knows nothing
+ * about hashing.
+ *
+ * MATH FIRST, AND IT MATTERS. `deLatex` rewrites a braced group — `{\psi}` is
+ * ψ, braces and all — which inside `\ket{\psi}` destroys the argument the
+ * command needed and leaves `\ketψ`. Run the other way round, the math pass
+ * expands the ket (with the same Greek table, which it imports), and what
+ * reaches `deLatex` is the text-mode accents it exists for.
+ */
+export function readable(text) {
+  return deLatex(deMath(String(text ?? '')));
+}
+
+/**
+ * One item, with every human-facing string put through `readable`.
+ *
+ * Done once here rather than at each of the twenty places a field is
+ * interpolated: the feed body, the arxave:* elements and the archive record all
+ * render the same fields, and a field that got the treatment in two of the
+ * three is the bug this shape exists to make impossible.
+ */
+export function readableItem(it) {
+  const e = it.enrichment;
+  return {
+    ...it,
+    title: readable(it.title),
+    authors: readable(it.authors),
+    abstract: readable(it.abstract),
+    enrichment: e ? {
+      ...e,
+      result: readable(e.result),
+      question: readable(e.question),
+      prior: readable(e.prior),
+      limits: readable(e.limits),
+      figure_gloss: readable(e.figure_gloss),
+      figure_caption: readable(e.figure_caption),
+      tools: (e.tools || []).map(readable),
+    } : e,
+  };
 }
 
 /** XML text nodes. Ampersand first, or the escapes escape each other. */
@@ -389,16 +437,21 @@ export function tallyOf(items) {
  * seam actually yielded over a month, which is how someone decides whether to
  * keep reading it at all.
  *
- * So every shipped item is also written flat, by month, with the decision
- * fields kept and the abstract dropped. The abstract is the big field and it is
- * one hop away on arXiv; keeping it would multiply the archive by roughly ten
- * for a paragraph nobody re-reads from a browsing page. Measured on the
- * 2026-08-20 build: 4 feeds × 15 items ≈ 13 kB a day with abstracts, ≈ 1.4 kB
- * without, so a year of stockpile is well under a megabyte and the page can
- * hold a whole month in memory to search it.
+ * So every shipped item is written flat, by month, with the whole card kept:
+ * the ranking, every brief field, the figure and its gloss, and the abstract.
+ *
+ * THE ABSTRACT IS KEPT, and that is a reversal. It used to be dropped as the
+ * one big field that was one hop away on arXiv anyway — measured on the
+ * 2026-08-20 build, 4 feeds × 15 items ≈ 13 kB a day with abstracts against
+ * ≈ 1.4 kB without. But the stockpile is now the place a paper is read rather
+ * than merely counted, and a browsing page that has to open arxiv.org to show
+ * an abstract is not that place. At ~13 kB a day a year is under 5 MB, spread
+ * over twelve month files that load one at a time, which the page can still
+ * hold in memory.
  */
 export function archiveEntry(items) {
-  return items.map((it) => {
+  return items.map((raw) => {
+    const it = readableItem(raw);
     const e = it.enrichment || null;
     return {
       id: it.arxivId,
@@ -410,12 +463,19 @@ export function archiveEntry(items) {
       band: it.band || 'longshot',
       matched: it.matched ? it.matched.label : '',
       announced: it.published || '',
-      verdict: e?.verdict || '',
       kind: e?.kind || '',
       result: e?.result || '',
       question: e?.question || '',
       prior: e?.prior || '',
       limits: e?.limits || '',
+      tools: e?.tools?.length ? e.tools.join(' · ') : '',
+      code: e?.code || '',
+      figure: e?.figure_url || '',
+      /* The gloss when there is one, the paper's own caption when there is not.
+         Which of the two it was does not survive into the archive, because
+         nothing downstream renders them differently. */
+      caption: e?.figure_gloss || e?.figure_caption || '',
+      abstract: it.abstract || '',
     };
   });
 }
@@ -618,37 +678,35 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
        rebuild, which is the case that makes keeping them separate worth it. */
     `    <pubDate>${itemDate(newestOf(items), 0)}</pubDate>`,
   ];
-  for (const [rank, it] of items.entries()) {
+  for (const [rank, raw] of items.entries()) {
+    const it = readableItem(raw);
     const e = it.enrichment;
     /* ORDER IS THE DESIGN HERE. Most readers show a list of items truncated to
        roughly their first line, so for a lot of subscribers that line *is* the
-       item. It holds the decision — verdict, kind, and the finding with its
-       number — and everything that only supports the decision comes after it.
+       item. It holds the band, the kind, and the finding with its number, and
+       everything that only supports it comes after — each part in its own fold.
+
+       EVERYTHING BELOW THE FINDING IS FOLDED, and that is the whole shape of a
+       card: title, authors, one line of finding, and six closed drawers. A feed
+       is a list, and a list where every item spends a screen on itself is not a
+       list — a reader who wants the figure, the caveat or the author's own
+       abstract opens the one drawer they want, on the one paper they want it
+       for. A reader that strips <details> gets everything inline, which is
+       exactly where it all sat before.
 
        The grade is in the body and not merely implied by the order, because a
        reader that re-sorts by date — most of them do — otherwise destroys the
        only signal this feed carries. The matched row rides the same line: it is
        what turns 0.612 from a bare number into a reason, and it tells someone
-       whose feed has drifted which preset row to go and edit.
-
-       The abstract stays, last, and folded. It is the author's own words and
-       the only part of the item nothing generated, which makes it the reader's
-       check on everything above it — but it is also four hundred words of prose
-       written to be skimmed by nobody, and open by default it buries five
-       cards under one. <details> is the compromise: still there, still the
-       author's, one click away. A reader that strips the tag shows the text
-       inline, which is exactly where it was before. */
-    /* The band leads the decision line, ahead of the verdict. It is the one
-       field that says how much to trust everything after it, and an unenriched
-       item has nothing else on that line at all — so the band, not the verdict,
-       is what guarantees a first line exists. */
+       whose feed has drifted which preset row to go and edit. */
+    /* The band leads the decision line. It is the one field that says how much
+       to trust everything after it, and an unenriched item has nothing else on
+       that line at all — so the band is what guarantees a first line exists. */
     const band = it.band || 'longshot';
     const bandChip = `<strong class="band band-${band}">${xmlEscape(BAND_LABEL[band])}</strong>`;
     const said = e
-      ? (e.verdict ? xmlEscape(titleCase(e.verdict)) : '') +
-        (e.verdict && e.kind ? ' · ' : '') +
-        (e.kind ? xmlEscape(e.kind) : '') +
-        (e.result ? `${e.verdict || e.kind ? ' — ' : ''}${xmlEscape(e.result)}` : '')
+      ? (e.kind ? xmlEscape(e.kind) : '') +
+        (e.result ? `${e.kind ? ' — ' : ''}${xmlEscape(e.result)}` : '')
       : '';
     const decision = `<p class="verdict">${bandChip}${said ? ' ' + said : ''}</p>`;
     const provenance = [
@@ -657,29 +715,37 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
       it.matched ? `matched “${xmlEscape(it.matched.label)}”` : '',
       it.authors ? xmlEscape(it.authors) : '',
     ].filter(Boolean).join(' · ');
+    /* One drawer, and it is empty when its field is. A fold whose summary
+       promises a figure and opens on nothing is worse than a card with one
+       fewer drawer. */
+    const fold = (label, inner) =>
+      inner ? `<details class="fold"><summary>${label}</summary>${inner}</details>` : '';
+    /* The figure is hotlinked, never copied: the image lives on arxiv.org and
+       this repository stays text. Wrapped in a link to the paper so a tap on it
+       goes somewhere, and given a caption as alt text so a reader that blocks
+       remote images still says what was there. The gloss is preferred over the
+       author's own caption — see enrich.mjs — and the caption is the fallback
+       for a record written before the gloss existed. */
+    const caption = e?.figure_gloss || e?.figure_caption || '';
     const body =
       decision +
       `<p class="grade">${provenance}</p>` +
-      /* The figure sits under the decision and above the prose, because it is
-         the fastest thing on the card to read. Hotlinked, never copied: the
-         image lives on arxiv.org and this repository stays text. Wrapped in a
-         link to the paper so a tap on it goes somewhere, and given the caption
-         as alt text so a reader that blocks remote images still says what was
-         there. */
       (e?.figure_url
-        ? `<p class="figure"><a href="${xmlEscape(it.link)}">` +
-          `<img src="${xmlEscape(e.figure_url)}" alt="${xmlEscape(e.figure_caption || 'Figure')}"/>` +
-          `</a></p>`
+        ? fold('Figure',
+            `<p class="figure"><a href="${xmlEscape(it.link)}">` +
+            `<img src="${xmlEscape(e.figure_url)}" alt="${xmlEscape(caption || 'Figure')}"/>` +
+            `</a></p>` +
+            (caption ? `<p class="figure-caption">${xmlEscape(caption)}</p>` : ''))
         : '') +
       (e ? (
-        (e.question ? `<p><strong>Asks.</strong> ${xmlEscape(e.question)}</p>` : '') +
-        (e.prior ? `<p><strong>Before.</strong> ${xmlEscape(e.prior)}</p>` : '') +
-        (e.limits ? `<p><strong>But.</strong> ${xmlEscape(e.limits)}</p>` : '') +
-        (e.tools?.length ? `<p><strong>Tools.</strong> ${xmlEscape(e.tools.join(' · '))}</p>` : '') +
-        (e.code ? `<p><strong>Code.</strong> <a href="${xmlEscape(e.code)}">${xmlEscape(e.code)}</a></p>` : '')
+        fold('Asks', e.question ? `<p>${xmlEscape(e.question)}</p>` : '') +
+        fold('Before', e.prior ? `<p>${xmlEscape(e.prior)}</p>` : '') +
+        fold('But', e.limits ? `<p>${xmlEscape(e.limits)}</p>` : '') +
+        fold('Tools',
+          (e.tools?.length ? `<p>${xmlEscape(e.tools.join(' · '))}</p>` : '') +
+          (e.code ? `<p><strong>Code.</strong> <a href="${xmlEscape(e.code)}">${xmlEscape(e.code)}</a></p>` : ''))
       ) : '') +
-      `<details class="abstract"><summary>Abstract</summary>` +
-      `<p>${xmlEscape(it.abstract)}</p></details>` +
+      fold('Abstract', `<p>${xmlEscape(it.abstract)}</p>`) +
       `<p><a href="${xmlEscape(digLink)}">Tune this in the Dig</a></p>`;
     const fields = [
       /* The same day pubDate carries, in a form a consumer can read without
@@ -692,7 +758,6 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
       Number.isFinite(it.z) ? `      <arxave:z>${it.z.toFixed(1)}</arxave:z>` : '',
       it.matched ? `      <arxave:matched>${xmlEscape(it.matched.label)}</arxave:matched>` : '',
       it.authors ? `      <arxave:authors>${xmlEscape(it.authors)}</arxave:authors>` : '',
-      e?.verdict ? `      <arxave:verdict>${xmlEscape(e.verdict)}</arxave:verdict>` : '',
       e?.kind ? `      <arxave:kind>${xmlEscape(e.kind)}</arxave:kind>` : '',
       e?.result ? `      <arxave:result>${xmlEscape(e.result)}</arxave:result>` : '',
       e?.question ? `      <arxave:question>${xmlEscape(e.question)}</arxave:question>` : '',
@@ -700,8 +765,8 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
       e?.limits ? `      <arxave:limits>${xmlEscape(e.limits)}</arxave:limits>` : '',
       e?.code ? `      <arxave:code>${xmlEscape(e.code)}</arxave:code>` : '',
       e?.figure_url ? `      <arxave:figure>${xmlEscape(e.figure_url)}</arxave:figure>` : '',
-      e?.figure_caption
-        ? `      <arxave:figurecaption>${xmlEscape(e.figure_caption)}</arxave:figurecaption>` : '',
+      caption
+        ? `      <arxave:figurecaption>${xmlEscape(caption)}</arxave:figurecaption>` : '',
       e?.tools?.length
         ? `      <arxave:tools>${xmlEscape(e.tools.join(' · '))}</arxave:tools>` : '',
       `      <arxave:abstract>${xmlEscape(it.abstract)}</arxave:abstract>`,
@@ -888,10 +953,11 @@ async function main() {
     const monthPath = path.join(archiveDir, `${month}.json`);
     let priorMonth = null;
     try { priorMonth = JSON.parse(await fs.readFile(monthPath, 'utf8')); } catch (_) { /* new month */ }
-    const items = Object.fromEntries(
-      Object.entries(archiveToday).map(([slug, entry]) => [slug, entry.items]));
+    /* One copy of each item, under its day. The month file used to carry a
+       second `items` map keyed by date as well, which doubled the file and —
+       because it was rebuilt from today alone rather than merged — held only
+       the newest day, so the page it fed showed one day per month. */
     const merged = mergeMonth(priorMonth, builtOn, archiveToday);
-    merged.items = { ...(merged.items || {}), [builtOn]: items };
     await fs.writeFile(monthPath, JSON.stringify(merged) + '\n');
 
     const indexPath = path.join(archiveDir, 'index.json');
