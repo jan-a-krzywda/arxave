@@ -2106,14 +2106,14 @@
   "fields": {
    "verdict": "read",
    "kind": "new method",
-   "result": "Flag fault-tolerant preparation of logical $|\\sqrt{\\mathrm{T}}\\rangle$ on 3D tetrahedral color codes reduces average space-time synthesis cost of Haar-random single-qubit unitaries by ~20-30% compared to standard Clifford+T.",
-   "question": "Can logical $|\\sqrt{\\mathrm{T}}\\rangle$ magic states be prepared fault-tolerantly with competitive overhead to reduce quantum circuit synthesis costs?",
-   "prior": "Standard Clifford+T gate synthesis baseline.",
-   "limits": "Circuit-level Pauli noise model; numerical simulations; single-qubit Haar-random unitaries in early fault-tolerant regime.",
+   "result": "Flag fault-tolerant preparation of logical $|\\sqrt{\\mathrm{T}}\\rangle$ magic states on 3D tetrahedral color code and morphed variant reduces average space-time cost of synthesizing Haar-random single-qubit unitaries by ~20-30% relative to Clifford+T.",
+   "question": "Can fault-tolerant preparation and injection of $|\\sqrt{\\mathrm{T}}\\rangle$ magic states reduce compilation overhead for single-qubit quantum circuits under circuit-level noise?",
+   "prior": "Clifford+T gate set synthesis baselines without direct $|\\sqrt{\\mathrm{T}}\\rangle$ state injection.",
+   "limits": "Numerical simulations under circuit-level noise; synthesis costs evaluated on Haar-random single-qubit unitaries.",
    "tools": [
     "3D tetrahedral color code",
-    "morphed color code",
-    "flag fault tolerance",
+    "morphed tetrahedral color code",
+    "flag fault-tolerant state preparation",
     "logical process tomography",
     "circuit-level noise simulation"
    ],
