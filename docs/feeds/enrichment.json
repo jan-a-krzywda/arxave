@@ -2106,16 +2106,16 @@
  "2608.25797": {
   "fields": {
    "kind": "new method",
-   "result": "Access to fault-tolerantly prepared |√T⟩ magic states reduces average space-time cost of synthesizing Haar-random single-qubit unitaries by approximately 20-30% relative to Clifford+T.",
-   "question": "Can fault-tolerant preparation of |√T⟩ magic states reduce circuit synthesis compilation overhead under circuit-level noise?",
-   "prior": "Standard synthesis uses the Clifford+T gate set.",
-   "limits": "Numerical circuit-level Pauli noise simulations, post-selection on verification/flag outcomes, Haar-random single-qubit target unitaries.",
+   "result": "Flag fault-tolerant preparation of logical |√T⟩ magic states on the 3D tetrahedral color code and morphed variant reduces the average space-time cost of synthesizing Haar-random single-qubit unitaries by ~20-30% relative to Clifford+T.",
+   "question": "Can fault-tolerant |√T⟩ magic state preparation and injection be realized efficiently enough to reduce quantum circuit synthesis overhead compared to standard Clifford+T synthesis?",
+   "prior": "Clifford+T gate set magic state distillation and synthesis.",
+   "limits": "Evaluated under circuit-level noise simulations; applies to single-qubit Haar-random unitaries in early fault-tolerant regimes.",
    "tools": [
-    "flag fault-tolerant protocols",
     "3D tetrahedral color code",
-    "morphed 3D color code",
-    "circuit-level noise simulations",
-    "logical process tomography"
+    "morphed color code variant",
+    "flag fault-tolerant circuits",
+    "logical process tomography",
+    "circuit-level Pauli noise simulations"
    ],
    "figure": "",
    "figure_url": "",
@@ -2131,26 +2131,26 @@
  "2608.25959": {
   "fields": {
    "kind": "new method",
-   "result": "Dissipatively stabilized 0-n Fock qubit in a nonlinear multi-level system suppresses bit-flip errors exponentially with level count n. Yields bit-flip probability approaching 10⁻⁸ in controlled-X gates on cat qubits at n ≥ 9 and logical error rates in the megaquop regime for a d=9 repetition code.",
-   "question": "How to design a noise-biased control ancilla qubit that preserves bias during gate operations with target noise-biased qubits?",
+   "result": "Encoding noise-biased qubits in Fock states |0> and |n> with engineered dissipation achieves bit-flip probabilities approaching 10⁻⁸ for controlled-X gates at n >= 9, reaching repetition-code logical error rates of p_L* = 10⁻⁶ at code distance d = 9.",
+   "question": "Can non-biased ancilla transmon back-action errors during syndrome extraction be prevented without the complex Hamiltonian engineering required for all-cat bias-preserving gates?",
    "prior": "",
-   "limits": "Numerical simulations under realistic superconducting circuit parameters rather than experimental demonstration; requires multi-mode frequency-selective dissipative filtering.",
+   "limits": "Numerical simulations; assumes odd n, engineered dissipation rate much larger than intrinsic rates (κ_s >> κ_i), and rotating-wave approximation conditions on filter detunings.",
    "tools": [
-    "nonlinear multi-level system (transmon)",
-    "dissipative stabilization via decay and gain",
-    "multi-mode lossy filter",
-    "numerical Lindblad simulation"
+    "multimode lossy filter bath engineering",
+    "Lindblad master equation",
+    "continuous-time Markov chain modeling",
+    "repetition code simulation"
    ],
-   "figure": "",
-   "figure_url": "",
-   "figure_caption": "",
-   "figure_gloss": "",
+   "figure": "S4.F4",
+   "figure_url": "https://arxiv.org/html/2608.25959v1/rep_code_threshold.svg",
+   "figure_caption": "Figure 4: Average logical error per round $p_{L}^{*}$ when the 0-n Fock qubit is used as an ancilla in the repetition code, paired with cat data qubits. The contours for $p_{L}^{*}\\in\\{10^{-4},10^{-5},10^{-6}\\}$ are shown as a function of $\\kappa_{1}T_{\\text{cycle}}$ and the code distance $d$ , where $\\kappa_{1}$ is the single-photon loss rate of the cat qubits, and $T_{\\text{cycle}}$ is the cycle time for a single round of error correction. We work with a phenomenological noise model, where $Z$ errors are applied on the ancilla and the data qubits at the start of each error correction round. The ancilla $Z$ errors occur only due to single-photon events ( $\\tau_{i}^{\\downarrow}=250\\;\\mu\\text{s},\\,\\tau_{i}^{\\uparrow}=250$ ms) during the stabilization ( $t_{s}=500$ ns), or the CX gates ( $t_{g}=200$ ns): we assume large enough $E_{J}/E_{C}$ such that dephasing due to charge noise is sufficiently suppressed. Lastly, the cat qubits have a mean photon number of $|\\alpha|^{2}=10$ .",
+   "figure_gloss": "Average logical error per round p_L* as a function of the single-photon loss rate product κ_1 T_cycle and repetition code distance d, showing the threshold for megaquop performance (p_L* = 10⁻⁶) at d = 9.",
    "code": ""
   },
   "seen": "2026-08-27",
   "model": "gemini-3.7-flash",
   "shape": 4,
-  "depth": "abstract"
+  "depth": "full"
  },
  "2608.24923": {
   "fields": {
@@ -2178,74 +2178,76 @@
  "2608.26061": {
   "fields": {
    "kind": "new result",
-   "result": "Analytically derived the leading-order optimal fidelity for universal purification of an unknown d-dimensional unitary subject to depolarizing noise of strength p; achieves query complexity Θ(d^2p/ε) for target infidelity ε via an explicit SU(d)-covariant parallel strategy.",
-   "question": "What is the optimal fidelity and query complexity achievable by arbitrary adaptive superchannels for universally purifying an unknown noisy unitary channel in arbitrary dimension d?",
-   "prior": "Prior naive approach combining optimal state purification and channel storage-and-retrieval yielded worse scaling in query complexity.",
-   "limits": "Leading-order in low-noise strength p and large channel uses N (asymptotic regime). Noise model restricted to depolarizing noise.",
+   "result": "Optimal fidelity for purifying an unknown $d$-dimensional unitary under depolarizing noise $p$ scales as $F = 1 - \\frac{(d^2-1)(d^2+2)}{4d^2n}p + O(n^{-2}p, p^2)$, achievable via an $\\mathrm{SU}(d)$-covariant parallel strategy.",
+   "question": "What is the fundamental limit of fidelity for purifying an unknown $d$-dimensional unitary channel from $n$ noisy uses under depolarizing noise?",
+   "prior": "Known only for $d=2, n=3$ parallel protocols and as a leading-order bound for $d=2$.",
+   "limits": "Depolarizing noise model; asymptotic low-noise limit ($p\\to 0$) and large-query limit ($n\\to\\infty$).",
    "tools": [
     "quantum superchannels",
-    "SU(d)-covariant parallel strategies",
-    "adaptive sequential channel protocols",
-    "representation theory of unitary groups"
+    "semidefinite programming",
+    "representation theory of $\\mathfrak{S}_n$ and $\\mathrm{SU}(d)$",
+    "quantum Schur transform",
+    "Danskin's theorem"
    ],
-   "figure": "",
-   "figure_url": "",
-   "figure_caption": "",
-   "figure_gloss": "",
+   "figure": "S0.F2",
+   "figure_url": "https://arxiv.org/html/2608.26061v1/Purification_Circuit.png",
+   "figure_caption": "Figure 2: In the above figure, $J_{\\alpha}$ is the basis transformation implementing the isomorphism $\\mathbb{C}^{d}\\simeq\\mathcal{U}_{\\alpha}$ , $U_{\\mathrm{Sch}}$ denotes the quantum Schur transform [ 49 , 50 , 51 ] , $|\\Phi_{m_{\\alpha}}^{+}\\rangle:=\\frac{1}{\\sqrt{m_{\\alpha}}}\\sum_{s_{\\alpha}=1}^{m_{\\alpha}}|s_{\\alpha}\\rangle_{\\mathcal{S}_{\\alpha}}\\otimes|s_{\\alpha}\\to\\hat{\\lambda}\\rangle_{E}$ is a maximally entangled state between the Specht module $\\mathcal{S}_{\\alpha}$ and the environment, $V_{\\eta}$ is an isometry, and $\\mathrm{CG}$ denotes the Clebsch-Gordan transformation. See Appendix for details.",
+   "figure_gloss": "Circuit implementation of the optimal $\\mathrm{SU}(d)$-covariant parallel purification protocol using quantum Schur and Clebsch-Gordan transforms on $n$ noisy channel queries.",
    "code": ""
   },
   "seen": "2026-08-27",
   "model": "gemini-3.7-flash",
   "shape": 4,
-  "depth": "abstract"
+  "depth": "full"
  },
  "2608.25042": {
   "fields": {
    "kind": "new method",
-   "result": "Unified framework matches operator backpropagation with optimal measurement protocols based on the number of qubit-wise commuting (QWC) groups, balancing backpropagation error, truncation error, and shot noise to minimize total measurement shots.",
-   "question": "How to integrate operator backpropagation with observable measurement protocols to minimize total measurements under fixed target accuracy.",
-   "prior": "",
-   "limits": "Analyzed for backpropagation algorithms subject to truncation errors and shot noise variation.",
+   "result": "Derandomized classical shadow measurement achieves up to a 28.79× reduction in measurement shots over standard qubit-wise commuting (QWC) grouping for 10-qubit Heisenberg circuits with 36 initial observables, whereas direct QWC measurement requires fewer shots (0.35× to 0.02× the measurements) on larger or deeper circuits (40-qubit Heisenberg, 26-qubit Ising, 18-qubit QFT).",
+   "question": "How can operator backpropagation be integrated with advanced measurement protocols to minimize total measurement shots while maintaining a target accuracy?",
+   "prior": "Operator backpropagation (OBP) paired exclusively with qubit-wise commuting (QWC) group measurements.",
+   "limits": "Evaluated on classical simulations with up to 40 qubits, max error per slice of 0.0001 for backpropagation truncation, and two-qubit Pauli observables.",
    "tools": [
-    "Operator backpropagation",
-    "Qubit-wise commuting (QWC) grouping",
-    "Observable truncation",
-    "Error accumulation analysis"
+    "Operator backpropagation (OBP)",
+    "Derandomized classical shadows",
+    "Qiskit Lima noise model",
+    "Qubit-wise commuting (QWC) grouping"
    ],
-   "figure": "",
-   "figure_url": "",
-   "figure_caption": "",
-   "figure_gloss": "",
+   "figure": "S2.F3",
+   "figure_url": "https://arxiv.org/html/2608.25042v1/obs_9-3.png",
+   "figure_caption": "Fig. 3 : Operator Backpropagation-Derandomization Protocol Results on a XYZ Heisenberg Hamiltonian Circuit.",
+   "figure_gloss": "Plots estimation error versus measurement shot count for 10-qubit Heisenberg circuits. Derandomized shadow protocols achieve lower error at fixed shot budgets compared to standard and weighted QWC operator backpropagation as observable count increases.",
    "code": ""
   },
   "seen": "2026-08-27",
   "model": "gemini-3.7-flash",
   "shape": 4,
-  "depth": "abstract"
+  "depth": "full"
  },
  "2608.25151": {
   "fields": {
    "kind": "theory",
-   "result": "Universal margin for complete quadratic-Majorana encoding of $m=\\Theta(n^2)$ variables on $n$ qubits is exactly $\\Delta_{\\rm Maj}(n)=\\tan(\\frac{\\pi}{4n})=\\Theta(1/n)$, while uniformly random sign assignments achieve $\\Theta(1/\\sqrt{n})$. General families of $m$ binary observables on $n$ qubits have universal margin at most $\\sqrt{(2\\ln2\\;n/m)}$ and require sample-qubit product $nN=\\Omega(m)$ for constant-bias recovery.",
-   "question": "What resource tradeoffs and margin limits are incurred when compressing classical optimization variables into quantum correlators on fewer qubits?",
+   "result": "Universal expectation-value sign margin for the complete quadratic-Majorana relaxation on n qubits is exactly Δ_Maj(n) = tan(π / (4n)) = Θ(1/n). For arbitrary designated binary observables on n qubits encoding m variables, the universal margin is at most √(2 ln 2 n/m).",
+   "question": "What physical and information-theoretic resource tradeoffs are required when classical optimization variables are compressed into quantum expectation values on fewer qubits?",
    "prior": "",
-   "limits": "Worst-case $1/n$ bound is Majorana-specific; non-Gaussian states cannot expand the two-point Majorana covariance body beyond fermionic Gaussian states.",
+   "limits": "Worst-case 1/n scaling applies specifically to the complete quadratic-Majorana observable family; uniformly random sign assignments achieve Θ(1/√ n). Information-theoretic bounds assume a fixed family of binary observables.",
    "tools": [
-    "quadratic-Majorana encoding",
-    "fermionic Gaussian states",
-    "quantum random access codes (QRAC)",
-    "information-theoretic bounds"
+    "quadratic-Majorana correlator encodings",
+    "fermionic Gaussian state covariance geometry",
+    "tournament matrix spectral theory",
+    "quantum random access code bounds",
+    "Fano and Pinsker inequalities"
    ],
-   "figure": "",
-   "figure_url": "",
-   "figure_caption": "",
-   "figure_gloss": "",
+   "figure": "S0.F1",
+   "figure_url": "https://arxiv.org/html/2608.25151v1/figure1.svg",
+   "figure_caption": "Figure 1: Three levels of compression limits. Majorana-specific. The exact result gives a $\\Theta(n^{-1})$ universal worst-case margin despite $\\Theta(n^{-1/2})$ typical behavior, together with a Gaussian-complete set of attainable two-point correlations (the covariance body). Designated observables. Standard QRAC information theory bounds the universal margin for fixed binary observables. Arbitrary random-access codes. Nayak’s bound converts width reduction into a copy cost for reliable recovery.",
+   "figure_gloss": "Three complementary bounds on quantum optimization variable compression: the exact Θ(1/n) universal margin for quadratic Majorana encodings, the √(2 ln 2 n/m) QRAC baseline for fixed observables, and the nN = Ω(m) copy-width bound for arbitrary random-access decoding.",
    "code": ""
   },
   "seen": "2026-08-27",
   "model": "gemini-3.7-flash",
   "shape": 4,
-  "depth": "abstract"
+  "depth": "full"
  },
  "2608.25914": {
   "fields": {
@@ -2274,26 +2276,26 @@
  "2608.26018": {
   "fields": {
    "kind": "new result",
-   "result": "Engineered noise bias in a standard transmon-resonator circuit using a single continuous microwave drive on the readout resonator, yielding an order-of-magnitude enhancement in relaxation time for |g⟩-|f⟩ encoding while conceding only a 2x reduction in echo coherence time.",
-   "question": "Can noise bias be engineered in standard superconducting transmon architectures without physical hardware modifications by adding simple microwave drives?",
-   "prior": "Standard transmon encoding (|g⟩-|e⟩) suffers from unsuppressed relaxation from single-photon loss without noise bias.",
-   "limits": "Demonstrated on a single transmon-resonator node; trades off a factor of 2 in echo-coherence time ($T_{2e}$) to achieve the relaxation boost.",
+   "result": "Realized noise-biased qubit using single microwave pump on standard transmon in |g>-|f> basis. Achieves order-of-magnitude relaxation time enhancement over conventional |g>-|e> encoding while losing only a factor of two in echo coherence time.",
+   "question": "Can noise bias be engineered in a simple qubit platform while remaining compatible with fast and high-fidelity operations?",
+   "prior": "Conventional |g>-|e> transmon had T1^e = 133.6 μs, T2^ge = 107.2 μs, and T2E^ge = 138 μs in the same device.",
+   "limits": "Simulations omit dephasing noise and thermal excitations; engineered gain modelled as single-rate Lindblad dissipator rather than frequency-dependent cavity response.",
    "tools": [
-    "standard transmon coupled to readout resonator",
-    "frequency-selective gain engineering",
-    "continuous-wave microwave drive",
-    "|g⟩ and |f⟩ state subspace encoding"
+    "superconducting transmon",
+    "3D microwave cavity",
+    "four-wave mixing parametric pump",
+    "two-photon drive"
    ],
-   "figure": "",
-   "figure_url": "",
-   "figure_caption": "",
-   "figure_gloss": "",
+   "figure": "S0.F3",
+   "figure_url": "https://arxiv.org/html/2608.26018v1/Fig3.png",
+   "figure_caption": "Figure 3: Relaxation and coherence times of the gain-engineered transmon as a function of engineered gain rate $g_{\\mathrm{gain}}$ . a, Pulse sequence for $T_{1}^{\\mathrm{f}}$ measurements in c , d . The white fill in the $\\pi_{\\mathrm{gf}}$ pulse indicates its use for the $T_{1}^{\\mathrm{f}}$ measurement only. b, Pulse sequence for $T_{2}^{\\mathrm{gf}}$ and $T_{2\\mathrm{E}}^{\\mathrm{gf}}$ measurements in e , f . The white fill in the $\\pi_{\\mathrm{gf}}$ pulse indicates that it is used only for the $T_{2\\mathrm{E}}^{\\mathrm{gf}}$ measurement. c, Decay times $T_{1}^{\\mathrm{f}}$ ( $T_{1}^{\\mathrm{g}}$ ) out of the $\\left|\\mathrm{f}\\right\\rangle$ ( $\\left|\\mathrm{g}\\right\\rangle$ ) state as a function of $g_{\\mathrm{gain}}$ . The $T_{1}^{\\mathrm{f}}$ begins to saturate at $g_{\\mathrm{gain}}/2\\pi=$133\\text{\\,}\\mathrm{kHz}$$ ( $\\kappa_{\\mathrm{gain}}/2\\pi=$165\\text{\\,}\\mathrm{kHz}$$ ), which we indicate by the dotted gray box. The solid light green line (dashed dark green line) is a numerical simulation of $T_{1}^{\\mathrm{f}}$ ( $T_{1}^{\\mathrm{g}}$ ) with experimentally measured parameters, while the dotted black line is an analytical theory prediction derived from the multilevel transmon decoherence model (Eq. ( 3 )). Note that $T_{1}^{\\mathrm{g}}$ for the lowest $g_{\\mathrm{gain}}$ values is omitted because the measurement contrast is too low to extract a decay time. d, Relaxation measurement traces for $g_{\\mathrm{gain}}/2\\pi=$133\\text{\\,}\\mathrm{kHz}$$ . Circles (diamonds) are data for the $T_{1}^{\\mathrm{f}}$ ( $T_{1}^{\\mathrm{g}}$ ) measurement, and the solid line is a simple exponential fit which yields $T_{1}^{\\mathrm{f}}=$2.22(\\pm 0.06)\\text{\\,}\\mathrm{ms}$$ ( $T_{1}^{\\mathrm{g}}=$1.67(\\pm 0.34)\\text{\\,}\\mathrm{ms}$$ ). e, Ramsey coherence time $T_{2}^{\\mathrm{gf}}$ (dark blue circles) and echo coherence time $T_{2\\mathrm{E}}^{\\mathrm{gf}}$ (light blue diamonds) as a function of $g_{\\mathrm{gain}}$ . f, Echo measurement trace for $g_{\\mathrm{gain}}/2\\pi=$133\\text{\\,}\\mathrm{kHz}$$ . Circles are data and solid line is a fit (see Supplementary Information Sec.. III.C), which yields $T_{2\\mathrm{E}}^{\\mathrm{gf}}=$65(\\pm 4)\\text{\\,}\\mathrm{\\SIUnitSymbolMicro s}$$ .",
+   "figure_gloss": "Relaxation and coherence times as a function of engineered gain rate g_gain. Shows enhancement in relaxation time alongside changes in coherence times.",
    "code": ""
   },
   "seen": "2026-08-27",
   "model": "gemini-3.7-flash",
   "shape": 4,
-  "depth": "abstract"
+  "depth": "full"
  },
  "2608.25852": {
   "fields": {

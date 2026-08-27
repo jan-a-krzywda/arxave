@@ -127,33 +127,40 @@ test('the cache drops what nobody has seen in a month', () => {
 });
 
 
-/* ── The two tiers ───────────────────────────────────────────────────────────
+/* ── What gets read in full ──────────────────────────────────────────────────
  *
- * The full-text pass is the expensive half of this file, so what it must not do
- * is run on papers it was not meant to, and what it must not fail to do is
- * re-run on a paper that has been promoted into the band since it was cached.
- * Both failures are silent: the first shows up as a bill, the second as a brief
- * that is quietly missing its two best fields.
+ * Everything in the feed does. The full-text pass is the expensive half of this
+ * file, so what it must not do is run on papers the ranking already dropped,
+ * and what it must not fail to do is re-run on a paper cached from its abstract
+ * back when only the top band was read. Both failures are silent: the first
+ * shows up as a bill, the second as a brief quietly missing its two best
+ * fields.
  */
 
 const paper = (id, band) => ({
   arxivId: id, title: 't', abstract: 'a', authors: '', band,
 });
 
-test('only the top band is read in full', () => {
-  const ids = deepSet([paper('1', 'paydirt'), paper('2', 'worth'), paper('3', 'longshot')]);
-  assert.deepEqual([...ids], ['1']);
+test('every paper in the feed is read in full, whatever its band', () => {
+  // A long shot is the paper a reader knows least about, and "no baseline
+  // given" on it must not mean "nobody showed the model the introduction".
+  const ids = deepSet([paper('1', 'paydirt'), paper('2', 'look'), paper('3', 'longshot')]);
+  assert.deepEqual([...ids], ['1', '2', '3']);
+});
+
+test('a band nobody has heard of is read, not quietly demoted', () => {
+  assert.deepEqual([...deepSet([paper('1', undefined), paper('2', 'new-band')])], ['1', '2']);
 });
 
 test('the fuse holds on an unusually rich morning', () => {
-  const many = Array.from({ length: DEEP_MAX + 5 }, (_, i) => paper(String(i), 'paydirt'));
+  const many = Array.from({ length: DEEP_MAX + 5 }, (_, i) => paper(String(i), 'longshot'));
   assert.equal(deepSet(many).size, DEEP_MAX);
 });
 
-test('a cached abstract-tier record is a miss once the paper is in the band', () => {
-  // The promotion case. Serving the shallow record would leave the item without
-  // `prior` and `limits` on exactly the day a reader is deciding to spend an
-  // evening on it — and nothing anywhere would say why.
+test('a cached abstract-tier record is a miss now that everything is read', () => {
+  // The migration case. Serving the shallow record would leave the item without
+  // `prior` and `limits` for as long as it stayed in the cache, and nothing
+  // anywhere would say why.
   const rec = { fields: { result: 'R.' }, shape: SHAPE, depth: 'abstract' };
   assert.ok(cachedFields(rec, false), 'still fine for the abstract tier');
   assert.equal(cachedFields(rec, true), null);
@@ -243,13 +250,13 @@ test('a gloss about a figure that is not the one shown is dropped', async () => 
   } finally { restore(); }
 });
 
-test('a lower-band paper is never fetched', async () => {
+test('a long shot is read in full too, not briefed from its abstract', async () => {
   const restore = stubGemini(full);
   try {
-    let fetched = 0;
-    const read = async () => { fetched++; return null; };
-    await enrichItems([paper('2', 'worth')], { apiKey: 'k', readFullText: read });
-    assert.equal(fetched, 0);
+    const read = [];
+    const readFullText = async (id) => { read.push(id); return { text: 'body', figures: [] }; };
+    await enrichItems([paper('2', 'longshot')], { apiKey: 'k', readFullText });
+    assert.deepEqual(read, ['2']);
   } finally { restore(); }
 });
 
@@ -315,7 +322,10 @@ test('the delay the API asks for is read, in ms', () => {
 test('a rate limit is waited out and the call retried', async () => {
   const real = globalThis.fetch;
   let calls = 0;
-  globalThis.fetch = async () => {
+  /* Only the model's own endpoint is counted. Every item is read in full now,
+     so a bare counter here would also be counting the fetch of arXiv's HTML. */
+  globalThis.fetch = async (url) => {
+    if (!String(url).includes('generativelanguage')) return { ok: false, status: 404, text: async () => '' };
     calls++;
     if (calls === 1) {
       return { ok: false, status: 429, text: async () => JSON.stringify(quota429('perMinute', '3s')) };
@@ -338,7 +348,8 @@ test('a spent daily allowance is refused by name, not by how long it asks for', 
   // job took ten. The quota's own name is the only dependable signal.
   const real = globalThis.fetch;
   let calls = 0;
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (url) => {
+    if (!String(url).includes('generativelanguage')) return { ok: false, status: 404, text: async () => '' };
     calls++;
     return {
       ok: false, status: 429,
@@ -361,6 +372,7 @@ test('a busy model hands the paper to the understudy rather than dropping it', a
   const real = globalThis.fetch;
   const asked = [];
   globalThis.fetch = async (url) => {
+    if (!String(url).includes('generativelanguage')) return { ok: false, status: 404, text: async () => '' };
     asked.push(String(url).match(/models\/([^:]+):/)[1]);
     if (asked.length <= 5) {
       return { ok: false, status: 503, text: async () => JSON.stringify({ error: { message: 'high demand' } }) };
@@ -385,7 +397,8 @@ test('a bad request is not asked twice, of two different models', async () => {
   // belongs to the key, not the model. Neither is worth a second model's time.
   const real = globalThis.fetch;
   let calls = 0;
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (url) => {
+    if (!String(url).includes('generativelanguage')) return { ok: false, status: 404, text: async () => '' };
     calls++;
     return { ok: false, status: 400, text: async () => JSON.stringify({ error: { message: 'bad field' } }) };
   };

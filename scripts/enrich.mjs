@@ -35,14 +35,20 @@
  *             stripped of that context, it says nothing. So the model writes
  *             the caption the card needs: what is plotted, and what it shows.
  *
- * TWO TIERS, AND WHY. `prior` and `limits` are stated in the introduction and
- * the discussion and nowhere else; from an abstract alone the model either
- * guesses or returns nothing. So the papers that clear the top band are read in
- * full — `fulltext.mjs` fetches arXiv's own HTML rendering and trims it — and
- * everything below that band is still briefed from its abstract, with the two
- * full-text-only fields simply absent. Ranking is the cheap local model's job,
- * prose is the expensive one's, and reading every paper in the announcement
- * would invert that order and turn a daily job into a monthly bill.
+ * EVERY PAPER IN THE FEED IS READ IN FULL. `prior` and `limits` are stated in
+ * the introduction and the discussion and nowhere else; from an abstract alone
+ * the model either guesses or returns nothing, so an abstract-tier card is a
+ * card with two of its six fields permanently blank. `fulltext.mjs` fetches
+ * arXiv's own HTML rendering and trims it.
+ *
+ * THIS USED TO BE THE TOP BAND ONLY, on the reasoning that a reader deciding
+ * whether to spend an evening is deciding it about pay dirt. That was wrong in
+ * the direction that matters: a long shot is exactly the paper a reader knows
+ * least about, and "no baseline given" on it is indistinguishable from "the
+ * model was never shown the introduction". The cost is bounded by the feed and
+ * not by the announcement — the ranking picks a handful out of ~100 abstracts
+ * before this runs, so this is tens of calls a day, not hundreds. What is never
+ * read in full is a paper the ranking already dropped.
  *
  * THE VOICE IS DELIBERATE. Short words, dropped articles, fragments — the same
  * voice the rest of arXave is written in, and it buys something beyond tone: it
@@ -58,8 +64,8 @@
  * RESULTS ARE CACHED ON DISK, keyed by arXiv id and committed with the feed. A
  * paper that stays in the feed for several days is enriched once. The cache is
  * pruned by age so it cannot grow forever, and it records which tier a record
- * came from: a paper briefed from its abstract yesterday and promoted to the
- * top band today is re-read in full rather than served stale and shallow.
+ * came from: a paper briefed from its abstract on a day arXiv had no HTML for
+ * it yet is re-read the next morning rather than served stale and shallow.
  *
  * FAILURE IS ALWAYS SOFT. No key, a refused call, a malformed response, a
  * timeout, a paper with no HTML rendering — every one of them degrades one step
@@ -117,13 +123,17 @@ const MIN_GAP_MS = Number(process.env.ARXAVE_ENRICH_GAP_MS || 1_000);
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/* Which papers are read in full. The top band only — that is a handful a day,
-   and the band is exactly the set where a reader is deciding whether to spend
-   an evening, which is the decision `prior` and `limits` are for. The hard cap
-   is a fuse, not a policy: an unusual morning must not silently become a
-   hundred full-paper calls. */
-export const DEEP_BANDS = new Set(['paydirt']);
-export const DEEP_MAX = 12;
+/* Which papers are read in full: every one that reached the feed, whatever its
+   band. Empty means no band filter at all, which is deliberately not the same
+   as listing the three known bands — an item whose band is missing or new is
+   read rather than silently demoted to its abstract.
+
+   The cap is a fuse, not a policy. It sits above `--top`'s default of 8 with
+   room to spare, so it binds only when a run is asked for far more papers per
+   feed than a person reads in a morning, and an unusual day cannot silently
+   become a hundred full-paper calls. */
+export const DEEP_BANDS = new Set();
+export const DEEP_MAX = 24;
 
 /* Bumped whenever the field set changes. A cached record from an older shape is
    treated as a miss and re-generated, because the alternative is a feed where
@@ -280,8 +290,9 @@ export function parseResponse(body) {
     kind: oneOf(parsed.kind, KINDS),
     result: String(parsed.result ?? '').trim(),
     question: String(parsed.question ?? '').trim(),
-    /* An absent `prior` or `limits` is a real answer — an abstract-tier brief
-       has no introduction to read, and plenty of papers state no limitation —
+    /* An absent `prior` or `limits` is a real answer — a paper arXiv has no
+       HTML rendering for has no introduction to read, and plenty of papers
+       state no limitation —
        so neither blocks the record and the feed simply omits the line. What
        must not happen is a fabricated baseline. */
     prior: String(parsed.prior ?? '').trim(),
@@ -432,9 +443,10 @@ export function pruneCache(cache, today = new Date().toISOString().slice(0, 10))
  * A usable cached record, or null.
  *
  * An older field set counts as a miss, and so does a shallower one: a paper
- * briefed from its abstract on a day it scraped into the feed, and promoted to
- * the top band this morning, must be re-read rather than served without the two
- * fields the promotion is exactly the reason to want.
+ * briefed from its abstract before the feed read everything in full must be
+ * re-read rather than served without the two fields that requires. This is the
+ * path that migrates the cache — no record is deleted, each is simply re-made
+ * the first morning its paper comes back round.
  */
 export function cachedFields(rec, wantDeep = false) {
   if (!rec?.fields) return null;
@@ -443,12 +455,12 @@ export function cachedFields(rec, wantDeep = false) {
   return rec.fields;
 }
 
-/** Which items get read in full: the top band, newest first, up to the fuse. */
+/** Which items get read in full: all of them, in feed order, up to the fuse. */
 export function deepSet(items) {
   const ids = new Set();
   for (const it of items) {
     if (ids.size >= DEEP_MAX) break;
-    if (DEEP_BANDS.has(it.band)) ids.add(it.arxivId);
+    if (!DEEP_BANDS.size || DEEP_BANDS.has(it.band)) ids.add(it.arxivId);
   }
   return ids;
 }

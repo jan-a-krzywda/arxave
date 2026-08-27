@@ -4,7 +4,7 @@
  * The enricher used to see abstracts only, and the two fields that most decide
  * whether a paper is worth an evening — what the number really is, and what it
  * was measured under — are the two an abstract is written to soften. So for the
- * papers that clear the top band, this fetches arXiv's own HTML rendering and
+ * papers that reach the feed, this fetches arXiv's own HTML rendering and
  * hands back a trimmed transcript plus the figures.
  *
  * WHY arXiv HTML AND NOT THE PDF OR THE SOURCE TARBALL. `arxiv.org/html/<id>`

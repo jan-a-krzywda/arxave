@@ -436,8 +436,9 @@
                   </xsl:if>
                   <!-- `Before` is the field the whole full-text tier exists for:
                        a number with nothing to compare it against is not a
-                       result yet. It is absent on abstract-tier items, which is
-                       honest — an abstract rarely names the baseline it beats. -->
+                       result yet. Absent when the paper states none, or when
+                       arXiv has no HTML rendering to read — an abstract rarely
+                       names the baseline it beats. -->
                   <xsl:if test="arxave:prior">
                     <details class="fold">
                       <summary>Before</summary>
