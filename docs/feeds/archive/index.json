@@ -1,9 +1,26 @@
 {
-  "built": "2026-08-26",
+  "built": "2026-08-27",
   "months": [
     {
       "month": "2026-08",
       "days": [
+        {
+          "date": "2026-08-27",
+          "feeds": {
+            "error-correction": {
+              "items": 3,
+              "paydirt": 2
+            },
+            "quantum-machine-learning": {
+              "items": 4,
+              "paydirt": 1
+            },
+            "spin-qubits": {
+              "items": 3,
+              "paydirt": 2
+            }
+          }
+        },
         {
           "date": "2026-08-26",
           "feeds": {
