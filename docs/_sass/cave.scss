@@ -236,6 +236,22 @@ body {
 .site-footer a {
   color: var(--text-dim);
 }
+.site-footer .foot {
+  text-align: center;
+  padding: 1.4rem 0 1.6rem;
+}
+.site-footer .foot-line {
+  margin: 0.2rem 0;
+  font-size: 0.85rem;
+}
+.site-footer .foot-line span {
+  margin: 0 0.4rem;
+  color: var(--text-faint);
+}
+.site-footer .foot-say {
+  color: var(--text-faint);
+  font-style: italic;
+}
 
 .page-content {
   background: var(--cave-air);
