@@ -263,7 +263,13 @@ export function deMath(text) {
      math only when it looks like math: a command, a script, a brace group, or
      a run with no space in it — `$200$` is a quantity, `$5 and $` is a price
      and the word after it. Everything else is left exactly as written. */
-  const isMath = (body) => /[\\^_{}]/.test(body) || !/\s/.test(body);
+  /* A span with spaces in it is still math when it is all relations and short
+     names — `$d=2, n=3$` is a pair of settings, not a sentence. Both halves of
+     the test have to hold: a relation sign somewhere, and no English word
+     anywhere, so `$100 to $200` stays a price range. */
+  const settings = (body) =>
+    /[=<>]/.test(body) && body.trim().split(/\s+/).every((t) => !/[A-Za-z]{3,}/.test(t));
+  const isMath = (body) => /[\\^_{}]/.test(body) || !/\s/.test(body) || settings(body);
   const flatten = (m, body) => (isMath(body) ? expand(body.replace(SPACING, ' ')) : m);
   /* `$$…$$` first: display math in an abstract is rare but it exists, and the
      single-dollar pattern would otherwise match its empty middle. */

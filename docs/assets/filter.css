@@ -10,16 +10,6 @@
   display: none;
 }
 
-/* minima's wrapper is 740px inside, which wraps the four stage cards 3 + 1
-   and squeezes the assay matrix. This stylesheet only loads on the dig page,
-   so widening the column here leaves the rest of the site alone. Header and
-   footer wrappers widen with it, so the nav still lines up with the content. */
-@media (min-width: 900px) {
-  .wrapper {
-    max-width: 1140px;
-  }
-}
-
 .dig-hero {
   margin: 0 0 2rem;
 }

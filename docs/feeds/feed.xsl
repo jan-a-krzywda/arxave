@@ -135,18 +135,22 @@
              line art on transparent SVG, which on a dark page is invisible.
              Centred, because a figure narrower than the column ragged-left
              reads as a mistake rather than as a plate. */
-          .figure { margin: 0.8rem 0; text-align: center; }
+          .figure {
+            margin: 0.8rem auto; max-width: 34rem; text-align: center;
+          }
           .figure img {
-            display: inline-block; width: 100%; max-width: 34rem; height: auto;
+            display: block; width: 100%; height: auto;
             border-radius: 3px; background: #f4f1ea; padding: 0.5rem;
             cursor: zoom-in;
           }
           /* The caption is the model's gloss, not the paper's own — written for
-             someone who has not read the paper. Set under the plate, quiet and
-             narrower than the column so it reads as a caption and not as the
-             next paragraph of the brief. */
+             someone who has not read the paper. It lives inside the plate's own
+             box, so it is exactly as wide as the image above it however wide
+             that turns out to be — a caption set to the column while the image
+             is set to 34rem reads as the next paragraph of the brief, which is
+             the one thing it must not look like. */
           .figure-caption {
-            margin: 0.5rem auto 0; max-width: 34rem;
+            margin: 0.5rem 0 0;
             color: var(--text-dim); font-size: 0.85rem; line-height: 1.5;
             text-align: center;
           }
@@ -414,17 +418,17 @@
                     <details class="fold">
                       <summary>Figure</summary>
                       <div class="fold-body">
-                        <p class="figure">
+                        <figure class="figure">
                           <img>
                             <xsl:attribute name="src"><xsl:value-of select="arxave:figure"/></xsl:attribute>
                             <xsl:attribute name="alt"><xsl:value-of select="arxave:figurecaption"/></xsl:attribute>
                             <xsl:attribute name="data-caption"><xsl:value-of select="arxave:figurecaption"/></xsl:attribute>
                             <xsl:attribute name="loading">lazy</xsl:attribute>
                           </img>
-                        </p>
-                        <xsl:if test="arxave:figurecaption">
-                          <p class="figure-caption"><xsl:value-of select="arxave:figurecaption"/></p>
-                        </xsl:if>
+                          <xsl:if test="arxave:figurecaption">
+                            <figcaption class="figure-caption"><xsl:value-of select="arxave:figurecaption"/></figcaption>
+                          </xsl:if>
+                        </figure>
                       </div>
                     </details>
                   </xsl:if>
