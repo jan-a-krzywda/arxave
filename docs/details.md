@@ -44,8 +44,8 @@ Two goals, only two:
 | Room | What it is | When you want it |
 |------|-----------|------------------|
 | [Dig]({{ '/' | relative_url }}) | The assay itself, live in your tab. Describe your seam, pull tonight's arXiv, watch the ranking move as you tune it. | You want to *set up* a seam, or wash a night by hand. |
-| [Stockpile]({{ '/stockpile/' | relative_url }}) | Everything ever hauled up and kept, by month and day, filterable by seam and grade. | You half-remember a paper, or want to see what a seam has been yielding. |
-| [Haul]({{ '/haul/' | relative_url }}) | Tonight's pay dirt, split by seam, as feeds you can point a reader at. | You want papers to arrive without you visiting anything. |
+| [Haul]({{ '/haul/' | relative_url }}) | Tonight's pay dirt, one wagon per seam — read it here, or take the feed and point a reader at it. | You want papers to arrive without you visiting anything. |
+| [Stockpile]({{ '/stockpile/' | relative_url }}) *(WIP)* | Everything ever hauled up and kept, by month and day, filterable by seam and grade. | You half-remember a paper, or want to see what a seam has been yielding. |
 | Details | This page. | Now. |
 
 Dig is the workshop, Stockpile is the archive, Haul is the delivery. Same

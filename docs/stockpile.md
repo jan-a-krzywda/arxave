@@ -4,10 +4,17 @@ title: Stockpile
 permalink: /stockpile/
 gloss: history
 nav_icon: stockpile
+nav_wip: true
 ---
 
 <div class="cave-wall cave-wall-left cave-wall-stockpile" aria-hidden="true"></div>
 <div class="cave-wall cave-wall-right cave-wall-stockpile" aria-hidden="true"></div>
+
+<div class="wip-banner">
+  <strong>WIP.</strong> This room is still being dug. The archive it reads is
+  thin and the day-by-day view has rough edges — the finished room tonight is
+  the <a href="{{ '/haul/' | relative_url }}">Haul</a>.
+</div>
 
 <div class="status-banner">
   <strong>Every night, every seam, what it yielded.</strong> Everything ever

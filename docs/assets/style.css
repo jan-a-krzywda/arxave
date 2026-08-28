@@ -274,6 +274,24 @@ textarea#topics:focus {
   color: var(--text-dim);
 }
 
+/* A room that is open but not finished. Pyrite, the same colour the nav's WIP
+   tag uses, so the two read as one claim: looks like gold, is not yet. */
+.wip-banner {
+  border: 1px solid var(--pyrite-dim);
+  border-left: 4px solid var(--pyrite);
+  background: rgba(154, 143, 92, 0.09);
+  border-radius: 4px;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 1rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+.wip-banner strong {
+  color: var(--pyrite);
+  letter-spacing: 0.05em;
+}
+
 /* ── Table of contents ────────────────────────────────────────
    For one long reference page. Built by kramdown from the headings, so it
    cannot drift out of step with them the way a hand-written list would.

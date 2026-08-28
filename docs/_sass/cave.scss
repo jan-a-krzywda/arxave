@@ -201,6 +201,23 @@ body {
   letter-spacing: 0.01em;
 }
 
+/* Pyrite, not gold: the room is here and it does not pay yet. Small enough to
+   read as a tag on the word rather than a second word. */
+.cave-nav .room-wip {
+  margin-left: 0.28em;
+  padding: 0 0.24em;
+  border: 1px solid var(--pyrite-dim);
+  border-radius: 3px;
+  color: var(--pyrite);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  vertical-align: 0.28em;
+}
+.cave-nav .room.is-here .room-wip {
+  color: var(--pyrite);
+}
+
 /* The translation, and it stays quiet: it is here for the first visit, and
    after that the sprite and the cave word do the work. */
 .cave-nav .room-gloss {
@@ -233,6 +250,11 @@ body {
      part a returning visitor has already stopped needing. */
   .cave-nav .room-gloss {
     display: none;
+  }
+  /* The tag survives the phone cut. It is a warning, not a translation. */
+  .cave-nav .room-wip {
+    font-size: 0.5rem;
+    padding: 0 0.18em;
   }
 }
 

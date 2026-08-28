@@ -4,15 +4,17 @@ theme: minima
 plugins:
   - jekyll-feed
 
-# The four rooms, in the order the work runs: Dig (the filter, at the site
-# root), Stockpile (everything kept), Haul (tonight's, as feeds), Details (what
-# the machine does). This list is the whole nav — _includes/header.html reads
-# the order from here and the icon and gloss from each page's front matter.
+# The four rooms, in the order a reader wants them: Dig (the filter, at the
+# site root), Haul (tonight's, as wagons and feeds), Stockpile (everything
+# kept, still WIP), Details (what the machine does). Haul comes before
+# Stockpile because it is the finished room and the one a stranger should land
+# in first. This list is the whole nav — _includes/header.html reads the order
+# from here and the icon, gloss and WIP mark from each page's front matter.
 # filter-moved.md and seams-moved.md only redirect and stay out of the nav.
 header_pages:
   - filter.md
-  - stockpile.md
   - haul.md
+  - stockpile.md
   - details.md
 
 # The repo the header's GitHub link points at. Unset means no link at all,
