@@ -324,8 +324,11 @@ textarea#topics:focus {
 /* Wide tables — measurement tables run past the column on a narrow screen, and
    a page that scrolls sideways as a whole is worse than one that scrolls a
    table. minima gives table a wrapper only inside .post-content, so this
-   targets the table itself. */
-.post-content table {
+   targets the table itself. The app-rendered tables on the Dig page
+   (.wagon-table, #assay-table) size themselves to width:100% and manage their
+   own overflow — this rule's width:max-content would shrink them to the
+   longest category string, so they opt out. */
+.post-content table:not(.wagon-table):not(#assay-table) {
   display: block;
   overflow-x: auto;
   max-width: 100%;
