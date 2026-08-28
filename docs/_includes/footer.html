@@ -1,0 +1,25 @@
+{%- comment -%}
+Overrides minima 2.5's own footer. Minima's version is a three-column h-card
+built from site.title, site.email and social handles — none of which this site
+sets, so it rendered as the title twice and the description once. This replaces
+it with the two things a footer here is for: who made it, and the two doors
+in (the idea, and how to help).
+{%- endcomment -%}
+<footer class="site-footer" role="contentinfo">
+  <div class="wrapper foot">
+    <p class="foot-line">
+      <a href="{{ site.github_repo }}#why-arxave-exist">The idea</a>
+      <span aria-hidden="true">·</span>
+      <a href="{{ site.github_repo }}/blob/main/CONTRIBUTING.md">Contribute</a>
+      {%- if site.github_repo %}
+      <span aria-hidden="true">·</span>
+      <a href="{{ site.github_repo }}" rel="noopener">Source</a>
+      {%- endif %}
+    </p>
+    <p class="foot-line foot-by">
+      By <a href="https://jan-a-krzywda.com/" rel="noopener">Jan A. Krzywda</a>
+      and collaborators.
+    </p>
+    <p class="foot-line foot-say">{{ site.description | escape }}</p>
+  </div>
+</footer>
