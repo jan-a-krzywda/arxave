@@ -622,4 +622,4 @@ nav_icon: stockpile
 }
 </style>
 
-<link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}?v={{ site.time | date: '%s' }}">

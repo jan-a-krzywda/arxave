@@ -1,0 +1,27 @@
+{%- comment -%}
+Overrides minima 2.5's own head include, copied verbatim except for the `?v=`
+on the stylesheet.
+
+WHY. minima links /assets/main.css with no version, GitHub Pages serves it with
+`cache-control: max-age=600`, and a returning visitor's browser holds the old
+file. Every CSS change therefore ships in two stages — new markup immediately,
+new styling up to ten minutes later — and the in-between state is a page styled
+by rules that no longer match its HTML. filter.md already solved this for the
+two stylesheets it links itself; main.css is the one minima links, and this is
+the only way to reach it, since minima 2.5 has no custom-head hook.
+
+`site.time` is the build timestamp, so the query changes on every deploy and
+only on a deploy: readers who have not been away since the last build keep
+their cached copy.
+{%- endcomment -%}
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {%- seo -%}
+  <link rel="stylesheet" href="{{ "/assets/main.css" | relative_url }}?v={{ site.time | date: '%s' }}">
+  {%- feed_meta -%}
+  {%- if jekyll.environment == 'production' and site.google_analytics -%}
+    {%- include google-analytics.html -%}
+  {%- endif -%}
+</head>
