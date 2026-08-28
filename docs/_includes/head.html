@@ -19,6 +19,19 @@ their cached copy.
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {%- seo -%}
+  {%- comment -%}
+    The wordmark's X on its own, for tabs and search results. Three files
+    because the three consumers differ: SVG for browsers that take one and
+    scale it cleanly, a 32px ICO for the ones that still ask for /favicon.ico
+    by name, and a 192px PNG for Google Search (which wants at least 48) and
+    for a phone home screen. All three are the same sprite at whole-number
+    scales, so no pixel ever lands off the grid. relative_url keeps them
+    right under a project-pages baseurl, where a bare /favicon.ico is not
+    served at all.
+  {%- endcomment -%}
+  <link rel="icon" href="{{ "/assets/arxave-icon.svg" | relative_url }}" type="image/svg+xml">
+  <link rel="icon" href="{{ "/favicon.ico" | relative_url }}" sizes="32x32">
+  <link rel="apple-touch-icon" href="{{ "/assets/arxave-icon-192.png" | relative_url }}">
   <link rel="stylesheet" href="{{ "/assets/main.css" | relative_url }}?v={{ site.time | date: '%s' }}">
   {%- feed_meta -%}
   {%- if jekyll.environment == 'production' and site.google_analytics -%}

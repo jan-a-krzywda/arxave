@@ -1,77 +1,82 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="424" height="144" viewBox="0 0 424 144"
+<svg xmlns="http://www.w3.org/2000/svg" width="392" height="144" viewBox="0 0 392 144"
      shape-rendering="crispEdges" role="img"
-     aria-label="arXave — pixel wordmark whose X is two crossed pickaxes">
+     aria-label="arXave — pixel wordmark whose X is two crossed daggers">
   <title>arXave</title>
   <!-- 8px grid, whole-unit rects, no curve anywhere: same sprite language as
        the room icons in docs/_includes/nav-icon.html and the cave wall tiles.
-       The X is two crossed pickaxes — rock hafts, gold heads, because gold is
+       The X is two crossed daggers, the same tool the dig room wears — rock
+       hafts, gold heads, because gold is
        the one colour on this site that only ever means ore. -->
-  <rect width="424" height="144" fill="#15181d"/>
+  <rect width="392" height="144" fill="#15181d"/>
   <g fill="#99a1ad">
-    <rect x="192" y="72" width="8" height="8"/>
-    <rect x="200" y="48" width="8" height="8"/>
-    <rect x="192" y="56" width="8" height="8"/>
-    <rect x="184" y="64" width="8" height="8"/>
-    <rect x="176" y="72" width="8" height="8"/>
-    <rect x="168" y="80" width="8" height="8"/>
+    <rect x="120" y="48" width="8" height="8"/>
+    <rect x="128" y="48" width="8" height="8"/>
+    <rect x="128" y="56" width="8" height="8"/>
+    <rect x="136" y="56" width="8" height="8"/>
+    <rect x="136" y="64" width="8" height="8"/>
+    <rect x="144" y="64" width="8" height="8"/>
+    <rect x="144" y="72" width="8" height="8"/>
+    <rect x="152" y="72" width="8" height="8"/>
+    <rect x="152" y="80" width="8" height="8"/>
+    <rect x="160" y="80" width="8" height="8"/>
     <rect x="160" y="88" width="8" height="8"/>
-    <rect x="152" y="96" width="8" height="8"/>
-    <rect x="144" y="104" width="8" height="8"/>
-    <rect x="136" y="112" width="8" height="8"/>
-    <rect x="128" y="120" width="8" height="8"/>
-    <rect x="120" y="128" width="8" height="8"/>
-    <rect x="208" y="48" width="8" height="8"/>
-    <rect x="200" y="56" width="8" height="8"/>
-    <rect x="192" y="64" width="8" height="8"/>
-    <rect x="184" y="72" width="8" height="8"/>
-    <rect x="176" y="80" width="8" height="8"/>
     <rect x="168" y="88" width="8" height="8"/>
-    <rect x="160" y="96" width="8" height="8"/>
-    <rect x="152" y="104" width="8" height="8"/>
-    <rect x="144" y="112" width="8" height="8"/>
-    <rect x="136" y="120" width="8" height="8"/>
-    <rect x="128" y="128" width="8" height="8"/>
-    <rect x="160" y="48" width="8" height="8"/>
-    <rect x="168" y="56" width="8" height="8"/>
-    <rect x="176" y="64" width="8" height="8"/>
-    <rect x="184" y="72" width="8" height="8"/>
-    <rect x="192" y="80" width="8" height="8"/>
-    <rect x="200" y="88" width="8" height="8"/>
-    <rect x="208" y="96" width="8" height="8"/>
-    <rect x="216" y="104" width="8" height="8"/>
-    <rect x="224" y="112" width="8" height="8"/>
-    <rect x="232" y="120" width="8" height="8"/>
-    <rect x="240" y="128" width="8" height="8"/>
-    <rect x="152" y="48" width="8" height="8"/>
-    <rect x="160" y="56" width="8" height="8"/>
-    <rect x="168" y="64" width="8" height="8"/>
+    <rect x="168" y="96" width="8" height="8"/>
+    <rect x="176" y="96" width="8" height="8"/>
+    <rect x="176" y="104" width="8" height="8"/>
+    <rect x="184" y="104" width="8" height="8"/>
+    <rect x="184" y="112" width="8" height="8"/>
+    <rect x="192" y="112" width="8" height="8"/>
+    <rect x="192" y="120" width="8" height="8"/>
+    <rect x="200" y="120" width="8" height="8"/>
+    <rect x="200" y="128" width="8" height="8"/>
+    <rect x="208" y="128" width="8" height="8"/>
+    <rect x="200" y="48" width="8" height="8"/>
+    <rect x="208" y="48" width="8" height="8"/>
+    <rect x="192" y="56" width="8" height="8"/>
+    <rect x="200" y="56" width="8" height="8"/>
+    <rect x="184" y="64" width="8" height="8"/>
+    <rect x="192" y="64" width="8" height="8"/>
     <rect x="176" y="72" width="8" height="8"/>
-    <rect x="184" y="80" width="8" height="8"/>
-    <rect x="192" y="88" width="8" height="8"/>
-    <rect x="200" y="96" width="8" height="8"/>
-    <rect x="208" y="104" width="8" height="8"/>
-    <rect x="216" y="112" width="8" height="8"/>
-    <rect x="224" y="120" width="8" height="8"/>
-    <rect x="232" y="128" width="8" height="8"/>
+    <rect x="184" y="72" width="8" height="8"/>
+    <rect x="168" y="80" width="8" height="8"/>
+    <rect x="176" y="80" width="8" height="8"/>
+    <rect x="152" y="96" width="8" height="8"/>
+    <rect x="160" y="96" width="8" height="8"/>
+    <rect x="144" y="104" width="8" height="8"/>
+    <rect x="152" y="104" width="8" height="8"/>
+    <rect x="136" y="112" width="8" height="8"/>
+    <rect x="144" y="112" width="8" height="8"/>
+    <rect x="128" y="120" width="8" height="8"/>
+    <rect x="136" y="120" width="8" height="8"/>
+    <rect x="120" y="128" width="8" height="8"/>
+    <rect x="128" y="128" width="8" height="8"/>
   </g>
   <g fill="#f5b301">
-    <!-- Pick heads: each a short bar struck across the top of its haft at a
-         right angle — the right head runs parallel to the left haft and the
-         left head to the right haft, the way two crossed picks actually sit.
-         They meet in a peak at the centre and flank the hafts where they
-         cross. -->
-    <rect x="168" y="32" width="8" height="8"/>
-    <rect x="176" y="32" width="8" height="8"/>
-    <rect x="184" y="32" width="8" height="8"/>
+    <!-- Dagger guards: the dig-room head, struck square across each
+         blade — each bar runs on the opposite diagonal to the haft it
+         caps, two units thick and five long, so the haft bisects it
+         two above and two below. The pair mirror about the centre. -->
+    <rect x="104" y="64" width="8" height="8"/>
+    <rect x="112" y="56" width="8" height="8"/>
+    <rect x="120" y="48" width="8" height="8"/>
+    <rect x="128" y="40" width="8" height="8"/>
+    <rect x="136" y="32" width="8" height="8"/>
+    <rect x="112" y="64" width="8" height="8"/>
+    <rect x="120" y="56" width="8" height="8"/>
+    <rect x="128" y="48" width="8" height="8"/>
+    <rect x="136" y="40" width="8" height="8"/>
+    <rect x="144" y="32" width="8" height="8"/>
     <rect x="192" y="32" width="8" height="8"/>
-    <rect x="160" y="40" width="8" height="8"/>
-    <rect x="168" y="40" width="8" height="8"/>
-    <rect x="192" y="40" width="8" height="8"/>
     <rect x="200" y="40" width="8" height="8"/>
-    <rect x="144" y="56" width="8" height="8"/>
-    <rect x="152" y="56" width="8" height="8"/>
-    <rect x="208" y="56" width="8" height="8"/>
+    <rect x="208" y="48" width="8" height="8"/>
     <rect x="216" y="56" width="8" height="8"/>
+    <rect x="224" y="64" width="8" height="8"/>
+    <rect x="184" y="32" width="8" height="8"/>
+    <rect x="192" y="40" width="8" height="8"/>
+    <rect x="200" y="48" width="8" height="8"/>
+    <rect x="208" y="56" width="8" height="8"/>
+    <rect x="216" y="64" width="8" height="8"/>
   </g>
   <g fill="#d7dbe0">
     <rect x="16" y="80" width="8" height="8"/>
@@ -85,6 +90,7 @@
     <rect x="24" y="104" width="8" height="8"/>
     <rect x="32" y="104" width="8" height="8"/>
     <rect x="40" y="104" width="8" height="8"/>
+    <rect x="48" y="104" width="8" height="8"/>
     <rect x="8" y="112" width="8" height="8"/>
     <rect x="48" y="112" width="8" height="8"/>
     <rect x="8" y="120" width="8" height="8"/>
@@ -106,60 +112,61 @@
     <rect x="64" y="112" width="8" height="8"/>
     <rect x="64" y="120" width="8" height="8"/>
     <rect x="64" y="128" width="8" height="8"/>
-    <rect x="264" y="80" width="8" height="8"/>
-    <rect x="272" y="80" width="8" height="8"/>
-    <rect x="280" y="80" width="8" height="8"/>
-    <rect x="288" y="80" width="8" height="8"/>
-    <rect x="256" y="88" width="8" height="8"/>
-    <rect x="296" y="88" width="8" height="8"/>
-    <rect x="296" y="96" width="8" height="8"/>
+    <rect x="232" y="80" width="8" height="8"/>
+    <rect x="240" y="80" width="8" height="8"/>
+    <rect x="248" y="80" width="8" height="8"/>
+    <rect x="256" y="80" width="8" height="8"/>
+    <rect x="224" y="88" width="8" height="8"/>
+    <rect x="264" y="88" width="8" height="8"/>
+    <rect x="264" y="96" width="8" height="8"/>
+    <rect x="232" y="104" width="8" height="8"/>
+    <rect x="240" y="104" width="8" height="8"/>
+    <rect x="248" y="104" width="8" height="8"/>
+    <rect x="256" y="104" width="8" height="8"/>
     <rect x="264" y="104" width="8" height="8"/>
-    <rect x="272" y="104" width="8" height="8"/>
-    <rect x="280" y="104" width="8" height="8"/>
-    <rect x="288" y="104" width="8" height="8"/>
-    <rect x="256" y="112" width="8" height="8"/>
-    <rect x="296" y="112" width="8" height="8"/>
-    <rect x="256" y="120" width="8" height="8"/>
-    <rect x="296" y="120" width="8" height="8"/>
+    <rect x="224" y="112" width="8" height="8"/>
+    <rect x="264" y="112" width="8" height="8"/>
+    <rect x="224" y="120" width="8" height="8"/>
+    <rect x="264" y="120" width="8" height="8"/>
+    <rect x="232" y="128" width="8" height="8"/>
+    <rect x="240" y="128" width="8" height="8"/>
+    <rect x="248" y="128" width="8" height="8"/>
+    <rect x="256" y="128" width="8" height="8"/>
     <rect x="264" y="128" width="8" height="8"/>
-    <rect x="272" y="128" width="8" height="8"/>
-    <rect x="280" y="128" width="8" height="8"/>
-    <rect x="288" y="128" width="8" height="8"/>
+    <rect x="280" y="80" width="8" height="8"/>
+    <rect x="320" y="80" width="8" height="8"/>
+    <rect x="280" y="88" width="8" height="8"/>
+    <rect x="320" y="88" width="8" height="8"/>
+    <rect x="280" y="96" width="8" height="8"/>
+    <rect x="320" y="96" width="8" height="8"/>
+    <rect x="280" y="104" width="8" height="8"/>
+    <rect x="320" y="104" width="8" height="8"/>
+    <rect x="288" y="112" width="8" height="8"/>
+    <rect x="312" y="112" width="8" height="8"/>
+    <rect x="288" y="120" width="8" height="8"/>
+    <rect x="312" y="120" width="8" height="8"/>
     <rect x="296" y="128" width="8" height="8"/>
-    <rect x="312" y="80" width="8" height="8"/>
+    <rect x="304" y="128" width="8" height="8"/>
+    <rect x="344" y="80" width="8" height="8"/>
     <rect x="352" y="80" width="8" height="8"/>
-    <rect x="312" y="88" width="8" height="8"/>
-    <rect x="352" y="88" width="8" height="8"/>
-    <rect x="312" y="96" width="8" height="8"/>
-    <rect x="352" y="96" width="8" height="8"/>
-    <rect x="312" y="104" width="8" height="8"/>
+    <rect x="360" y="80" width="8" height="8"/>
+    <rect x="368" y="80" width="8" height="8"/>
+    <rect x="336" y="88" width="8" height="8"/>
+    <rect x="376" y="88" width="8" height="8"/>
+    <rect x="336" y="96" width="8" height="8"/>
+    <rect x="376" y="96" width="8" height="8"/>
+    <rect x="336" y="104" width="8" height="8"/>
+    <rect x="344" y="104" width="8" height="8"/>
     <rect x="352" y="104" width="8" height="8"/>
-    <rect x="320" y="112" width="8" height="8"/>
-    <rect x="344" y="112" width="8" height="8"/>
-    <rect x="320" y="120" width="8" height="8"/>
-    <rect x="344" y="120" width="8" height="8"/>
-    <rect x="328" y="128" width="8" height="8"/>
-    <rect x="336" y="128" width="8" height="8"/>
-    <rect x="376" y="80" width="8" height="8"/>
-    <rect x="384" y="80" width="8" height="8"/>
-    <rect x="392" y="80" width="8" height="8"/>
-    <rect x="400" y="80" width="8" height="8"/>
-    <rect x="368" y="88" width="8" height="8"/>
-    <rect x="408" y="88" width="8" height="8"/>
-    <rect x="368" y="96" width="8" height="8"/>
-    <rect x="408" y="96" width="8" height="8"/>
+    <rect x="360" y="104" width="8" height="8"/>
     <rect x="368" y="104" width="8" height="8"/>
     <rect x="376" y="104" width="8" height="8"/>
-    <rect x="384" y="104" width="8" height="8"/>
-    <rect x="392" y="104" width="8" height="8"/>
-    <rect x="400" y="104" width="8" height="8"/>
-    <rect x="408" y="104" width="8" height="8"/>
-    <rect x="368" y="112" width="8" height="8"/>
-    <rect x="368" y="120" width="8" height="8"/>
-    <rect x="408" y="120" width="8" height="8"/>
-    <rect x="376" y="128" width="8" height="8"/>
-    <rect x="384" y="128" width="8" height="8"/>
-    <rect x="392" y="128" width="8" height="8"/>
-    <rect x="400" y="128" width="8" height="8"/>
+    <rect x="336" y="112" width="8" height="8"/>
+    <rect x="336" y="120" width="8" height="8"/>
+    <rect x="376" y="120" width="8" height="8"/>
+    <rect x="344" y="128" width="8" height="8"/>
+    <rect x="352" y="128" width="8" height="8"/>
+    <rect x="360" y="128" width="8" height="8"/>
+    <rect x="368" y="128" width="8" height="8"/>
   </g>
 </svg>
