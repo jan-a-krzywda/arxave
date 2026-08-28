@@ -2,6 +2,8 @@
 layout: page
 title: Dig
 permalink: /
+gloss: new
+nav_icon: dig
 ---
 
 <noscript>

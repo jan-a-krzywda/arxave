@@ -6,6 +6,13 @@
   <em>Cave dark. Gold small. Bring lamp.</em>
 </p>
 
+<p align="center">
+  <a href="https://jan-a-krzywda.github.io/arxave/"><strong>Dig</strong></a> ·
+  <a href="https://jan-a-krzywda.github.io/arxave/stockpile/">Stockpile</a> ·
+  <a href="https://jan-a-krzywda.github.io/arxave/haul/">Haul</a> ·
+  <a href="https://jan-a-krzywda.github.io/arxave/details/">Details</a>
+</p>
+
 ---
 
 ## Why arXave exist
@@ -26,23 +33,81 @@ pick up because hand full.
 **Hard part not reading. Hard part is finding.** Nugget rare, rock heavy, cave
 big, night short.
 
-arXave is the lamp and the sieve. It go down in cave every morning, wash the
-whole night pile, hold up the few stone that match *your* seam, and say out loud
-**why** each one look like gold. Every rock it touch go in `papers.db` — even the
-one it throw back — so nothing lost, and you can re-wash pile later when your
-seam change.
-
-Then: **collection**. Your kept stone is yours, in your own bag. Point of a bag
-is to open it in front of other miner — swap stone, compare seam, see nugget from
-tunnel you never dug. That is where this go (see [Still to build](#still-to-build)).
+arXave is lamp and sieve. It go down in cave every morning, wash whole night
+pile, hold up the few stone that match *your* seam, and say out loud **why** each
+one look like gold. Every rock it touch go in the bag — even one it throw back —
+so nothing lost, and you can re-wash pile later when your seam change.
 
 Two goal, only two:
 
-1. **Never miss the nugget that matter.**
+1. **Never miss nugget that matter.**
 2. **Bigger reading bandwidth** — more tunnel swept, same hours, less pyrite.
 
-Status: **M1** shipped. Browser sieve page live. See `arxave-spec.md` for full
-design and M2–M4 plan.
+---
+
+## What you can do
+
+Four room. Same paper, same grade, four way in.
+
+| Room | What it is | Go when |
+|------|-----------|---------|
+| [**Dig**](https://jan-a-krzywda.github.io/arxave/) — *new* | Filter itself, live in your tab. Say what you work on, pull tonight arXiv, watch ranking move while you tune. | You want to *set* a seam, or wash one night by hand. |
+| [**Stockpile**](https://jan-a-krzywda.github.io/arxave/stockpile/) — *history* | Every night ever hauled, by month and day. Filter by seam, filter by grade. | You half-remember paper. Or want see what seam been yielding. |
+| [**Haul**](https://jan-a-krzywda.github.io/arxave/haul/) — *today* | Tonight pay dirt, split by seam, as feed you point reader at. | You want paper arrive without you visiting anything. |
+| [**Details**](https://jan-a-krzywda.github.io/arxave/details/) — *how it work* | What machine do, and what it refuse to do. | Before you trust ranking. |
+
+### Three thing you actually do with it
+
+**1. Wash tonight pile against your own work.** Open
+[Dig](https://jan-a-krzywda.github.io/arxave/). Take preset closest to your
+tunnel, or type your own touchstone — one thought per row, plain sentence, not
+keyword. Drop few paper you already care about in **core samples** (DOI, arXiv
+ID, or upload `.bib`). Hit dig. Ranking is live: move weight, ranking move under
+your hand. No reload, no re-fetch, no key.
+
+**2. Stop visiting.** Go [Haul](https://jan-a-krzywda.github.io/arxave/haul/),
+take feed for your seam, paste in reader. Every morning the night pay dirt land
+on desk. Count beside each seam is tonight haul, split by band, so you see how
+thin a thin morning look *before* you subscribe.
+
+**3. Find rock you half-remember.** Go
+[Stockpile](https://jan-a-krzywda.github.io/arxave/stockpile/). Every night ever
+run, every seam, kept *and* thrown back. Open a row and whole card come back —
+same figure, same finding, same caveat it shipped with in March.
+
+### What paper look like when arXave hold it up
+
+Card come **folded**. First you see byline and one-line finding. That is it. Six
+drawer sit under, you open only if finding earn it:
+
+| Drawer | Inside |
+|--------|--------|
+| **Figure** | Paper own key figure, plus gloss saying what to look at. |
+| **Asks** | Question paper set itself. |
+| **Before** | How thing stood before this paper. |
+| **But** | Caveat. What it not show, what author concede. |
+| **Tools** | Method, hardware, codebase it lean on. |
+| **Abstract** | Original abstract, untouched. |
+
+Fold is the point. Month of open card is not page anyone scroll.
+
+And every card carry **band**, not raw score:
+
+| Band | Mean |
+|------|------|
+| **Pay dirt** | Assay was confident. Read these. |
+| **Worth a look** | Over ship line, under pay-dirt line. Shipped honest, labelled honest. |
+| **Long shot** | Under ship line, or night with no spread to measure. In feed because floor guarantee minimum haul — not because assay back it. |
+
+Band sit on z-score against *that night own spread*, because grade from thin
+Tuesday and fat Thursday not comparable. **"No pay dirt today" is information**,
+not emptiness: mean dig ran and found nothing exceptional. Different message from
+feed that look broken, so it get said out loud.
+
+Status: browser Dig live, nightly preset feed shipping, stockpile archive
+browsable, Details page up. See [`arxave-spec.md`](arxave-spec.md) for full design
+and M2–M4 plan, and [`arxave-release.md`](arxave-release.md) for what shipped in
+this release.
 
 ---
 
@@ -50,29 +115,33 @@ design and M2–M4 plan.
 
 | Way | Where it run | Need what |
 |-----|--------------|-----------|
-| **Browser sieve** | your tab, no install | nothing — embeddings run in browser |
+| **Browser sieve** | your tab, no install | nothing |
 | **CLI mine** | your machine | Python 3.11, one LLM key (or local LM Studio) |
 
 ### Way 1 — browser sieve (fastest look)
 
-Go [here](https://jan-a-krzywda.github.io/arxave/). Type topics. Hit **Dig**.
+Go [here](https://jan-a-krzywda.github.io/arxave/). Type touchstone. Hit dig.
 
-Page pull today arXiv, embed abstract and your topics with **the pick** —
-`allenai/specter2_base`, trained on citation graph, so papers that cite each
-other land near each other. Rank by match. Move slider, ranking move live.
+Page pull today arXiv, embed abstract and your touchstone with **the pick** —
+`allenai/specter2_base`, trained on citation graph, so paper that cite each other
+land near each other. Rank by match. Move slider, ranking move live.
 
 Pick run server-side, in Supabase `embed` function, so browser download nothing.
 Text you want scored get sent there, embed, thrown away. Published text
-(abstracts, and touchstone this repo ship as preset) also go in shared cache so
+(abstract, and touchstone this repo ship as preset) also go in shared cache so
 nobody pay twice; **touchstone you type never go in that cache** — cache read
 public, and hash of short phrase is one dictionary from phrase.
 
 arXiv fetch also leave, through small Supabase `relay` — browser cannot fetch
 arXiv direct, no CORS header.
 
+A **claim** is one dig setup: touchstone, core, weight, gate. It save itself in
+your tab, and it export as JSON — so seam is the most tradeable thing here. Take
+someone claim, bend it, keep it.
+
 For CLI config, edit `config/arxave.yaml` and `.env` by hand — see below. (There
 was a browser form that wrote them for you. It fell behind the CLI and got
-pulled; better no form than a form that lies.)
+pulled; better no form than a form that lie.)
 
 ### Way 2 — CLI mine (full shaft)
 
@@ -146,6 +215,9 @@ everyone shout about cannot outrank one that actually touch your work. Venue,
 author fame, press release: not signals at all. Shiny rock that touch neither
 seam nor bag sink.
 
+Signal missing? Ranking renormalise over signal actually present. Paper never
+score "nobody care" because a source was down.
+
 **No runtime dep on the spin-qubit library repo.** OpenAlex client is arxave own
 code (`openalex.py`). Corpus is **snapshot**, copied in by `sync-corpus`, read
 from `.local/corpus/`. Library stay library. Cost is drift:
@@ -204,11 +276,11 @@ Supabase, text only. Not built yet.
 **Browser sieve — mesh not finished**
 
 - **Corpus signal** — WIP, title only. Need full abstract embeddings.
-- **Crowd attention** — Scirate block automated fetch. Need other source.
+- **Crowd attention** — Scirate behind bot challenge. Need other source.
 - **Citation overlap** — need backend, not browser.
 - **LLM refine step** — not wired yet.
 
-Those slider sit disabled until signal real. Ranking renormalize over signal
+Those slider sit disabled until signal real. Ranking renormalise over signal
 actually present, so missing signal redistribute weight instead of scoring paper
 "nobody care".
 
@@ -240,7 +312,7 @@ static, no session.
 | Function | Why |
 |----------|-----|
 | `relay` | arXiv and Scirate send **no** CORS header. Browser cannot fetch them at all. This relay the GET server-side, allowlisted to those host. |
-| `embed` | Optional. Page default to in-browser embeddings (free), so this only serve people who pick "Hosted" for speed. Deploy it or not — page work either way. |
+| `embed` | The pick. Run server-side so browser download no model. Text sent get embedded and thrown away; published text also land in shared cache, text you typed never do. |
 
 Deploy step and cost cap: [`supabase/functions/README.md`](supabase/functions/README.md).
 
@@ -249,7 +321,8 @@ Deploy step and cost cap: [`supabase/functions/README.md`](supabase/functions/RE
 ## Tests
 
 ```bash
-uv run pytest
+uv run pytest             # Python: pipeline, ranking, storage
+cd scripts && node --test  # Node: warmer, feed builder, enricher, demath
 ```
 
 No network, no API key, no fixture outside `tmp_path`.

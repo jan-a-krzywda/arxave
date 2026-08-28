@@ -1613,48 +1613,11 @@ details.advanced input[type="text"] {
   }
 }
 
-/* ── Cave walls: pixel-art rock + nuggets in the page gutters ──
-   Scroll down the page like descending a mine shaft. Absolutely
-   positioned against .page-content (see cave.scss) so the strip's
-   height tracks the whole page, not just the viewport. Same sprite
-   style as assets/arxave-logo.svg: 8px blocks, crisp edges, no
-   anti-aliasing. */
-.cave-wall {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  /* A conservative estimate of the gutter outside the content column —
-     deliberately undershoots (minima's own max-width shifts at its
-     800px breakpoint, and the dev preview's shell is wider still) so
-     this never eats into the text. Shrinks to 0 on narrower viewports;
-     background-position keeps the inner tip (near the content) in view
-     and crops the outer bulk first as it shrinks. Text still wins if
-     the estimate is ever wrong: #app sits a layer above. */
-  width: clamp(0px, calc((100vw - 1220px) / 2), 180px);
-  z-index: 0;
-  pointer-events: none;
-  background-color: var(--cave-air);
-  background-image: url('cave-wall.svg');
-  background-repeat: repeat-y;
-  background-position: right top;
-  background-size: 200px 320px;
-  image-rendering: pixelated;
-}
-/* Below this the gutter is a sliver, and a 20px strip of rock reads as
-   noise rather than a wall — better none at all. */
-@media (max-width: 1340px) {
-  .cave-wall {
-    display: none;
-  }
-}
-
-.cave-wall-left {
-  left: 0;
-}
-.cave-wall-right {
-  right: 0;
-  transform: scaleX(-1);
-}
+/* ── Cave walls ───────────────────────────────────────────────
+   The gutter rock moved to assets/style.css, which every room loads,
+   so Stockpile, Haul and Details get walls too — each pointing the
+   same rules at its own tile via --cave-wall-art. What stays here is
+   the one rule that is about this page and not about walls. */
 
 /* The page content sits above the walls, so a mis-estimated gutter
    dims nothing and covers no text. */

@@ -1,54 +1,67 @@
 {%- comment -%}
-Overrides minima 2.5's own header include, copied verbatim except for the
-GitHub link appended after the page links. The copy is the whole diff: minima
-offers no hook inside .trigger, and the nav's mobile behaviour (the checkbox
-and its label) has to stay intact around whatever is added.
+Overrides minima 2.5's own header include. Nothing of minima's markup survives
+except the class names its stylesheet already paints (.site-header,
+.site-title), because the nav here is not minima's: it is four rooms as pixel
+icons, centred, and a stranger landing on the front page has to be able to see
+all four at once and guess right about which one they want.
+
+The rooms come from site.header_pages, so the order lives in _config.yml and
+each page carries its own gloss and icon in front matter. A page with no
+`nav_icon` still renders — label and gloss, no sprite — so adding a room cannot
+break the bar.
+
+No hamburger. Four icons fit one row at 320px, and a menu you have to open is
+exactly the thing this bar exists to stop being.
 {%- endcomment -%}
 <header class="site-header" role="banner">
 
   <div class="wrapper">
+
+    <div class="site-bar">
+      <a class="site-title" rel="author" href="{{ "/" | relative_url }}">{{ site.title | escape }}</a>
+
+      {%- if site.github_repo -%}
+      {%- comment -%}
+        Off to the side, not in the centred group: the star is an ask, and the
+        four rooms are the offer. The outlined star says which button to press
+        when the link lands, without a sentence about it.
+      {%- endcomment -%}
+      <a class="gh-link" href="{{ site.github_repo }}#readme"
+         rel="noopener" title="Star arXave on GitHub">
+        <svg class="gh-mark" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+          <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
+        </svg>
+        <span class="gh-text">GitHub</span>
+        <svg class="gh-star" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+          <path fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"
+                d="M8 1.6l1.9 3.9 4.3.6-3.1 3 .74 4.3L8 11.4l-3.84 2-.74-4.3-3.1-3 4.3-.6z"/>
+        </svg>
+      </a>
+      {%- endif -%}
+    </div>
+
     {%- assign default_paths = site.pages | map: "path" -%}
     {%- assign page_paths = site.header_pages | default: default_paths -%}
-    <a class="site-title" rel="author" href="{{ "/" | relative_url }}">{{ site.title | escape }}</a>
-
     {%- if page_paths -%}
-      <nav class="site-nav">
-        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
-        <label for="nav-trigger">
-          <span class="menu-icon">
-            <svg viewBox="0 0 18 15" width="18px" height="15px">
-              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
-            </svg>
-          </span>
-        </label>
-
-        <div class="trigger">
-          {%- for path in page_paths -%}
-            {%- assign my_page = site.pages | where: "path", path | first -%}
-            {%- if my_page.title -%}
-            <a class="page-link" href="{{ my_page.url | relative_url }}">{{ my_page.title | escape }}</a>
-            {%- endif -%}
-          {%- endfor -%}
-          {%- if site.github_repo -%}
-          {%- comment -%}
-            Last in the nav, and the star is the whole ask: the readme anchor
-            lands on the page where the Star button is, and the outlined star
-            says which button without a sentence about it.
-          {%- endcomment -%}
-          <a class="page-link page-link-gh" href="{{ site.github_repo }}#readme"
-             rel="noopener" title="Star arXave on GitHub">
-            <svg class="gh-mark" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-              <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
-            </svg>
-            <span class="gh-text">GitHub</span>
-            <svg class="gh-star" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
-              <path fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"
-                    d="M8 1.6l1.9 3.9 4.3.6-3.1 3 .74 4.3L8 11.4l-3.84 2-.74-4.3-3.1-3 4.3-.6z"/>
-            </svg>
-          </a>
+    <nav class="cave-nav" aria-label="Rooms">
+      {%- for path in page_paths -%}
+        {%- assign my_page = site.pages | where: "path", path | first -%}
+        {%- if my_page.title -%}
+        <a class="room{% if page.url == my_page.url %} is-here{% endif %}"
+           href="{{ my_page.url | relative_url }}"
+           {% if page.url == my_page.url %}aria-current="page"{% endif %}>
+          {%- if my_page.nav_icon -%}
+            {%- include nav-icon.html icon=my_page.nav_icon -%}
           {%- endif -%}
-        </div>
-      </nav>
+          <span class="room-name">{{ my_page.title | escape }}</span>
+          {%- if my_page.gloss -%}
+          <span class="room-gloss">{{ my_page.gloss | escape }}</span>
+          {%- endif -%}
+        </a>
+        {%- endif -%}
+      {%- endfor -%}
+    </nav>
     {%- endif -%}
+
   </div>
 </header>

@@ -2,7 +2,12 @@
 layout: page
 title: Stockpile
 permalink: /stockpile/
+gloss: history
+nav_icon: stockpile
 ---
+
+<div class="cave-wall cave-wall-left cave-wall-stockpile" aria-hidden="true"></div>
+<div class="cave-wall cave-wall-right cave-wall-stockpile" aria-hidden="true"></div>
 
 <div class="status-banner">
   <strong>Every night, every seam, what it yielded.</strong> Everything ever
