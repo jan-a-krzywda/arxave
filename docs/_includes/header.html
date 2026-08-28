@@ -8,7 +8,8 @@ all four at once and guess right about which one they want.
 The rooms come from site.header_pages, so the order lives in _config.yml and
 each page carries its own gloss and icon in front matter. A page with no
 `nav_icon` still renders — label and gloss, no sprite — so adding a room cannot
-break the bar.
+break the bar. `nav_wip: true` hangs a pyrite WIP tag off the room's name: the
+door is open, what is behind it is half dug.
 
 No hamburger. Four icons fit one row at 320px, and a menu you have to open is
 exactly the thing this bar exists to stop being.
@@ -56,7 +57,7 @@ exactly the thing this bar exists to stop being.
           {%- if my_page.nav_icon -%}
             {%- include nav-icon.html icon=my_page.nav_icon -%}
           {%- endif -%}
-          <span class="room-name">{{ my_page.title | escape }}</span>
+          <span class="room-name">{{ my_page.title | escape }}{% if my_page.nav_wip %}<span class="room-wip" title="Work in progress">WIP</span>{% endif %}</span>
           {%- if my_page.gloss -%}
           <span class="room-gloss">{{ my_page.gloss | escape }}</span>
           {%- endif -%}
