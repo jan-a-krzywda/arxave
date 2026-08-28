@@ -6,7 +6,6 @@
        the room icons in docs/_includes/nav-icon.html and the cave wall tiles.
        The X is two crossed pickaxes — rock hafts, gold heads, because gold is
        the one colour on this site that only ever means ore. -->
-  <rect width="424" height="144" fill="#15181d"/>
   <g fill="#99a1ad">
     <rect x="192" y="72" width="8" height="8"/>
     <rect x="200" y="48" width="8" height="8"/>

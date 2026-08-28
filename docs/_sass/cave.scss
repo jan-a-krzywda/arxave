@@ -110,6 +110,15 @@ body {
   padding-right: 0;
 }
 
+/* The wordmark is the pixel logo now, not type. Cap it to a sane header height
+   and let the intrinsic ratio set the width — crispEdges keeps the sprite
+   sharp at any integer-ish scale. */
+.site-wordmark {
+  display: block;
+  height: 2rem;
+  width: auto;
+}
+
 .gh-link,
 .gh-link:visited {
   display: inline-flex;
