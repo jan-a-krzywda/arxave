@@ -383,12 +383,26 @@ async function callGemini(prompt, apiKey, model, { attempts = BUSY_ATTEMPTS, sle
   const url = `${ENDPOINT}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
   let last = '';
   for (let n = 0; n < attempts; n++) {
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-      body: JSON.stringify(requestBody(prompt)),
-    });
+    /* MEASURED 2026-08-25, first paid run: four items were lost to
+       "The operation was aborted due to timeout". The abort rejects the fetch
+       promise, so it used to leave this loop entirely — a hung request got none
+       of the retries a 503 gets, even though the two are the same thing from
+       here: a model under load. A timeout is now retried like a busy model. */
+    let resp;
+    try {
+      resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+        body: JSON.stringify(requestBody(prompt)),
+      });
+    } catch (err) {
+      last = err.message;
+      if (n === attempts - 1) break;
+      console.log(`enrich: ${err.name === 'TimeoutError' ? 'timed out' : 'call failed'}, retrying`);
+      await sleep(BUSY_RETRY_MS * (n + 1));
+      continue;
+    }
     if (resp.ok) return parseResponse(await resp.json());
 
     const raw = await resp.text();
