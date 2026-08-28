@@ -262,6 +262,70 @@ textarea#topics:focus {
   color: var(--text-dim);
 }
 
+/* ── Table of contents ────────────────────────────────────────
+   For one long reference page. Built by kramdown from the headings, so it
+   cannot drift out of step with them the way a hand-written list would.
+   Two levels: sections, and the numbered steps of the assay under it. */
+.toc-card {
+  background: var(--rock-deep);
+  border: 1px solid var(--rock-edge);
+  border-left: 4px solid var(--rock-lit);
+  border-radius: 4px;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 2rem;
+  font-size: 0.9rem;
+}
+.toc-card > p {
+  margin: 0 0 0.5rem;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.toc-card ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.toc-card li {
+  margin: 0.15rem 0;
+  line-height: 1.4;
+}
+/* Nested entries are the steps inside a section: indented, smaller, and dimmer,
+   so the top level still reads as the page's shape at a glance. */
+.toc-card ul ul {
+  padding-left: 0.9rem;
+  margin: 0.1rem 0 0.35rem;
+  border-left: 1px solid var(--rock-edge);
+}
+.toc-card ul ul li {
+  font-size: 0.85rem;
+}
+.toc-card ul ul a,
+.toc-card ul ul a:visited {
+  color: var(--text-dim);
+}
+.toc-card a:hover {
+  color: var(--gold);
+}
+
+/* Wide tables — measurement tables run past the column on a narrow screen, and
+   a page that scrolls sideways as a whole is worse than one that scrolls a
+   table. minima gives table a wrapper only inside .post-content, so this
+   targets the table itself. */
+.post-content table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+  width: max-content;
+}
+
+/* Formula blocks: monospace, and they must never wrap — a broken alignment in
+   a fraction is a different formula. */
+.post-content pre {
+  overflow-x: auto;
+}
+
 /* ── Cave walls: pixel art in the page gutters ─────────────────
    Scroll down a page like descending a mine shaft. Absolutely positioned
    against .page-content (see cave.scss) so a strip's height tracks the whole

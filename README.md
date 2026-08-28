@@ -7,10 +7,10 @@
 </p>
 
 <p align="center">
-  <a href="https://jan-a-krzywda.github.io/arxave/"><strong>Dig</strong></a> ·
-  <a href="https://jan-a-krzywda.github.io/arxave/stockpile/">Stockpile</a> ·
-  <a href="https://jan-a-krzywda.github.io/arxave/haul/">Haul</a> ·
-  <a href="https://jan-a-krzywda.github.io/arxave/details/">Details</a>
+  <a href="https://arxave.com/"><strong>Dig</strong></a> ·
+  <a href="https://arxave.com/stockpile/">Stockpile</a> ·
+  <a href="https://arxave.com/haul/">Haul</a> ·
+  <a href="https://arxave.com/details/">Details</a>
 </p>
 
 ---
@@ -51,27 +51,27 @@ Four room. Same paper, same grade, four way in.
 
 | Room | What it is | Go when |
 |------|-----------|---------|
-| [**Dig**](https://jan-a-krzywda.github.io/arxave/) — *new* | Filter itself, live in your tab. Say what you work on, pull tonight arXiv, watch ranking move while you tune. | You want to *set* a seam, or wash one night by hand. |
-| [**Stockpile**](https://jan-a-krzywda.github.io/arxave/stockpile/) — *history* | Every night ever hauled, by month and day. Filter by seam, filter by grade. | You half-remember paper. Or want see what seam been yielding. |
-| [**Haul**](https://jan-a-krzywda.github.io/arxave/haul/) — *today* | Tonight pay dirt, split by seam, as feed you point reader at. | You want paper arrive without you visiting anything. |
-| [**Details**](https://jan-a-krzywda.github.io/arxave/details/) — *how it work* | What machine do, and what it refuse to do. | Before you trust ranking. |
+| [**Dig**](https://arxave.com/) — *new* | Filter itself, live in your tab. Say what you work on, pull tonight arXiv, watch ranking move while you tune. | You want to *set* a seam, or wash one night by hand. |
+| [**Stockpile**](https://arxave.com/stockpile/) — *history* | Every night ever hauled, by month and day. Filter by seam, filter by grade. | You half-remember paper. Or want see what seam been yielding. |
+| [**Haul**](https://arxave.com/haul/) — *today* | Tonight pay dirt, split by seam, as feed you point reader at. | You want paper arrive without you visiting anything. |
+| [**Details**](https://arxave.com/details/) — *how it work* | What machine do, and what it refuse to do. | Before you trust ranking. |
 
 ### Three thing you actually do with it
 
 **1. Wash tonight pile against your own work.** Open
-[Dig](https://jan-a-krzywda.github.io/arxave/). Take preset closest to your
+[Dig](https://arxave.com/). Take preset closest to your
 tunnel, or type your own touchstone — one thought per row, plain sentence, not
 keyword. Drop few paper you already care about in **core samples** (DOI, arXiv
 ID, or upload `.bib`). Hit dig. Ranking is live: move weight, ranking move under
 your hand. No reload, no re-fetch, no key.
 
-**2. Stop visiting.** Go [Haul](https://jan-a-krzywda.github.io/arxave/haul/),
+**2. Stop visiting.** Go [Haul](https://arxave.com/haul/),
 take feed for your seam, paste in reader. Every morning the night pay dirt land
 on desk. Count beside each seam is tonight haul, split by band, so you see how
 thin a thin morning look *before* you subscribe.
 
 **3. Find rock you half-remember.** Go
-[Stockpile](https://jan-a-krzywda.github.io/arxave/stockpile/). Every night ever
+[Stockpile](https://arxave.com/stockpile/). Every night ever
 run, every seam, kept *and* thrown back. Open a row and whole card come back —
 same figure, same finding, same caveat it shipped with in March.
 
@@ -120,7 +120,7 @@ this release.
 
 ### Way 1 — browser sieve (fastest look)
 
-Go [here](https://jan-a-krzywda.github.io/arxave/). Type touchstone. Hit dig.
+Go [here](https://arxave.com/). Type touchstone. Hit dig.
 
 Page pull today arXiv, embed abstract and your touchstone with **the pick** —
 `allenai/specter2_base`, trained on citation graph, so paper that cite each other
@@ -144,6 +144,8 @@ was a browser form that wrote them for you. It fell behind the CLI and got
 pulled; better no form than a form that lie.)
 
 ### Way 2 — CLI mine (full shaft)
+
+What it is and how it differ: [The other shaft](#the-other-shaft--cli).
 
 ```bash
 uv venv --python 3.11
@@ -180,7 +182,66 @@ resume clean. Re-run stage — it enrich row, not duplicate row.
 
 ---
 
-## How it work inside
+## How it work inside — the site
+
+**No LLM in the ranking.** Grade is weighted mean of cosine. That is all.
+
+```
+haul  ->  cut  ->  centre  ->  blend  ->  gate  ->  read  ->  ship
+arXiv     embed   subtract   weighted   robust    Gemini   feed +
+pile      each    the cone   mean of    z, band   read     archive
+          abstract axis      cosines    it        in full
+```
+
+- **haul** — night pile out of arXiv, through relay (browser cannot fetch arXiv,
+  no CORS header). Publishing day, not calendar day — arXiv not announce weekend,
+  so calendar lookback return nothing every Monday.
+- **cut** — every abstract through **the pick**: `allenai/specter2_base`, 768-dim,
+  trained on citation graph. Your touchstone go through same model. Vector cached
+  and shared, keyed by model + dim + hash of text. Nightly job warm cache first,
+  so haul is download, not compute.
+- **centre** — **the step that make cosine mean anything.** SPECTER2 vector sit in
+  narrow cone: measured over 1241 vector, mean of unit vector has norm **0.913**.
+  Nine tenth of every vector point same way as every other, carry nothing about
+  paper. Subtract fixed centroid, renormalise. Pairwise cosine spread go 0.137 ->
+  **0.685**. Not re-ranking — ordering barely move. What change is whether
+  anything downstream can *read* ordering.
+- **blend** — `grade = Σ wᵣ·cos(paper, rowᵣ) / Σ wᵣ`. Weighted mean over your
+  touchstone and core sample. Whole ranking function.
+- **gate** — grade not comparable between night, so cut on robust z:
+  `z = (grade − median) / (1.4826·MAD)`. Median and MAD, not mean and sigma, so
+  one runaway paper cannot move the bar it get measured against. Ship line under
+  pay-dirt line, and band say which — feed that lower unlabelled bar teach people
+  stop opening it; labelled one not.
+- **read** — only place LLM appear, and it appear **after** ranking. Gemini read
+  the handful that clear gate, in full (arXiv HTML, not abstract), write six card
+  field. Cannot promote anything. Never see paper the cosine already drop.
+- **ship** — feed per seam, row per paper in archive.
+
+Dig also **group** the night: N×N cosine matrix, average-linkage dendrogram, cut
+at 0.46. Average not single linkage — single chain, one bridging paper join two
+topic. Switch took one 89-stone night from 4 wagon holding 26 stone to 11 wagon
+holding 63.
+
+**Pyrite defence.** Nothing about paper except its text reach the grade. Not
+venue, not author list, not institution, not how many people posting about it,
+not how confident abstract sound. No citation count, no popularity term anywhere
+in browser assay. Fool gold cost double — your evening, plus real nugget you not
+pick up because hand full — and every one of those excluded signal is how pyrite
+get picked up.
+
+Honest cost: night with nothing for your seam come out dark, feed come out short.
+That is truth about the night.
+
+Full arithmetic, every measured constant, every date:
+**[Details](https://arxave.com/details/)**.
+
+---
+
+## The other shaft — CLI
+
+Different machine. LLM read and judge *every* paper, cost real money per night,
+buy written brief instead of ranking you tune live. Run by hand.
 
 ```
 scout  ->  summarize  ->  filter  ->  refs  ->  connect  ->  rank  ->  brief
@@ -204,11 +265,9 @@ scouted paper, so it eat most of cost. `heavy` write the brief, run only for top
 N. Configure each one separate — provider, model, base URL, key env var. Can
 point at different provider.
 
-**Scout window count publishing day, not calendar day.** arXiv not announce on
-weekend. Calendar lookback return nothing every Monday. Bad. So count real
-announce day.
+Scout window count publishing day here too, same reason as the site.
 
-**Pyrite defence.** Ranking never score a stone on shine alone. Three signal
+**Pyrite defence, CLI version.** Ranking never score a stone on shine alone. Three signal
 only (`rank.py`): LLM judgment against *your* seam, citation centrality inside
 *your* bag, and crowd attention — and crowd attention is saturating, so a paper
 everyone shout about cannot outrank one that actually touch your work. Venue,
