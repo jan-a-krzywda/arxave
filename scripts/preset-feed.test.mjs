@@ -12,13 +12,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
   archiveEntry, archiveIndex, bandOf, bestRow, center, CORPUS_CENTROID, cosine, 
-  grade, itemDate, mergeMonth, newestOf, renderFeed, rowLabel, selectItems,
-  tallyOf, xmlEscape,
+  figureMirror, grade, itemDate, mergeMonth, newestOf, renderFeed, rowLabel,
+  selectItems, tallyOf, xmlEscape,
 } from './preset-feed.mjs';
 
 /* Orthonormal basis vectors make the cosines exactly 1, 0 or -1, so every
@@ -622,4 +623,58 @@ test('archive index gathers months, reverses them, counts by band', () => {
   assert.equal(idx.months[0].days[0].date, '2026-08-20');
   assert.equal(idx.months[0].days[0].feeds['sq1'].items, 2);
   assert.equal(idx.months[0].days[0].feeds['sq1'].paydirt, 1);
+});
+
+test('the archive keeps the maths typeset beside the flat field', () => {
+  // Both renderings of the same sentence: the flat one every consumer has read
+  // since the archive existed, and the MathML the stockpile prints. A record
+  // that carried only the second would blank a page that has not been updated.
+  const [entry] = archiveEntry([{
+    arxivId: '1', title: 't', link: 'l', authors: 'a',
+    grade: 0.5, z: null, band: 'look', matched: null, published: '2026-08-28',
+    abstract: 'x',
+    enrichment: {
+      kind: 'theory', result: 'Needs $C_{\\min}(K,S,\\epsilon)$ gates.',
+      question: '', prior: '', limits: 'Below $\\delta_{GV}$.', tools: [],
+    },
+  }]);
+  assert.equal(entry.result, 'Needs C_min(K,S,ε) gates.');
+  assert.match(entry.html.result, /^Needs <math/);
+  assert.match(entry.html.limits, /<msub><mi>δ<\/mi>/);
+  assert.ok(!('question' in entry.html), 'a field with no maths grows nothing');
+});
+
+test('a brief with no maths in it grows no second copy of itself', () => {
+  const [entry] = archiveEntry([{
+    arxivId: '1', title: 't', link: 'l', authors: 'a',
+    grade: 0.5, z: null, band: 'look', matched: null, published: '2026-08-28',
+    abstract: 'x',
+    enrichment: { kind: '', result: 'Was 1.1 ms. Now 3.4 ms.', question: '', prior: '', limits: '', tools: [] },
+  }]);
+  assert.ok(!('html' in entry));
+});
+
+const FIGS = path.join(os.tmpdir(), 'arxave-figure-test');
+
+test('a mirrored figure is named for the paper and the figure', async () => {
+  // The name is the idempotence: re-running a day overwrites the same file
+  // rather than growing a second copy of the same picture.
+  const written = [];
+  const mirror = figureMirror({
+    dir: FIGS, site: 'https://arxave.com/',
+    write: async (file, body) => { written.push([file, body]); },
+  });
+  const url = await mirror('2608.26272', { id: 'S0.F1', svg: '<svg viewBox="0 0 1 1"/>' });
+  assert.equal(url, 'https://arxave.com/figures/2608.26272-S0.F1.svg');
+  assert.equal(written[0][0], path.join(FIGS, '2608.26272-S0.F1.svg'));
+  assert.match(written[0][1], /xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+});
+
+test('an id that looks like a path cannot become one', () => {
+  return figureMirror({
+    dir: FIGS, site: 'https://arxave.com/',
+    write: async (file) => {
+      assert.equal(file, path.join(FIGS, '-etc-passwd-S1.F1.svg'));
+    },
+  })('../etc/passwd', { id: 'S1.F1', svg: '<svg/>' });
 });

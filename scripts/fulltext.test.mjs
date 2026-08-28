@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 
 import {
   BUDGET, clip, decodeEntities, dropBackMatter, extractArticle, fetchFullText,
-  parseCodeLinks, parseFigures, stripMath, toText,
+  parseCodeLinks, parseFigures, standaloneSvg, stripMath, toText,
 } from './fulltext.mjs';
 
 const BASE = 'https://arxiv.org/html/2608.23460v1';
@@ -164,4 +164,55 @@ test('a conversion-failure stub is treated as absent, not briefed as the paper',
 test('a network failure is null, not a thrown feed', async () => {
   const boom = async () => { throw new Error('ETIMEDOUT'); };
   assert.equal(await fetchFullText('1234.5678', { fetchImpl: boom }), null);
+});
+
+test('a TikZ picture drawn into the page is a figure, not a miss', () => {
+  // 2608.26272's only figure, in LaTeXML's third spelling: no <img> and no
+  // <object>, just the drawing, inline. Reading only the first two is why
+  // every diagram in a theory paper went missing.
+  const html = '<figure id="S0.F1" class="ltx_figure">' +
+    '<svg id="S0.F1.pic1" class="ltx_picture" viewBox="0 0 182 202">' +
+    '<g><path d="M 0 0 L 158 0"></path></g></svg>' +
+    '<figcaption>Figure 1: The overhead, against $K$.</figcaption></figure>';
+  const [fig] = parseFigures(html, BASE);
+  assert.equal(fig.id, 'S0.F1');
+  assert.equal(fig.src, '');
+  assert.ok(fig.svg.startsWith('<svg') && fig.svg.endsWith('</svg>'));
+  assert.equal(fig.caption, 'Figure 1: The overhead, against $K$.');
+});
+
+test('a hotlinkable figure is never mirrored', () => {
+  // Both spellings in one block: the file wins, because a URL costs nothing to
+  // carry and a copy costs a file in the repository.
+  const html = '<figure id="S2.F1"><img src="x1.png"/><svg><g/></svg></figure>';
+  const [fig] = parseFigures(html, BASE);
+  assert.equal(fig.src, 'https://arxiv.org/html/x1.png');
+  assert.equal(fig.svg, '');
+});
+
+test('a nested picture is taken whole', () => {
+  // The same trap the figure scan has: a non-greedy match to the first </svg>
+  // hands back markup that no longer closes.
+  const block = '<figure id="S1.F1"><svg id="a"><svg id="b"><g/></svg><g/></svg></figure>';
+  const [fig] = parseFigures(block, BASE);
+  assert.equal(fig.svg, '<svg id="a"><svg id="b"><g/></svg><g/></svg>');
+});
+
+test('a mirrored picture declares the three namespaces it needs', () => {
+  // In a .svg file every one of these is parsed as XML: an element with no
+  // namespace is not SVG, not XHTML and not MathML, and the file renders as an
+  // empty box.
+  const svg = '<svg viewBox="0 0 10 10"><foreignObject><span class="ltx_p">' +
+    '<math><mi>K</mi></math></span></foreignObject></svg>';
+  const out = standaloneSvg(svg);
+  assert.match(out, /^<\?xml version="1\.0" encoding="UTF-8"\?>\n<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+  assert.match(out, /<span xmlns="http:\/\/www\.w3\.org\/1999\/xhtml" class="ltx_p">/);
+  assert.match(out, /<math xmlns="http:\/\/www\.w3\.org\/1998\/Math\/MathML">/);
+});
+
+test('namespaces a converter already wrote are not doubled', () => {
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg"><math xmlns="http://www.w3.org/1998/Math/MathML"/></svg>';
+  const out = standaloneSvg(svg);
+  assert.equal((out.match(/xmlns="http:\/\/www\.w3\.org\/2000\/svg"/g) || []).length, 1);
+  assert.equal((out.match(/xmlns="http:\/\/www\.w3\.org\/1998\/Math\/MathML"/g) || []).length, 1);
 });

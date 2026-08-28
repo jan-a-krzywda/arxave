@@ -27,6 +27,24 @@
                 exclude-result-prefixes="atom arxave">
   <xsl:output method="html" encoding="UTF-8" indent="yes"/>
 
+  <!-- A FIELD, TYPESET WHERE IT CAN BE. Every brief field arrives twice: the
+       flat text every consumer has always read, and — when the field held any
+       maths — the same sentence as MathML in its own element. The MathML is a
+       tree in this document, not escaped markup, so it is copied into the page
+       whole and the browser lays it out with no script and no stylesheet. That
+       is the whole reason it is MathML and not KaTeX: this page runs nothing.
+
+       `copy-of` and not `value-of`: value-of would flatten the formula to the
+       run of characters inside its tags, which is how `C_min` becomes `Cmin`. -->
+  <xsl:template name="field">
+    <xsl:param name="flat"/>
+    <xsl:param name="math"/>
+    <xsl:choose>
+      <xsl:when test="$math"><xsl:copy-of select="$math/node()"/></xsl:when>
+      <xsl:otherwise><xsl:value-of select="$flat"/></xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
   <xsl:template match="/rss">
     <html lang="en">
       <head>
@@ -252,6 +270,13 @@
             margin: 0.7rem auto 0; max-width: 42rem;
             text-align: center; font-size: 1rem; line-height: 1.55;
           }
+          /* A formula sits inside a sentence, so it takes the sentence's size
+             and face rather than the browser's own serif default for maths. A
+             long one scrolls inside itself instead of widening the card. */
+          .body math {
+            font-size: inherit; font-family: inherit;
+            max-width: 100%; overflow-x: auto;
+          }
           /* The chip line: how sure the assay was, and what sort of paper it
              is. No read/skim flag — the band already says how much to trust the
              card, and a second verdict on top of it was one label too many. */
@@ -390,7 +415,12 @@
                 <!-- The finding: centred, on its own line, and the last thing
                      visible before the drawers. -->
                 <xsl:if test="arxave:result">
-                  <p class="result"><xsl:value-of select="arxave:result"/></p>
+                  <p class="result">
+                    <xsl:call-template name="field">
+                      <xsl:with-param name="flat" select="arxave:result"/>
+                      <xsl:with-param name="math" select="arxave:resultmath"/>
+                    </xsl:call-template>
+                  </p>
                 </xsl:if>
                 <p class="grade">
                   <strong>Grade <xsl:value-of select="arxave:grade"/></strong>
@@ -426,7 +456,12 @@
                             <xsl:attribute name="loading">lazy</xsl:attribute>
                           </img>
                           <xsl:if test="arxave:figurecaption">
-                            <figcaption class="figure-caption"><xsl:value-of select="arxave:figurecaption"/></figcaption>
+                            <figcaption class="figure-caption">
+                              <xsl:call-template name="field">
+                                <xsl:with-param name="flat" select="arxave:figurecaption"/>
+                                <xsl:with-param name="math" select="arxave:figurecaptionmath"/>
+                              </xsl:call-template>
+                            </figcaption>
                           </xsl:if>
                         </figure>
                       </div>
@@ -435,7 +470,12 @@
                   <xsl:if test="arxave:question">
                     <details class="fold">
                       <summary>Asks</summary>
-                      <p class="fold-body"><xsl:value-of select="arxave:question"/></p>
+                      <p class="fold-body">
+                        <xsl:call-template name="field">
+                          <xsl:with-param name="flat" select="arxave:question"/>
+                          <xsl:with-param name="math" select="arxave:questionmath"/>
+                        </xsl:call-template>
+                      </p>
                     </details>
                   </xsl:if>
                   <!-- `Before` is the field the whole full-text tier exists for:
@@ -446,14 +486,24 @@
                   <xsl:if test="arxave:prior">
                     <details class="fold">
                       <summary>Before</summary>
-                      <p class="fold-body"><xsl:value-of select="arxave:prior"/></p>
+                      <p class="fold-body">
+                        <xsl:call-template name="field">
+                          <xsl:with-param name="flat" select="arxave:prior"/>
+                          <xsl:with-param name="math" select="arxave:priormath"/>
+                        </xsl:call-template>
+                      </p>
                     </details>
                   </xsl:if>
                   <!-- The caveat is the field that makes the rest credible. -->
                   <xsl:if test="arxave:limits">
                     <details class="fold">
                       <summary>But</summary>
-                      <p class="fold-body but"><xsl:value-of select="arxave:limits"/></p>
+                      <p class="fold-body but">
+                        <xsl:call-template name="field">
+                          <xsl:with-param name="flat" select="arxave:limits"/>
+                          <xsl:with-param name="math" select="arxave:limitsmath"/>
+                        </xsl:call-template>
+                      </p>
                     </details>
                   </xsl:if>
                   <xsl:if test="arxave:tools or arxave:code">

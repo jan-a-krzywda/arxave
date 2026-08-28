@@ -26,6 +26,7 @@
  * Flags:
  *   --presets   directory of preset claims (required)
  *   --out       directory to write <slug>.xml into (required)
+ *   --figures   directory for mirrored figures (default: <out>/../figures)
  *   --endpoint  dig-cache URL (default: the project's deployed function)
  *   --top       how many papers per feed (default 8)
  *   --embed     embed URL (default: the project's deployed function)
@@ -41,7 +42,9 @@ import {
   loadPresets, resolveEndpoint, sha256Hex,
 } from './warm-dig.mjs';
 import { enrichItems } from './enrich.mjs';
+import { standaloneSvg } from './fulltext.mjs';
 import { deMath } from './demath.mjs';
+import { mathHtml } from './mathml.mjs';
 
 const READ_CHUNK = 500;
 const BATCH = 64;    // under embed's MAX_TEXTS (96, measured), same as the warmer
@@ -296,6 +299,19 @@ export function readable(text) {
  */
 export function readableItem(it) {
   const e = it.enrichment;
+  /* Both renderings of the same field, from the same source string: the flat
+     one, which every consumer gets, and the MathML one, which is null unless
+     the field actually held TeX. `_html` is already escaped — it is markup —
+     so a consumer that takes it must not escape it again, and one that ignores
+     it is exactly where this file was before MathML existed. */
+  const both = (text) => [readable(text), mathHtml(text, { flatten: readable })];
+  const html = {};
+  const flat = {};
+  for (const key of ['result', 'question', 'prior', 'limits', 'figure_gloss', 'figure_caption']) {
+    const [text, markup] = both(e?.[key]);
+    flat[key] = text;
+    if (markup) html[key + '_html'] = markup;
+  }
   return {
     ...it,
     title: readable(it.title),
@@ -303,15 +319,36 @@ export function readableItem(it) {
     abstract: readable(it.abstract),
     enrichment: e ? {
       ...e,
-      result: readable(e.result),
-      question: readable(e.question),
-      prior: readable(e.prior),
-      limits: readable(e.limits),
-      figure_gloss: readable(e.figure_gloss),
-      figure_caption: readable(e.figure_caption),
+      ...flat,
+      ...html,
       tools: (e.tools || []).map(readable),
     } : e,
   };
+}
+
+/**
+ * A field as it goes into a card: the rendered maths when there is any, the
+ * escaped flat text when there is not.
+ *
+ * The two must never both be emitted for one field — a card that prints the
+ * formula and then the flattened formula after it is worse than either.
+ */
+export function fieldHtml(e, key) {
+  return e?.[key + '_html'] || xmlEscape(e?.[key] ?? '');
+}
+
+/**
+ * The typeset fields as arxave:*math elements, for the stylesheet.
+ *
+ * MathML is XML and this is an XML document, so the markup goes in unescaped
+ * and stays a tree the XSL can copy. temml is asked for XML output for exactly
+ * this reason — a stray unclosed tag here would not be a bad card, it would be
+ * a feed no parser accepts.
+ */
+export function mathElements(e) {
+  return ['result', 'question', 'prior', 'limits']
+    .filter((key) => e?.[key + '_html'])
+    .map((key) => `      <arxave:${key}math>${e[key + '_html']}</arxave:${key}math>`);
 }
 
 /** XML text nodes. Ampersand first, or the escapes escape each other. */
@@ -476,8 +513,24 @@ export function archiveEntry(items) {
          nothing downstream renders them differently. */
       caption: e?.figure_gloss || e?.figure_caption || '',
       abstract: it.abstract || '',
+      /* The rendered maths, under `html`, and only for the fields that had
+         any. A record whose brief was plain prose grows nothing at all, and a
+         page reading the archive falls back to the flat field it always read —
+         which is why this is a side car and not a replacement. */
+      ...mathFields(e),
     };
   });
+}
+
+/** The `_html` renderings an entry actually has, or nothing. */
+function mathFields(e) {
+  const html = {};
+  for (const key of ['result', 'question', 'prior', 'limits']) {
+    if (e?.[key + '_html']) html[key] = e[key + '_html'];
+  }
+  const caption = e?.figure_gloss ? e.figure_gloss_html : e?.figure_caption_html;
+  if (caption) html.caption = caption;
+  return Object.keys(html).length ? { html } : {};
 }
 
 /**
@@ -706,7 +759,7 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
     const bandChip = `<strong class="band band-${band}">${xmlEscape(BAND_LABEL[band])}</strong>`;
     const said = e
       ? (e.kind ? xmlEscape(e.kind) : '') +
-        (e.result ? `${e.kind ? ' — ' : ''}${xmlEscape(e.result)}` : '')
+        (e.result ? `${e.kind ? ' — ' : ''}${fieldHtml(e, 'result')}` : '')
       : '';
     const decision = `<p class="verdict">${bandChip}${said ? ' ' + said : ''}</p>`;
     const provenance = [
@@ -720,13 +773,18 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
        fewer drawer. */
     const fold = (label, inner) =>
       inner ? `<details class="fold"><summary>${label}</summary>${inner}</details>` : '';
-    /* The figure is hotlinked, never copied: the image lives on arxiv.org and
-       this repository stays text. Wrapped in a link to the paper so a tap on it
+    /* The figure is hotlinked wherever arxiv.org has a file to link, and
+       mirrored as SVG — still text — only for a picture drawn into the page
+       that has no URL at all. Wrapped in a link to the paper so a tap on it
        goes somewhere, and given a caption as alt text so a reader that blocks
        remote images still says what was there. The gloss is preferred over the
        author's own caption — see enrich.mjs — and the caption is the fallback
        for a record written before the gloss existed. */
     const caption = e?.figure_gloss || e?.figure_caption || '';
+    const captionHtml = e?.figure_gloss
+      ? fieldHtml(e, 'figure_gloss') : fieldHtml(e, 'figure_caption');
+    const captionMath = e?.figure_gloss
+      ? e.figure_gloss_html : e?.figure_caption_html;
     const body =
       decision +
       `<p class="grade">${provenance}</p>` +
@@ -735,12 +793,12 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
             `<p class="figure"><a href="${xmlEscape(it.link)}">` +
             `<img src="${xmlEscape(e.figure_url)}" alt="${xmlEscape(caption || 'Figure')}"/>` +
             `</a></p>` +
-            (caption ? `<p class="figure-caption">${xmlEscape(caption)}</p>` : ''))
+            (caption ? `<p class="figure-caption">${captionHtml}</p>` : ''))
         : '') +
       (e ? (
-        fold('Asks', e.question ? `<p>${xmlEscape(e.question)}</p>` : '') +
-        fold('Before', e.prior ? `<p>${xmlEscape(e.prior)}</p>` : '') +
-        fold('But', e.limits ? `<p>${xmlEscape(e.limits)}</p>` : '') +
+        fold('Asks', e.question ? `<p>${fieldHtml(e, 'question')}</p>` : '') +
+        fold('Before', e.prior ? `<p>${fieldHtml(e, 'prior')}</p>` : '') +
+        fold('But', e.limits ? `<p>${fieldHtml(e, 'limits')}</p>` : '') +
         fold('Tools',
           (e.tools?.length ? `<p>${xmlEscape(e.tools.join(' · '))}</p>` : '') +
           (e.code ? `<p><strong>Code.</strong> <a href="${xmlEscape(e.code)}">${xmlEscape(e.code)}</a></p>` : ''))
@@ -763,10 +821,21 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
       e?.question ? `      <arxave:question>${xmlEscape(e.question)}</arxave:question>` : '',
       e?.prior ? `      <arxave:prior>${xmlEscape(e.prior)}</arxave:prior>` : '',
       e?.limits ? `      <arxave:limits>${xmlEscape(e.limits)}</arxave:limits>` : '',
+      /* The same four fields again, typeset — as real elements this time, not
+         as escaped markup. <description> already carries the whole card in
+         escaped HTML, which is what a feed reader wants and what the XSL
+         explicitly cannot undo (no browser implements disable-output-escaping).
+         So the stylesheet gets the maths the only way it can use it: MathML in
+         its own namespace, sitting in the XML, copied into the page whole. A
+         reader that does not know these elements skips them, as it always
+         has. */
+      ...mathElements(e), 
       e?.code ? `      <arxave:code>${xmlEscape(e.code)}</arxave:code>` : '',
       e?.figure_url ? `      <arxave:figure>${xmlEscape(e.figure_url)}</arxave:figure>` : '',
       caption
         ? `      <arxave:figurecaption>${xmlEscape(caption)}</arxave:figurecaption>` : '',
+      captionMath
+        ? `      <arxave:figurecaptionmath>${captionMath}</arxave:figurecaptionmath>` : '',
       e?.tools?.length
         ? `      <arxave:tools>${xmlEscape(e.tools.join(' · '))}</arxave:tools>` : '',
       `      <arxave:abstract>${xmlEscape(it.abstract)}</arxave:abstract>`,
@@ -787,6 +856,39 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
   return lines.join('\n');
 }
 
+/**
+ * Where a mirrored figure is written, and what URL it gets.
+ *
+ * THE REPOSITORY STAYS TEXT, and an SVG is text — this is not the raster cache
+ * the hotlink exists to avoid. A TikZ diagram has no URL on arxiv.org because
+ * it was never a file there (see fulltext.mjs), so a card can either keep a
+ * copy or show nothing, and for a theory paper "nothing" was every figure it
+ * had. Measured on 2608.26272: 9 KB for the one the model picked.
+ *
+ * ONE FILE PER FIGURE, NAMED FOR IT. The id is in the name, so re-running a day
+ * overwrites the same file rather than growing a second copy, and a figure that
+ * stops being picked leaves a file nobody links — harmless, and traceable back
+ * to the paper it came from by its own name.
+ */
+export function figureMirror({ dir, site, write = fs.writeFile }) {
+  return async (arxivId, fig) => {
+    /* The id is LaTeXML's and the arXiv id is arXiv's, and neither is a path.
+       Anything outside the set below becomes a dash rather than a directory
+       separator, a dotfile or a query string. */
+    const name = `${arxivId}-${fig.id}`.replace(/[^\w.-]+/g, '-') + '.svg';
+    try {
+      await fs.mkdir(dir, { recursive: true });
+      await write(path.join(dir, name), standaloneSvg(fig.svg));
+    } catch (err) {
+      /* A figure that could not be written is a card without a picture, not a
+         run without a feed. */
+      console.warn(`preset-feed: figure ${name} — ${err.message}`);
+      return '';
+    }
+    return new URL(`figures/${name}`, site).href;
+  };
+}
+
 async function main() {
   const presetDir = arg('presets');
   const outDir = arg('out');
@@ -795,6 +897,9 @@ async function main() {
     process.exit(2);
   }
   const site = arg('site') || process.env.ARXAVE_SITE || DEFAULT_SITE;
+  /* Beside the feeds by default, because the site root is their parent and the
+     figure URLs are absolute against it either way. */
+  const figuresDir = arg('figures') || path.join(outDir, '..', 'figures');
   const top = parseInt(arg('top', '8'), 10) || 8;
   let endpoint;
   let embedUrl;
@@ -809,6 +914,7 @@ async function main() {
   const { bySlug, failures } = await loadPresets(presetDir);
   if (failures.length) console.warn('preset-feed: ' + failures.join(' | '));
   await fs.mkdir(outDir, { recursive: true });
+  const mirror = figureMirror({ dir: figuresDir, site });
 
   const builtOn = new Date().toISOString().slice(0, 10);
 
@@ -904,6 +1010,7 @@ async function main() {
 
     const enriched = await enrichItems(ranked, {
       cachePath: path.join(outDir, 'enrichment.json'),
+      mirrorFigure: mirror,
     });
 
     const xml = renderFeed({ preset, slug, items: enriched, site, builtOn });
