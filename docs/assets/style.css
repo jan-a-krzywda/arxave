@@ -262,6 +262,83 @@ textarea#topics:focus {
   color: var(--text-dim);
 }
 
+/* ── Cave walls: pixel art in the page gutters ─────────────────
+   Scroll down a page like descending a mine shaft. Absolutely positioned
+   against .page-content (see cave.scss) so a strip's height tracks the whole
+   page, not just the viewport. Same sprite language as assets/arxave-logo.svg:
+   8px blocks, crisp edges, no anti-aliasing.
+
+   Every room loads this file, and every room gets walls — but not the same
+   ones. Dig is raw rock with ore still in it, Stockpile is that rock cut and
+   stacked in bins, Haul is the stone laid out on market counters under price
+   tags. The rules are shared; the tile is a variable, so a room says which
+   wall it is in one line and nothing else has to change. */
+.cave-wall {
+  /* Default tile: raw cave rock. A room overrides this and inherits
+     everything else. */
+  --cave-wall-art: url('cave-wall.svg');
+
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  /* A conservative estimate of the gutter outside the content column —
+     deliberately undershoots (minima's own max-width shifts at its
+     800px breakpoint, and the dev preview's shell is wider still) so
+     this never eats into the text. Shrinks to 0 on narrower viewports;
+     background-position keeps the inner tip (near the content) in view
+     and crops the outer bulk first as it shrinks. Text still wins if
+     the estimate is ever wrong: page content sits a layer above. */
+  width: clamp(0px, calc((100vw - 1220px) / 2), 180px);
+  z-index: 0;
+  pointer-events: none;
+  background-color: var(--cave-air);
+  background-image: var(--cave-wall-art);
+  background-repeat: repeat-y;
+  background-position: right top;
+  background-size: 200px 320px;
+  image-rendering: pixelated;
+}
+/* Below this the gutter is a sliver, and a 20px strip of rock reads as
+   noise rather than a wall — better none at all. */
+@media (max-width: 1340px) {
+  .cave-wall {
+    display: none;
+  }
+}
+
+.cave-wall-left {
+  left: 0;
+}
+.cave-wall-right {
+  right: 0;
+  /* Mirrored, so the two gutters are one cave rather than two copies of the
+     same wall facing the same way. */
+  transform: scaleX(-1);
+}
+
+/* Stockpile: the same stone, cut square and stacked in bins. Sorted, because
+   this is the room where everything is already filed. */
+.cave-wall-stockpile {
+  --cave-wall-art: url('stockpile-wall.svg');
+}
+
+/* Haul: market stalls. Awnings, stone laid out on counters, price tags, a
+   scale. This is the room where the night's stone is offered. */
+.cave-wall-haul {
+  --cave-wall-art: url('haul-wall.svg');
+}
+
+/* The walls are decoration and always lose to text. They are positioned with
+   z-index 0, and an unpositioned sibling would paint *under* them if the gutter
+   estimate ever came out too wide — so every sibling that is not a wall gets
+   lifted one layer. `:not(.cave-wall)` matters: without it this rule would
+   re-position the walls themselves and drop them into the flow. */
+.post-content > *:not(.cave-wall),
+#app {
+  position: relative;
+  z-index: 1;
+}
+
 /* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 600px) {
   .role-grid,

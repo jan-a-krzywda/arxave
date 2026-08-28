@@ -82,6 +82,19 @@ body {
   background: var(--rock-deep);
   border-top: none;
   border-bottom: 1px solid var(--rock-edge);
+  /* minima sizes its header around a single floated row. This one is two rows —
+     wordmark, then the room bar — so the fixed min-height only gets in the way. */
+  min-height: 0;
+  padding: 0.5rem 0 0;
+}
+
+/* Row one: the wordmark, and the GitHub ask pushed to the far side so it is
+   nowhere near the four rooms in the middle of row two. */
+.site-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .site-title,
@@ -90,38 +103,127 @@ body {
   color: var(--text);
   font-weight: 700;
   letter-spacing: 0.02em;
+  /* minima floats the title left and pads it for the floated nav beside it.
+     Neither is true here. */
+  float: none;
+  margin: 0;
+  padding-right: 0;
 }
 
-.site-nav,
-.site-nav .page-link,
-.site-nav .page-link:visited {
-  color: var(--text-dim);
-}
-.site-nav .page-link:hover {
-  color: var(--lamp);
-  text-decoration: none;
-}
-/* The GitHub link sits last in the nav and carries a star outline, because the
-   ask is the star and not the visit. Inline-flex so mark, word and star stay on
-   one line at every width; the mobile menu stacks it like any other page-link. */
-.site-nav .page-link-gh {
+.gh-link,
+.gh-link:visited {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex: none;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  line-height: 1;
 }
-.site-nav .page-link-gh .gh-star {
+.gh-link:hover {
+  color: var(--lamp);
+  text-decoration: none;
+}
+.gh-link .gh-star {
   color: var(--lamp);
 }
-.site-nav .page-link-gh:hover .gh-star {
+.gh-link:hover .gh-star {
   fill: var(--lamp);
 }
-.site-nav .menu-icon > svg path {
-  fill: var(--text-dim);
+
+/* ── The room bar ─────────────────────────────────────────────────
+   Four rooms, centred, every one visible at once. The site has no
+   landing page that lists what is inside it, so this bar is that
+   list: land anywhere, see all four doors, pick one. Each door is a
+   pixel sprite over its cave word over the plain-English gloss,
+   because "Stockpile" is the right name for the thing and still tells
+   a stranger nothing on its own. */
+.cave-nav {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.35rem 0 0.15rem;
 }
+
+.cave-nav .room,
+.cave-nav .room:visited {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 84px;
+  padding: 0.45rem 0.6rem 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-dim);
+  line-height: 1.2;
+  text-align: center;
+  transition: color 0.12s, background 0.12s, border-color 0.12s;
+}
+.cave-nav .room:hover {
+  color: var(--lamp);
+  background: var(--rock);
+  border-color: var(--rock-edge);
+  text-decoration: none;
+}
+
+/* The room you are standing in. Lit, not merely bolded: the marker has to
+   survive being read at a glance from across the bar. */
+.cave-nav .room.is-here,
+.cave-nav .room.is-here:visited {
+  color: var(--text);
+  background: var(--rock);
+  border-color: var(--rock-lit);
+}
+.cave-nav .room.is-here .room-name {
+  color: var(--gold);
+}
+
+.cave-nav .room-icon {
+  display: block;
+  image-rendering: pixelated;
+}
+
+.cave-nav .room-name {
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* The translation, and it stays quiet: it is here for the first visit, and
+   after that the sprite and the cave word do the work. */
+.cave-nav .room-gloss {
+  font-size: 0.68rem;
+  color: var(--text-faint);
+  letter-spacing: 0.03em;
+}
+
 @media screen and (max-width: 600px) {
-  .site-nav {
-    background: var(--rock);
-    border-color: var(--rock-edge);
+  .site-header {
+    padding-top: 0.35rem;
+  }
+  .gh-link .gh-text {
+    /* The mark and the star already say it, and the row is tight. */
+    display: none;
+  }
+  .cave-nav {
+    gap: 0;
+  }
+  .cave-nav .room {
+    min-width: 0;
+    flex: 1 1 0;
+    padding: 0.4rem 0.15rem 0.35rem;
+  }
+  .cave-nav .room-name {
+    font-size: 0.78rem;
+  }
+  /* Four glosses do not fit one phone-width row without wrapping into
+     something no one reads. The sprite and the word survive; the gloss is the
+     part a returning visitor has already stopped needing. */
+  .cave-nav .room-gloss {
+    display: none;
   }
 }
 

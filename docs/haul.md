@@ -2,7 +2,12 @@
 layout: page
 title: Haul
 permalink: /haul/
+gloss: today
+nav_icon: haul
 ---
+
+<div class="cave-wall cave-wall-left cave-wall-haul" aria-hidden="true"></div>
+<div class="cave-wall cave-wall-right cave-wall-haul" aria-hidden="true"></div>
 
 <div class="status-banner">
   <strong>Tonight's haul, split by seam.</strong> Point a reader at one and it
