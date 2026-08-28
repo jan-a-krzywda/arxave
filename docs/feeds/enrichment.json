@@ -2372,14 +2372,15 @@
  "2608.27430": {
   "fields": {
    "kind": "new method",
-   "result": "Extracting shared factors from containment and complementary-polarity relations in Boolean expressions reduces the maximum control count and qubit count of reversible circuits before mapping, never increasing cost measures at the representation level.",
-   "question": "Can exploiting algebraic structure beyond classical logic minimization reduce the quantum synthesis cost of Boolean specifications?",
-   "prior": "Logic minimization followed by standard mapping to reversible circuits.",
-   "limits": "Requires uncomputing auxiliary lines during translation to executable circuits, which offsets part of representation-level gains.",
+   "result": "Extracting containment and complementary-polarity relationships from minimized Boolean expressions reduces circuit control counts and qubit requirements. Transformation never increases representation-level cost measures.",
+   "question": "Can factorizing minimized Boolean expressions reduce executable quantum circuit costs compared to direct mapping?",
+   "prior": "",
+   "limits": "Translation to executable circuits requires uncomputing auxiliary lines, which returns part of the resource savings.",
    "tools": [
     "Factorized Boolean representations",
+    "Algebraic factor extraction",
     "Auxiliary line uncomputation",
-    "Quantum circuit synthesis"
+    "Circuit-level optimizers"
    ],
    "figure": "",
    "figure_url": "",
@@ -2388,7 +2389,7 @@
    "code": ""
   },
   "seen": "2026-08-28",
-  "model": "gemini-3.7-flash",
+  "model": "gemini-3.6-flash",
   "shape": 4,
   "depth": "abstract"
  },
@@ -2529,6 +2530,149 @@
    "figure_url": "https://arxiv.org/html/2608.26702v1/fig20.jpg",
    "figure_caption": "Figure 3: Topological protection of perfect CAR. (a) Map of $\\eta$ versus $\\epsilon_{0}$ and $t^{\\prime}$ at zero bias. The phase winding of the electron reflection (ER) amplitude along the indicated closed loop yields $W=1$ , topologically guaranteeing a zero of ER (perfect CAR) within the enclosed region. (b) Trajectory of the perfect CAR condition in the $(E,\\epsilon_{0},t^{\\prime})$ parameter space. Other parameters are the same as in Fig. 2 .",
    "figure_gloss": "Logarithmic nonlocal conductance $\\eta$ mapped against interface energy $\\epsilon_{0}$ and junction hopping $t'/t$. The closed loop yields a topological phase winding number $W=1$, protecting a zero-reflection node (unit CAR).",
+   "code": ""
+  },
+  "seen": "2026-08-28",
+  "model": "gemini-3.6-flash",
+  "shape": 4,
+  "depth": "full"
+ },
+ "2608.26600": {
+  "fields": {
+   "kind": "new result",
+   "result": "Per-run encoder reseeding reduces mean accepted logical disturbance from 0.150 under a seed-aware fault selection to 0.020 under a seed-blind fault selection at width $n=8$ and depth $d=12$. Rejection causes the 86.7% reduction.",
+   "question": "How much per-run encoder reseeding reduces accepted logical corruption under different attacker-knowledge models.",
+   "prior": "Fixed distance-three $[[5,1,3]]$ code corrects 100% of tested weight-one Pauli faults, whereas only 18.5% of sampled random Clifford encoders satisfy exact correction.",
+   "limits": "Restricted to Clifford encoders up to $n=17$, weight-one local Pauli injections, and gate-local depolarizing noise rates of $p_{1}=10^{-3}$ and $p_{2}=10^{-2}$.",
+   "tools": [
+    "Hadamard-structured ensemble",
+    "Stim stabilizer simulator",
+    "accepted logical disturbance metric",
+    "dense linear algebra"
+   ],
+   "figure": "S6.F3",
+   "figure_url": "https://arxiv.org/html/2608.26600v1/hse_ablation.svg",
+   "figure_caption": "Figure 3: HSE ablation and attacker knowledge. Left: paired ablation at $(n,k,d)=(8,1,12)$ over 200 seeds. (a) Change in worst-fault disturbance relative to the full HSE; squares show means and shading the central 90%. (b) Fraction of seeds safe against every tested fault; labels give mean two-qubit instruction counts. Right: (c) held-out scores at $n=8$ for seed-aware, seed-blind, and uniformly random fault selection. Bars show 95% intervals.",
+   "figure_gloss": "Plots disturbance relative to full HSE and safe seed fraction (left panels) and held-out scores at $n=8$ (right panel). Demonstrates that seed-blind performance approaches random fault selection while seed-aware attackers cause higher disturbance.",
+   "code": ""
+  },
+  "seen": "2026-08-28",
+  "model": "gemini-3.6-flash",
+  "shape": 4,
+  "depth": "full"
+ },
+ "2608.26407": {
+  "fields": {
+   "kind": "new result",
+   "result": "CHSH violation without recovery operations is impossible for particle survival probability $\\eta\\le 1/2$. Explicit permutation-invariant Dicke encodings achieve recovery-free CHSH violation for $\\eta > (\\sqrt{5}-1)/2$.",
+   "question": "Can CHSH nonlocality survive particle loss without applying an explicit recovery operation?",
+   "prior": "",
+   "limits": "Asymptotically large particle number $n\\to\\infty$ and excitation limit $N\\to\\infty$. Evaluated under unflagged deletion and flagged erasure noise models.",
+   "tools": [
+    "permutation-invariant encodings",
+    "Dicke states",
+    "two-extendibility bounds",
+    "direct POVM measurements"
+   ],
+   "figure": "S5.F1",
+   "figure_url": "https://arxiv.org/html/2608.26407v1/main_threshold_hierarchy_2.svg",
+   "figure_caption": "Figure 1: Recovery-free CHSH violation under particle loss for the PI protocols. The dashed horizontal line is the local bound $S=2$ . For the one-excitation encoding ( $N=1$ ), the threshold is $\\eta=1/\\sqrt{2}$ . For the large- $n$ limit, increasing $N$ lowers the onset of CHSH violation toward $\\eta_{G}=(\\sqrt{5}-1)/2$ , the threshold obtained by optimizing over finite $N$ . We find no protocol such that $S>2$ for $1/2\\leq\\eta\\leq\\eta_{G}$ (Supp. Mat. S4.4).",
+   "figure_gloss": "Plots the CHSH parameter $S$ against survival probability $\\eta$ for various excitation numbers $N$. It shows the violation threshold $S>2$ moving from $\\eta=1/\\sqrt{2}$ at $N=1$ toward $\\eta_G=(\\sqrt{5}-1)/2$ as $N$ increases.",
+   "code": ""
+  },
+  "seen": "2026-08-28",
+  "model": "gemini-3.6-flash",
+  "shape": 4,
+  "depth": "full"
+ },
+ "2608.27136": {
+  "fields": {
+   "kind": "new result",
+   "result": "Analytical characterization of Gaussian quantum networks achieving perfect local privacy while reaching Heisenberg scaling in sensitivity with photon number and sensing mode count.",
+   "question": "How to construct optimal Gaussian networks for private distributed quantum sensing under perfect local privacy constraints.",
+   "prior": "",
+   "limits": "Applies to phase estimation with Gaussian probe states under arbitrary phase-independent quantum channels.",
+   "tools": [
+    "Gaussian pairing matrix graph representation",
+    "two-mode squeezed vacuum states",
+    "local homodyne measurements",
+    "maximum-likelihood estimation"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-08-28",
+  "model": "gemini-3.6-flash",
+  "shape": 4,
+  "depth": "abstract"
+ },
+ "2608.26341": {
+  "fields": {
+   "kind": "theory",
+   "result": "Zero-temperature linear conductance for unhybridized MBSs ($\nu_M=0$) is non-zero only at magnetic flux phase $\nu=(2n+1)\nu$ ($n\\in\\mathbb{Z}$) and scales as $\\mathcal{G}=2q\\alpha e^2/[h(\\alpha+1)]$. For hybridized MBSs ($\nu_M\\neq 0$), conductance oscillation period shifts from $2\\nu$ to $4\\nu$ when quantum dot energy level $\\varepsilon_d\\neq\\varepsilon_F$.",
+   "question": "How do leads-QD coupling asymmetry $\\alpha$ and bias voltage asymmetry $q$ modify the linear conductance signatures of Majorana bound states in quantum dot-nanowire junctions?",
+   "prior": "Generalizes the symmetric coupling case ($\\alpha=1$, $q=0.5$) where zero-temperature, zero-bias conductance is $e^2/(2h)$ (Liu and Baranger).",
+   "limits": "Theoretical calculation in the low-energy transport regime. Assumes noninteracting single-level QD and Zeeman energy $E_Z>\\sqrt{\\Delta^2+\\mu_w^2}$.",
+   "tools": [
+    "nonequilibrium Green's functions technique",
+    "p-wave topological superconductor model",
+    "Andreev reflection transport theory"
+   ],
+   "figure": "S3.F7",
+   "figure_url": "https://arxiv.org/html/2608.26341v1/Fig_7.jpg",
+   "figure_caption": "Figure 7: The linear conductance $\\mathcal{G}$ in the case of unhybridized MBSs ( $\\varepsilon_{M}/\\Gamma=0$ ) as a function of magnetic flux phase $\\phi$ and bias voltage asymmetry parameter $q$ for different values of the leads–QD coupling asymmetry parameter $\\alpha$ : (a) and (d) $\\alpha=0.5$ , (b) and (e) $\\alpha=1$ and (c) and (f) $\\alpha=5$ . The temperature is fixed at $k_{B}T/\\Gamma=0.3$ and the QD–MBSs coupling strengths are $|\\lambda_{1}|/\\Gamma=0.3$ and $|\\lambda_{2}|/\\Gamma=0.1$ , respectively. The QD characteristic energy is (a)–(c) $\\varepsilon_{d}/\\Gamma=0$ and (d)–(f) $\\varepsilon_{d}/\\Gamma=-1$ .",
+   "figure_gloss": "Linear conductance $\\mathcal{G}$ mapped against magnetic flux phase $\\phi$ (horizontal axis) and bias asymmetry $q$ (vertical axis) for different leads-QD coupling ratios $\\alpha$. Shows conductance peak locations shifting from $\\phi=2n\\pi$ to $\\phi=(2n+1)\\pi$ as $q$ increases.",
+   "code": ""
+  },
+  "seen": "2026-08-28",
+  "model": "gemini-3.6-flash",
+  "shape": 4,
+  "depth": "full"
+ },
+ "2608.27452": {
+  "fields": {
+   "kind": "new result",
+   "result": "In a gapless normal wire, even- and odd-parity capacitance resonances are separated by $35.0\\,\\mu\\mathrm{eV}$ in dot potential, while in a topological wire they are separated by only $5.25\\,\\mu\\mathrm{eV}$ and persist over a gate-voltage window of $-50\\,\\mu\\mathrm{eV}\\leq\\delta\\mu\\leq 50\\,\\mu\\mathrm{eV}$.",
+   "question": "Can quantum capacitance signatures of topological Majorana zero modes be experimentally distinguished from those of a non-superconducting gapless wire segment?",
+   "prior": "",
+   "limits": "Clean wire benchmark and correlated-disorder model with finite Rashba spin-orbit coupling. Low-energy limit involving two or three single-particle levels.",
+   "tools": [
+    "nanowire-quantum-dot interferometer model",
+    "parity-resolved quantum capacitance calculations",
+    "finite-temperature Boltzmann weighting",
+    "quasistatic charge-fluctuation averaging"
+   ],
+   "figure": "S3.F2",
+   "figure_url": "https://arxiv.org/html/2608.27452v1/Figures/Peak_capacitance_vs_VQD.png",
+   "figure_caption": "Figure 2: Flux-maximized parity-resolved capacitance in the clean systems. Maximum of $|C_{\\mathrm{Q}}|$ over $\\phi$ as a function of $\\delta V_{\\mathrm{QD}}$ for the gapless (left) and topological (right) wires. Solid blue and dashed red curves denote even and odd parity, respectively. The gapless maxima lie near the separate $\\tau$ and $g$ resonances and are separated by $35.00\\,\\mu\\mathrm{eV}$ , whereas the topological maxima remain within the same gate region and are separated by $5.25\\,\\mu\\mathrm{eV}$ . Colored vertical lines mark the maxima, the black dash-dotted line marks $\\delta V_{\\mathrm{QD}}=0$ .",
+   "figure_gloss": "Plots the maximum quantum capacitance over magnetic flux against dot potential detuning for gapless (left) and topological (right) wires. Gapless system shows two distinct, separated parity resonances, whereas topological system shows overlapping parity branches within a single broader gate window.",
+   "code": ""
+  },
+  "seen": "2026-08-28",
+  "model": "gemini-3.6-flash",
+  "shape": 4,
+  "depth": "full"
+ },
+ "2608.27213": {
+  "fields": {
+   "kind": "new result",
+   "result": "Steady-state current factorizes into reciprocal spectral current and phase-asymmetric occupation imbalance $I_{\\rm ss}=I_{A}P_{\\gamma}$, producing diode response without Andreev spectrum asymmetry.",
+   "question": "Can a Josephson junction with a reciprocal Andreev channel acquire a diode response through nonequilibrium occupation?",
+   "prior": "",
+   "limits": "Infinite-gap limit, large loss rate $\\kappa \\gg t,\\Gamma$, and secular limit $\\Gamma_{\\pm} \\ll 2E_{A}$.",
+   "tools": [
+    "double-quantum-dot junction",
+    "phase-textured nonlocal reservoir",
+    "quantum Zeno effect",
+    "Keldysh-Lindblad formalism"
+   ],
+   "figure": "S3.F3",
+   "figure_url": "https://arxiv.org/html/2608.27213v1/sfig3.png",
+   "figure_caption": "Figure S3: Finite- $\\kappa$ diode efficiency from the direct Lindblad solution at $t=\\Gamma_{L}=\\Gamma_{R}=1$ and zero onsite energies, $\\epsilon_{L}=\\epsilon_{R}=0$ . (a) Diode efficiency $\\eta_{D}$ in the $(\\chi,\\kappa)$ plane. The broad region with $\\eta_{D}\\simeq 1$ shows that the backward-current branch is strongly suppressed relative to the forward branch. (b) $\\eta_{D}$ versus reservoir phase $\\chi$ for $\\kappa=1,3,10$ , together with the analytic Zeno result of Eq. ( S64 ) ( $\\kappa\\to\\infty$ , dashed). Reversing $\\chi$ reverses the diode polarity, $\\eta_{D}(-\\chi)=-\\eta_{D}(\\chi)$ . (c) $\\eta_{D}$ versus $\\kappa$ at fixed $\\chi=0.1\\pi$ and $0.3\\pi$ . Dashed lines denote the corresponding $\\kappa\\to\\infty$ values.",
+   "figure_gloss": "Diode efficiency $\\eta_D$ plotted against reservoir phase $\\chi$ and dissipation rate $\\kappa$. Shows saturation to ideal efficiency $\\eta_D \\simeq 1$ and convergence to the analytical Zeno limit as $\\kappa$ increases.",
    "code": ""
   },
   "seen": "2026-08-28",
