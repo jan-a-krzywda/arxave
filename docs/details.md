@@ -515,4 +515,4 @@ of one embedding model on one archive, and the first thing to do after changing
 either is to take them again.
 </div>
 
-<link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}?v={{ site.time | date: '%s' }}">

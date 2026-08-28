@@ -39,4 +39,4 @@ permalink: /briefs/
     <code>briefs/</code> directory, then this page will populate automatically.
   </p>
 {% endif %}
-<link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}?v={{ site.time | date: '%s' }}">
