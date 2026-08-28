@@ -299,6 +299,7 @@
     wagonModalGraph: null,   // live graph handle for the modal canvas
     haulTrain: null,        // live handle for stage 1's mine-train progress
     hauledFromCache: 0,     // stones whose vector came from the shared cache
+    scoutWarnings: [],      // categories whose feed failed while others came in
     /* Hand-picked stones, by index into state.stones. Runtime, never saved:
        a claim is a setup and outlives the night, while a hand pick is about
        these stones and dies with them. Keeping it out of the claim is also what
@@ -1040,32 +1041,38 @@
     return out;
   }
 
-  /** Tonight's announcement across every scouted category, deduped by id. */
+  /** Tonight's announcement across every scouted category, deduped by id.
+   *
+   * One category must never take the others down with it. The try therefore
+   * covers the whole per-category leg — the relay call, reading the body and
+   * parsing it — not just the fetch: a truncated or non-XML body throws inside
+   * parseAnnouncementRSS, and with that outside the try a single bad feed
+   * rejected the whole haul and threw away the categories that had already
+   * come in (a quant-ph + cond-mat.mes-hall scout lost both).
+   *
+   * A surviving failure is not silent either: it lands in state.scoutWarnings
+   * so the haul can say which archive is missing from the count. */
   async function fetchAnnouncement(cats) {
     var seen = {};
     var stones = [];
     var failures = [];
     for (var i = 0; i < cats.length; i++) {
       var url = 'https://rss.arxiv.org/rss/' + encodeURIComponent(cats[i]);
-      var resp;
       try {
-        resp = await fetchViaRelay(url);
+        var resp = await fetchViaRelay(url);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        var batch = parseAnnouncementRSS(await resp.text(), cats[i]);
+        for (var j = 0; j < batch.length; j++) {
+          // A paper announced in two scouted archives is one stone, not two.
+          if (seen[batch[j].arxiv_id]) continue;
+          seen[batch[j].arxiv_id] = 1;
+          stones.push(batch[j]);
+        }
       } catch (err) {
         failures.push(cats[i] + ' → ' + (err && err.message ? err.message : String(err)));
-        continue;
-      }
-      if (!resp.ok) {
-        failures.push(cats[i] + ' → HTTP ' + resp.status);
-        continue;
-      }
-      var batch = parseAnnouncementRSS(await resp.text(), cats[i]);
-      for (var j = 0; j < batch.length; j++) {
-        // A paper announced in two scouted archives is one stone, not two.
-        if (seen[batch[j].arxiv_id]) continue;
-        seen[batch[j].arxiv_id] = 1;
-        stones.push(batch[j]);
       }
     }
+    state.scoutWarnings = failures;
     // Every feed failing is an error; some failing is a warning we can survive.
     if (stones.length === 0 && failures.length > 0) {
       throw new Error('arXiv scout failed: ' + failures.join(' | '));
@@ -3344,6 +3351,7 @@
     state.haulTrain = startHaulTrain(byId('haul-train'));
     progLabel.textContent = 'Scouting...';
     state.hauledFromCache = 0;
+    state.scoutWarnings = [];
     statusEl.textContent = '';
     statusEl.style.color = '';
     wagonPanel.style.display = 'none';
@@ -3428,8 +3436,14 @@
       if (state.hauledFromCache) {
         parts.push(state.hauledFromCache + ' already cut (cached)');
       }
-      statusEl.textContent = stones.length + ' stones hauled — ' + parts.join(', ') + '.';
-      statusEl.style.color = 'var(--moss)';
+      var line = stones.length + ' stones hauled — ' + parts.join(', ') + '.';
+      /* A category whose feed failed is missing from that count. Say so —
+         a short haul with no explanation reads as a quiet day. */
+      if (state.scoutWarnings.length) {
+        line += ' No stones from ' + state.scoutWarnings.join(' | ') + '.';
+      }
+      statusEl.textContent = line;
+      statusEl.style.color = state.scoutWarnings.length ? 'var(--ember)' : 'var(--moss)';
       /* The loaded train stays on the page — it is the picture of the day's
          take, and the count next to the button reads as its caption. */
       if (state.haulTrain) state.haulTrain.set(stones.length, stones.length);
