@@ -88,8 +88,15 @@ export function toText(html) {
  *
  * The id is LaTeXML's — "S2.F1" for the first figure of section 2 — and it is
  * what the model is asked to name when it picks one, so ids and captions travel
- * together. Figures with no <img> (a table dressed as a figure, a TikZ picture
- * that failed to convert) are dropped: there is nothing to show.
+ * together. Figures with nothing showable in them (a table dressed as a figure,
+ * a TikZ picture that failed to convert) are dropped.
+ *
+ * A figure arrives with EITHER `src` — an absolute URL on arxiv.org, which the
+ * card hotlinks — OR `svg`, the picture's own markup, which has no URL because
+ * it was never a file. A TikZ diagram is drawn inline, and dropping that
+ * spelling is why every diagram in a theory paper went missing: this paper's
+ * only figure is one, and 11 of the first 26 shipped items carried no figure at
+ * all. What the caller does with `svg` is its business — see `standaloneSvg`.
  */
 export function parseFigures(html, base) {
   const out = [];
@@ -114,17 +121,76 @@ export function parseFigures(html, base) {
        them. */
     const src = block.match(/<img\b[^>]*\bsrc="([^"]+)"/i)
       || block.match(/<object\b[^>]*\bdata="([^"]+\.svgz?)"/i);
-    if (src) {
+    /* The third spelling. A TikZ picture is converted to SVG and written into
+       the page, not to a file beside it, so there is no src to take — the
+       markup itself is the figure. Only pictures are taken this way:
+       LaTeXML also emits inline SVG for the odd decorated rule, so a <svg>
+       outside a <figure> never reaches here. */
+    const svg = src ? null : inlineSvg(block);
+    if (src || svg) {
       const cap = block.match(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/i);
       out.push({
         id: id[1],
-        src: new URL(decodeEntities(src[1]), base).href,
+        src: src ? new URL(decodeEntities(src[1]), base).href : '',
+        svg: svg || '',
         caption: cap ? toText(stripMath(cap[1])).replace(/\s+/g, ' ').trim() : '',
       });
     }
     i = j - 2 >= i ? j - 2 : i;                     // skip the panels just consumed
   }
   return out;
+}
+
+/**
+ * The first inline <svg> element in a block, whole, or null.
+ *
+ * Depth-counted like the figure scan above and for the same reason: a picture
+ * can hold another <svg>, and a non-greedy match to the first `</svg>` would
+ * cut it in half and hand back markup that no longer closes.
+ */
+export function inlineSvg(block) {
+  const tags = [...block.matchAll(/<(\/?)svg\b[^>]*>/gi)];
+  if (!tags.length || tags[0][1]) return null;
+  let depth = 0;
+  for (const t of tags) {
+    depth += t[1] ? -1 : 1;
+    if (depth === 0) return block.slice(tags[0].index, t.index + t[0].length);
+  }
+  return null;
+}
+
+/**
+ * An inline picture, made into a file that stands on its own.
+ *
+ * INSIDE AN HTML PAGE a <svg> needs no namespace: the parser is in HTML mode
+ * and knows the element. A .svg file is parsed as XML, where an element with no
+ * namespace is not SVG at all and the file renders as nothing. The same is true
+ * one level down: LaTeXML draws every label in a <foreignObject> holding XHTML,
+ * and the maths inside that in MathML, and each of those switches namespace.
+ * Three declarations, added only where they are missing — LaTeXML omits all
+ * three, but a converter that emits them must not have them doubled.
+ *
+ * WHAT IS DELIBERATELY NOT DONE is inlining arxiv.org's stylesheet. The labels
+ * carry their colours and sizes as attributes, which is enough to read them;
+ * the `ltx_` classes they also carry style nothing that survives the trip into
+ * an <img>, where no external sheet loads anyway.
+ */
+export function standaloneSvg(markup) {
+  let out = String(markup ?? '');
+  if (!/\bxmlns\s*=/.test(out.slice(0, out.indexOf('>') + 1))) {
+    out = out.replace(/^<svg\b/i, '<svg xmlns="http://www.w3.org/2000/svg"');
+  }
+  if (/\bxlink:href\b/.test(out) && !/xmlns:xlink\s*=/.test(out)) {
+    out = out.replace(/^<svg\b/i, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+  }
+  /* The first element inside each <foreignObject> is where XHTML begins. */
+  out = out.replace(/(<foreignObject\b[^>]*>\s*)<([a-zA-Z][\w-]*)((?:\s[^>]*)?)>/g,
+    (m, open, tag, attrs) => (/\bxmlns\s*=/.test(attrs) ? m
+      : `${open}<${tag} xmlns="http://www.w3.org/1999/xhtml"${attrs}>`));
+  out = out.replace(/<math\b((?:\s[^>]*)?)>/gi,
+    (m, attrs) => (/\bxmlns\s*=/.test(attrs) ? m
+      : `<math xmlns="http://www.w3.org/1998/Math/MathML"${attrs}>`));
+  return '<?xml version="1.0" encoding="UTF-8"?>\n' + out + '\n';
 }
 
 /** Every repository link the paper offers, deduped, first one first. */

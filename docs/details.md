@@ -346,6 +346,19 @@ and everything else sits in six drawers you open only if the finding earns it:
 | **Tools** | The methods, hardware, or codebase it leans on, for filtering by eye. |
 | **Abstract** | The original abstract, unedited. |
 
+**The figure comes from wherever arXiv keeps it.** A photograph or a plot is a
+file on arxiv.org and the card links straight to it; a diagram drawn in TikZ is
+not a file at all — LaTeXML draws it into the page — so that one is copied here
+as SVG, which is text, and served from the site. Reading only the first spelling
+is why theory papers used to ship with no picture at all.
+
+**The maths is typeset, and typeset once, in the builder.** Briefs are written
+with formulas as TeX, and the build turns each one into MathML before anything
+ships: `C_{\min}` is a real subscript on the site, in the Haul page and in a
+feed reader, none of which load a script or a stylesheet to do it. Every field
+also ships flat — `C_min`, spelled out — for anything that shows plain text, so
+a reader that ignores markup loses nothing.
+
 Nothing in a card restates the paper. The abstract is already a summary and it is
 the author's own; a generated paragraph beside it would have to be better than it
 to be worth the reader's eye. Every field is instead something the abstract makes

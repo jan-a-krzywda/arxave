@@ -90,6 +90,25 @@ nav_icon: stockpile
     return p;
   }
 
+  /* THE MATHS IS ALREADY TYPESET when the archive is written — MathML, cut by
+     the builder, sitting in the JSON under `html` beside the flat field. This
+     page renders no formulas of its own and loads nothing to do it: the browser
+     lays MathML out with no stylesheet and no script, which is the only reason
+     the same markup can also ride in a feed.
+
+     innerHTML, and only here. The string comes out of the same build that
+     writes every other field on this page, not from the reader and not from a
+     third party — and a record from before that build, or a brief with no maths
+     in it, has no `html` at all and takes the textContent path it always did. */
+  function richPara(item, key, cls) {
+    const markup = item.html && item.html[key];
+    if (!markup) return item[key] ? para(item[key], cls) : null;
+    const p = document.createElement('p');
+    p.className = 'fold-body' + (cls ? ' ' + cls : '');
+    p.innerHTML = markup;
+    return p;
+  }
+
   function figureFold(item) {
     if (!item.figure) return null;
     const wrap = document.createElement('div');
@@ -108,7 +127,8 @@ nav_icon: stockpile
     if (item.caption) {
       const cap = document.createElement('p');
       cap.className = 'figure-caption';
-      cap.textContent = item.caption;
+      if (item.html && item.html.caption) cap.innerHTML = item.html.caption;
+      else cap.textContent = item.caption;
       wrap.appendChild(cap);
     }
     return wrap;
@@ -152,7 +172,8 @@ nav_icon: stockpile
     if (item.result) {
       const r = document.createElement('p');
       r.className = 'result';
-      r.textContent = item.result;
+      if (item.html && item.html.result) r.innerHTML = item.html.result;
+      else r.textContent = item.result;
       box.appendChild(r);
     }
 
@@ -160,9 +181,9 @@ nav_icon: stockpile
     row.className = 'folds';
     const drawers = [
       fold('Figure', () => figureFold(item)),
-      fold('Asks', () => (item.question ? para(item.question) : null)),
-      fold('Before', () => (item.prior ? para(item.prior) : null)),
-      fold('But', () => (item.limits ? para(item.limits, 'but') : null)),
+      fold('Asks', () => richPara(item, 'question')),
+      fold('Before', () => richPara(item, 'prior')),
+      fold('But', () => richPara(item, 'limits', 'but')),
       fold('Tools', () => toolsFold(item)),
       fold('Abstract', () => (item.abstract ? para(item.abstract) : null)),
     ].filter(Boolean);
@@ -496,6 +517,17 @@ nav_icon: stockpile
   text-align: center;
   font-size: 0.95rem;
   line-height: 1.55;
+}
+
+/* A formula sits in a line of prose, not above it. Browsers give <math> its own
+   size and its own serif face by default, both of which make a subscript in the
+   middle of a sentence look pasted in; inheriting keeps it the sentence's. A
+   long one scrolls inside itself rather than widening the card. */
+.stockpile-detail math {
+  font-size: inherit;
+  font-family: inherit;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 /* Closed drawers sit in a row; an open one takes the full width and pushes the

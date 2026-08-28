@@ -498,3 +498,54 @@ test('a call that times out every time reports the timeout, not a silent null', 
     assert.equal(it.enrichment, null, 'ships unenriched, and the feed still builds');
   } finally { globalThis.fetch = real; }
 });
+
+test('a picture with no URL is mirrored, and one with a URL is not', async () => {
+  // A TikZ diagram is drawn into arXiv's page rather than served beside it, so
+  // there is nothing to hotlink and the mirror is the only way a card gets it.
+  const restore = stubGemini({ ...full, figure: 'S0.F1' });
+  const mirrored = [];
+  try {
+    const read = async () => ({
+      text: 'body',
+      figures: [{ id: 'S0.F1', src: '', svg: '<svg/>', caption: 'c' }],
+      code: [],
+    });
+    const mirrorFigure = async (id, fig) => {
+      mirrored.push([id, fig.id]);
+      return `https://arxave.com/figures/${id}-${fig.id}.svg`;
+    };
+    const [it] = await enrichItems([paper('1', 'paydirt')],
+      { apiKey: 'k', readFullText: read, mirrorFigure });
+    assert.deepEqual(mirrored, [['1', 'S0.F1']]);
+    assert.equal(it.enrichment.figure_url, 'https://arxave.com/figures/1-S0.F1.svg');
+  } finally { restore(); }
+
+  const restore2 = stubGemini({ ...full, figure: 'S2.F1' });
+  const notMirrored = [];
+  try {
+    const read = async () => ({
+      text: 'body',
+      figures: [{ id: 'S2.F1', src: 'https://arxiv.org/html/x/a.png', svg: '', caption: 'c' }],
+      code: [],
+    });
+    const [it] = await enrichItems([paper('2', 'paydirt')], {
+      apiKey: 'k', readFullText: read,
+      mirrorFigure: async () => { notMirrored.push('called'); return 'no'; },
+    });
+    assert.deepEqual(notMirrored, []);
+    assert.equal(it.enrichment.figure_url, 'https://arxiv.org/html/x/a.png');
+  } finally { restore2(); }
+});
+
+test('a mirror that fails costs the picture, not the brief', async () => {
+  const restore = stubGemini({ ...full, figure: 'S0.F1' });
+  try {
+    const read = async () => ({
+      text: 'body', figures: [{ id: 'S0.F1', src: '', svg: '<svg/>', caption: 'c' }], code: [],
+    });
+    const [it] = await enrichItems([paper('1', 'paydirt')],
+      { apiKey: 'k', readFullText: read, mirrorFigure: async () => '' });
+    assert.equal(it.enrichment.figure_url, '');
+    assert.equal(it.enrichment.result, full.result);
+  } finally { restore(); }
+});

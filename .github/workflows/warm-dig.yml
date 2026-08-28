@@ -70,7 +70,7 @@ jobs:
       # feed recommend papers the page would not. Both report success.
       - name: Check the parse and the blend still match the browser's
         working-directory: scripts
-        run: node --test warm-dig.test.mjs preset-feed.test.mjs enrich.test.mjs fulltext.test.mjs
+        run: node --test warm-dig.test.mjs preset-feed.test.mjs enrich.test.mjs fulltext.test.mjs demath.test.mjs mathml.test.mjs
 
       - name: Warm
         working-directory: scripts

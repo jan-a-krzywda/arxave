@@ -138,8 +138,13 @@ export const DEEP_MAX = 24;
 /* Bumped whenever the field set changes. A cached record from an older shape is
    treated as a miss and re-generated, because the alternative is a feed where
    some items carry a figure gloss and some a raw LaTeX caption, with nothing
-   in the code saying which era an item came from. */
-export const SHAPE = 4;
+   in the code saying which era an item came from.
+
+   5: maths is asked for as TeX and rendered — a shape-4 record wrote `C_min` as
+   prose, which no renderer can find, and a mixed feed would show one card with
+   its formula set and the next with it flat. It also predates the inline-SVG
+   figures, so a shape-4 record for a theory paper carries no figure at all. */
+export const SHAPE = 5;
 
 export const KINDS = ['new result', 'new method', 'theory', 'review', 'incremental'];
 
@@ -159,6 +164,12 @@ const SYSTEM = [
   'unit, symbol and technical term exactly as the paper writes it. Never round a',
   'number, never drop a unit, never swap the paper\'s term for a simpler one.',
   'Vague-but-short is a failure; an empty field is better than a padded one.',
+  '',
+  'WRITE MATHS AS TeX, BETWEEN DOLLAR SIGNS. `$C_{\\min}(K,S,\\epsilon)$`, never',
+  '"C_min(K,S,e)". Every symbol, subscript, superscript, fraction and Greek',
+  'letter, inside a formula or standing alone in a sentence. It is typeset',
+  'before anyone reads it, and flattened to plain text for readers that cannot',
+  'show it. A bare quantity with a unit is prose: "3.4 ms" is not maths.',
   '',
   'Never state anything the text does not support, and do not editorialize about',
   'importance or novelty beyond the one judgement asked of you below.',
@@ -497,7 +508,10 @@ export function resolveFigure(full, id) {
  * Enrich items in place-ish: returns a new array, each item with `enrichment`
  * set when one is available. Cache hits cost nothing; misses cost one call.
  */
-export async function enrichItems(items, { cachePath, apiKey, model = DEFAULT_MODEL, readFullText = fetchFullText } = {}) {
+export async function enrichItems(items, {
+  cachePath, apiKey, model = DEFAULT_MODEL, readFullText = fetchFullText,
+  mirrorFigure = null,
+} = {}) {
   const key = apiKey || process.env.GEMINI_API_KEY || '';
   let cache = {};
   if (cachePath) {
@@ -576,7 +590,15 @@ export async function enrichItems(items, { cachePath, apiKey, model = DEFAULT_MO
         const named = fields.figure;
         const fig = resolveFigure(full, named);
         fields.figure = fig?.id || '';
-        fields.figure_url = fig?.src || '';
+        /* A hotlink when the paper has a file to link, and a mirror when it
+           does not: a TikZ diagram is drawn into the page and has no URL of its
+           own, so the only way to show one is to keep a copy. The URL is what
+           goes in the cache either way — the card cannot tell the two apart,
+           and tomorrow's cache hit must not have to fetch the paper again to
+           find out which it was. */
+        fields.figure_url = fig?.src
+          || (fig?.svg && mirrorFigure ? await mirrorFigure(item.arxivId, fig) : '')
+          || '';
         fields.figure_caption = fig?.caption || '';
         /* The gloss was written about the figure the model *named*. When that
            id did not match and resolveFigure fell back to the first figure, the
