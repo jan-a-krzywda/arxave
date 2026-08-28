@@ -17,34 +17,33 @@ nav_icon: dig
 
 <div id="app" style="display:none">
 
-  <!-- ── Masthead: what this page is, before anything else ── -->
+  <!-- ── Masthead: what this page is, before anything else. No title: the
+       header nav already says which room you are in. ── -->
   <header class="dig-hero">
-    <h1 class="dig-title">The Dig</h1>
     <p class="dig-lede">
-      arXiv drops hundreds of papers every night. Tell this page what you care
-      about, and it scores the whole night against it and hands back the few
-      worth a careful look.
+      arXiv drops hundreds of papers a night. Say what you care about, and
+      this page ranks the whole night against it.
     </p>
     <ol class="dig-steps">
       <li>
         <span class="dig-step-n">1</span>
         <span class="dig-step-name">Haul the stones</span>
-        <span class="dig-step-say">Fetch the night's papers, read them into numbers.</span>
+        <span class="dig-step-say">Fetch tonight's papers.</span>
       </li>
       <li>
         <span class="dig-step-n">2</span>
         <span class="dig-step-name">Filter</span>
-        <span class="dig-step-say">Say what interests you — words, or papers you like.</span>
+        <span class="dig-step-say">Say what interests you.</span>
       </li>
       <li>
         <span class="dig-step-n">3</span>
         <span class="dig-step-name">Assay</span>
-        <span class="dig-step-say">Read the ranked matrix, keep the pay dirt.</span>
+        <span class="dig-step-say">Keep the pay dirt.</span>
       </li>
     </ol>
     <p class="dig-privacy">
-      Runs in this tab. Text you want scored is sent to the pick to be embedded,
-      and is not stored. <a href="#small-print">Small print</a>.
+      Runs in this tab. Text you score is embedded, not stored.
+      <a href="#small-print">Small print</a>.
     </p>
   </header>
 
@@ -53,7 +52,7 @@ nav_icon: dig
        the haul is about, and nothing else reads them) ── -->
   <fieldset id="stage-1">
     <legend>1. Haul the stones</legend>
-    <p class="hint">Fetch tonight's arXiv announcement — new papers and cross-lists, the same set the listing page shows — and read them into numbers. The train below shows how they cluster — one wagon per cluster.</p>
+    <p class="hint">Fetch tonight's arXiv announcement: new papers and cross-lists, the same set the listing page shows. The train below groups them, one wagon per cluster.</p>
 
     <div class="scout-block">
       <div class="cat-field">
@@ -131,7 +130,7 @@ nav_icon: dig
       </div>
       <div class="wagon-graph-wrap" id="wagon-graph-wrap" style="display:none">
         <canvas id="wagon-graph-canvas"></canvas>
-        <div class="wagon-graph-hint" id="wagon-graph-hint">drag a stone to move it · drag the rock to pan · scroll to zoom · click to pin, then hover its wagon-mates to compare</div>
+        <div class="wagon-graph-hint" id="wagon-graph-hint">drag a stone · drag the rock to pan · scroll to zoom · click to pin, then hover to compare</div>
       </div>
       <div class="wagon-table-wrap" id="wagon-table-wrap"></div>
       <div class="wagon-readout" id="wagon-readout"></div>
@@ -141,7 +140,7 @@ nav_icon: dig
   <!-- ── Stage 2: Filter ── -->
   <fieldset id="stage-2">
     <legend>2. Filter</legend>
-    <p class="hint">What you care about: a word, a phrase, a sentence — or papers you already like.</p>
+    <p class="hint">A word, a phrase, a sentence, or papers you already like.</p>
 
     <!-- ── Before the dig ───────────────────────────────────────────────────
          This used to be two columns. The left one was "Sharpen the pick": a
@@ -162,7 +161,7 @@ nav_icon: dig
              also why they are offered above your own slots rather than below. -->
         <div id="presets-group" class="setup-group">
           <div class="group-label label-with-action">
-            <span>Catalogue <span class="sub">— curated, already cut</span></span>
+            <span>Catalogue <span class="sub">ready-made setups</span></span>
             <!-- One RSS control for the whole catalogue, not one per preset: the
                  feeds are a list you browse, and a button beside every chip is what
                  broke the row. Hidden until the feed manifest says what exists. -->
@@ -175,13 +174,12 @@ nav_icon: dig
           <div id="presets-list" class="preset-buttons"></div>
           <p class="hint" id="presets-hint" style="display:none">
             <span id="presets-blurb" class="preset-blurb-line"></span>
-            Replaces the rows below. Edit any row afterwards — an edited phrase is
-            yours again, and is cut without being cached, like anything else you type.
+            Replaces the rows below. Edit any row afterwards; an edited phrase is yours.
           </p>
         </div>
 
         <div class="setup-group">
-          <div class="group-label">Mine <span class="sub">— setups you saved</span></div>
+          <div class="group-label">Mine <span class="sub">setups you saved</span></div>
           <div class="claim-bar">
             <label class="claim-pick">
               Claim
@@ -206,7 +204,7 @@ nav_icon: dig
           <span class="claim-status" id="claim-status"></span>
           <p class="hint claim-hint">
             A claim is one dig setup. Edits save themselves. Clear empties the
-            touchstones, cores, and gate — the stones you hauled stay put.
+            touchstones, cores and gate; hauled stones stay put.
           </p>
         </div>
       </section>
@@ -216,7 +214,7 @@ nav_icon: dig
 
     <!-- Touchstones (free text) -->
     <div id="touchstones-group">
-      <div class="group-label">Touchstones <span class="sub">— free text, one per row</span></div>
+      <div class="group-label">Touchstones <span class="sub">free text, one per row</span></div>
       <div id="touchstones-list"></div>
       <button type="button" id="add-touchstone" class="add-row-btn">+ Add touchstone</button>
     </div>
@@ -225,7 +223,7 @@ nav_icon: dig
 
     <!-- Core samples -->
     <div id="cores-group">
-      <div class="group-label">Core samples <span class="sub">— a few reference papers</span></div>
+      <div class="group-label">Core samples <span class="sub">papers you already like</span></div>
       <p class="hint">A DOI or arXiv ID per row, or upload a <code>.bib</code>. Abstracts come from OpenAlex.</p>
       <div id="cores-list"></div>
       <button type="button" id="add-core" class="add-row-btn">+ Add core sample</button>
@@ -240,7 +238,7 @@ nav_icon: dig
 
     <!-- The rush (Scirate, inactive) -->
     <div id="rush-group" class="inactive-group">
-      <div class="group-label">The rush <span class="wip">WIP</span> <span class="sub">— crowd attention, Scirate scites</span></div>
+      <div class="group-label">The rush <span class="wip">WIP</span> <span class="sub">crowd attention</span></div>
       <div class="rush-row">
         <span class="rush-name">Scirate scites</span>
         <span class="rush-unavailable">signal unavailable</span>
@@ -282,7 +280,7 @@ nav_icon: dig
         </label>
         <label class="gate-strict-label">
           <input type="checkbox" id="gate-strict">
-          Rather ship fewer than pad with long shots
+          Ship fewer rather than pad with long shots
         </label>
         <span class="gate-readout" id="gate-readout" role="status"></span>
       </div>
@@ -298,7 +296,7 @@ nav_icon: dig
           <span class="gate-gem gate-gem-diamond" aria-hidden="true"></span>
           <span class="gate-preset-text">
             <span class="gate-preset-name">Most shiny ones</span>
-            <span class="gate-preset-sub">only the sure things — small, hard cut</span>
+            <span class="gate-preset-sub">only the sure things</span>
           </span>
         </button>
         <div class="gate-preset-sep"><span class="gate-gem gate-gem-diamond" aria-hidden="true"></span></div>
@@ -314,24 +312,20 @@ nav_icon: dig
           <span class="gate-gem gate-gem-copper" aria-hidden="true"></span>
           <span class="gate-preset-text">
             <span class="gate-preset-name">Do not miss any</span>
-            <span class="gate-preset-sub">loose lines, floor fills the night's load</span>
+            <span class="gate-preset-sub">loose lines, always a full load</span>
           </span>
         </button>
       </div>
       <details class="gate-adv">
-        <summary>Where the lines fall <span class="sub">— the three bands and the floor</span></summary>
+        <summary>Where the lines fall <span class="sub">bands and floor</span></summary>
         <p class="hint">
-          Every stone gets a <em>z</em>: how far its grade sits above the night's
-          median, in MAD units, over the whole announcement. A feed ships
-          everything above the <em>ship line</em> and labels it by the
-          <em>pay dirt line</em> — <strong>Pay dirt</strong> above, <strong>Worth
-          a look</strong> between the two, <strong>Long shot</strong> below. The
-          bar is low on purpose and the chip is what makes that honest: an
-          unmarked z-1.2 paper claims to be a z-3 one, a labelled one does not,
-          and a feed nobody can skim is a feed nobody opens. The floor is the
-          escape hatch: if fewer than <em>floor</em> stones reach the ship line,
-          it reaches down to <em>long shot z</em> and ships that many — never
-          past the ceiling.
+          Each stone gets a <em>z</em>: how far its grade sits above the night's
+          median, in MAD units. A feed ships everything above the
+          <em>ship line</em>, labelled <strong>Pay dirt</strong> above the
+          <em>pay dirt line</em>, <strong>Worth a look</strong> between,
+          <strong>Long shot</strong> below. If fewer than <em>floor</em> stones
+          reach the ship line, the floor reaches down to <em>long shot z</em>,
+          never past the ceiling.
         </p>
         <div class="role-grid gate-grid">
           <label>
@@ -339,11 +333,11 @@ nav_icon: dig
             <input type="number" id="gate-z" value="2" min="0" max="4" step="0.1">
           </label>
           <label>
-            Ceiling <span class="sub">max items — the slider above</span>
+            Ceiling <span class="sub">max items</span>
             <input type="number" id="gate-max-items" value="8" min="1" max="50">
           </label>
           <label>
-            Floor <span class="sub">min items — 0 when shipping fewer</span>
+            Floor <span class="sub">min items</span>
             <input type="number" id="gate-min-items" value="3" min="0" max="50">
           </label>
           <label>
@@ -356,12 +350,9 @@ nav_icon: dig
           </label>
         </div>
         <p class="hint">
-          These five numbers are the <code>select</code> block of a preset file —
-          export this claim and they travel with it, so a feed built from it cuts
-          and bands where you set it here. The two controls above write two of
-          them: the slider is the ceiling, and the tick-box is the floor going to
-          zero. Pull <em>long shot z</em> up to the ship line to switch the floor
-          off that way instead.
+          These five numbers travel with an exported claim, so a feed built from
+          it cuts where you set it here. The slider above writes the ceiling;
+          the tick-box drops the floor to zero.
         </p>
       </details>
     </div>
@@ -454,24 +445,23 @@ nav_icon: dig
 
   <!-- ── Relay ── -->
   <details class="advanced">
-    <summary>Relay <span class="sub">— advanced, leave blank</span></summary>
+    <summary>Relay <span class="sub">advanced, leave blank</span></summary>
     <p class="hint">
-      Browsers refuse to read a response from a site that does not opt in, and
-      arXiv does not opt in. So the arXiv request is sent for you by
+      arXiv does not opt in to cross-site reads, so the request goes through
       <a href="https://github.com/jan-a-krzywda/arxave/blob/main/supabase/functions/relay/index.ts">arxave's relay</a>.
-      It carries a category list and public paper IDs — never your topics,
-      your library, or a key.
+      It carries a category list and public paper IDs. Never your topics, your
+      library or a key.
     </p>
     <input type="text" id="cors-proxy" placeholder="(blank = arxave relay)">
   </details>
 
   <!-- ── Small print ── -->
   <div class="cave-footnote" id="small-print">
-    <p><strong>What is sent.</strong> Your touchstones, core samples and weights live only in this tab — never uploaded, and they survive a reload because they sit in your browser. The one thing that leaves is text you want scored: the pick (the model that turns text into a vector) runs on a server, so that text is sent there to be embedded, used for the request, and not stored.</p>
-    <p><strong>The shared cache.</strong> Published text — arXiv abstracts, core-sample abstracts, and the touchstones this repo ships as presets — also goes into a <em>shared vector cache</em>, keyed by a hash of the text, so nobody pays to cut the same phrase twice. <strong>A touchstone you type yourself never enters that cache.</strong> Reads on it are public, and a hash of a short phrase is one dictionary away from the phrase.</p>
-    <p><strong>Your own pick or relay.</strong> Set <code>window.ARXAVE_EMBED</code> to any OpenAI-shaped <code>/v1/embeddings</code> — your own LM Studio, Ollama, or a paid endpoint — and text is embedded there instead, with the shared cache skipped. The Relay field above does the same for the arXiv fetch. Or fork the whole thing (<a href="{{ site.github_repo }}">source</a>) and run it against your own library.</p>
-    <p><strong>Touchstone length.</strong> A one-word touchstone and a paragraph-long one are not directly comparable — longer text is more specific. The per-row weights in the assay are the mitigation.</p>
-    <p><strong>What is real today.</strong> Scouting arXiv, embedding abstracts through the hosted pick, and ranking on touchstone similarity with live re-blending. The rush (Scirate) is parked behind a Cloudflare challenge and stays inactive until a path exists.</p>
+    <p><strong>What is sent.</strong> Your touchstones, core samples and weights stay in this tab and survive a reload. The one thing that leaves is text you want scored: the pick runs on a server, so that text is sent there to be embedded, and is not stored.</p>
+    <p><strong>The shared cache.</strong> Published text (arXiv abstracts, core-sample abstracts, preset touchstones) also goes into a <em>shared vector cache</em>, keyed by a hash, so nobody pays to cut the same phrase twice. <strong>A touchstone you type yourself never enters that cache</strong>, because reads on it are public and a hash of a short phrase is one dictionary away from the phrase.</p>
+    <p><strong>Your own pick or relay.</strong> Set <code>window.ARXAVE_EMBED</code> to any OpenAI-shaped <code>/v1/embeddings</code> (LM Studio, Ollama, a paid endpoint) and text is embedded there instead, with the shared cache skipped. The Relay field does the same for the arXiv fetch. Or fork it (<a href="{{ site.github_repo }}">source</a>).</p>
+    <p><strong>Touchstone length.</strong> One word and a paragraph are not directly comparable, since longer text is more specific. The per-row weights are the mitigation.</p>
+    <p><strong>What is real today.</strong> Scouting arXiv, embedding abstracts, and ranking on touchstone similarity with live re-blending. The rush (Scirate) sits behind a Cloudflare challenge and stays inactive.</p>
   </div>
 </div>
 
