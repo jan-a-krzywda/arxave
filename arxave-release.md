@@ -142,3 +142,52 @@ CLI.
 
 - [x] A stranger reading the top third knows what the site does and where to click.
 - [x] No link in it 404s.
+
+---
+
+## Chunk 6 — Details tells the truth about the assay
+
+**Why.** The first cut of Details described the seven-stage Python pipeline
+(scout → summarize → filter → refs → connect → rank → brief) as though it were
+what the website runs. It is not. That pipeline is the CLI, dispatch-only, last
+touched 2026-08-11. What the site actually does is embed every abstract with
+SPECTER2, subtract a fixed corpus centroid, take a weighted mean of cosines
+against the seam's rows, and gate on a robust z — with a language model appearing
+only *after* the ranking, to write cards for the handful that survived.
+
+Describing the wrong machine on the page whose whole job is "here is how the
+ranking works" is the worst single error the site could carry.
+
+**What changes**
+
+- `docs/details.md` — the pipeline section rewritten around the real assay, one
+  subsection per step, each carrying its formula and its measured numbers:
+  centring (‖μ‖ = 0.913, spread 0.137 → 0.685), the blend, the robust z
+  (median/MAD, 1.4826), the gate defaults, the enricher's position *after* the
+  cut.
+- A new section on the train: the N×N cosine matrix, average-linkage
+  agglomeration with the Lance-Williams update, the 0.46 cut and its sweep, why
+  single linkage chained, and the force layout's spring law.
+- The CLI moves to its own section, honestly labelled as a second, different
+  machine, keeping the `.bbl`-over-OpenAlex finding.
+- A kramdown-generated table of contents at the top — generated, so it cannot
+  drift out of step with the headings.
+- `docs/assets/style.css` — TOC card, and `overflow-x` on tables and formula
+  blocks so a measurement table scrolls itself instead of the page.
+- `README.md` — same correction, caveman voice, plus the pyrite defence stated
+  for the site (where it is stronger: no citation or popularity term exists at
+  all). Links moved to the canonical `arxave.com`.
+
+**Also: code blocks were unreadable.** Rouge ships minima's light-theme syntax
+colours — a `#eef` block with dark-red comments — and `.highlighter-rouge
+.highlight` is two classes, so the theme's bare `.highlight` override lost to it.
+Fixed at matching specificity, with a token palette rebuilt on rock: lamp for
+keywords, gold for literal quantities, moss for strings, comments dropped to the
+faintest text on the site. `.err` no longer paints ordinary shell flags red.
+
+**Done when**
+
+- [x] Every formula on the page matches the code that runs it.
+- [x] Every measured constant is quoted with its date and its source file.
+- [x] Code blocks are legible in the cave palette.
+- [x] TOC is generated from the headings, not hand-maintained.

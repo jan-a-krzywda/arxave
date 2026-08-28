@@ -277,8 +277,46 @@ pre > code {
   border: 0;
   background: transparent;
 }
-.highlight {
+/* Rouge ships minima's light-theme syntax colours: a #fff block, a #eef block
+   for the fenced case, and a token palette picked for white paper. On this page
+   that landed as a pale lavender slab with dark-red comments — the one element
+   on the site that was still lit like daylight.
+
+   `.highlighter-rouge .highlight` is two classes, so a bare `.highlight`
+   override loses to it. Matching that specificity is the fix, not !important. */
+.highlight,
+.highlighter-rouge .highlight,
+figure.highlight {
   background: var(--rock-deep);
+  color: #c8d3e0;
+}
+
+/* The token palette, rebuilt on rock. Roles rather than rainbow: the lamp for
+   the words that command, gold for literal quantities, moss for strings, and
+   comments dropped to the faintest text on the site — a comment in a snippet is
+   there for whoever needs it and should not out-shout the command above it. */
+.highlight {
+  .c, .c1, .cm, .cs, .cd, .cp, .cpf { color: var(--text-faint); font-style: italic; }
+  .k, .kc, .kd, .kn, .kp, .kr, .kt, .kv { color: var(--lamp); }
+  .o, .ow, .p, .pi { color: var(--text-dim); }
+  .s, .s1, .s2, .sa, .sb, .sc, .sd, .se, .sh, .si, .sr, .ss, .sx, .dl { color: var(--moss); }
+  .m, .mb, .mf, .mh, .mi, .mo, .mx, .il { color: var(--gold); }
+  .nb, .bp { color: var(--lamp-dim); }
+  .nc, .nn, .ne, .nf, .nd, .no { color: #c8d3e0; }
+  .na, .nt, .nl, .nv, .vc, .vg, .vi, .py { color: var(--pyrite); }
+  .nx, .ni { color: var(--text); }
+  /* A shell prompt is punctuation, not content: dim, and unselectable so that
+     copying a block does not carry a `$` into the reader's terminal. */
+  .gp { color: var(--text-faint); user-select: none; }
+  .gd { color: #f0a49b; }
+  .gi { color: var(--moss); }
+  .gh, .gu { color: var(--text-dim); font-weight: 600; }
+  .ge { font-style: italic; }
+  .gs { font-weight: 600; }
+  /* Rouge marks anything its lexer could not place as an error and minima paints
+     it on a red background. In a shell block that fires on ordinary flags and
+     paths, so it is loud and always wrong. Plain text instead. */
+  .err { color: var(--text); background: transparent; }
 }
 
 /* ── Tables (minima's, e.g. in briefs) ────────────────────────── */
