@@ -44,6 +44,10 @@ test('a dollar sign in prose is money, not a delimiter', () => {
   // The failure this guards is silent and reads as plausible English:
   // "costs 5 and 10 in prose".
   assert.equal(deMath('costs $5 and $10 in prose'), 'costs $5 and $10 in prose');
+  assert.equal(deMath('Known only for $d=2, n=3$ protocols'), 'Known only for d=2, n=3 protocols');
+  assert.equal(deMath('$n = 9$'), 'n = 9');
+  assert.equal(deMath('from $100 to $200 a month'), 'from $100 to $200 a month');
+  assert.equal(deMath('$T = 10 mK and cold$'), '$T = 10 mK and cold$');
   assert.equal(deMath('no math at all, just prose'), 'no math at all, just prose');
 });
 

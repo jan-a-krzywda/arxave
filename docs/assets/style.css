@@ -1,5 +1,17 @@
 /* Shared form styling. Colours come from the tokens in cave.css. */
 
+/* ── Column width ─────────────────────────────────────────────
+   minima's wrapper is 740px inside, which wraps Dig's four stage cards 3 + 1
+   and squeezes the assay matrix. Every room loads this file, so widening here
+   gives Dig, Stockpile, Haul and Details one column width instead of Dig being
+   the odd wide room. Header and footer wrappers widen with it, so the nav
+   still lines up with the content. */
+@media (min-width: 900px) {
+  .wrapper {
+    max-width: 1140px;
+  }
+}
+
 /* ── Warning banner (noscript only) ───────────────────────────── */
 .warn-banner {
   background: rgba(224, 90, 77, 0.12);
