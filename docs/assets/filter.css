@@ -3,24 +3,10 @@
    ═══════════════════════════════════════════════════════════════════ */
 
 /* ── Masthead ─────────────────────────────────────────────────
-   minima prints the page title ("Dig") above the content; the hero below
-   says the same thing and more, so the theme's header is dropped. This
-   stylesheet is loaded by the dig page only, so the rule stays scoped. */
-.post-header {
-  display: none;
-}
-
+   No title here: _layouts/page.html drops the theme's page heading, and the
+   header nav already names the room. The hero opens with the lede. */
 .dig-hero {
   margin: 0 0 2rem;
-}
-
-.dig-title {
-  font-size: 2.6rem;
-  line-height: 1.1;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  margin: 0 0 0.6rem;
-  color: #e8ebef;
 }
 
 .dig-lede {

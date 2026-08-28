@@ -1,0 +1,13 @@
+---
+layout: default
+---
+{%- comment -%}
+  Overrides minima's page layout to drop the <h1>{{ page.title }}</h1> header.
+  Every page here is one of the four rooms, and the header nav already names
+  the room you are in, so the title repeated it one line lower.
+{%- endcomment -%}
+<article class="post">
+  <div class="post-content">
+    {{ content }}
+  </div>
+</article>
