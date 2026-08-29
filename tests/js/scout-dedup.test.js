@@ -71,7 +71,7 @@ console.log('\n4. one bad category feed does not take the haul down with it');
      stones must survive, and the failure must be reported, not swallowed. */
   const src = JS.slice(JS.indexOf('async function fetchAnnouncement('));
   const body = src.slice(0, src.indexOf('\n  }\n') + 4);
-  const make = new Function('fetchViaRelay', 'parseAnnouncementRSS', 'state',
+  const make = new Function('fetchViaRelay', 'parseAnnouncementRSS', 'relayFailure', 'state',
     body + '\n  return fetchAnnouncement;');
 
   const state = { scoutWarnings: [] };
@@ -81,6 +81,7 @@ console.log('\n4. one bad category feed does not take the haul down with it');
       if (cat === 'cond-mat.mes-hall') throw new TypeError('bad XML');
       return [{ arxiv_id: '2508.00001' }, { arxiv_id: '2508.00002' }];
     },
+    async (resp) => 'HTTP ' + resp.status,
     state);
 
   fetchAnnouncement(['quant-ph', 'cond-mat.mes-hall']).then((stones) => {
@@ -93,7 +94,7 @@ console.log('\n4. one bad category feed does not take the haul down with it');
     // Every feed failing is still an error, not an empty haul.
     const allBad = make(
       async () => { throw new Error('offline'); },
-      () => [], { scoutWarnings: [] });
+      () => [], async (resp) => 'HTTP ' + resp.status, { scoutWarnings: [] });
     allBad(['quant-ph', 'cond-mat.mes-hall']).then(
       () => { check('every feed failing throws', false, 'resolved instead'); done(); },
       (err) => { check('every feed failing throws', /arXiv scout failed/.test(err.message), err.message); done(); });
