@@ -450,7 +450,9 @@ nav_icon: dig
       arXiv does not opt in to cross-site reads, so the request goes through
       <a href="https://github.com/jan-a-krzywda/arxave/blob/main/supabase/functions/relay/index.ts">arxave's relay</a>.
       It carries a category list and public paper IDs. Never your topics, your
-      library or a key.
+      library or a key. It also caches what arXiv answers for a few minutes and
+      shares that copy with everyone. arXiv rate-limits the relay as one
+      client, so a single fetch has to serve the whole page.
     </p>
     <input type="text" id="cors-proxy" placeholder="(blank = arxave relay)">
   </details>

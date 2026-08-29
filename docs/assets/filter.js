@@ -784,8 +784,102 @@
     if (p.indexOf('?') === -1) return p + '?url=' + encodeURIComponent(url);
     return p + '&url=' + encodeURIComponent(url);
   }
-  function fetchViaRelay(url, opts) {
-    return fetch(relayUrl(url), opts || {});
+  /* arXiv's stated rate for the legacy API is one request every three seconds,
+     counted per client — and because the relay does the fetching, "the client"
+     is the relay, shared by everyone on the page. See supabase/relay-cache.sql
+     for the outage that taught us this.
+
+     So the page paces itself. Not blindly, though: the relay reports what a
+     response cost with `x-relay-cache`, and a `hit` cost arXiv nothing at all.
+     Waiting after one would slow every haul that the cache had just made free,
+     which is the wrong lesson to draw from a 429. */
+  var RELAY_GAP_MS = 3000;
+  var relayLastUpstreamAt = 0;
+
+  function relayCameFromCache(resp) {
+    /* A custom proxy in the CORS box sends no such header. Unknown means we
+       must assume it went upstream — pacing an already-cheap call is a small
+       cost, skipping a pace on an expensive one is the bug we are fixing. */
+    try {
+      var tag = resp.headers && resp.headers.get('x-relay-cache');
+      return tag === 'hit' || tag === 'stale';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function sleep(ms) {
+    return new Promise(function (r) { setTimeout(r, ms); });
+  }
+
+  /* How long the server asked us to wait, in ms, or 0 if it did not say.
+     Retry-After is either seconds or an HTTP date; arXiv's gateway sends
+     neither on its 429, which is why there is a backoff to fall back on. */
+  function retryAfterMs(resp) {
+    var raw = '';
+    try { raw = (resp.headers && resp.headers.get('Retry-After')) || ''; } catch (_) { return 0; }
+    if (!raw) return 0;
+    var secs = Number(raw);
+    if (Number.isFinite(secs) && secs >= 0) return Math.min(secs * 1000, 30000);
+    var when = Date.parse(raw);
+    if (!isNaN(when)) return Math.max(0, Math.min(when - Date.now(), 30000));
+    return 0;
+  }
+
+  /* 429 and the 5xx family are "ask again shortly"; a 403 or a 404 is a verdict
+     on the URL and retrying it only wastes the budget we are trying to protect. */
+  function relayWorthRetrying(status) {
+    return status === 429 || status === 502 || status === 503 || status === 504;
+  }
+
+  var RELAY_TRIES = 3;
+
+  async function fetchViaRelay(url, opts) {
+    var wait = relayLastUpstreamAt
+      ? RELAY_GAP_MS - (Date.now() - relayLastUpstreamAt)
+      : 0;
+    if (wait > 0) await sleep(wait);
+
+    var resp = null;
+    var lastErr = null;
+    for (var attempt = 0; attempt < RELAY_TRIES; attempt++) {
+      if (attempt > 0) {
+        /* Exponential, and it starts above the 3 s arXiv asks for: the whole
+           point of a retry here is to come back after the window has moved. */
+        var backoff = resp ? retryAfterMs(resp) : 0;
+        await sleep(backoff || RELAY_GAP_MS * Math.pow(2, attempt - 1));
+      }
+      try {
+        resp = await fetch(relayUrl(url), opts || {});
+      } catch (err) {
+        /* A dropped connection is as retryable as a 503, and on the last
+           attempt it is the error the caller should see. */
+        resp = null;
+        lastErr = err;
+        continue;
+      }
+      lastErr = null;
+      if (!relayCameFromCache(resp)) relayLastUpstreamAt = Date.now();
+      if (resp.ok || !relayWorthRetrying(resp.status)) return resp;
+    }
+    if (resp) return resp;      // out of attempts: hand back the last refusal
+    throw lastErr || new Error('relay unreachable');
+  }
+
+  /* A refusal, said in a way that tells you what to do about it.
+     "HTTP 429 — Rate exceeded" is arXiv's gateway wording and it reads like the
+     *user* did something too fast, which is almost never what happened: the
+     relay fetches server-side, so the limit is shared with everyone else on
+     the page and one busy morning spends it. */
+  async function relayFailure(resp) {
+    var body = '';
+    try { body = (await resp.text()).substring(0, 200); } catch (_) {}
+    if (resp.status === 429) {
+      return 'arXiv is throttling the shared relay (HTTP 429). Everyone on this ' +
+        'page fetches through one server, so the limit is shared. Wait a minute ' +
+        'and haul again — the answer is cached once it comes through.';
+    }
+    return 'HTTP ' + resp.status + (body ? ' — ' + body : '');
   }
 
   // ── escapeHtml ────────────────────────────────────────────────────
@@ -1060,7 +1154,7 @@
       var url = 'https://rss.arxiv.org/rss/' + encodeURIComponent(cats[i]);
       try {
         var resp = await fetchViaRelay(url);
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        if (!resp.ok) throw new Error(await relayFailure(resp));
         var batch = parseAnnouncementRSS(await resp.text(), cats[i]);
         for (var j = 0; j < batch.length; j++) {
           // A paper announced in two scouted archives is one stone, not two.
@@ -1102,11 +1196,7 @@
         '&max_results=' + maxResults +
         '&start=0';
       var resp = await fetchViaRelay(url);
-      if (!resp.ok) {
-        var relayErr = '';
-        try { relayErr = (await resp.text()).substring(0, 200); } catch (_) {}
-        throw new Error('arXiv scout failed: HTTP ' + resp.status + (relayErr ? ' — ' + relayErr : ''));
-      }
+      if (!resp.ok) throw new Error('arXiv scout failed: ' + await relayFailure(resp));
       var candidates = parseAtomXML(await resp.text());
       var cutoff = cutoffDate(new Date(), lookback);
       for (var i = 0; i < candidates.length; i++) {
