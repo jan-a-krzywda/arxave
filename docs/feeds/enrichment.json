@@ -3515,41 +3515,16 @@
  },
  "2608.29811": {
   "fields": {
-   "kind": "theory",
-   "result": "Dark mode coupled via $ZZ$ interaction to a bright mode achieves dispersive shift comparable to bright state while maintaining effective zero coupling strength and zero Purcell loss.",
-   "question": "Can a quantum state achieve dispersive readout without suffering from Purcell decay?",
+   "kind": "new result",
+   "result": "Dark mode in a coupled quantum system exhibits effective zero coupling strength and zero Purcell loss to resonator photons, yet maintains a dispersive shift almost identical to bright mode.",
+   "question": "Can a qubit mode achieve strong dispersive readout shift while completely avoiding Purcell loss?",
    "prior": "",
-   "limits": "Theoretical proposal relying on higher excited states to mediate dispersive shifts.",
+   "limits": "Relies on higher-order perturbation effects from higher excited states.",
    "tools": [
     "circuit quantum electrodynamics",
-    "dispersive readout",
-    "dark state engineering",
-    "higher-order perturbation theory"
-   ],
-   "figure": "",
-   "figure_url": "",
-   "figure_caption": "",
-   "figure_gloss": "",
-   "code": ""
-  },
-  "seen": "2026-09-01",
-  "model": "gemini-3.7-flash",
-  "shape": 5,
-  "depth": "abstract"
- },
- "2608.30953": {
-  "fields": {
-   "kind": "new result",
-   "result": "Spin-to-charge conversion and spin-torque efficiencies in $\\text{Py/MoTe}_2$ heterostructures are independent of $\\text{MoTe}_2$ thickness, proving conversion is governed by the interfacial Rashba-Edelstein effect rather than bulk spin Hall transport.",
-   "question": "Does charge-to-spin conversion in $\\text{MoTe}_2$ originate predominantly from the bulk or the interface?",
-   "prior": "Differs from $\\text{Pt}$ heterostructures which exhibit strong bulk thickness-dependent conversion.",
-   "limits": "Sputtered $\\text{Py/MoTe}_2$ interfaces.",
-   "tools": [
-    "spin-pumping ferromagnetic resonance (SP-FMR)",
-    "spin-torque ferromagnetic resonance (ST-FMR)",
-    "sputtered MoTe2 heterostructures",
-    "thickness-dependent measurements",
-    "interface-separation measurements"
+    "ZZ interaction",
+    "higher-order perturbation theory",
+    "coupled quantum system dark modes"
    ],
    "figure": "",
    "figure_url": "",
@@ -3559,6 +3534,30 @@
   },
   "seen": "2026-09-01",
   "model": "gemini-3.6-flash",
+  "shape": 5,
+  "depth": "abstract"
+ },
+ "2608.30953": {
+  "fields": {
+   "kind": "new result",
+   "result": "Spin-to-charge conversion and spin-torque efficiencies in sputtered $\\mathrm{Py}/\\mathrm{MoTe}_2$ heterostructures remain constant across $\\mathrm{MoTe}_2$ thicknesses, demonstrating conversion is driven by interfacial Rashba-Edelstein effect rather than bulk spin Hall effect.",
+   "question": "Does spin-charge interconversion in sputtered $\\mathrm{MoTe}_2$ heterostructures originate predominantly from bulk transport or from the interface?",
+   "prior": "",
+   "limits": "Room-temperature measurements on sputtered $\\mathrm{Py}/\\mathrm{MoTe}_2$ thin films.",
+   "tools": [
+    "spin-pumping ferromagnetic resonance (SP-FMR)",
+    "spin-torque ferromagnetic resonance (ST-FMR)",
+    "magnetron sputtering",
+    "$\\mathrm{Py}/\\mathrm{MoTe}_2$ heterostructures"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-09-01",
+  "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "abstract"
  },
