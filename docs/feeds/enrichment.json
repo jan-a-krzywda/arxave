@@ -3637,14 +3637,14 @@
  "2609.01037": {
   "fields": {
    "kind": "new method",
-   "result": "Dynamic intermediate representation (IR) elevates quantum gates to first-class values for dynamic creation, composition, and control steered by classical runtime computation.",
-   "question": "How to represent hybrid quantum-classical programs where gate choices depend on runtime data, classical control, or measurement results within a unified intermediate representation?",
-   "prior": "Static circuit-model intermediate representations restricted to fixed sequences of gates without native support for dynamic runtime gate construction or classical-quantum steering.",
+   "result": "Introduced dynamic intermediate representation (IR) treating quantum gates as first-class runtime values, enabling dynamic creation, composition, and classical control for hybrid programs within a single framework.",
+   "question": "How to represent and optimize hybrid quantum-classical programs where gate execution dynamically depends on runtime classical data or measurement outcomes?",
+   "prior": "Standard static quantum circuit model, which fixes gate sequences and struggles to represent runtime-dependent control and dynamic gate synthesis.",
    "limits": "",
    "tools": [
     "dynamic intermediate representation (IR)",
-    "first-class gate value model",
-    "compiler analysis and transformation suite"
+    "first-class gate semantics",
+    "hybrid quantum-classical compiler optimization"
    ],
    "figure": "",
    "figure_url": "",
@@ -3757,16 +3757,15 @@
  "2609.01448": {
   "fields": {
    "kind": "new result",
-   "result": "Constructed classically verifiable quantum advantage sampling problem runnable on $\\mathsf{QNC}^0[\\log\\log]$ circuits (one- and two-qubit gates) or $\\mathsf{QAC}^0$ circuits (constant depth with unbounded fan-in gates), requiring no mid-circuit measurements or feed-forward.",
-   "question": "Can classically verifiable quantum advantage be achieved with shallow quantum circuits without requiring mid-circuit measurements or adaptive feed-forward?",
-   "prior": "Arabadjieva et al. (2025) achieved single-round LWE-based proofs of quantumness, but required deeper circuits.",
-   "limits": "Relies on lattice knowledge assumption and a strengthened variant of the adaptive-hardcore-bit property of LWE; classical hardness is computational.",
+   "result": "Constructed classically verifiable quantum advantage sampling task solvable by $\\mathsf{QNC}^0[\\log\\log]$ circuits (one- and two-qubit gates) or $\\mathsf{QAC}^0$ circuits (constant-depth unbounded fan-in gates) with no mid-circuit measurements or feed-forward.",
+   "question": "Can shallow quantum circuits without mid-circuit measurements or feed-forward demonstrate verifiable quantum advantage under lattice-based hardness assumptions?",
+   "prior": "LWE-based single-round proof of quantumness of Arabadjieva et al. (2025) operated at higher circuit depth.",
+   "limits": "Relies on lattice knowledge assumption and a strengthened variant of the adaptive-hardcore-bit property of LWE; classical hardness is asymptotic.",
    "tools": [
     "Learning with Errors (LWE)",
-    "$\\mathsf{QNC}^0[\\log\\log]$ circuits",
-    "$\\mathsf{QAC}^0$ circuits",
-    "lattice knowledge assumptions",
-    "strengthened adaptive-hardcore-bit property"
+    "adaptive-hardcore-bit property",
+    "lattice knowledge assumption",
+    "shallow quantum circuit compilation"
    ],
    "figure": "",
    "figure_url": "",
