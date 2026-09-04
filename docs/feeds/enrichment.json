@@ -4265,15 +4265,16 @@
  "2609.03194": {
   "fields": {
    "kind": "new result",
-   "result": "Demonstrated full logical Clifford group on $[[20,2,6]]$ $C_4$-Helix code with error of $2.8^{+1.0}_{-1.6}\\times 10^{-4}$ per two-qubit logical Clifford, repeated QEC cycle error of $4.6^{+6.2}_{-2.6}\\times 10^{-5}$ per logical qubit, and heterogeneous 3-qubit GHZ state fidelity lower bound of $99.925^{+0.068}_{-0.245}\\%$, all outperforming unencoded baselines without post-selection.",
-   "question": "Can an integrated, low-overhead fault-tolerant architecture support memory, universal logical gates, and inter-code interfaces that outperform physical physical baselines on current hardware?",
+   "result": "Demonstrated full fault-tolerant architecture using $[[20,2,6]]$ $C_4$-Helix code on Quantinuum Helios: repeated QEC cycle error of $4.6^{+6.2}_{-2.6}\\times10^{-5}$ per logical qubit, two-qubit logical Clifford error of $2.8^{+1.0}_{-1.6}\\times 10^{-4}$, and heterogeneous three-logical-qubit GHZ state fidelity lower bound of $99.925^{+0.068}_{-0.245}\\%$ without postselection.",
+   "question": "Can an integrated quantum error-correcting architecture combine compact logical encoding, fault-tolerant transversal Clifford gates, and code-interfacing to outperform unencoded physical baselines on trapped ions?",
    "prior": "",
-   "limits": "Demonstrated on a 98-qubit trapped-ion processor without post-selection; sub-$10^{-6}$ error rates projected via circuit-level simulations under improved physical fidelities.",
+   "limits": "Demonstrated on a trapped-ion hardware architecture; reaching the $10^{-6}$-$10^{-8}$ logical-error regime for early fault-tolerant compute relies on circuit-level simulations with improved physical fidelities.",
    "tools": [
-    "Quantinuum Helios (98-qubit trapped-ion processor)",
+    "Quantinuum Helios 98-qubit trapped-ion processor",
     "$[[20,2,6]]$ $C_4$-Helix code",
     "distance-5 surface code",
-    "fault-tolerant chain-map interface"
+    "fault-tolerant chain-map interface",
+    "active quantum error correction"
    ],
    "figure": "",
    "figure_url": "",
@@ -4314,16 +4315,16 @@
  "2609.03048": {
   "fields": {
    "kind": "new method",
-   "result": "Integrated decoding halves required distillation code distance compared to separate decoding, yielding substantial Bell pair savings in distributed quantum error correction across surface and color code architectures.",
-   "question": "How to synthesize resource-adaptive, fault-tolerant distributed stabilizer measurement circuits when inter-module Bell pairs are much noisier than local operations?",
+   "result": "Integrated decoding halves required distillation code distance compared to separate decoding, substantially reducing required Bell pairs for distributed quantum error correction primitives under very noisy interconnects.",
+   "question": "How to synthesize resource-adaptive and context-optimized fault-tolerant distributed quantum error correction primitives when inter-module Bell pairs are much noisier than local gates?",
    "prior": "",
-   "limits": "Circuit-level Pauli noise model with depolarizing interconnect noise; relies on shared noisy Bell pairs between modules.",
+   "limits": "Numerical simulations under circuit-level noise with additional interconnect noise models; applies to surface and color code distributed memories and lattice surgery.",
    "tools": [
-    "fault tolerance by construction framework",
+    "fault-tolerance by construction framework",
+    "circuit-level noise simulations",
     "integrated decoding",
-    "entanglement distillation",
-    "lattice surgery",
-    "circuit-level noise simulations"
+    "distributed stabilizer measurement synthesis",
+    "lattice surgery optimization"
    ],
    "figure": "",
    "figure_url": "",
@@ -4436,15 +4437,15 @@
  "2609.03583": {
   "fields": {
    "kind": "new method",
-   "result": "Parity Twine Networks adapted to neutral-atom hardware reduce two-qubit gate count, shuttling, and circuit depth, improving estimated circuit fidelity by three orders of magnitude for a 30-qubit Quantum Fourier Transform (QFT).",
-   "question": "How to optimize gate count, circuit depth, and atom shuttling when mapping all-to-all interacting quantum circuits onto neutral-atom quantum processors with various native gate sets.",
-   "prior": "Standard QFT compilation strategies on neutral atoms.",
-   "limits": "Estimated fidelities derived from circuit compilation models rather than physical hardware execution; requires circuits encoding interactions in a common basis.",
+   "result": "Parity Twine Networks adapted to neutral-atom hardware reduce two-qubit gate count, atom shuttling, and depth, yielding estimated circuit fidelity three orders of magnitude higher for a 30-qubit quantum Fourier transform.",
+   "question": "How to optimize gate count, circuit depth, and atom shuttling for the Parity Architecture on neutral-atom quantum processors with diverse native gates and geometries?",
+   "prior": "Prior compilation strategies achieved lower estimated fidelity (three orders of magnitude lower for 30-qubit QFT).",
+   "limits": "Estimated fidelities derived from analytical/numerical resource counts rather than physical execution on hardware; applies to circuits encoding interactions in a common basis.",
    "tools": [
     "Parity Twine Networks (PTNs)",
-    "Parity Architecture",
-    "neutral-atom shuttling and static arrays",
-    "native CZ, CZSWAP, and iSWAP gates"
+    "Neutral-atom shuttling compilation",
+    "Native CZ, CZSWAP, and iSWAP gate realizations",
+    "Quantum Fourier transform (QFT) benchmarking"
    ],
    "figure": "",
    "figure_url": "",
