@@ -4526,6 +4526,9 @@
     if (byId('table-view-toggle').checked) {
       renderTable(order, kk, kp, topN);
     }
+
+    // ── Papers list (always on, alongside whichever view above is showing) ──
+    renderAssayList(order);
   }
 
   /** Wire the per-row weight sliders in the assay rail. `input` just updates
@@ -4734,6 +4737,68 @@
     };
 
     byId('assay-table-wrap').style.display = '';
+  }
+
+  /* The plain read: one row per stone in grade order, full width, clicking a
+     row opens it in place. No fetch — a hauled stone already carries its own
+     arXiv abstract, so "enrich" here just reveals what is already in state. */
+  var assayListWired = false;
+
+  function renderAssayList(order) {
+    var wrap = byId('assay-list');
+    if (!wrap || !order) return;
+
+    var gate = gateReport();
+    var openId = wrap.dataset.openSi;
+
+    var html = '';
+    for (var n = 0; n < order.length; n++) {
+      var si = order[n];
+      var stone = state.stones[si];
+      var z = gate && gate.z ? gate.z[si] : null;
+      var band = gate ? bandOf(z, state.select) : null;
+      var isOpen = String(si) === openId;
+
+      html += '<div class="assay-list-row' + (isOpen ? ' is-open' : '') +
+        '" data-si="' + si + '">' +
+        '<span class="assay-list-rank">' + (n + 1) + '</span>' +
+        (band ? bandChipHtml(band) : '') +
+        '<span class="assay-list-title">' + escapeHtml(stone.title) + '</span>' +
+        '<span class="assay-list-z">' + (z !== null && isFinite(z) ? fmtZ(z) : '—') + '</span>' +
+        '<span class="assay-list-caret" aria-hidden="true">▸</span>' +
+        '</div>';
+      html += '<div class="assay-list-detail">' + (isOpen ? assayListDetailHtml(si) : '') + '</div>';
+    }
+    wrap.innerHTML = html;
+
+    if (!assayListWired) {
+      assayListWired = true;
+      wrap.addEventListener('click', function (e) {
+        var row = e.target.closest('.assay-list-row');
+        if (!row) return;
+        var si = row.getAttribute('data-si');
+        wrap.dataset.openSi = (wrap.dataset.openSi === si) ? '' : si;
+        renderAssayList(state.order);
+      });
+    }
+  }
+
+  function assayListDetailHtml(si) {
+    var stone = state.stones[si];
+    if (!stone) return '';
+    var match = bestRowFor(si);
+    var out = '';
+    var authors = authorLine(stone);
+    if (authors) out += '<div class="assay-list-authors">' + authors + '</div>';
+    if (stone.abstract) out += '<div>' + escapeHtml(stone.abstract) + '</div>';
+    if (match) {
+      out += '<div class="assay-list-match">Best match: “' + escapeHtml(clipLabel(match.label)) +
+        '” (' + match.cosine.toFixed(2) + ')</div>';
+    }
+    if (stone.abs_url) {
+      out += '<div><a href="' + stone.abs_url + '" target="_blank" rel="noopener">open on arXiv →</a></div>';
+    }
+    return out;
   }
 
   function isPicked(si) {
