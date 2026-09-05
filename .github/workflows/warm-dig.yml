@@ -82,7 +82,7 @@ jobs:
           EMBED_URL: ${{ vars.ARXAVE_EMBED_URL }}
         run: |
           node warm-dig.mjs \
-            --categories "${{ inputs.categories || vars.ARXAVE_WARM_CATEGORIES || 'quant-ph, cond-mat.mes-hall, cs.AI, cs.LG' }}" \
+            --categories "${{ inputs.categories || vars.ARXAVE_WARM_CATEGORIES || 'quant-ph, cond-mat.mes-hall, cond-mat.str-el, cs.AI, cs.LG' }}" \
             --lookback "${{ inputs.lookback || vars.ARXAVE_WARM_LOOKBACK || '2' }}" \
             --presets ../docs/presets \
             ${{ inputs.dry_run && '--dry-run' || '' }}

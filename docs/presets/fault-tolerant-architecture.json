@@ -1,0 +1,35 @@
+{
+  "arxave_claim": 1,
+  "preset": "fault-tolerant-architecture",
+  "name": "Fault-tolerant architecture",
+  "blurb": "Codes, decoders and layouts — what a logical qubit costs, end to end.",
+  "saved": "2026-09-05",
+  "scout": {
+    "categories": "quant-ph",
+    "lookback_days": 1,
+    "max_results": 200
+  },
+  "touchstones": [
+    { "text": "surface code decoders and logical error rates under circuit-level noise", "weight": 1.0 },
+    { "text": "quantum LDPC codes and low-overhead fault tolerance", "weight": 1.0 },
+    { "text": "magic state distillation, cultivation and non-Clifford gate cost", "weight": 1.0 },
+    { "text": "lattice surgery, logical qubit layout and compilation to a fault-tolerant instruction set", "weight": 1.0 },
+    { "text": "resource estimation: physical qubit and runtime budgets for useful algorithms", "weight": 0.8 },
+    { "text": "real-time syndrome extraction and decoder hardware on the control stack", "weight": 0.8 },
+    { "text": "architectures exploiting biased noise, erasure conversion or bosonic codes", "weight": 0.8 }
+  ],
+  "cores": [
+    { "doi": "10.1103/physreva.86.032324", "weight": 1.0 },
+    { "doi": "10.1103/physreva.71.022316", "weight": 1.0 },
+    { "doi": "10.1088/1367-2630/14/12/123011", "weight": 1.0 },
+    { "doi": "10.1038/s41586-024-08449-y", "weight": 1.0 },
+    { "doi": "10.1038/s41586-024-07107-7", "weight": 1.0 },
+    { "doi": "10.22331/q-2021-04-15-433", "weight": 0.8 },
+    { "doi": "10.1145/3519935.3520017", "weight": 0.8 },
+    { "doi": "10.1016/s0003-4916(02)00018-0", "weight": 0.8 },
+    { "doi": "10.1103/prxquantum.2.040101", "weight": 0.6 }
+  ],
+  "blend": {
+    "paydirt_n": 10
+  }
+}

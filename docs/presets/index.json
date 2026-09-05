@@ -1,19 +1,29 @@
 {
   "presets": [
     {
-      "slug": "spin-qubits",
-      "name": "Spin qubits",
-      "blurb": "Exchange gates, readout, and the noise that limits them."
+      "slug": "solid-state-qubits",
+      "name": "Solid-state qubits",
+      "blurb": "Spins and superconducting circuits — the gates, the readout, and the noise that limits them."
     },
     {
-      "slug": "error-correction",
-      "name": "Quantum error correction",
-      "blurb": "Codes, decoders, and thresholds — what it costs to keep a logical qubit alive."
+      "slug": "atoms-ions-photons",
+      "name": "Atoms, ions and photons",
+      "blurb": "Tweezer arrays, trapped ions, and light — the platforms built from single particles."
     },
     {
-      "slug": "quantum-machine-learning",
-      "name": "Quantum machine learning",
-      "blurb": "Variational circuits, quantum kernels, and whether any of it beats a laptop."
+      "slug": "quantum-algorithms",
+      "name": "Quantum algorithms",
+      "blurb": "Speedups, and the classical work that keeps taking them back."
+    },
+    {
+      "slug": "fault-tolerant-architecture",
+      "name": "Fault-tolerant architecture",
+      "blurb": "Codes, decoders and layouts — what a logical qubit costs, end to end."
+    },
+    {
+      "slug": "quantum-simulation",
+      "name": "Quantum simulation and many-body",
+      "blurb": "Simulating matter on quantum hardware — and the tensor networks racing it."
     }
   ]
 }

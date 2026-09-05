@@ -1,0 +1,35 @@
+{
+  "arxave_claim": 1,
+  "preset": "quantum-algorithms",
+  "name": "Quantum algorithms",
+  "blurb": "Speedups, and the classical work that keeps taking them back.",
+  "saved": "2026-09-05",
+  "scout": {
+    "categories": "quant-ph",
+    "lookback_days": 1,
+    "max_results": 200
+  },
+  "touchstones": [
+    { "text": "quantum algorithms with provable speedup, query and gate complexity bounds", "weight": 1.0 },
+    { "text": "Hamiltonian simulation algorithms: product formulas, qubitization, signal processing", "weight": 1.0 },
+    { "text": "quantum linear algebra, block encodings and singular value transformation", "weight": 1.0 },
+    { "text": "variational algorithms: VQE, QAOA, and their optimization landscapes", "weight": 0.8 },
+    { "text": "end-to-end resource estimates for chemistry, optimization and cryptanalysis", "weight": 0.8 },
+    { "text": "dequantization and classical algorithms that match quantum claims", "weight": 0.8 },
+    { "text": "sampling-based quantum advantage and its classical spoofing", "weight": 0.6 }
+  ],
+  "cores": [
+    { "doi": "10.1137/s0097539795293172", "weight": 1.0 },
+    { "doi": "10.1145/237814.237866", "weight": 1.0 },
+    { "doi": "10.22331/q-2019-07-12-163", "weight": 1.0 },
+    { "doi": "10.1145/3313276.3316366", "weight": 1.0 },
+    { "doi": "10.1103/physrevlett.103.150502", "weight": 0.8 },
+    { "doi": "10.1038/ncomms5213", "weight": 0.8 },
+    { "doi": "10.1073/pnas.1801723115", "weight": 0.8 },
+    { "doi": "10.22331/q-2018-08-06-79", "weight": 0.6 },
+    { "doi": "10.1038/s41586-019-1666-5", "weight": 0.6 }
+  ],
+  "blend": {
+    "paydirt_n": 10
+  }
+}

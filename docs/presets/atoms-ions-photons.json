@@ -1,0 +1,34 @@
+{
+  "arxave_claim": 1,
+  "preset": "atoms-ions-photons",
+  "name": "Atoms, ions and photons",
+  "blurb": "Tweezer arrays, trapped ions, and light — the platforms built from single particles.",
+  "saved": "2026-09-05",
+  "scout": {
+    "categories": "quant-ph",
+    "lookback_days": 1,
+    "max_results": 200
+  },
+  "touchstones": [
+    { "text": "neutral atom tweezer arrays and Rydberg blockade entangling gates", "weight": 1.0 },
+    { "text": "trapped-ion gates, shuttling and QCCD architectures", "weight": 1.0 },
+    { "text": "photonic qubits, linear-optical computing and boson sampling", "weight": 1.0 },
+    { "text": "cavity QED, atom-photon interfaces and quantum networks", "weight": 0.8 },
+    { "text": "quantum memories and repeaters for long-distance links", "weight": 0.8 },
+    { "text": "mid-circuit measurement, atom loss and erasure conversion", "weight": 0.8 },
+    { "text": "laser and motional-mode error budgets, heating and crosstalk", "weight": 0.6 }
+  ],
+  "cores": [
+    { "doi": "10.1103/physrevlett.74.4091", "weight": 1.0 },
+    { "doi": "10.1103/revmodphys.82.2313", "weight": 1.0 },
+    { "doi": "10.1038/nature24622", "weight": 1.0 },
+    { "doi": "10.1038/35051009", "weight": 1.0 },
+    { "doi": "10.1038/s41567-019-0733-z", "weight": 0.8 },
+    { "doi": "10.1103/revmodphys.87.1379", "weight": 0.8 },
+    { "doi": "10.1038/35106500", "weight": 0.8 },
+    { "doi": "10.1038/nature18648", "weight": 0.6 }
+  ],
+  "blend": {
+    "paydirt_n": 10
+  }
+}

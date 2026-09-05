@@ -165,6 +165,7 @@
       ['cs.AI', 'Artificial intelligence'],
       ['cs.LG', 'Machine learning'],
       ['cond-mat.mes-hall', 'Mesoscale and nanoscale physics'],
+      ['cond-mat.str-el', 'Strongly correlated electrons'],
     ]],
     ['Physics — condensed matter', [
       ['cond-mat.mes-hall', 'Mesoscale and nanoscale physics'],

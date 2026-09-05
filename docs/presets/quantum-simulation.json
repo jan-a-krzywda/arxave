@@ -1,0 +1,35 @@
+{
+  "arxave_claim": 1,
+  "preset": "quantum-simulation",
+  "name": "Quantum simulation and many-body",
+  "blurb": "Simulating matter on quantum hardware — and the tensor networks racing it.",
+  "saved": "2026-09-05",
+  "scout": {
+    "categories": "quant-ph, cond-mat.str-el",
+    "lookback_days": 1,
+    "max_results": 200
+  },
+  "touchstones": [
+    { "text": "analog quantum simulation of lattice models on cold atoms or superconducting arrays", "weight": 1.0 },
+    { "text": "digital simulation of many-body dynamics, Trotter error and product formulas", "weight": 1.0 },
+    { "text": "tensor network and matrix product state methods, and classical simulability of quantum experiments", "weight": 1.0 },
+    { "text": "quantum chemistry and electronic structure on quantum computers", "weight": 0.8 },
+    { "text": "thermalization, many-body localization and quantum scars in driven systems", "weight": 0.8 },
+    { "text": "lattice gauge theory simulation on quantum hardware", "weight": 0.6 },
+    { "text": "error mitigation and verification for pre-fault-tolerant simulation claims", "weight": 0.8 }
+  ],
+  "cores": [
+    { "doi": "10.1007/bf02650179", "weight": 1.0 },
+    { "doi": "10.1126/science.273.5278.1073", "weight": 1.0 },
+    { "doi": "10.1038/nphys2259", "weight": 1.0 },
+    { "doi": "10.1103/physrevx.11.011020", "weight": 1.0 },
+    { "doi": "10.1038/s41586-023-06096-3", "weight": 1.0 },
+    { "doi": "10.1016/j.aop.2010.09.012", "weight": 0.8 },
+    { "doi": "10.1103/physrevlett.69.2863", "weight": 0.8 },
+    { "doi": "10.1038/nature24622", "weight": 0.6 },
+    { "doi": "10.1038/s41586-022-04940-6", "weight": 0.6 }
+  ],
+  "blend": {
+    "paydirt_n": 10
+  }
+}
