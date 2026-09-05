@@ -1004,61 +1004,35 @@ progress::-moz-progress-bar {
 .gate-readout.is-empty {
   color: var(--text-dim);
 }
-/* The three-line pick, doom-menu shaped: stacked rows, a gem-marked line
-   between each. The gem repeats the tier it sits above — diamond over the
-   strict end, copper over the loose one — so the row order alone tells you
-   which way each line pulls, before reading a word. */
+/* The three-stance pick: one row of small gems, not a stack of full-width
+   rows. Each gem is the tier it picks — diamond strict, copper loose — with
+   the name as a hover title rather than printed text, so it stays a row of
+   controls the width of a slider handle, not a card. */
 .gate-presets {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin: 0.5rem 0;
 }
 .gate-preset {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  width: 100%;
-  padding: 0.4rem 0.5rem;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  padding: 0;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 50%;
   background: none;
-  color: var(--text-dim);
-  text-align: left;
   cursor: pointer;
-  font: inherit;
 }
 .gate-preset:hover {
   border-color: var(--rock-edge);
   background: var(--rock-lit);
-  color: var(--text);
 }
 .gate-preset.is-active {
   border-color: var(--lamp);
   background: var(--rock-lit);
-  color: var(--text);
-}
-.gate-preset-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-}
-.gate-preset-name {
-  font-size: 0.92rem;
-}
-.gate-preset-sub {
-  font-size: 0.8rem;
-  color: var(--text-faint);
-}
-.gate-preset-sep {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0.15rem 0;
-}
-.gate-preset-sep::before,
-.gate-preset-sep::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--rock-edge);
 }
 .gate-gem {
   flex: none;
@@ -1078,35 +1052,6 @@ progress::-moz-progress-bar {
 .gate-gem-copper {
   background: linear-gradient(135deg, #dd9a6c, #8a4b2c);
   box-shadow: 0 0 4px rgba(138, 75, 44, 0.5);
-}
-.gate-adv {
-  margin-top: 0.5rem;
-}
-.gate-adv > summary {
-  cursor: pointer;
-  font-size: 0.88rem;
-  color: var(--text-dim);
-}
-.gate-grid {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin: 0.4rem 0;
-}
-.gate-grid label {
-  font-size: 0.88rem;
-  color: var(--text-dim);
-}
-.gate-grid input[type="number"] {
-  width: 4.5em;
-  padding: 0.3rem 0.4rem;
-  border: 1px solid var(--rock-edge);
-  border-radius: 4px;
-  background: var(--rock-lit);
-  color: var(--text);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  margin-left: 0.35rem;
 }
 
 .assay-grid {
@@ -1537,43 +1482,6 @@ progress::-moz-progress-bar {
   border-bottom: 2px solid var(--lamp);
 }
 
-/* ── Advanced block ───────────────────────────────────────────── */
-details.advanced {
-  border: 1px solid var(--rock-edge);
-  border-radius: 8px;
-  background: var(--rock-deep);
-  padding: 0.6rem 1rem;
-  margin-bottom: 1.5rem;
-}
-details.advanced > summary {
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 1rem;
-  color: var(--text-dim);
-  list-style: none;
-}
-details.advanced > summary::-webkit-details-marker {
-  display: none;
-}
-details.advanced > summary::before {
-  content: "▸ ";
-  color: var(--text-faint);
-}
-details.advanced[open] > summary::before {
-  content: "▾ ";
-}
-details.advanced input[type="text"] {
-  width: 100%;
-  box-sizing: border-box;
-  font-size: 0.98rem;
-  padding: 0.45rem 0.6rem;
-  border: 1px solid var(--rock-edge);
-  border-radius: 4px;
-  background: var(--rock);
-  color: var(--text);
-  margin-top: 0.3rem;
-}
-
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .role-grid {
@@ -1830,6 +1738,67 @@ a.feeds-item:hover {
 .pick-col { width: 2rem; text-align: center; }
 .pick-box { cursor: pointer; }
 
+/* ── Papers list ──────────────────────────────────────────────────
+   Full width, one row per stone in grade order — the matrix and table above
+   are narrow and column-shaped, this is the plain read. A row expands in
+   place on click, same idea as the train's own rows. */
+.assay-list {
+  margin-top: 1rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.assay-list-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.45rem 0.7rem;
+  cursor: pointer;
+  border-top: 1px solid var(--rock-edge);
+}
+.assay-list-row:first-child { border-top: none; }
+.assay-list-row:hover { background: var(--rock-lit); }
+.assay-list-rank {
+  flex: none;
+  width: 1.8rem;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.assay-list-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+.assay-list-z {
+  flex: none;
+  width: 3.2rem;
+  text-align: right;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.assay-list-caret {
+  flex: none;
+  width: 1rem;
+  text-align: center;
+  color: var(--text-faint);
+}
+.assay-list-row.is-open .assay-list-caret { transform: rotate(90deg); }
+.assay-list-detail {
+  display: none;
+  padding: 0 0.7rem 0.7rem 3.4rem;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  border-top: 1px solid var(--rock-edge);
+}
+.assay-list-row.is-open + .assay-list-detail { display: block; }
+.assay-list-detail .assay-list-authors { color: var(--text-faint); margin: 0.3rem 0; }
+.assay-list-detail .assay-list-match { color: var(--text-faint); font-style: italic; }
+.assay-list-detail a { color: var(--lamp); }
+
 /* ── The report bar ───────────────────────────────────────────────
    The report itself is a whole page and opens in its own tab; only its
    controls live here. */
@@ -1839,22 +1808,6 @@ a.feeds-item:hover {
   gap: 0.6rem;
   flex-wrap: wrap;
   margin: 0.8rem 0 0.4rem;
-}
-.report-source {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.9rem;
-  color: var(--text-dim);
-}
-.report-source select {
-  padding: 0.35rem 0.45rem;
-  font-size: 0.9rem;
-  border: 1px solid var(--rock-edge);
-  border-radius: 4px;
-  background: var(--rock);
-  color: var(--text);
-  max-width: 100%;
 }
 .report-btn {
   padding: 0.4rem 0.9rem;
@@ -1896,7 +1849,6 @@ a.feeds-item:hover {
   .preset-buttons { gap: 0.45rem; }
   .preset-btn { min-height: 44px; }
   .report-bar { gap: 0.5rem; }
-  .report-source { flex: 1 1 100%; }
   .pick-col { width: 2.4rem; }
   .pick-box { width: 20px; height: 20px; }
 }

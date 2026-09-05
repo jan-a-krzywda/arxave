@@ -284,91 +284,36 @@ nav_icon: dig
         </label>
         <span class="gate-readout" id="gate-readout" role="status"></span>
       </div>
-      <!-- The three-line pick. Same five numbers as the advanced grid below,
-           just handed over as a stance instead of a spreadsheet — someone who
-           has never heard of a z-score can still say whether they want only
-           the sure things, a middle load, or nothing missed. Clicking one
-           writes the five fields below it; typing in those fields is what
-           breaks a stance back into numbers, and the pick shows no highlight
-           once it no longer matches any of the three. -->
+      <!-- The three-line pick. Same five numbers the JS presets carry,
+           handed over as a stance instead of a spreadsheet: three gems in one
+           row, not a stack of full-width rows. Clicking one applies its
+           numbers; the active gem lights up, and none does once a manual
+           edit (from an imported claim, say) no longer matches any of them. -->
       <div class="gate-presets" role="group" aria-label="Pick a stance">
-        <button type="button" class="gate-preset" id="gate-preset-shiny" data-preset="shiny">
+        <button type="button" class="gate-preset" id="gate-preset-shiny" data-preset="shiny"
+                title="Most shiny ones — only the sure things">
           <span class="gate-gem gate-gem-diamond" aria-hidden="true"></span>
-          <span class="gate-preset-text">
-            <span class="gate-preset-name">Most shiny ones</span>
-            <span class="gate-preset-sub">only the sure things</span>
-          </span>
         </button>
-        <div class="gate-preset-sep"><span class="gate-gem gate-gem-diamond" aria-hidden="true"></span></div>
-        <button type="button" class="gate-preset" id="gate-preset-carry" data-preset="carry">
+        <button type="button" class="gate-preset" id="gate-preset-carry" data-preset="carry"
+                title="Reasonable carry — the default balance">
           <span class="gate-gem gate-gem-gold" aria-hidden="true"></span>
-          <span class="gate-preset-text">
-            <span class="gate-preset-name">Reasonable carry</span>
-            <span class="gate-preset-sub">the default balance</span>
-          </span>
         </button>
-        <div class="gate-preset-sep"><span class="gate-gem gate-gem-gold" aria-hidden="true"></span></div>
-        <button type="button" class="gate-preset" id="gate-preset-any" data-preset="any">
+        <button type="button" class="gate-preset" id="gate-preset-any" data-preset="any"
+                title="Do not miss any — loose lines, always a full load">
           <span class="gate-gem gate-gem-copper" aria-hidden="true"></span>
-          <span class="gate-preset-text">
-            <span class="gate-preset-name">Do not miss any</span>
-            <span class="gate-preset-sub">loose lines, always a full load</span>
-          </span>
         </button>
       </div>
-      <details class="gate-adv">
-        <summary>Where the lines fall <span class="sub">bands and floor</span></summary>
-        <p class="hint">
-          Each stone gets a <em>z</em>: how far its grade sits above the night's
-          median, in MAD units. A feed ships everything above the
-          <em>ship line</em>, labelled <strong>Pay dirt</strong> above the
-          <em>pay dirt line</em>, <strong>Worth a look</strong> between,
-          <strong>Long shot</strong> below. If fewer than <em>floor</em> stones
-          reach the ship line, the floor reaches down to <em>long shot z</em>,
-          never past the ceiling.
-        </p>
-        <div class="role-grid gate-grid">
-          <label>
-            Pay dirt line <span class="sub">min z</span>
-            <input type="number" id="gate-z" value="2" min="0" max="4" step="0.1">
-          </label>
-          <label>
-            Ceiling <span class="sub">max items</span>
-            <input type="number" id="gate-max-items" value="8" min="1" max="50">
-          </label>
-          <label>
-            Floor <span class="sub">min items</span>
-            <input type="number" id="gate-min-items" value="3" min="0" max="50">
-          </label>
-          <label>
-            Ship line <span class="sub">soft z</span>
-            <input type="number" id="gate-soft-z" value="1.5" min="0" max="4" step="0.1">
-          </label>
-          <label>
-            Long shot z <span class="sub">how far the floor reaches</span>
-            <input type="number" id="gate-long-z" value="0.5" min="0" max="4" step="0.1">
-          </label>
-        </div>
-        <p class="hint">
-          These five numbers travel with an exported claim, so a feed built from
-          it cuts where you set it here. The slider above writes the ceiling;
-          the tick-box drops the floor to zero.
-        </p>
-      </details>
+      <!-- The five numbers behind the gems above (min_z, max_items, min_items,
+           soft_z, long_z) still live in state.select and still travel with an
+           exported claim — there is just no on-screen grid to hand-edit them
+           in. -->
     </div>
 
     <!-- The report. The feed is what arrives unasked; this is what you ask for
-         once you have moved the weights, and it says which of the two produced
-         each paper — a band is the assay's confidence, hand-picked is yours. -->
+         once you have moved the weights. Always reports what the feed would
+         ship — the pay-dirt-cut and hand-picked-only sources are still in
+         reportItems() for the report page's own use, just not switchable here. -->
     <div class="report-bar" id="report-bar" style="display:none">
-      <label class="report-source">
-        Report on
-        <select id="report-source">
-          <option value="gate">what the feed would ship</option>
-          <option value="paydirt">the pay dirt cut (top N)</option>
-          <option value="picked">hand-picked only</option>
-        </select>
-      </label>
       <!-- A whole page of papers is not a panel wedged under a slider: it opens
            in its own tab, self-contained, so it can be read beside the Dig,
            saved with ⌘S, or printed. Copy stays here, where the clipboard
@@ -419,6 +364,14 @@ nav_icon: dig
       </div>
     </div>
 
+    <!-- Papers list: full width, one row per stone in grade order, always on
+         alongside the matrix/table above. Click a row to enrich it in place —
+         abstract, authors and the row it matched — with no fetch, since a
+         hauled stone already carries its own arXiv abstract. -->
+    <div id="assay-list-wrap">
+      <div class="assay-list" id="assay-list"></div>
+    </div>
+
     <!-- Tooltip -->
     <div id="cell-tooltip" class="cell-tooltip" style="display:none" role="tooltip"></div>
   </fieldset>
@@ -443,25 +396,17 @@ nav_icon: dig
     </div>
   </div>
 
-  <!-- ── Relay ── -->
-  <details class="advanced">
-    <summary>Relay <span class="sub">advanced, leave blank</span></summary>
-    <p class="hint">
-      arXiv does not opt in to cross-site reads, so the request goes through
-      <a href="https://github.com/jan-a-krzywda/arxave/blob/main/supabase/functions/relay/index.ts">arxave's relay</a>.
-      It carries a category list and public paper IDs. Never your topics, your
-      library or a key. It also caches what arXiv answers for a few minutes and
-      shares that copy with everyone. arXiv rate-limits the relay as one
-      client, so a single fetch has to serve the whole page.
-    </p>
-    <input type="text" id="cors-proxy" placeholder="(blank = arxave relay)">
-  </details>
+  <!-- ── Relay ── dropped for now; JS reads cors-proxy via byId with no
+       null-check at line ~779, so the field must still exist off-screen
+       rather than vanish outright. window.ARXAVE_RELAY / the default relay
+       still applies to everyone since there is no field to override it. -->
+  <input type="text" id="cors-proxy" value="" style="display:none">
 
   <!-- ── Small print ── -->
   <div class="cave-footnote" id="small-print">
     <p><strong>What is sent.</strong> Your touchstones, core samples and weights stay in this tab and survive a reload. The one thing that leaves is text you want scored: the pick runs on a server, so that text is sent there to be embedded, and is not stored.</p>
     <p><strong>The shared cache.</strong> Published text (arXiv abstracts, core-sample abstracts, preset touchstones) also goes into a <em>shared vector cache</em>, keyed by a hash, so nobody pays to cut the same phrase twice. <strong>A touchstone you type yourself never enters that cache</strong>, because reads on it are public and a hash of a short phrase is one dictionary away from the phrase.</p>
-    <p><strong>Your own pick or relay.</strong> Set <code>window.ARXAVE_EMBED</code> to any OpenAI-shaped <code>/v1/embeddings</code> (LM Studio, Ollama, a paid endpoint) and text is embedded there instead, with the shared cache skipped. The Relay field does the same for the arXiv fetch. Or fork it (<a href="{{ site.github_repo }}">source</a>).</p>
+    <p><strong>Your own pick or relay.</strong> Set <code>window.ARXAVE_EMBED</code> to any OpenAI-shaped <code>/v1/embeddings</code> (LM Studio, Ollama, a paid endpoint) and text is embedded there instead, with the shared cache skipped. Set <code>window.ARXAVE_RELAY</code> the same way for the arXiv fetch. Or fork it (<a href="{{ site.github_repo }}">source</a>).</p>
     <p><strong>Touchstone length.</strong> One word and a paragraph are not directly comparable, since longer text is more specific. The per-row weights are the mitigation.</p>
     <p><strong>What is real today.</strong> Scouting arXiv, embedding abstracts, and ranking on touchstone similarity with live re-blending. The rush (Scirate) sits behind a Cloudflare challenge and stays inactive.</p>
   </div>
