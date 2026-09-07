@@ -1,4 +1,35 @@
 {
-  "built": "2026-09-04",
-  "feeds": {}
+  "built": "2026-09-07",
+  "feeds": {
+    "atoms-ions-photons": {
+      "name": "Atoms, ions and photons",
+      "items": 3,
+      "paydirt": 0,
+      "updated": "2026-09-07"
+    },
+    "fault-tolerant-architecture": {
+      "name": "Fault-tolerant architecture",
+      "items": 6,
+      "paydirt": 2,
+      "updated": "2026-09-07"
+    },
+    "quantum-algorithms": {
+      "name": "Quantum algorithms",
+      "items": 3,
+      "paydirt": 1,
+      "updated": "2026-09-07"
+    },
+    "quantum-simulation": {
+      "name": "Quantum simulation and many-body",
+      "items": 8,
+      "paydirt": 4,
+      "updated": "2026-09-07"
+    },
+    "solid-state-qubits": {
+      "name": "Solid-state qubits",
+      "items": 3,
+      "paydirt": 0,
+      "updated": "2026-09-07"
+    }
+  }
 }
