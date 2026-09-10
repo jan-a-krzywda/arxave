@@ -5863,5 +5863,373 @@
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
+ },
+ "2609.09292": {
+  "fields": {
+   "kind": "new result",
+   "result": "Brickwork dual-unitary circuits improve quantum reservoir memory and nonlinear capacity at short-to-moderate delay, while increasing the readout measurement variance to mitigate finite-shot exponential concentration.",
+   "question": "How does dual-unitarity in brickwork quantum circuits affect reservoir computing performance, memory, nonlinearity, and resilience to exponential concentration?",
+   "prior": "",
+   "limits": "Numerical simulations on 1D spin chains of sizes up to $L=7$ qubits. Constant prefactor protection rather than altered exponential scaling of finite-shot noise.",
+   "tools": [
+    "Dual-unitary XXZ Trotterized Floquet circuits",
+    "Erase-input reservoir computing map",
+    "Information processing capacity (IPC)",
+    "Weyl chamber parametrization"
+   ],
+   "figure": "S4.F6",
+   "figure_url": "https://arxiv.org/html/2609.09292v1/tasks_vs_trotter.svg",
+   "figure_caption": "Figure 6: Error (given by the ”complement” $1-C$ of the IPC) as a function of the Trotter step for the nonlinear STM with $d=2$ [(a), (b) – Eq. ( 28 )], parity check [(c), (d) – Eq. ( 29 )], sine-square [(e), (f) – Eq. ( 31 )], MGTS [(g), (h) – Eq. ( 32 )] and NARMA( $\\tau+3$ ) [(i), (j) – Eq. ( 30 )] tasks. We highlight the region around the dual unitary point $\\Delta t=\\pi/4$ with the gray area. Results are shown for the integrable (left column, $\\epsilon=0$ ) and ergodic regimes (right column, $\\epsilon=1$ ), in analogy to Fig. 5 . Note the prominent dip at the DU point for delays up to $\\tau=L-1$ for most tasks, indicating the optimality around the DU point, corresponding to the Trotter step $\\Delta t=\\pi/4$ . Note that in the case of the sine-square [(e), (f)] we plot a single curve, since there is no notion of delay or order in this task. The results were averaged over $50\\times 40=2000$ task and gate realizations, respectively, with $J_{z}=0.8$ fixed. In this plot we have set $L=5$ . We take $40L$ points for the washout phase.",
+   "figure_gloss": "Reservoir task error ($1-C$) plotted against the Trotter step $\\Delta t$ for multiple benchmark tasks. Performance optimizes near the dual-unitary point $\\Delta t=\\pi/4$.",
+   "code": ""
+  },
+  "seen": "2026-09-10",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.09371": {
+  "fields": {
+   "kind": "review",
+   "result": "Solid-state quantum platforms share a common structure-coherence bottleneck driven by light elements and defects in disordered or buried interfaces, with no platform yet quantitatively connecting a specific atomic structure directly to measured coherence.",
+   "question": "What shared material constraints limit performance across solid-state quantum platforms and how can characterization methodologies address them?",
+   "prior": "",
+   "limits": "Focuses on solid-state platforms (superconducting qubits, color centers, quantum photonics, 2D heterostructures); proxy metrics remain unvalidated across multi-facility fabrication.",
+   "tools": [
+    "cryo-STEM",
+    "correlated cathodoluminescence",
+    "quantum scanning probes",
+    "ToF-SIMS",
+    "XPS"
+   ],
+   "figure": "S6.F10",
+   "figure_url": "https://arxiv.org/html/2609.09371v1/Fig_4_Overview.png",
+   "figure_caption": "Figure 10: (a) Diagram of material analysis techniques towards understanding TLS defects as a function of information content and operating conditions. Established groups of surface analysis techniques (yellow) at present used to correlate properties with qubit performance. (b) Three gaps identified in this review for the structure-coherence correlation. Images adapted with permission from 97 (a).",
+   "figure_gloss": "Information content and operating condition regimes for analytical surface techniques mapped against the characterization gaps needed to resolve two-level system defects.",
+   "code": ""
+  },
+  "seen": "2026-09-10",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.10079": {
+  "fields": {
+   "kind": "new method",
+   "result": "Single-zone transversal-gate layout and loss-aware compilation cut accumulated atom loss per syndrome-extraction round by $1.25\\times$ on average (up to $2.15\\times$) and CX routing time by up to $8.5\\times$, reducing logical error rates by up to $212.4\\times$ on 100-qubit circuits.",
+   "question": "How can physical layout, compilation, and decoding be co-designed to mitigate atom loss across fault-tolerant neutral-atom quantum computing architectures?",
+   "prior": "ZAC zoned rearrangement compiler on separate storage/entangling architectures had $2.9\\times$ longer average CX routing times ($8.4\\times$ longer on 32-qubit Ising) and higher logical error rates (e.g. $1.39\\times 10^{-6}$ vs $6.56\\times 10^{-9}$ on 100-qubit Heisenberg).",
+   "limits": "Circuit-level numerical simulations under rotated surface codes. Relies on continuous mid-circuit atom reloading rates of $2.24\\times 10^4$ to $1.53\\times 10^7\\text{ atoms/s}$, which exceeds current extraction demonstrations by orders of magnitude.",
+   "tools": [
+    "Single compute-zone neutral-atom layout",
+    "AOD-configuration-aware parallel routing",
+    "Transfer-deferred qubit scheduling",
+    "Delayed-erasure soft-output surface code decoder",
+    "Loss-aware fold-transversal magic state cultivation"
+   ],
+   "figure": "S8.F10",
+   "figure_url": "https://arxiv.org/html/2609.10079v1/CX_routing_time.png",
+   "figure_caption": "Fig. 10 : Routing time comparison in zoned and loss-aware layout (log scale, lower is better). The highest benefits of parallelism are seen in the 32- and 64-qubit lattice circuits, with reductions of $88\\%$ and $82\\%$ in CX-routing time. Number of AODs for computation = 4.",
+   "figure_gloss": "CX-routing time in milliseconds (log scale) across benchmark circuits comparing the zoned baseline against the loss-aware layout with 4 AODs. Shorter times reflect higher gate parallelism and fewer trap handoffs.",
+   "code": ""
+  },
+  "seen": "2026-09-10",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.09805": {
+  "fields": {
+   "kind": "new result",
+   "result": "Two-photon interference visibility of 82% demonstrated between remote $\\mathrm{V_{Si}}$ centers in separate SiC p-i-n diodes across two cryostats separated by 2 m over a 26-day run. Spectral tuning overlaps 19 randomly selected centers with linewidths typically below 60 MHz and bias readjustment required only every 8.4 hours.",
+   "question": "Can remote silicon-vacancy color centers in industrial silicon carbide achieve high two-photon interference visibilities stably over prolonged timescales?",
+   "prior": "",
+   "limits": "Cryogenic operation across two setups separated by 2 m. Requires diode voltage readjustment every 8.4 hours.",
+   "tools": [
+    "silicon vacancy ($\\mathrm{V_{Si}}$) color centers",
+    "industrial-grade SiC p-i-n diodes",
+    "DC voltage Stark tuning",
+    "two-photon interference setup across two cryostats"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-09-10",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "abstract"
+ },
+ "2609.09270": {
+  "fields": {
+   "kind": "new method",
+   "result": "Compiled quantum-classical workloads across heterogeneous targets directly from Python, reaching median steady-state round-trip latencies over RoCE v2 of 2.305 μs from an FPGA controller to an AMD CPU and 4.5 μs to an AMD MI210 GPU.",
+   "question": "Can high-level Python quantum programming frameworks be compiled directly onto heterogeneous distributed hardware to achieve microsecond-scale co-processing latencies for real-time quantum error correction?",
+   "prior": "",
+   "limits": "Round 0 exhibits higher latency (4.640 μs on CPU, 9.270 μs on GPU) due to one-time endpoint initialization. Evaluated on AMD hardware over local RoCE v2 connections.",
+   "tools": [
+    "Backline framework (PennyLane + Catalyst MLIR)",
+    "AMD VPK120 FPGA controller",
+    "RoCE v2 RDMA",
+    "AMD Ryzen Threadripper PRO CPU",
+    "AMD Instinct MI210 GPU"
+   ],
+   "figure": "A1.F10",
+   "figure_url": "https://arxiv.org/html/2609.09270v1/hwhs-b2b-random-delayed.png",
+   "figure_caption": "Fig. 10 : Steady-state b2b (blue) and random-delayed (red) traces, one row per responder. Only the first $N_{\\mathrm{random-delayed}}-1$ rounds are plotted here. The P50 and P99.9 quoted in each panel include only the rounds plotted, so for b2b values come from the truncated subset and can differ slightly from the full-run values in Table X . The first two columns plot round-trip time against round number and the third column overlays the two empirical CCDFs for that responder.",
+   "figure_gloss": "Round-trip time across rounds and empirical complementary CDFs comparing back-to-back and random-delayed message cadences across five CPU and GPU responders.",
+   "code": ""
+  },
+  "seen": "2026-09-10",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.09993": {
+  "fields": {
+   "kind": "new method",
+   "result": "Entangled non-Clifford magic states $|CS\\rangle=CS|++\\rangle$ are cultivated directly with no accepted closed-boundary logical-failure mechanisms through fault order two and an operation-count reduction of 34.8% at $p=5\\times 10^{-4}$ and 37.3% at $p=10^{-3}$ via optimized $d=5\\rightarrow 13$ surface-code expansion.",
+   "question": "Can the entangled non-Clifford resource $|CS\\rangle$ be cultivated directly with a fault-tolerant branch record, composable code-growth interface, and practical decoder rather than synthesized from independent single-qubit magic states?",
+   "prior": "Indirect synthesis of $|CS\\rangle$ from three logical $|T\\rangle$ states via a Clifford+$T$ circuit.",
+   "limits": "Evaluated under a uniform active-location stochastic-Pauli noise model omitting idle memory errors, leakage, coherent errors, and routing. Evaluated for $p=10^{-4}$ to $10^{-3}$; active locations count operations with early-abort accounting rather than spacetime volume.",
+   "tools": [
+    "commuting Clifford involutions",
+    "$[6,2,4]$ classical branch record",
+    "verified CAT$_7$ gadgets",
+    "midpoint Steane error detection",
+    "four-coset BP+OSD decoder"
+   ],
+   "figure": "S7.F7",
+   "figure_url": "https://arxiv.org/html/2609.09993v1/Fig7_matched_LER_BINARY_MUTED.svg",
+   "figure_caption": "Figure 7: Binary-LER-matched resource comparison. (a) Active locations per accepted $|CS\\rangle$ for Direct CS and the optimistic ready-patch three- $T$ comparator. The shaded band shows the effect of uncertainty in the Direct $A_{3}^{\\rm bin}$ estimate; uncertainty in the public three- $T$ anchors and interpolation is not included. (b) Cost ratio $C_{\\rm Direct}/C_{\\rm 3T}$ . The ordering changes between $8\\times 10^{-4}$ and $9\\times 10^{-4}$ ; no more precise crossover is claimed.",
+   "figure_gloss": "Active locations per accepted $|CS\\rangle$ plotted against target binary logical error rate comparing direct $|CS\\rangle$ cultivation to a three-$T$ synthesis baseline. Shows direct cultivation requires fewer operations at $p=5\\times 10^{-4}$ and $p=8\\times 10^{-4}$, with the cost advantage reversing between $8\\times 10^{-4}$ and $9\\times 10^{-4}$.",
+   "code": ""
+  },
+  "seen": "2026-09-10",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.10056": {
+  "fields": {
+   "kind": "new method",
+   "result": "Gated belief propagation pre-decoding reduces Tesseract $\\text{A}^{*}$ node expansions by $\\approx 15\\times$ at physical error rate $p = 0.05$ (peak reduction 14.79 at $p_{\\mathrm{gated}} = 0.1$, $\\tau = 0.0025$) for the $[[126, 12, d < 11]]$ code, and by $8.8\\times$ for the $[[72, 12, 6]]$ bivariate bicycle code, while matching standalone Tesseract logical error rates.",
+   "question": "Can pre-processing syndromes with belief propagation accelerate $\\text{A}^{*}$-based Tesseract search without degrading logical error rates in QLDPC codes?",
+   "prior": "Stand-alone Tesseract $\\text{A}^{*}$ search decoder and un-gated BP-Tesseract hybrid.",
+   "limits": "Simulated under an i.i.d. symmetric depolarizing noise model, tested only on physical error rates $p \\in [0.03, 0.1]$ and two specific codes ($[[126, 12, d < 11]]$ T1 and $[[72, 12, 6]]$ BB).",
+   "tools": [
+    "Belief propagation",
+    "$\\text{A}^{*}$ search algorithm (Tesseract)",
+    "Oscillation gating mechanism",
+    "Sum-product decoding with serial scheduling"
+   ],
+   "figure": "S4.F4",
+   "figure_url": "https://arxiv.org/html/2609.10056v1/avg_node_T1.png",
+   "figure_caption": "(a) T1 $\\mathrm{[[126,12,d<11]]}$ .",
+   "figure_gloss": "Mean number of $\\text{A}^{*}$ node expansions versus physical error rate $p$ comparing stand-alone Tesseract, ungated BP-Tesseract, and gated BP-Tesseract across T1 and BB codes.",
+   "code": ""
+  },
+  "seen": "2026-09-10",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.09994": {
+  "fields": {
+   "kind": "new method",
+   "result": "Constructing magic-state cultivation records as binary linear codes over Clifford parities saturates the Plotkin bound, resolving distance-four $|CS\\rangle$ in 6 logical measurements and $|CCZ\\rangle$ in 7 measurements, while reducing active locations in compiled Steane $|CS\\rangle$ cultivation by 26.6%.",
+   "question": "How to minimize the classical measurement record length and logical redundancy required to cultivate multiqubit non-Clifford resource states without sacrificing fault tolerance?",
+   "prior": "Independent repetition required 8 logical measurements for distance-four $|CS\\rangle$ and 12 logical measurements for distance-four $|CCZ\\rangle$.",
+   "limits": "Applies strictly to record-only classical errors; does not eliminate data-coupled fault mechanisms occurring inside measurement gadgets. Validated with 5000 shots per point without full-factory downstream decoder modeling.",
+   "tools": [
+    "binary linear record codes",
+    "third-level Clifford-hierarchy parity checks",
+    "Plotkin average-distance bound",
+    "exact state-vector Monte Carlo simulation",
+    "native-CZZ Steane code compilation"
+   ],
+   "figure": "S0.F2",
+   "figure_url": "https://arxiv.org/html/2609.09994v1/fig2a_resource_savings_v8.svg",
+   "figure_caption": "Figure 2: Consequences of coded Clifford records. (a) For distance four, coding reduces the $CS$ schedule from $8$ to $6$ logical checks, from $948$ to $696$ compiled-core active locations, and from $2844$ to $2040$ active-qubit gate steps; the $CCZ$ schedule falls from $12$ to $7$ logical checks. (b) The optimal $[5,2,3]$ and $[6,2,4]$ two-bit records give cubic and quartic wrong-acceptance scaling. (c) The $[7,3,4]$ $CCZ$ simplex schedule reaches the minimum length allowed for any binary record.",
+   "figure_gloss": "Comparison of measurement count, compiled core locations, and active-qubit gate-steps between independent repetition and coded schedules for $|CS\\rangle$ and $|CCZ\\rangle$ at distance four.",
+   "code": ""
+  },
+  "seen": "2026-09-10",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.09467": {
+  "fields": {
+   "kind": "new result",
+   "result": "Depth-independent upper bound on local depolarizing noise for fermionic quantum computation is $p=(8-2\\sqrt{6})/5 \\approx 62\\%$ (0.6202). Above this depolarizing rate, all 2-qubit parity-preserving non-Gaussian gates map into convex Gaussian channels.",
+   "question": "What is the upper bound on local depolarizing noise after which fault-tolerant fermionic quantum computing with matchgates and non-Gaussian gates becomes impossible?",
+   "prior": "Local depolarizing noise limit was $\\approx 45\\%$ for Clifford + T circuits (Bravyi, Browne, Calpin, Campbell, Gosset, Howard 2016).",
+   "limits": "Restricted to 2-qubit parity-preserving gates followed by local depolarizing noise, assuming noise-free matchgates and Gaussian input states.",
+   "tools": [
+    "Matchgate with non-Gaussian resource gate set",
+    "Uhlmann-Wootters concurrences for 4-mode fermionic states",
+    "Fermionic Choi state representation",
+    "Local depolarizing noise model"
+   ],
+   "figure": "S3.F2",
+   "figure_url": "https://arxiv.org/html/2609.09467v1/graph_swap.svg",
+   "figure_caption": "Figure 2: Numerical results implementing Algorithm 1 for SWAP. The left two graphs show the value for $\\Delta^{\\pm}$ for different probabilities of depolarization $p$ . The third graph shows that $\\left[\\rho_{U,p},P\\right]=\\boldsymbol{0}$ regardless of noise.",
+   "figure_gloss": "Concurrence parameters $\\Delta^+$ and $\\Delta^-$ versus depolarizing probability $p$ for SWAP, alongside state commutator with parity $[\rho_{U,p}, P]$. Shows $\\Delta^+$ crossing zero at $p \\approx 0.62$.",
+   "code": ""
+  },
+  "seen": "2026-09-10",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.09977": {
+  "fields": {
+   "kind": "review",
+   "result": "Unifies quantum linear algebra via a standardized five-primitive pipeline (block-encoding, qubitization, QSP, QSVT, and GQSP) and provides a decision workflow matching operator structure to polynomial synthesis.",
+   "question": "How can the parallel frameworks of QSVT and GQSP be unified into a systematic algorithm design workflow for matrix transformations?",
+   "prior": "",
+   "limits": "GQSP extension to the singular value domain for arbitrary matrices remains open; synthesis relies on efficient block-encoding availability and complementary polynomial finding.",
+   "tools": [
+    "Block-encoding",
+    "Qubitization",
+    "Quantum Signal Processing (QSP)",
+    "Quantum Singular Value Transformation (QSVT)",
+    "Generalized Quantum Signal Processing (GQSP)"
+   ],
+   "figure": "S3.F18",
+   "figure_url": "https://arxiv.org/html/2609.09977v1/poly_approx.svg",
+   "figure_caption": "(a) Comparison of the exact function $f_{30}(x)$ with its degree-20 Chebyshev and power-basis polynomial approximations over $x\\in[-1,1]$ . Both polynomial representations closely track the exact function across the entire interval.",
+   "figure_gloss": "Degree-20 Chebyshev and power-basis polynomial approximations versus the altered inverse function $f_{30}(x)$ on $x\\in[-1,1]$, achieving absolute errors near $10^{-9}$.",
+   "code": ""
+  },
+  "seen": "2026-09-10",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.10250": {
+  "fields": {
+   "kind": "new method",
+   "result": "Iterative refinement using fixed-precision QLSA and tomography yields classical solutions to $Ax=b$ with error $\\|x-A^{-1}b\\|\\le\\epsilon$ in $\\mathcal{O}(\\log(\\|b\\|\\kappa_A/\\epsilon))$ iterations, reducing precision dependence from polynomial to polylogarithmic.",
+   "question": "How can one extract high-precision classical solutions from quantum linear system algorithms combined with tomography without suffering polynomial overhead in the target accuracy?",
+   "prior": "Combining QLSA with quantum state tomography had polynomial dependence on the target inverse precision $1/\\epsilon$ to reconstruct classical vectors.",
+   "limits": "Fixed per-iteration quantum precision $\\xi$ must be strictly smaller than $1/\\kappa_A$; requires classical matrix-vector residual computation at each step.",
+   "tools": [
+    "iterative refinement",
+    "quantum linear system algorithms (HHL)",
+    "quantum state tomography",
+    "block encodings / QRAM / LCU"
+   ],
+   "figure": "S6.F2",
+   "figure_url": "https://arxiv.org/html/2609.10250v1/sensitivity_total_gates_IR_vs_direct.svg",
+   "figure_caption": "Figure 2: Cumulative circuit depth required to reach the residual threshold $\\|Ax-b\\|_{2}\\leq\\varepsilon$ , with and without iterative refinement. Solid curves with filled markers are measured transpiled depths: HHL + IR at the target $\\varepsilon=10^{-6}$ , and direct HHL at the relaxed threshold $\\varepsilon=10^{-2}$ , for which the required QPE register sizes are directly compilable. The dashed curve with hollow markers is the extrapolated direct-HHL depth at $\\varepsilon=10^{-6}$ , obtained from a fitted depth model; the shaded band is the fit’s 95% prediction interval. Boxed labels indicate the required QPE register size $q$ on each plateau.",
+   "figure_gloss": "Condition number $\\kappa_A$ versus cumulative transpiled circuit depth to achieve target residual norm $\\varepsilon$. Iterative refinement maintains near-constant cumulative depth around $10^4$ at $\\varepsilon = 10^{-6}$, avoiding the $10^{10}\\text{--}10^{11}$ depth required by direct HHL.",
+   "code": ""
+  },
+  "seen": "2026-09-10",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.09806": {
+  "fields": {
+   "kind": "new method",
+   "result": "Decomposing quantum dynamics onto a Dynamic Observable Subspace (DOS) gives polynomial-time classical simulation of observable expectation values for circuits with polynomial-dimension dynamic Lie algebras, scaling to hundreds of qubits.",
+   "question": "How can quantum circuit expectation values and variational dynamics be classically simulated in polynomial time for large qubit counts without barren plateaus?",
+   "prior": "",
+   "limits": "Polynomial efficiency requires a polynomial-sized DLA or a small induced DOS orbit. Restricted circuits may lack the expressivity to fully span arbitrary Hamiltonian target spaces.",
+   "tools": [
+    "Dynamic Observable Subspace (DOS)",
+    "Skew Heisenberg picture",
+    "Dynamic Lie Algebra (DLA)",
+    "Sparse adjoint matrix updates"
+   ],
+   "figure": "Sx2.F2",
+   "figure_url": "https://arxiv.org/html/2609.09806v1/lvn_heisenberg_pic.svg",
+   "figure_caption": "Figure 2 : Liouville von Neumann Dynamics in the Heisenberg Picture. In the skew Heisenberg picture, an observable $iO$ evolves by a Hamiltonian $H(t)=\\sum_{k}H_{k}(t)$ in reverse time from $T$ to $0$ to an operator state $iO(0)$ contained inside $\\text{orb}_{\\mathfrak{g}}^{iO}$ . Then the measurement of $iO$ is associated with $\\text{Tr}\\left(iO(0)\\,\\text{proj}_{\\mathfrak{g}}^{iO}(i\\rho(0))\\right)$ in the Heisenberg picture (or $\\text{Tr}\\left(iO\\,\\text{proj}_{\\mathfrak{g}}^{iO}(i\\rho(T))\\right)$ in the Schrödinger picture).",
+   "figure_gloss": "Reverse-time Heisenberg evolution of an observable $iO$ within its dynamic Lie orbit $\\text{orb}_{\\mathfrak{g}}^{iO}$, enabling expectation value simulation via projection of the initial state.",
+   "code": ""
+  },
+  "seen": "2026-09-10",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.10429": {
+  "fields": {
+   "kind": "theory",
+   "result": "A continuous-time quantum walk driven by a generalized Laplacian $L_\\alpha = L + \\alpha D$ searches irregular complete bipartite graphs with runtime $t_* = (\\pi/2)\\sqrt{N_1 B F_- / [k_1(B F_- - 2N_1 N_2)]}$, reaching optimal search time as $|\\alpha| \\to \\infty$.",
+   "question": "Can a generalized Laplacian quantum walk solve computational search problems faster than standard Laplacian or adjacency matrix walks?",
+   "prior": "Generalized Laplacian search offered no speedup over adjacency walks on weighted barbell graphs.",
+   "limits": "Asymptotic regime for large vertex counts $N_1, N_2 \\gg 1$; holds for irregular complete bipartite graphs ($N_1 \\neq N_2$).",
+   "tools": [
+    "continuous-time quantum walk",
+    "generalized Laplacian Hamiltonian",
+    "degenerate perturbation theory",
+    "Hamiltonian spatial search"
+   ],
+   "figure": "S0.F2",
+   "figure_url": "https://arxiv.org/html/2609.10429v1/5kn1big.svg",
+   "figure_caption": "(a) $N_{1}=5000$ , $N_{2}=2000$ , $k_{1}=2$ , and $k_{2}=3$ , so $N_{1}\\gg N_{2}$ .",
+   "figure_gloss": "Success probability plotted against time for searching complete bipartite graphs. Runtime decreases monotonically as $\\alpha$ moves toward $-\\infty$ when $N_1 > N_2$ or toward $+\\infty$ when $N_1 < N_2$.",
+   "code": ""
+  },
+  "seen": "2026-09-10",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.10486": {
+  "fields": {
+   "kind": "new method",
+   "result": "Averaging over a family of approximations via quantum randomized compiling reduces systematic QMC error from $\\mathcal{O}(\\epsilon)$ to $\\mathcal{O}(\\epsilon^{2})$ at negligible extra cost. In path integral Monte Carlo, QDrift replaces Trotter error $\\mathcal{O}(L^{3}\\beta^{3}/r^{2})$ with $\\mathcal{O}(\\lambda^{2}\\beta^{2}/r)$, eliminating explicit scaling with term count $L$.",
+   "question": "Can randomized compiling techniques from quantum computing be used to reduce systematic approximation errors and computational costs in classical Quantum Monte Carlo simulations?",
+   "prior": "Standard QMC uses a single fixed approximation with systematic error $\\mathcal{O}(\\epsilon)$ and Trotter error $\\mathcal{O}(L^{3}\\beta^{3}/r^{2})$.",
+   "limits": "Suppresses systematic error only; does not reduce statistical sampling variance or resolve the QMC sign problem.",
+   "tools": [
+    "Random compilation / randomized compiling",
+    "QDrift randomized Trotterization",
+    "Randomly corrected Trotterization",
+    "Path integral quantum Monte Carlo",
+    "Quantum trajectories method"
+   ],
+   "figure": "S1.F1",
+   "figure_url": "https://arxave.com/figures/2609.10486-S1.F1.svg",
+   "figure_caption": "Figure 1: Overview of the randomly compiled QMC (RC-QMC) framework. Standard QMC algorithms estimate an observable $\\langle\\hat{O}\\rangle$ by averaging an estimator function $F(\\hat{O},X)$ over a random variable $X$ sampled from a fixed approximate distribution $\\widetilde{\\mathcal{P}}$ (see Eq. ( 4 )), incurring systematic error $\\mathcal{O}(\\epsilon)$ . RC-QMC instead averages over a collection of approximate distributions $\\{\\widetilde{\\mathcal{P}}_{j}\\}$ weighted by probabilities $p_{j}$ (see Eq. ( 17 )), which suppresses the systematic error to $\\mathcal{O}(\\epsilon^{2})$ at essentially the same computational cost. This improvement is demonstrated in two settings: Randomly Compiled Path Integral Monte Carlo for thermal state estimation, where QDrift replaces the standard Trotter decomposition and eliminates the explicit dependence on the number of Hamiltonian terms, and Randomly Compiled Quantum Trajectories Method for open system dynamics, where randomly corrected Trotterization doubles the effective Trotter order.",
+   "figure_gloss": "Schematic comparing standard QMC (single fixed distribution, $\\mathcal{O}(\\epsilon)$ systematic error) against randomly compiled QMC (distribution averaging, $\\mathcal{O}(\\epsilon^2)$ systematic error) across path integral Monte Carlo and quantum trajectory methods.",
+   "code": ""
+  },
+  "seen": "2026-09-10",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.09779": {
+  "fields": {
+   "kind": "new method",
+   "result": "Splitting the Dirac Cellular Automaton evolution into $M$ fractional sub-steps in momentum space breaks the artificial phase-matching symmetry that cancels Zitterbewegung on finite lattices ($c\\delta t = \\delta x / M$), recovering continuous-time velocity oscillations and entanglement dynamics without increasing spatial register size.",
+   "question": "How can finite-grid Dirac Cellular Automata simulate continuous-time Dirac dynamics and interference phenomena like Zitterbewegung without requiring an inflated spatial qubit register?",
+   "prior": "",
+   "limits": "Circuit depth scales with temporal refinement factor $M$, causing accumulated gate error decay at $t > 4$; dynamic QFT circuits are constrained by mid-circuit measurement errors and relaxation times.",
+   "tools": [
+    "Split-Step Dirac Cellular Automata (SDCA)",
+    "Quantum Fourier Transform (QFT)",
+    "ibm_aachen, ibm_kingston, ibm_miami quantum processors",
+    "Twirled Readout Error Extinction (TREX)",
+    "Zero-Noise Extrapolation (ZNE)"
+   ],
+   "figure": "S4.F4",
+   "figure_url": "https://arxiv.org/html/2609.09779v1/FIG_4.jpg",
+   "figure_caption": "Figure 4: Experimental results of the SDCA for a highly localized initial state executed on the ibm_aachen quantum processor. (a) Time evolution of the internal space Pauli expectation values ( $\\langle\\sigma_{x}\\rangle$ , $\\langle\\sigma_{y}\\rangle$ , $\\langle\\sigma_{z}\\rangle$ ) and the corresponding entanglement entropy ( $S$ ) for the initial state $|\\Psi(0)\\rangle=|0\\rangle_{c}\\otimes|x=0\\rangle$ with mass $m=\\pi/2$ . (b) and (c) Experimental spacetime probability diagrams, $P(x,t)$ of the initial state $|\\Psi(0)\\rangle_{c}=\\frac{1}{\\sqrt{2}}(|0\\rangle_{c}+|1\\rangle_{c})\\otimes|x=0\\rangle$ for (b) a massless particle and (c) a massive particle with $m=\\pi/4$ . The insets display the corresponding ideal spacetime diagrams. (d) Fidelity of the experimental probability distributions relative to the ideal distributions over time step $t$ for both the massless and massive cases.",
+   "figure_gloss": "Plots internal Pauli expectation values, entanglement entropy, and spacetime probability distributions $P(x,t)$ across time steps $t$ on ibm_aachen for massless and massive ($m=\\pi/4$, $m=\\pi/2$) Dirac particles under $M=2$ SDCA.",
+   "code": ""
+  },
+  "seen": "2026-09-10",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
  }
 }
