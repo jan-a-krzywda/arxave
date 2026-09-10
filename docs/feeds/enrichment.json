@@ -5941,15 +5941,15 @@
  "2609.09805": {
   "fields": {
    "kind": "new result",
-   "result": "Two-photon interference visibility of 82% demonstrated between remote $\\mathrm{V_{Si}}$ centers in separate SiC p-i-n diodes across two cryostats separated by 2 m over a 26-day run. Spectral tuning overlaps 19 randomly selected centers with linewidths typically below 60 MHz and bias readjustment required only every 8.4 hours.",
-   "question": "Can remote silicon-vacancy color centers in industrial silicon carbide achieve high two-photon interference visibilities stably over prolonged timescales?",
+   "result": "Demonstrated two-photon interference with raw visibility of 82% between remote $\\mathrm{V_{Si}}$ color centers in separate cryostats over a 26-day campaign. Achieved spectral narrowing below 60 MHz and overlap across 19 randomly selected centers in industrial-grade SiC p-i-n diodes requiring bias readjustment only every 8.4 hours.",
+   "question": "Can silicon vacancy centers in industrial-grade silicon carbide devices provide stable, high-visibility two-photon interference across remote nodes over long timescales?",
    "prior": "",
-   "limits": "Cryogenic operation across two setups separated by 2 m. Requires diode voltage readjustment every 8.4 hours.",
+   "limits": "Measured between two cryostats separated by 2 meters. Electrical tuning requires bias readjustment every 8.4 hours.",
    "tools": [
-    "silicon vacancy ($\\mathrm{V_{Si}}$) color centers",
-    "industrial-grade SiC p-i-n diodes",
-    "DC voltage Stark tuning",
-    "two-photon interference setup across two cryostats"
+    "silicon vacancy ($\\mathrm{V_{Si}}$) color centers in industrial SiC",
+    "p-i-n diodes with electrical voltage biasing",
+    "two separate cryostat setups spaced by 2 m",
+    "two-photon Hong-Ou-Mandel interference setup"
    ],
    "figure": "",
    "figure_url": "",
