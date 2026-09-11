@@ -6722,14 +6722,14 @@
  "2609.10834": {
   "fields": {
    "kind": "new result",
-   "result": "Fabricated current-based DAC in 90 nm planar CMOS operating at cryogenic temperatures. Enables digital control of output current pulse amplitude, rise/fall slopes, and trigger-controlled pulse width while driving superconducting circuits.",
-   "question": "Can a digitally tunable CMOS current DAC operate at cryogenic temperatures to control flux coupled to superconducting qubits and circuit readout?",
+   "result": "Implemented cryo-CMOS current-steering DAC in planar 90 nm CMOS process providing digitally tunable pulse amplitude, rise/fall slopes, and trigger-controlled pulse width for superconducting qubit control and readout.",
+   "question": "Can a digitally tunable CMOS current-based DAC operate reliably at cryogenic temperatures to control flux and readout in superconducting circuits?",
    "prior": "",
-   "limits": "90 nm planar CMOS technology node.",
+   "limits": "Demonstrated for specific superconducting circuit driving requirements at cryogenic temperatures.",
    "tools": [
-    "90 nm planar CMOS process",
-    "Current-based DAC",
-    "Cryogenic measurement setup"
+    "planar 90 nm CMOS process",
+    "cryogenic measurement setup",
+    "current-steering DAC architecture"
    ],
    "figure": "",
    "figure_url": "",
