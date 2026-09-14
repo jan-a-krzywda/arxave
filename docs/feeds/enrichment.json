@@ -1,70 +1,4 @@
 {
- "2608.11072": {
-  "fields": {
-   "research_question": "What factors limit single-qubit gate fidelity in driven silicon spin qubits, and how can fidelity beyond 99.999% be achieved?",
-   "tools": [
-    "Driven silicon spin qubits",
-    "Spin-locking coherence time ($T_{1\\rho}$) measurement",
-    "Parity readout",
-    "Spectrally tailored pulse shaping",
-    "Microwave driving"
-   ],
-   "summary": "The authors investigated fidelity-limiting factors in driven silicon spin qubits, finding that proximal reservoirs degrade spin-locking coherence and off-resonant excitation causes benchmarking artifacts. By mitigating these effects and using spectrally tailored pulse shaping, they achieved a single-qubit gate fidelity of 99.99920(2)%."
-  },
-  "seen": "2026-08-12",
-  "model": "gemini-2.5-flash"
- },
- "2608.10325": {
-  "fields": {
-   "research_question": "How can a high-bandwidth feedback stabilization scheme be implemented for silicon double quantum dots to suppress low-frequency charge noise?",
-   "tools": [
-    "Silicon double quantum dot device",
-    "rf-reflectometry readout",
-    "Field-programmable gate array (FPGA)",
-    "OPX by Quantum Machines",
-    "Gradient-descent feedback (GDFB) approach"
-   ],
-   "summary": "The authors extended a gradient-descent feedback approach in a silicon double quantum dot device using an FPGA (OPX) for digital signal processing and high-bandwidth rf-reflectometry readout, enabling continuous multi-parameter gradient calculation and quick gate voltage updates. This high-speed stabilization scheme achieved -6 dB noise suppression up to a bandwidth of 5 kHz, effectively suppressing low-frequency 1/f noise and maintaining device stability."
-  },
-  "seen": "2026-08-12",
-  "model": "gemini-2.5-flash"
- },
- "2608.13543": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new method",
-   "headline": "An asymptotically optimal synthesis method for distributed CNOT and Clifford circuits is presented, enabling CNOT circuit implementation in CSS codes with O(nk) inter-block transversal CNOTs.",
-   "so_what": "This method offers a way to minimize non-local operations, which often dominate the time or error budget in large-scale distributed quantum computation.",
-   "caveat": "",
-   "tools": [
-    "block-matrix Gaussian elimination",
-    "Pauli exponential circuit representation",
-    "Clifford circuit synthesis",
-    "CSS code encoding"
-   ]
-  },
-  "seen": "2026-08-14",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.13530": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new method",
-   "headline": "Shunting an Andreev spin qubit with a linear inductor enhances its relaxation time by separating spin-qubit states in phase space.",
-   "so_what": "This inductively protected Andreev spin qubit combines the long coherence times and large anharmonicity of protected superconducting qubits with the operational advantages of a spin degree of freedom.",
-   "caveat": "This is a theoretical proposal.",
-   "tools": [
-    "linear inductor",
-    "quantum dot Josephson junction",
-    "semiconductor-superconductor device",
-    "fluxoniums"
-   ]
-  },
-  "seen": "2026-08-14",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
  "2608.14285": {
   "fields": {
    "verdict": "read",
@@ -6741,5 +6675,367 @@
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "abstract"
+ },
+ "2609.12066": {
+  "fields": {
+   "kind": "theory",
+   "result": "Atomic spontaneous emission at rate $\\gamma$ stabilizes a metastable superradiant phase via a coherent phase-space bridge, whereas pure dephasing at rate $\\delta$ actively destroys this coherence and suppresses superradiant order.",
+   "question": "How do atomic spontaneous emission and pure dephasing compete with cavity loss to modify nonequilibrium criticality and metastable dynamics in the anisotropic open Rabi model?",
+   "prior": "",
+   "limits": "Semiclassical limit $\\eta = \\Omega/\\omega \\to \\infty$; numerical calculations truncated at bosonic cutoff $N_{\\rm cutoff} \\le 400$.",
+   "tools": [
+    "mean-field stability analysis",
+    "exact Liouvillian diagonalization",
+    "Lindblad master equation",
+    "Wigner quasiprobability distribution"
+   ],
+   "figure": "S0.F4",
+   "figure_url": "https://arxiv.org/html/2609.12066v1/combined_wigner_NP_SP_BS.png",
+   "figure_caption": "Figure 4: Wigner functions of the cavity field in the NP ( $\\tilde{\\lambda}_{x}=\\tilde{\\lambda}_{y}=0.5$ ), SP ( $\\tilde{\\lambda}_{x}=1.5,\\tilde{\\lambda}_{y}=0.5$ ), and BP ( $\\tilde{\\lambda}_{x}=2.3,\\tilde{\\lambda}_{y}=1.1$ ). Rows from top to bottom represent NP, SP, and BP; columns from left to right represent $\\kappa$ only, $\\kappa+\\gamma$ , $\\kappa+\\delta$ , and $\\kappa+\\gamma+\\delta$ . Parameters: $\\kappa/\\omega=\\gamma/\\omega=\\delta/\\omega=0.5$ , $N_{\\rm cutoff}=400$ .",
+   "figure_gloss": "Wigner quasiprobability distributions $W(\\alpha)$ of the steady-state cavity field across normal, superradiant, and bistable phases under combinations of cavity loss $\\kappa$, spontaneous emission $\\gamma$, and pure dephasing $\\delta$.",
+   "code": ""
+  },
+  "seen": "2026-09-14",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.13065": {
+  "fields": {
+   "kind": "new result",
+   "result": "Real-time distributed error detection and feedforward correction demonstrated across two trapped-ion quantum processors separated by $\\sim 2\\text{ m}$. Stabilises logical qubit in a $[[2,1,1]]$ repetition code and actively corrects arbitrary single-qubit Pauli errors on a distributed Bell state.",
+   "question": "Can stabiliser measurements and quantum error detection/correction be performed across spatially separated quantum processors using photonic interconnects?",
+   "prior": "",
+   "limits": "Interleaved recooling reduces entanglement generation rate from $\\sim 100\\text{ s}^{-1}$ to $\\sim 10\\text{ s}^{-1}$. Calibration drifts and gate phase offsets not fully captured in error budget.",
+   "tools": [
+    "trapped-ion processors ($^{88}\\text{Sr}^+$, $^{43}\\text{Ca}^+$)",
+    "photonic interconnects",
+    "mixed-species geometric phase gates",
+    "real-time classical feedforward (TTL link)"
+   ],
+   "figure": "S1.F1",
+   "figure_url": "https://arxiv.org/html/2609.13065v1/fig1.png",
+   "figure_caption": "Fig. 1: Remote stabiliser measurements. a , Illustrative example of remote stabiliser measurements in a modular quantum architecture. i , Tanner graph of the $[[18,4,4]]$ bivariate bicycle code Bravyi et al. [2024] , Wang et al. [2026] , comprising 18 data qubits divided into left and right sets, together with $X$ - and $Z$ -check nodes. Each stabiliser acts on six data qubits, but the code requires interactions between qubits that cannot all be made local in a two-dimensional device layout. ii , The code can instead be distributed across three modules, each containing six data qubits, reducing both the number of qubits and the required local connectivity within each processor. iii , Inter-module stabiliser measurements are mediated by photonic interconnects. Entanglement between network qubits provides the shared resource required to perform these measurements across separate processors. b , Experimental implementation of a two-qubit remote stabiliser measurement. Two modules each hold a 88 Sr + ion providing a network qubit, $\\mathcal{Q}_{\\mathrm{N}{}}$ , and a 43 Ca + ion providing a data qubit, $\\mathcal{Q}_{\\mathrm{D}{}}$ , and auxiliary qubit, $\\mathcal{Q}_{\\mathrm{X}{}}$ . A Bell pair shared between the network qubits provides a distributed ancilla for measuring remote data-qubit stabilisers. Each module applies a local CNOT gate between the network and data qubits, mediated temporarily by the auxiliary qubit, mapping the joint data-qubit parity onto the network qubits. Their mid-circuit measurement outcomes are exchanged in real time via a classical (TTL) link. c , Characterisation of the two-qubit remote stabiliser measurement. The data qubits are prepared in the four $X$ -basis product states before an $X_{1}X_{2}$ stabiliser measurement. The probability of measuring odd parity on the network-qubit Bell pair is plotted as a function of the phase, $\\phi$ , of the final analysis pulse applied to both network qubits before measurement. The $+1$ ( $\\ket{++},\\ket{--}$ ) and $-1$ ( $\\ket{+-},\\ket{-+}$ ) stabiliser eigenspaces oscillate $\\pi$ radians out of phase, demonstrating syndrome discrimination. Error bars are the half-widths of $68\\text{\\,}\\mathrm{\\%}$ binomial confidence intervals, and solid lines are sinusoidal fits to the data.",
+   "figure_gloss": "Remote stabiliser measurement scheme and network qubit parity readout. Network qubit parity plotted against analysis pulse phase demonstrates syndrome discrimination between $+1$ and $-1$ eigenspaces of data-qubit pairs.",
+   "code": ""
+  },
+  "seen": "2026-09-14",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.12048": {
+  "fields": {
+   "kind": "new result",
+   "result": "Adiabatic edge-to-edge quantum state transfer of localized winding states across a 1D quasiperiodic optical lattice achieves fidelities up to 99.6% under locally adiabatic protocols.",
+   "question": "How can quantum state transfer protocols based on quasiperiodic edge winding states be efficiently implemented in realistic continuum ultracold atomic systems?",
+   "prior": "",
+   "limits": "Noninteracting bosons ($g=0$), single-particle regime, finite-size rational approximants ($N_w = 13, 21$), simulation rather than experiment.",
+   "tools": [
+    "Aubry–André–Harper (AAH) model",
+    "locally adiabatic driving protocols",
+    "MCTDH-X simulation",
+    "two-level Landau–Zener approximation"
+   ],
+   "figure": "S4.F5",
+   "figure_url": "https://arxiv.org/html/2609.12048v1/PDiagramm-N0_new.png",
+   "figure_caption": "Figure 5: Performance diagram for the state-transfer fidelity. Final-state fidelity $\\mathcal{F}$ as a function of the dimensionless transfer time $TJ_{\\mathrm{bulk}}/\\hbar$ and detuning strength $\\rho$ for (a) the tangent protocol ( $N=0$ ) and (b) the Roland-Cerf protocol ( $N=1$ ). Each panel was obtained with 2160 MCTDH-X simulations over a $72\\times 30$ grid in $(\\rho,T)$ space. The color scale is logarithmic, and fidelities below $\\mathcal{F}=0.75$ are omitted to emphasize the high-fidelity region. The dashed red line indicates the adiabatic boundary from Eq. ( 21 ). In the right panel, we additionally show the times $T_{n}$ from Eq. ( 29 ) for which the two-level assumptions predict unit fidelity.",
+   "figure_gloss": "Transfer fidelity $\\mathcal{F}$ plotted against dimensionless transfer duration $TJ_{\\mathrm{bulk}}/\\hbar$ and detuning strength $\\rho$ for the tangent protocol ($N=0$) and the Roland-Cerf protocol ($N=1$), showing coherent fidelity oscillations and improved high-$\\rho$ robustness for $N=1$.",
+   "code": ""
+  },
+  "seen": "2026-09-14",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.12698": {
+  "fields": {
+   "kind": "new method",
+   "result": "Postselected infidelity scales as $210.2p^3 + O(p^4)$ under uniform circuit-level depolarizing noise, bounded at $2.2\\times10^{-7}$ at $p=10^{-3}$ (99.9% joint confidence, 86.9% acceptance) using 19 qubits and 82 CNOT gates.",
+   "question": "Can co-designing the stabilizer-generator basis with flag circuits reduce the qubit and circuit overhead of fault-tolerant magic-state preparation?",
+   "prior": "100 CNOTs, 31 measurements, and leading correction error $25.5p^2$ in the two-block benchmark of Daguerre and Kim (2025).",
+   "limits": "Applies strictly to destructive postselected error-detection diagnostic; minimum-weight error correction has leading infidelity $183.81p^2$. Omits memory errors, routing, idle time, crosstalk, and coherent leakage.",
+   "tools": [
+    "quantum Reed-Muller to Steane code gauge fixing",
+    "jointly flagged syndrome extraction",
+    "destructive error detection",
+    "exact low-order fault enumeration",
+    "stratified Monte Carlo sampling"
+   ],
+   "figure": "S5.F6",
+   "figure_url": "https://arxiv.org/html/2609.12698v1/zero_b2_daguerre_benchmark.svg",
+   "figure_caption": "Figure 6: Matched ideal-readout ED benchmark. (a) The diamond and downward arrow at $p=10^{-3}$ show the 99.9% upper bound of Eq. ( 32 ); it is not a Monte Carlo point. Open circles show direct four-branch Monte Carlo estimates only where the complete one-standard-error interval is positive and can therefore be displayed on a logarithmic axis. The inset retains every remaining estimate on a linear axis, including negative values of the signed estimator. No point is clipped or horizontally displaced. (b) All 20 Monte Carlo acceptance points are shown. The blue curve is the exact expansion through $p^{3}$ and is drawn only in its low- $p$ range; the orange dashed curve is the published Daguerre–Kim polynomial fit and is stopped at $p=2\\times 10^{-2}$ . The Monte Carlo abscissae form a logarithmic grid from $5\\times 10^{-3}$ to $3\\times 10^{-2}$ , with $10^{7}$ shots for each of four stabilizer branches and two bases at every point.",
+   "figure_gloss": "Postselected logical infidelity versus physical depolarizing error rate $p$, showing exact analytical $O(p^3)$ scaling and the finite-$p$ upper-bound certificate at $p=10^{-3}$.",
+   "code": ""
+  },
+  "seen": "2026-09-14",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.12262": {
+  "fields": {
+   "kind": "new method",
+   "result": "Parallel sparse blossom decodes an $O(d)$-round syndrome extraction window on a distance-$d$ rotated surface code in average parallel runtime bounded by $\\exp[O((\\log\\log d)^{2})]$, yielding $o(1)$ average parallel runtime per round.",
+   "question": "Can minimum-weight perfect matching decoding via sparse blossom be parallelized with an exact correctness guarantee and a runtime per round that scales as $o(1)$?",
+   "prior": "Decoding time per round scaled as $O(d^{2.34})$ in sequential sparse blossom, requiring $O(d^{3.34})$ total latency for a $d$-round window (Higgott and Gidney 2023).",
+   "limits": "Circuit-level local stochastic error model below a finite threshold $p_{\\mathrm{th}}$, with finite-size numerical comparisons assuming negligible parallelization overhead.",
+   "tools": [
+    "parallel sparse blossom",
+    "hierarchical error clustering",
+    "minimum-weight embedded matching",
+    "rotated surface code simulation"
+   ],
+   "figure": "Sx2.F4",
+   "figure_url": "https://arxiv.org/html/2609.12262v1/fixed_vs_global.svg",
+   "figure_caption": "Figure 4 : Event counts per shot per syndrome-extraction round for global sparse blossom and parallel sparse blossom in rotated surface-code memory experiments as a function of the code distance $d$ . We consider code distances $d\\in\\{9,13,\\ldots,49\\}$ . The upper three panels correspond to physical error rates (a) $p=10^{-3}$ , (b) $p=10^{-4}$ , and (c) $p=10^{-5}$ under the uniform noise model. The lower three panels correspond to physical error rates (d) $p=10^{-3}$ , (e) $p=10^{-4}$ , and (f) $p=10^{-5}$ under the physically motivated noise model. The blue lines denote the event counts of global sparse blossom. The orange lines denote the event counts of parallel sparse blossom using the fixed parameter schedules. The dotted lines are guides proportional to $d^{2}$ . Error bars indicate standard errors of the mean. Under both noise models, the parallel event counts per shot per syndrome-extraction round decrease at larger code distances for $p=10^{-5}$ , indicating that a larger code distance increases the total amount of work but does not necessarily increase the critical-path length. For $p=10^{-4}$ , the $d$ dependence of the parallel event count is weaker under the physically motivated noise model than under the uniform noise model, indicating that the effective noise strength relevant to the decoder depends on the details of the noise model even at the same nominal physical error rate $p$ .",
+   "figure_gloss": "Event counts per shot per syndrome extraction round plotted against code distance $d\\in\\{9,13,\\ldots,49\\}$, demonstrating that parallel sparse-blossom runtime per round decreases with increasing $d$ at low physical error rates.",
+   "code": ""
+  },
+  "seen": "2026-09-14",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.12073": {
+  "fields": {
+   "kind": "new method",
+   "result": "Code-adapted basis-population dynamics under circuit-level stochastic Pauli noise are mapped to an exact $(2^{n}+1)$-dimensional Markov kernel, reducing Steane code dynamics from 129 to 11 states via orbit lumping.",
+   "question": "At what granularity can the multi-cycle dynamics and post-selection of quantum error detection protocols under noise be modeled exactly and tractably?",
+   "prior": "",
+   "limits": "Restricted to circuit-level stochastic Pauli noise and data-preserving Clifford syndrome-extraction circuits; transition matrix scales as $2^n + 1$ before symmetry lumping.",
+   "tools": [
+    "Markov transition matrices",
+    "stabilizer code-adapted basis",
+    "absorbing Markov chain reduction",
+    "Markov orbit lumping",
+    "Stim Monte Carlo simulations"
+   ],
+   "figure": "S9.F1",
+   "figure_url": "https://arxiv.org/html/2609.12073v1/fig1_transition_validation_v3_million.svg",
+   "figure_caption": "Figure 1: Transition-matrix validation. Lines join exact accepted-block matrix predictions at integer QED cycles; markers show $10^{6}$ -shot Stim estimates (pointwise $95\\%$ Wilson confidence intervals) for the $[[4,2,2]]$ (blue) and $[[5,1,3]]$ (orange) codes at $\\varepsilon=10^{-3}$ and $\\eta=0$ . Panel (a): acceptance probability $p_{\\mathrm{acc}}(t)$ . Panel (b): accepted-state correctness $\\mathrm{ASC}(t)$ . Matrix predictions use Pauli fault averaging and the reduction $\\mathcal{R}$ of Section 4.4 , independently of the simulator. Agreement over $20$ cycles supports the implementation of the population-level construction under the specified circuit and readout noise.",
+   "figure_gloss": "Accepted logical population and rejection probabilities as a function of integer QED cycle count for the $[[4,2,2]]$ and $[[5,1,3]]$ codes at physical error rate $\\varepsilon=10^{-3}$, comparing exact transition-matrix curves with $10^6$-shot Stim Monte Carlo data.",
+   "code": ""
+  },
+  "seen": "2026-09-14",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.12802": {
+  "fields": {
+   "kind": "new method",
+   "result": "DFE overlap $Y\\equiv\\operatorname{Tr}(\\rho\\widetilde{\\rho})$ and purity $\\mathscr{P}\\equiv\\operatorname{Tr}(\\widetilde{\\rho}^2)$ of PEC-mitigated state $\\widetilde{\\rho}$ serve as hardware witnesses and directional diagnostics: consistent underestimation yields $Y \\le 1$ and $\\mathscr{P} \\le 1$, while consistent overestimation yields $Y \\ge 1$ and $\\mathscr{P} \\ge 1$.",
+   "question": "How to test whether the noise parameters used in Probabilistic Error Cancellation (PEC) are accurate directly on hardware, and diagnose whether they are overestimated or underestimated?",
+   "prior": "",
+   "limits": "Requires positive Pauli fidelities ($>1/2$ identity coefficient) and absence of hybrid miscalibration; overestimation directionality for $Y$ in arbitrary circuits holds perturbatively under a nondegeneracy condition, while purity condition $\\mathscr{P}$ holds non-perturbatively.",
+   "tools": [
+    "Direct Fidelity Estimation (DFE)",
+    "Probabilistic Error Cancellation (PEC)",
+    "Two-copy purity estimator",
+    "Classically simulable surrogate circuits"
+   ],
+   "figure": "S6.F6",
+   "figure_url": "https://arxiv.org/html/2609.12802v1/dfe_overlap_vs_peprime_paper_N50.png",
+   "figure_caption": "Figure 6: Exact DFE overlap between the ideal state and the effective mitigated state for the global depolarizing model as a function of the deviated error parameter $\\widetilde{p}_{e}$ . We set the true error parameter to $p_{e}=0.02$ and plot the DFE overlap for $N=50$ qubits and $s=50$ , $100$ , and $150$ gates.",
+   "figure_gloss": "DFE overlap $\\operatorname{Tr}(\\widetilde{\\rho}\\rho)$ plotted against assumed depolarizing parameter $\\widetilde{p}_e$ for $N=50$ qubits and $s=50, 100, 150$ gates. The curve crosses 1 exactly at the true parameter $p_e=0.02$, being $<1$ for underestimated $\\widetilde{p}_e$ and $>1$ for overestimated $\\widetilde{p}_e$.",
+   "code": ""
+  },
+  "seen": "2026-09-14",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.12146": {
+  "fields": {
+   "kind": "new method",
+   "result": "Defines QUOPS to benchmark quantum capability by circuit size and execution rate. Translating utility challenge problems (factoring RSA-2048, FeMoco) shows computational capability must grow by 5 orders of magnitude over current physical processors (Quantinuum Helios-1 $Q=1504$, H2-1 $Q=1320$).",
+   "question": "How can quantum computational power be directly benchmarked and compared across disparate physical and logical architectures relative to utility-scale challenge problems?",
+   "prior": "Quantum volume and physical gate error rates; quantum volume scaling requires exponential classical verification and does not map directly to fault-tolerant utility resource requirements.",
+   "limits": "Historical score inferences rely on global depolarizing noise, two-qubit gates as the sole error source, and simplified compilation models accurate to within roughly a factor of two.",
+   "tools": [
+    "QUOPS benchmark suite",
+    "Mirror circuit fidelity estimation",
+    "Steane $\\llbracket 7,1,3\\rrbracket$ logical processor",
+    "Quantinuum Helios-1 ion-trap processor",
+    "IBM ibm_boston and Google Willow superconducting processors"
+   ],
+   "figure": "S0.F2",
+   "figure_url": "https://arxiv.org/html/2609.12146v1/fig_main_combined.png",
+   "figure_caption": "Figure 2: Measured capabilities of three state-of-the-art quantum computers. ( a – d ) Experimentally measured QUOPS capability regions for ( a ) Google’s Willow (105 transmon qubits), ( b ) IBM’s ibm_boston (156 transmon qubits), ( c ) Quantinuum’s H2 - 1 (56 ion qubits), and ( d ) Quantinuum’s Helios - 1 (98 ion qubits). Blue regions indicate successful execution of circuits directly on physical qubits, using the standard success threshold of $1/\\sqrt{e}$ . Pink indicates leakage-postselected performance, and orange indicates error-mitigated capability regions using a $1\\%$ success threshold, corresponding to sampling overhead of $10^{4}$ . Pale hatching indicates interpolated or extrapolated capability. The green region in ( d ) shows the capability of a fault-tolerant architecture using logical qubits encoded in the Steane $\\llbracket 7,1,3\\rrbracket$ code, chosen for simplicity rather than optimal QUOPS performance. ( e ) Historical QUOPS scores inferred from quantum volume data for IBM and Quantinuum systems, together with direct QUOPS measurements on Helios - 1 , H2 - 1 , and ibm_boston and the $\\llbracket 7,1,3\\rrbracket$ fault tolerant processor implemented on Helios - 1 . Dashed lines show exponential fits. ( f ) QUOPS rate versus QUOPS score for the experimentally measured architectures, projected surface-code architectures, and the smallest known requirements for solving RSA-2048 and FeMoco in 5 days. Error mitigation increases QUOPS scores at reduced throughput (orange markers); curves show the continuum of speed–size tradeoffs, achieved by varying the success threshold between $1/\\sqrt{e}$ and $1\\%$ . Dashed lines correspond to a constant number of maximally-sized circuit executions per second.",
+   "figure_gloss": "Plots QUOPS capability regions (circuit size vs width), historical capability score scaling vs time with exponential trend lines showing 1.4-year (Quantinuum) and 2.1-year (IBM) doubling times, and QUOPS execution rate vs score for physical, logical, and projected architectures against utility milestones.",
+   "code": ""
+  },
+  "seen": "2026-09-14",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.12020": {
+  "fields": {
+   "kind": "new method",
+   "result": "FastSched uses reinforcement learning and importance sampling to synthesize syndrome extraction schedules, reducing logical error rate by 25.9% versus AlphaSyndrome and 71.7% versus PropHunt on average, reaching a 97.8% reduction for distance-15 surface codes.",
+   "question": "How can automatic schedule synthesis find quantum error correction syndrome extraction schedules with low logical error rates without sacrificing scalability to large code distances?",
+   "prior": "AlphaSyndrome (MCTS) and PropHunt (MaxSAT) synthesized schedules matching or improving hand-designed baselines, but suffered from poor scaling at large distance or degraded logical error rates.",
+   "limits": "Evaluated under simulated noise models (e.g. Brisbane noise), one noisy extraction round, ideal boundaries, and specific decoders (PyMatching, BP-OSD). Search ceilings capped at 10 to 30 minutes.",
+   "tools": [
+    "Reinforcement learning",
+    "Importance sampling",
+    "Proximal policy optimization (PPO)",
+    "Rare-event estimation"
+   ],
+   "figure": "S1.F3",
+   "figure_url": "https://arxiv.org/html/2609.12020v1/scalability-contours.svg",
+   "figure_caption": "Figure 3. Surface-code LER versus distance under Brisbane noise (lower is better). Lines join point estimates; Figure 11 adds confidence bounds. The dashed PropHunt curve shows starting circuits because its searches returned no optimized schedules. Three curves show measured logical error rates at rotated surface-code distances three, five, seven, nine, eleven, thirteen, and fifteen. The horizontal axis is code distance. The vertical axis is LER on a logarithmic scale. Blue circles mark FastSched, rust squares mark AlphaSyndrome, and a purple dashed line with open triangles marks PropHunt initialization-only circuits. Names appear beside the curve endpoints in larger type. FastSched is labeled FastSched (This work). All results come from our matched Brisbane study with one noisy extraction round, ideal boundaries, and PyMatching. LER is the sum of X-memory and Z-memory failure rates. Lines join point estimates. Evaluation reports confidence bounds. The curves have no numerical point annotations.",
+   "figure_gloss": "Logical error rate on a logarithmic vertical axis versus rotated surface-code distance from 3 to 15 on the horizontal axis. FastSched maintains lower logical error rates than AlphaSyndrome and PropHunt across all evaluated code distances.",
+   "code": ""
+  },
+  "seen": "2026-09-14",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.13087": {
+  "fields": {
+   "kind": "theory",
+   "result": "Every detector in a composed stabilizer circuit splits across serial boundaries via virtual syndromes; composing gadget Extended Detector Error Models (EDEMs) under $Q_{t}A_{t-1} + P_{t}C_{t-1} = 0$ reproduces the monolithic detector error model as a block lower bidiagonal matrix $d_{t} = D_{t}f_{t} + (Q_{t}B_{t-1} + P_{t}E_{t-1})f_{t-1}$.",
+   "question": "How can detector error models be constructed incrementally and modularly from reusable logical gadgets without reanalyzing the full physical circuit?",
+   "prior": "Stim and stimflow compose chunk relations to reconstruct the monolithic circuit, then derive the DEM globally.",
+   "limits": "Stabilizer circuits with stochastic Pauli noise. Connected ports must share matching stabilizer codes and code presentations.",
+   "tools": [
+    "Extended Detector Error Models (EDEMs)",
+    "linear maps over $\\mathbb{F}_{2}$",
+    "virtual syndromes",
+    "block-matrix diagrammatic contraction"
+   ],
+   "figure": "S7.F12",
+   "figure_url": "https://arxiv.org/html/2609.13087v1/commit-buffer-banded-dem.svg",
+   "figure_caption": "Figure 12 : One step of sequential sliding-window decoding on the block-banded channel-check matrix $A_{\\mathsf{D}}$ of a chain of gadget calls $g_{1}\\to\\cdots\\to g_{10}$ (top strip). Column blocks are the fault partitions $\\mathsf{F}_{t}$ and row blocks the detector partitions $\\mathsf{D}_{t}$ . Causality empties the upper triangle. The figure assumes detector span $w=1$ , so nonzero blocks lie on the diagonal and the first subdiagonal; Sec. 5.2 and App. C provide locality conditions for the two-block band for repeated stabilizer, subsystem, and Floquet syndrome extraction, and Sec. 7.3 discusses gadgets that widen it. At step $j$ the inference window $W_{j}=\\{g_{4},\\dots,g_{8}\\}$ (black outline) supplies the visible detectors and the fault variables included in the inference problem. Its commit window $C_{j}=\\{g_{4},g_{5}\\}$ (green) is separated from the buffer (purple) by the commit boundary (bold dashed line), which cuts the wire between $g_{5}$ and $g_{6}$ in the interior of $W_{j}$ ; the interface data $b$ and $\\Delta v$ on that wire are handed to step $j+1$ . The committed correction reaches later detectors only through the orange block $(\\mathsf{D}_{6},\\mathsf{F}_{5})$ , which Proposition 7.1 folds into the frontier. Calls $g_{1}$ to $g_{3}$ (grey) were committed at earlier steps and discarded; their block $(\\mathsf{D}_{4},\\mathsf{F}_{3})$ was folded at step $j-1$ and fixes the input frontier of $W_{j}$ . The trailing boundary of $W_{j}$ plays no role in composition, and calls $g_{9}$ and $g_{10}$ (dashed) are not yet issued.",
+   "figure_gloss": "Sequential sliding-window decoding across a chain of gadget calls. Matrix columns represent fault partitions $\\mathsf{F}_{t}$ and rows represent detector partitions $\\mathsf{D}_{t}$, forming a block-banded structure where committed corrections fold across window boundaries.",
+   "code": ""
+  },
+  "seen": "2026-09-14",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.12284": {
+  "fields": {
+   "kind": "new method",
+   "result": "Purely dissipative Lindbladian solves $Ax=b$ via residual-reset jumps with trace-distance mixing time $\\Theta(\\kappa^2 \\log(1/\\varepsilon))$ and digital quantum query complexity $O\\!\\left(\\kappa^2 \\log(1/\\varepsilon) \\frac{\\log(\\kappa/\\varepsilon)}{\\log\\log(\\kappa/\\varepsilon)}\\right)$.",
+   "question": "Is it possible to solve linear systems from dissipation?",
+   "prior": "was $O(\\kappa\\log(1/\\varepsilon))$ query complexity in coherent algorithms (Costa et al. 2022, Chakraborty et al. 2023)",
+   "limits": "Requires $0 < \\varepsilon < 1/4$, $\\kappa \\geq 1$, and unitary access to block encoding $U_A$ and state preparation $U_b$.",
+   "tools": [
+    "residual kernel encoding",
+    "purely dissipative Lindbladian",
+    "collective block encoding",
+    "Lindbladian simulation"
+   ],
+   "figure": "S3.F1",
+   "figure_url": "https://arxave.com/figures/2609.12284-S3.F1.svg",
+   "figure_caption": "Figure 1: Population flow for the purely dissipative residual-reset solver.",
+   "figure_gloss": "Schematic of population flow in the dissipative solver showing jump-induced reset to state $|r\\rangle$ and decay towards the target stationary state.",
+   "code": ""
+  },
+  "seen": "2026-09-14",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.12172": {
+  "fields": {
+   "kind": "new method",
+   "result": "Parallel circuit execution on 156-qubit ibm_boston processor reduces billed QPU execution time by $3.5\\times$--$5.5\\times$ while retaining $83$--$92\\%$ of sequential fidelity.",
+   "question": "How can idle qubits on large quantum processors be utilized to execute multiple independent circuits simultaneously and reduce execution time?",
+   "prior": "Qiskit ParallelExperiment provided multi-circuit execution mechanics but required manual partition selection without error awareness.",
+   "limits": "Dependent on availability of low-error disjoint device partitions and prone to transpiler escape constraints; multi-GPU classical scaling evaluated up to 28 qubits and 16 GPUs.",
+   "tools": [
+    "IBM 156-qubit ibm_boston processor",
+    "CUDA-Q and MPI on NERSC Perlmutter",
+    "QED-C application-oriented benchmarks",
+    "Topology-aware greedy partition mapping algorithm"
+   ],
+   "figure": "S5.F6",
+   "figure_url": "https://arxiv.org/html/2609.12172v1/combined_ibm_boston_fidelity_depth.svg",
+   "figure_caption": "Fig. 6 : Fidelity and Billed Execution-Time Comparison for Standard QED-C Benchmarks on IBM Boston. Parallel and sequential execution results for the Bernstein–Vazirani (BV), transverse-field Ising model (TFIM), and Quantum Fourier Transform (QFT) benchmarks. The top row reports the Hellinger fidelity as a function of qubit width, with error bars indicating the standard deviation across repeated runs; the secondary axis shows the corresponding transpiled circuit depth. Parallel execution generally exhibits lower fidelity than sequential execution because partitioning constrains qubit placement and routing within each partition, introducing additional routing overhead. As circuit depth increases, particularly for TFIM and QFT, the fidelity of both execution strategies decreases, with the parallel implementation experiencing a larger degradation. The bottom row reports the billed execution time together with the percentage reduction achieved through parallel execution. Executing independent circuits simultaneously on disjoint qubit partitions consistently reduces billed execution time, although the achievable reduction decreases for larger circuits as the number of available partitions becomes more limited.",
+   "figure_gloss": "Hellinger fidelity and billed QPU execution time on ibm_boston plotted against circuit qubit width. Parallel execution achieves $3.5\\times$--$5.5\\times$ runtime reductions while closely matching sequential fidelity across benchmarks.",
+   "code": ""
+  },
+  "seen": "2026-09-14",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.12840": {
+  "fields": {
+   "kind": "new method",
+   "result": "Covariance-orthogonal projection $\\pi_{m}^{\\sigma_{0}}$ compresses Heisenberg observables onto at-most-$m$-body subspaces while preserving expectation values $\\langle{\\bf O}\\rangle_{\\sigma_{0}}$ and spatial support for product states $\\sigma_{0}$.",
+   "question": "How can Heisenberg-picture Pauli propagation be truncated reliably and stably during coherent many-body dynamics?",
+   "prior": "Conventional Hilbert--Schmidt weight-based truncation and state-informed methods like xSPD discard components above weight $m$, losing target expectation value preservation and suffering from instability.",
+   "limits": "Product reference states $\\sigma_{0}$; requires exponential tail concentration $\\Theta_{r}^{(g)}(s) \\leq C_{g}e^{2{\\cal M}_{1}(s)}e^{-2\\kappa_{g}r}$ for certified sufficiency; rank-deficient states can suffer compatibility failures in covariance quotient geometry.",
+   "tools": [
+    "state-adapted generalized mean-field projections",
+    "covariance bilinear form",
+    "adaptive hierarchical-basis Krylov evolution",
+    "Lieb-Robinson bounds",
+    "Rényi-2 operator-space entanglement entropy"
+   ],
+   "figure": "S0.F2",
+   "figure_url": "https://arxiv.org/html/2609.12840v1/tfim_error_time_walltime.svg",
+   "figure_caption": "Figure 2: Accuracy and computational cost for the $3\\times 3\\times 2$ TFIM benchmark. (a) Instantaneous absolute error $\\Delta Z_{0}(t)=|\\langle Z_{0}(t)\\rangle_{\\rm approx}-\\langle Z_{0}(t)\\rangle_{\\rm exact}|$ for covariance and HS adaptive PP at $m=1,2,3$ , together with representative TN results at $\\chi=8,32,128$ . (b) Maximum instantaneous error $\\Delta_{\\max}=\\max_{tJ\\in[0,1.215]}\\Delta Z_{0}(t)$ versus measured end-to-end wall time, including the full TN hierarchy $\\chi=8,16,32,64,128$ . The $\\chi=16,64$ trajectories are omitted from panel (a) for clarity.",
+   "figure_gloss": "Instantaneous absolute error $\\Delta Z_{0}(t)$ and computational resource cost versus time for covariance PP, Hilbert--Schmidt PP across $m=1,2,3$, and tensor-network benchmarks on a $3\\times 3\\times 2$ transverse-field Ising lattice.",
+   "code": ""
+  },
+  "seen": "2026-09-14",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.13055": {
+  "fields": {
+   "kind": "new result",
+   "result": "The maximum effective sub-resonant drive amplitude before the onset of chaos scales as $\\eta_{\\max} \\propto \\gamma^{0.61}$, where $\\gamma = \\omega_q / \\alpha$. For four-wave iSWAP/beamsplitter gates, the interaction rate figure of merit scales weakly as $\\alpha \\eta_{\\max}^2 \\propto \\alpha^{-0.22} \\omega_q^{1.22}$, establishing an upper limit of approximately $\\omega_q / 20$.",
+   "question": "How does the sub-resonant drive strength threshold for chaos in transmon qubits depend on transmon parameters and drive frequency?",
+   "prior": "",
+   "limits": "Isolated transmons driven sub-resonantly; assumes transmon single-mode approximation.",
+   "tools": [
+    "14 transmon devices ($E_J/E_C$ varying over two orders of magnitude)",
+    "Floquet branch analysis",
+    "semiclassical Poincaré maps"
+   ],
+   "figure": "S4.F4",
+   "figure_url": "https://arxiv.org/html/2609.13055v1/fig_4.png",
+   "figure_caption": "Figure 4: Relationship between chaos threshold $\\eta_{\\max}$ and $\\gamma$ . a , Threshold drive strength $\\eta_{\\max}$ as a function of $\\gamma$ at drive frequency $\\Omega_{\\textrm{d}}=0.35$ . Error-bars shows the peak to peak variation observed about the mean over 10 values of $n_{\\textrm{g}}$ . Both Floquet and semi-classical simulations show quantitative match with experiments. $n_{\\textrm{zpf}}=\\sqrt{\\gamma}/4$ is plotted as a black dashed line for reference. b , Linear fit applied to log-plot for both measured and simulated $\\eta_{\\max}$ to obtain the power scaling. c , Heatmap of MBC threshold, $\\eta_{\\max}/\\gamma^{0.61}$ vs $\\Omega_{\\textrm{d}}$ , for all simulated transmons after dividing out the power-scaling with $\\gamma$ obtained from b . 63 transmons with $\\gamma$ evenly spaced between $11$ and $132$ were simulated. The density is normalized such that its sum along any vertical linecut is $1$ . The thresholds for all transmons collapse to one curve that shows the drive frequency dependent factor in $\\eta_{\\max}$ , which varies by a factor of two over the entire frequency range. d , Same rescaling applied to the experimentally measured threshold for 14 transmons (scatter points) overlaid on the rescaled BC threshold. The black line is the mean over all simulated transmons whereas the boundary of the gray shaded region shows the max deviation from this mean. While the MBC threshold gives a clear picture of the threshold for transition to the chaotic regime, the experimental data is compared to the BC threshold because it includes the effect of individual resonances as described in Sec. II .",
+   "figure_gloss": "Chaos threshold drive strength $\\eta_{\\max}$ plotted against the ratio $\\gamma = \\omega_q / \\alpha$, showing the universal $\\eta_{\\max} \\propto \\gamma^{0.61}$ scaling across experiment and simulation.",
+   "code": ""
+  },
+  "seen": "2026-09-14",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.12523": {
+  "fields": {
+   "kind": "theory",
+   "result": "Superconducting unconventional magnet junctions realize transverse spin and charge diode effects with perfect rectification efficiencies ($\rho_y = \\pm 1$ and $\\eta_y = \\pm 1$) at zero net magnetization.",
+   "question": "Can transverse superconducting diode effects emerge in unconventional magnet hybrids without net magnetization?",
+   "prior": "",
+   "limits": "Zero temperature calculations, tight-binding discretization with proximity-induced s-wave superconductivity.",
+   "tools": [
+    "Bogoliubov-de Gennes tight-binding model",
+    "lattice Green's functions",
+    "Blonder-Tinkham-Klapwijk formalisms"
+   ],
+   "figure": "S0.F4",
+   "figure_url": "https://arxiv.org/html/2609.12523v1/figure4.png",
+   "figure_caption": "Figure 4: (a) Sketch of a four-terminal setup consisting of three normal-metal leads ( $N_{j}$ ) and one superconducting AM lead, where a bias voltage $V_{0}$ is applied to the injector lead $N_{0}$ . The red and blue arrows indicate spin-up (spin-down) transport channels. (b) Charge diode quality factor $\\eta_{y}$ versus $eV_{0}$ and $\\theta_{J}$ . (c) Same as (b) but for the spin diode quality factor $\\rho_{y}$ . Parameters: same as Fig. 2 ; Width of the setup: $30a$ ; Width of the normal leads $5a$ .",
+   "figure_gloss": "Quality factors for transverse charge $\\eta_y$ and spin $\\rho_y$ diodes across bias voltage $eV_0$ and crystal orientation $\\theta_J$ in a four-terminal geometry, showing $\\pm 1$ rectification plateaus.",
+   "code": ""
+  },
+  "seen": "2026-09-14",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
  }
 }
