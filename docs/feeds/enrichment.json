@@ -7381,15 +7381,15 @@
  "2609.14252": {
   "fields": {
    "kind": "new method",
-   "result": "Sample-complexity scaling on gate-wise stabilizer extent is reduced from quadratic to linear in low-variance regime by replacing Hoeffding bounds with empirical variance estimation.",
-   "question": "Can classical simulation runtime for estimating quantum circuit expectation values be reduced beyond quadratic dependence on stabilizer extent without increasing space complexity?",
-   "prior": "Standard quasi-probability stabilizer methods rely on Hoeffding bounds with quadratic dependence on gate-wise stabilizer extent.",
-   "limits": "Quadratic-to-linear sample complexity reduction holds specifically in low-variance regime.",
+   "result": "Sample complexity dependence on gate-wise stabilizer extent drops from quadratic to linear in the low-variance regime via empirical variance-based confidence bounds instead of Hoeffding's inequality, maintaining prior space complexity.",
+   "question": "Can classical expectation value estimation for non-Clifford quantum circuits be accelerated by combining sum-over-Clifford and quasi-probability methods with adaptive stopping criteria?",
+   "prior": "Standard quasi-probability and sum-over-Clifford stabilizer simulators relied on Hoeffding's inequality, yielding quadratic sample-complexity overhead in the gate-wise stabilizer extent.",
+   "limits": "Sample complexity advantage holds in the low-variance regime. Validated on random circuits, T-doped Clifford circuits, QAOA, and quantum kernel models.",
    "tools": [
-    "Sum-over-Clifford method",
-    "Quasi-probability stabilizer simulation",
-    "Circuit-adaptive empirical variance estimation",
-    "Empirical Bernstein stopping bounds"
+    "sum-over-Clifford simulation",
+    "quasi-probability stabilizer simulation",
+    "adaptive empirical variance estimation",
+    "extended stabilizer framework"
    ],
    "figure": "",
    "figure_url": "",
