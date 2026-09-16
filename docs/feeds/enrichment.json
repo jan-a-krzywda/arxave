@@ -7795,15 +7795,14 @@
  "2609.16172": {
   "fields": {
    "kind": "review",
-   "result": "Evaluates feasibility, integration pathways, and performance tradeoffs of incorporating atomically thin 2D materials into CMOS-compatible solid-state quantum processor fabrication.",
-   "question": "Can 2D material fabrication techniques developed for advanced CMOS electronics address interface disorder, chemical residue, and scalability limits in solid-state quantum hardware?",
+   "result": "Evaluates 2D materials and van der Waals interfaces to mitigate fabrication-induced chemical residues, structural disorder, and interface non-uniformity in scalable solid-state quantum chips using CMOS-compatible processes.",
+   "question": "Whether CMOS channel fabrication processes for 2D materials can be transferred to solid-state quantum hardware to improve coherence and scalability.",
    "prior": "",
-   "limits": "Perspective/review analysis without new primary experimental datasets.",
+   "limits": "Perspective and literature assessment; focus on solid-state qubit platforms compatible with standard semiconductor fabrication.",
    "tools": [
     "2D materials",
-    "van der Waals heterostructures",
-    "CMOS-compatible nanofabrication",
-    "solid-state qubit architectures"
+    "van der Waals interfaces",
+    "CMOS manufacturing processes"
    ],
    "figure": "",
    "figure_url": "",
@@ -8112,10 +8111,10 @@
  "2609.17188": {
   "fields": {
    "kind": "theory",
-   "result": "Real-space renormalization-group yields closed-form expressions for stabilizer Rényi entropies in spin chains in the low-energy, large-distance regime, tracking the flow of non-stabilizerness under coarse-graining across quantum phases.",
-   "question": "How do stabilizer Rényi entropies and non-stabilizerness evolve under real-space renormalization-group coarse-graining in spin chain Hamiltonians?",
+   "result": "Real-space renormalization yields a closed-form analytical expression for stabilizer Rényi entropies (quantum magic) in the low-energy, large-distance regime of a class of spin Hamiltonians.",
+   "question": "How do stabilizer Rényi entropies evolve under coarse-graining across different quantum phases in spin chains?",
    "prior": "",
-   "limits": "Valid in low-energy, large-distance regime.",
+   "limits": "Valid specifically in the low-energy, large-distance regime.",
    "tools": [
     "real-space renormalization group",
     "stabilizer Rényi entropy",
