@@ -8240,15 +8240,15 @@
  "2609.17706": {
   "fields": {
    "kind": "new method",
-   "result": "Flagged double-check circuits restore fault distance of $T$-state cultivation, suppressing pre-escape logical error rate from $\\mathcal O(p^3)$ to $\\mathcal O(p^5)$, giving $4.9\\times$ error improvement at physical error rate $p = 10^{-3}$ at $1.36\\times$ overhead in attempts per accepted shot.",
-   "question": "Why does logical $T$-state cultivation suffer higher logical error rates than analogous $S$-state cultivation?",
-   "prior": "Unflagged distance-3 and distance-5 $T$-state cultivation degraded to fault distance 2 and 3 due to Pauli hook errors propagating into coherent Clifford errors.",
-   "limits": "Circuit-level depolarising noise; fixed logical-qubit count for the $\\mathcal O(n^3)$-time acceptance calculation.",
+   "result": "Flagged double-check circuits eliminate malignant hook errors in magic state cultivation, suppressing pre-escape logical error rate from $\\mathcal{O}(p^3)$ to $\\mathcal{O}(p^5)$ and achieving a 4.9$\\times$ error rate improvement at $p = 10^{-3}$ for a 1.36$\\times$ attempt overhead.",
+   "question": "Why does $T$-state cultivation suffer higher logical error rates and lower fault distances than $S$-state cultivation under circuit-level noise, and how can the full fault distance be restored?",
+   "prior": "Unflagged distance-3 (distance-5) $T$-state cultivation degraded to fault distance 2 (fault distance 3), while $S$-state cultivation retained full fault distance 3 (fault distance 5).",
+   "limits": "Evaluated under standard circuit-level depolarising noise at error rate $p = 10^{-3}$; applies to fixed logical-qubit count with physical qubit count $n$.",
    "tools": [
-    "magic state cultivation",
-    "circuit-level depolarising noise model",
-    "flag fault tolerance",
-    "Clifford error acceptance formula"
+    "circuit-level depolarising noise simulations",
+    "analytic propagation of Pauli hook errors into coherent Clifford errors",
+    "$\\mathcal{O}(n^3)$-time Clifford acceptance probability algorithm",
+    "flagged verification circuits"
    ],
    "figure": "",
    "figure_url": "",
@@ -8410,16 +8410,16 @@
  "2609.18841": {
   "fields": {
    "kind": "review",
-   "result": "Compares four MPS-based TEBD algorithms for 1D Lindbladian dynamics (direct vectorization, positivity-preserving vectorization, quantum jump trajectories, and quantum state diffusion) and benchmarks performance against an exactly solvable free fermion model.",
-   "question": "How do different MPS and stochastic unravelling algorithms compare in accuracy and efficiency when integrating the Lindblad master equation for 1D open quantum lattice systems?",
+   "result": "Four matrix product state (MPS) extensions of TEBD integrate the 1D Lindblad equation: vectorized TEBD, positive-operator-preserving purification TEBD, quantum trajectories, and quantum state diffusion.",
+   "question": "How do standard MPS-based time-evolution algorithms compare in accuracy, positivity preservation, and computational cost when solving Lindbladian dynamics of 1D open quantum systems?",
    "prior": "",
-   "limits": "One-dimensional quantum lattice systems under Markovian Lindblad dynamics.",
+   "limits": "One-dimensional quantum lattice systems. Evaluated on an exactly solvable free fermion chain benchmark.",
    "tools": [
-    "Matrix Product States (MPS)",
-    "Time-Evolving Block Decimation (TEBD)",
-    "Quantum jump trajectory method",
-    "Quantum state diffusion (QSD)",
-    "Free fermion analytical benchmark"
+    "matrix product states (MPS)",
+    "time-evolving block decimation (TEBD)",
+    "vectorized master equation",
+    "quantum jump trajectories",
+    "quantum state diffusion"
    ],
    "figure": "",
    "figure_url": "",
@@ -8581,14 +8581,14 @@
  "2609.17818": {
   "fields": {
    "kind": "new result",
-   "result": "Measured the total entropy of a two-site Hubbard molecule across transitions from two isolated dots to hybridized molecular states and a merged single dot, tracking the suppression of antibonding, singlet, and triplet occupations as tunnel splitting exceeds thermal energy.",
-   "question": "Which microscopic states remain thermally active as interdot tunneling competes with Coulomb interactions in a minimal two-site Hubbard molecule?",
-   "prior": "",
-   "limits": "Requires shifting both dot levels together at fixed detuning.",
+   "result": "Measured total thermodynamic entropy of a tunable two-site Hubbard molecule across the transition from isolated dots to a merged single dot via single-charge-sensor spectroscopy, resolving thermal suppression of antibonding and triplet states as interdot tunneling increases.",
+   "question": "Which microscopic orbital and spin states remain thermally active in a two-site Hubbard system as tunneling competes with interactions?",
+   "prior": "Charge-based entropy readout was established only for single quantum dots.",
+   "limits": "Requires shifting both dot levels simultaneously at fixed detuning.",
    "tools": [
-    "GaAs double quantum dot",
-    "Single-charge-sensor entropy measurement",
-    "Two-site Hubbard model"
+    "GaAs/AlGaAs double quantum dot",
+    "single-charge-sensor entropy spectroscopy",
+    "two-site Hubbard model"
    ],
    "figure": "",
    "figure_url": "",

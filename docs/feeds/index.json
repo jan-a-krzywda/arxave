@@ -22,13 +22,13 @@
     "quantum-simulation": {
       "name": "Quantum simulation and many-body",
       "items": 8,
-      "paydirt": 5,
+      "paydirt": 4,
       "updated": "2026-09-17"
     },
     "solid-state-qubits": {
       "name": "Solid-state qubits",
       "items": 8,
-      "paydirt": 2,
+      "paydirt": 8,
       "updated": "2026-09-17"
     }
   }

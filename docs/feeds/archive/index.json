@@ -21,11 +21,11 @@
             },
             "quantum-simulation": {
               "items": 8,
-              "paydirt": 5
+              "paydirt": 4
             },
             "solid-state-qubits": {
               "items": 8,
-              "paydirt": 2
+              "paydirt": 8
             }
           }
         },
