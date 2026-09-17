@@ -1,188 +1,4 @@
 {
- "2608.14285": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new method",
-   "headline": "Qu-Trefoil simulated quantum circuits with over 43 qubits, requiring more than 128 TB of memory.",
-   "so_what": "This makes large-scale quantum circuit simulations more accessible and cost-efficient for researchers without supercomputer access.",
-   "caveat": "on a single storage subsystem equipped with one FPGA",
-   "tools": [
-    "FPGA-based platform",
-    "SATA storage subsystems",
-    "HLS-based quantum gates",
-    "HDL-designed modules"
-   ]
-  },
-  "seen": "2026-08-17",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.13975": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new method",
-   "headline": "Neural decoders for subsystem many-hypercube codes improve decoding performance by utilizing gauge-measurement information, with recurrent neural decoders outperforming fully connected ones.",
-   "so_what": "This work makes subsystem many-hypercube codes more practical for quantum error correction by providing high-performance neural decoders that leverage gauge information.",
-   "caveat": "in a circuit-level noise model",
-   "tools": [
-    "neural-network-based decoders",
-    "recurrent neural decoders",
-    "fully connected neural decoders",
-    "syndrome-measurement sequence"
-   ]
-  },
-  "seen": "2026-08-17",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.13654": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new result",
-   "headline": "Under depolarizing noise, heavy output probabilities can be greater than 0.5 while bipartite negativity entanglement is destroyed in quantum volume circuits.",
-   "so_what": "This implies a NISQ computer could pass the Quantum Volume benchmark test threshold of 2/3 without underlying global entanglement.",
-   "caveat": "for small $n$",
-   "tools": [
-    "numerical study",
-    "depolarizing noise model",
-    "bipartite negativity measure",
-    "heavy-output-probability (HOP)"
-   ]
-  },
-  "seen": "2026-08-17",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.14387": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new method",
-   "headline": "Universal Hamiltonian Eigenvalue Transformation (UHET) can be interpreted as a (randomised) linearisation of Generalised Quantum Signal Processing (GQSP), leading to a new Universal Hamiltonian Singular Value Transformation (UHSVT).",
-   "so_what": "The new Universal Hamiltonian Singular Value Transformation (UHSVT) enables efficient transformation of singular values of any arbitrary matrix encoded in a Hamiltonian, relaxing conditions required by previous QSVT-based approaches.",
-   "caveat": "The algorithm requires the sole condition that the function f vanishes at the origin.",
-   "tools": [
-    "Quantum Signal Processing (QSP)",
-    "Quantum Singular Value Transformation (QSVT)",
-    "Universal Hamiltonian Eigenvalue Transformation (UHET)",
-    "Generalised QSP (GQSP)",
-    "Universal Hamiltonian Singular Value Transformation (UHSVT)"
-   ]
-  },
-  "seen": "2026-08-17",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.13862": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new method",
-   "headline": "New quantum algorithms for eigenvalue transforms achieve commutator scaling, lower circuit depth, and require only a single ancillary qubit.",
-   "so_what": "This method offers more resource-efficient quantum algorithms for applications like phase estimation, Green's function evaluation, and measurement distribution estimation.",
-   "caveat": "The method's significantly shallower circuit depths are confirmed in certain parameter regimes and its application is heuristic.",
-   "tools": [
-    "quantum algorithms",
-    "product formulae circuits",
-    "classical postprocessing",
-    "Richardson extrapolation"
-   ]
-  },
-  "seen": "2026-08-17",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.14169": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new result",
-   "headline": "Magnitude (attenuating) filters in quantum generative models do not create a quantum-classical separation.",
-   "so_what": "Researchers using spectral filtering for regularization in quantum generative models should note that magnitude filters do not provide a quantum-classical separation, with any such separation inherited from the spectral phase of the input state.",
-   "caveat": "The dichotomy for magnitude filters holds at a fixed affordability threshold.",
-   "tools": [
-    "spectral filtering",
-    "quantum generative models",
-    "quantum Fourier transform",
-    "circuit Born machines",
-    "numerical experiments"
-   ]
-  },
-  "seen": "2026-08-17",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.14214": {
-  "fields": {
-   "verdict": "read",
-   "kind": "theory",
-   "headline": "Integrating Loss-DiVincenzo with exchange-only qubits provides a practical route to error detection and fault-tolerant \\u03c0-rotations about three control axes for the singlet-only exchange-only qubit.",
-   "so_what": "This approach converts charge and nuclear noise into erasures, suppressing error propagation and potentially enhancing quantum error-correction schemes for semiconductor-based quantum computing.",
-   "caveat": "",
-   "tools": [
-    "Loss-DiVincenzo qubits",
-    "exchange-only qubits",
-    "spin-shuttling architectures",
-    "quantum error-correction schemes"
-   ]
-  },
-  "seen": "2026-08-17",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.14469": {
-  "fields": {
-   "verdict": "skim",
-   "kind": "new method",
-   "headline": "An additive unravelling of non-additive quantum master equations can reproduce current and fluctuations.",
-   "so_what": "This allows the quantum jump formalism to be applied to a broader class of open quantum systems for characterizing current and fluctuations.",
-   "caveat": "This is possible only when allowing for an imperfect jump detection scenario.",
-   "tools": [
-    "quantum master equation formalism",
-    "Lindblad form",
-    "quantum jump formalism",
-    "Landauer-Büttiker formalism"
-   ]
-  },
-  "seen": "2026-08-17",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.14357": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new method",
-   "headline": "A multiunimon circuit simulates all twelve different controlled-controlled-NOT gates with a mean fidelity of 99.5%.",
-   "so_what": "This circuit offers a path to highly efficient implementations of near-term quantum algorithms on noisy hardware.",
-   "caveat": "The results are based on simulations and performance is limited by incoherent errors dominated by dielectric loss.",
-   "tools": [
-    "superconducting multimode circuit",
-    "single Josephson junction",
-    "coplanar waveguide structure",
-    "leakage-aware encoding scheme",
-    "sine-squared pulses"
-   ]
-  },
-  "seen": "2026-08-17",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.13627": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new method",
-   "headline": "A scalable edge-pass Purcell filter achieves average readout fidelities of 99.46(4)% (HPF) and 99.49(3)% (LPF) and average single-qubit gate fidelities of 99.94% (HPF) and 99.93% (LPF).",
-   "so_what": "This filter architecture unifies fast, high-fidelity readout, Purcell protection, and effective reset, enabling more compact designs for large-scale fault-tolerant quantum computation.",
-   "caveat": "Readout fidelities were achieved with 150-ns (HPF) and 130-ns (LPF) pulses.",
-   "tools": [
-    "edge-pass Purcell filter",
-    "high-pass filter (HPF)",
-    "low-pass filter (LPF)",
-    "superconducting qubits",
-    "readout resonators"
-   ]
-  },
-  "seen": "2026-08-17",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
  "2608.15760": {
   "fields": {
    "verdict": "skim",
@@ -8224,6 +8040,587 @@
    "code": ""
   },
   "seen": "2026-09-16",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.18347": {
+  "fields": {
+   "kind": "review",
+   "result": "Surveys discrete- and continuous-variable optical quantum computing architectures, measurement-based cluster-state models, and non-universal algorithms (boson sampling, VQEs, QML).",
+   "question": "How do optical encoding schemes and computing architectures compare across universal and non-universal quantum platforms?",
+   "prior": "",
+   "limits": "Photonic scaling is constrained by weak single-photon nonlinearities, probabilistic gate generation, and optical propagation losses.",
+   "tools": [
+    "integrated photonics",
+    "continuous-variable squeeze states",
+    "discrete-variable cluster states",
+    "linear optical interferometry"
+   ],
+   "figure": "S1.F1",
+   "figure_url": "https://arxiv.org/html/2609.18347v1/Introdiction_L.png",
+   "figure_caption": "Figure 1 : Overview of the optical quantum computing approaches covered in this review. This document is organized into two primary sections: approaches to universal quantum computation (discrete-variable, continuous-variable, gate-based and measurement-based quantum computation), and non-universal approaches (boson sampling, quantum machine learning, and variational algorithms) that provide computational advantages for specific problems. For each topic, we provide tables that summarize the present state of the art.",
+   "figure_gloss": "Taxonomy mapping discrete-variable and continuous-variable universal optical quantum computing models alongside non-universal photonic applications.",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.18547": {
+  "fields": {
+   "kind": "new result",
+   "result": "Multipoint coupling of giant atom provides additional destructive interference paths, enabling simultaneous unconventional photon blockade in two and three coupled cavities with driven first cavity. Point-atom configuration cannot produce simultaneous unconventional photon blockade.",
+   "question": "Can multipoint coupling of a giant atom enable simultaneous unconventional photon blockade across multiple coupled cavities?",
+   "prior": "",
+   "limits": "Weak driving regime ($F \\ll \\kappa$), equal cavity and atomic dissipations $\\kappa_1=\\kappa_2=\\kappa_3=\\gamma \\equiv \\kappa$, theoretical model without experimental verification.",
+   "tools": [
+    "Lindblad master equation",
+    "effective non-Hermitian Hamiltonian",
+    "few-photon state truncation"
+   ],
+   "figure": "S5.F16",
+   "figure_url": "https://arxiv.org/html/2609.18547v1/threetheta.png",
+   "figure_caption": "Figure 16: $\\log_{10}g^{(2)}_{o}(0)$ (solved by Eq. ( 5 )) with giant atom and three cavities system versus phase $\\theta$ with $a_{1}$ in (a)(d), $a_{2}$ in (b)(e), and $a_{3}$ in (c)(f). (a)-(c) shows results for the first parameters set $\\lambda=0.6872\\kappa$ , $J_{\\text{opt}}=0.7996\\kappa$ , ${\\Delta_{3}}_{\\text{opt}}=-0.1195\\kappa$ , $V_{\\text{opt}}=0.0627\\kappa$ , $F=0.05\\kappa$ , ${\\Delta_{0}}_{\\text{opt}}=0.0999\\kappa$ , and $\\Delta_{\\text{opt}}=-0.403\\kappa$ . (d)-(f) displays results for the second set $\\lambda=0.6558\\kappa$ , $J_{\\text{opt}}=0.8678\\kappa$ , $V_{\\text{opt}}=0.0507\\kappa$ , ${\\Delta_{3}}_{\\text{opt}}=0.2105\\kappa$ , $F=0.01\\kappa$ , ${\\Delta_{0}}_{\\text{opt}}=-0.2306\\kappa$ , and $\\Delta_{\\text{opt}}=0.9242\\kappa$ determined by Eq. ( 38 ). UPBs occur simultaneously in three cavities at the same location at $\\theta_{\\text{opt}}=1.2732\\pi$ (with period 2 $\\pi$ ) for (a)-(c), also at $\\theta_{\\text{opt}}=0.4456\\pi$ (with period 2 $\\pi$ ) for (d)-(f).",
+   "figure_gloss": "$\\\\log_{10}g^{(2)}_o(0)$ in a three-cavity system driven at cavity $a_1$ versus coupling phase $\\theta$. Shows simultaneous dips to minimum values in all three cavities at $\\theta_{\\text{opt}}=1.2732\\pi$ and $\\theta_{\\text{opt}}=0.4456\\pi$.",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.18447": {
+  "fields": {
+   "kind": "theory",
+   "result": "Dispersive Rydberg atom chains act as coherent quantum buses to mediate effective quasi-all-to-all interactions between data units via virtual excitations, analytically derived using Green's-function continued fractions.",
+   "question": "Can a Rydberg atom array provide a stationary quantum bus to mediate coherent nonlocal connectivity between distant data units?",
+   "prior": "",
+   "limits": "Off-resonant dispersive regime with $J_\\mu \\ll \\min_k |E_k|$; validated with Gaussian positional uncertainty $\\sigma = 0.02~\\mu\\text{m}$ and Rydberg lifetimes up to $T = 77~\\text{K}$.",
+   "tools": [
+    "Green's function continued-fraction method",
+    "Feshbach partitioning",
+    "Monte Carlo wavefunction trajectories",
+    "Floquet engineering"
+   ],
+   "figure": "S2.F2",
+   "figure_url": "https://arxiv.org/html/2609.18447v1/FIG2.png",
+   "figure_caption": "Figure 2: (a)-(c) Time evolution of the populations of the data units in a nine-atom chain coupled to three data units. (a) Dynamics in the single-excitation manifold. Blue solid, red solid, and orange dashed lines represent the populations of the excited states of data units $A$ , $B$ , and $C$ , respectively. Initially, only site $A$ is excited to $|{\\uparrow}\\rangle$ , while all other sites are in $|{\\downarrow}\\rangle$ . (b) Dynamics in the double-excitation manifold, where blue solid, red solid, and orange dashed lines denote the populations of the double-excitation states. Initially, sites $A$ and $B$ are excited to $|{\\uparrow}\\rangle$ , while all other sites are in $|{\\downarrow}\\rangle$ . (c) Dynamics in the triple-excitation manifold, with all data units initially excited. Open circles in (a) and (b) represent the results obtained from the effective Hamiltonian. (d)-(e) Time evolution of the data-unit populations in a nine-atom chain coupled to five data units. (d) Dynamics under the full Hamiltonian, demonstrating the effective qusi-all-to-all connectivity among the data units. (e) Dynamics with additional detuning compensation applied to the data units to prepare a W-state, where the detailed compensation scheme is described in Appendix B . The vertical axis labels the data units. The horizontal axis denotes the dimensionless time. The parameters are set to $V/J=40$ and $\\Delta/J=80$ .",
+   "figure_gloss": "Population dynamics of data units coupled to a nine-atom Rydberg chain across single, double, and triple excitation manifolds, plotted against dimensionless time for $V/J=40$ and $\\Delta/J=80$.",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.18530": {
+  "fields": {
+   "kind": "theory",
+   "result": "Two-level giant atom coupled to two waveguides via two points with tunable phase differences $\\theta_a,\\theta_b$ acts as a programmable 50:50 beam splitter, yielding a Hong–Ou–Mandel dip and continuous tuning between two-photon bunching and antibunching.",
+   "question": "Can a giant atom with tunable coupling phases serve as a programmable Hong–Ou–Mandel interferometer and enable coupling-phase quantum parameter estimation?",
+   "prior": "",
+   "limits": "Theoretical model assuming identical coupled cavities, two-level approximation for the giant atom, rotating-wave approximation, and lossless wave-packet propagation.",
+   "tools": [
+    "waveguide quantum electrodynamics",
+    "coupled-cavity arrays",
+    "two-photon wave-packet scattering simulation",
+    "classical and quantum Fisher information"
+   ],
+   "figure": "S4.F4",
+   "figure_url": "https://arxiv.org/html/2609.18530v1/Figure-4-v1-AVV.png",
+   "figure_caption": "Figure 4: Programmable HOM interference. (a) Representative bunching and antibunching events in the four-port output geometry. (b) Generalized coincidence probability $P_{\\rm coin}$ and bunching probabilities $P_{\\rm bunch}^{aa}$ and $P_{\\rm bunch}^{bb}$ as functions of the initial relative displacement $\\Delta x=x_{a}-x_{b}$ between two identical Gaussian wave packets, one incident through each CCA, at the balanced-splitting point $\\theta=\\pi/2$ and $\\Delta_{e}=-2J$ . (c) Same probabilities as functions of the coupling phase $\\theta$ for fully overlapping inputs ( $x_{a}=x_{b}=-50$ ). The shaded regions indicate bunching- and antibunching-dominated regimes. Parameters: $N=1$ , $w_{a}=w_{b}=25$ , $g_{a}=g_{b}=J$ , and $k_{a}=k_{b}=\\pi/2$ .",
+   "figure_gloss": "Coincidence and bunching probabilities versus initial wave-packet displacement $\\delta x_0$ (showing the HOM dip) and versus coupling phases $\\theta_a,\\theta_b$, demonstrating continuous control over two-photon output correlations.",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.18972": {
+  "fields": {
+   "kind": "theory",
+   "result": "Two-qubit and multi-qubit controlled-phase gates $C(\\varphi)$ can be implemented in optically trapped polar molecules via an ancilla-assisted dark-state mechanism driven solely by two smooth adiabatic microwave $\\pi$ pulses on the ancilla.",
+   "question": "How can high-fidelity entangling quantum gates be realized in optically trapped polar molecules without suffering from motional decoherence or Rydberg-state decay?",
+   "prior": "",
+   "limits": "Theoretical and numerical simulation; assumes zero rotational Zeeman effect or weak rotational Zeeman effect relative to nuclear spin Zeeman effect (evaluated for $^{23}\\text{Na}^{133}\\text{Cs}$ at $B=2\\text{ G}$); requires specific tweezer alignment to suppress inter-data molecule DDI.",
+   "tools": [
+    "dipole-dipole interaction (DDI)",
+    "adiabatic dark-state evolution",
+    "microwave driving",
+    "optical tweezer geometry optimization",
+    "quantized motional coupling analysis"
+   ],
+   "figure": "S3.F3",
+   "figure_url": "https://arxiv.org/html/2609.18972v1/impure.png",
+   "figure_caption": "Figure 3: Logarithm of the infidelity of the ancilla-assisted CZ gate caused by impure polarization in the microwave field. Here $\\varsigma_{0}$ is the intensity ratio of the wrong field to the desired field and $\\varsigma$ is the intensity ratio of the $\\sigma^{-}$ to the $\\pi$ polarized fields, shown in Eq. ( 25 ). The peak value of $\\Omega_{\\mu}$ in Eq. ( 24 ) is $J_{\\text{at}}/(4\\hbar)$ , where the DDI between the a and t molecules is $J_{\\text{at}}/h=1$ kHz. For the configuration in Fig. 1 , we take $L_{2}=\\sqrt{3}L_{1}$ for brevity, at which $J_{\\text{ac}}$ is about 8.9% larger than $J_{\\text{at}}$ .",
+   "figure_gloss": "Gate infidelity $\\log_{10}(1-F)$ of the ancilla-assisted CZ gate as a function of the microwave field polarization impurity parameters $\\varsigma_{0}$ and $\\varsigma$.",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.18800": {
+  "fields": {
+   "kind": "theory",
+   "result": "In transversely driven Fermi gas inside an optical cavity, bare attraction triggers direct transition into an intertwined charge-density-wave plus pair-density-wave superradiant phase, whereas repulsive interaction separates density-wave ordering from finite-momentum pairing until higher pump power.",
+   "question": "How preexisting superfluidity and photon-pair coupling govern the sequence and nature of self-organized spatial and pairing orders in a degenerate Fermi gas?",
+   "prior": "",
+   "limits": "Zero temperature ($T=0$), effective 1D geometry along cavity axis, dispersive regime (large single-atom and molecular detunings $\\Delta_e, \\Delta_B$), mean-field cavity treatment.",
+   "tools": [
+    "Hartree-Fock-Bogoliubov (HFB) mean-field theory",
+    "Linear response susceptibility analysis",
+    "Adiabatic elimination of molecular/excited transitions",
+    "Dispersive two-channel light-matter Hamiltonian"
+   ],
+   "figure": "S0.F2",
+   "figure_url": "https://arxiv.org/html/2609.18800v1/phase_abs_alpha_density_pairing_components_lambda_c_units_lr_fixed.png",
+   "figure_caption": "Figure 2: Mean-field phase diagram and signatures of self-organization. (a) Zero temperature phase diagram as a function of the pump strength $\\beta$ (dimensionless) and the contact interaction strength $g_{0}/(E_{R}\\lambda_{c})$ (dimensionless). The dashed horizontal lines mark cuts at $g_{0}/(E_{R}\\lambda_{c})=\\pm 0.101$ shown in the following plots. The black dotted curve shows the analytical prediction. The labels denote the normal, superfluid (SF), charge-density-wave (CDW), pair-density-wave (PDW), and superradiant (SR) phases. The pale green region “weak pairing” corresponds to weak effective attraction, for which the exponentially small pairing amplitude is below our numerical accuracy. (b) Intra-cavity field amplitude $|\\alpha|$ along the two cuts from (a); the inset magnifies the onset of superradiance. Fourier components (dimensionless) of (c) the density $|n_{m}|\\lambda_{c}$ and (d) the pairing field $|F_{m}|\\lambda_{c}$ , where $m\\in\\{0,1,2\\}$ . In (b) – (d) , the red circles and blue diamonds correspond to $g_{0}/(E_{R}\\lambda_{c})=-0.101$ and $0.101$ , respectively. The parameters: $N_{\\uparrow}\\!=\\!N_{\\downarrow}\\!\\!=\\!\\!1$ atom per unit cell, $\\kappa/E_{R}=0.101$ , $\\Delta_{c}/E_{R}=-3.04$ , $g_{\\mathrm{a}}/E_{R}=-0.152$ , and $g_{\\Delta}/(E_{R}\\lambda_{c})=-0.0152$ .",
+   "figure_gloss": "Mean-field zero-temperature phase diagram versus pump strength $\\beta$ and bare contact interaction $g_{0}/(E_{R}\\lambda_{c})$, distinguishing normal, superfluid, CDW superradiant, and intertwined CDW+PDW phases.",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.19116": {
+  "fields": {
+   "kind": "new result",
+   "result": "For $d=5$ regular surface-code fold-transversal cultivation, $|T\rangle$ logical error rates match $|S\rangle$ Clifford proxy error rates across the tested noise range. A rotated surface-code scheme achieves $\\sim 1.3\\times$ lower expected space-time cost while reaching $10^{-9}$ logical error rate.",
+   "question": "What is the exact non-Clifford performance and logical error rate of fold-transversal magic state cultivation schemes on surface codes?",
+   "prior": "Color-code cultivation (Gidney et al.) showed a $7\\times$ to $30\\times$ higher logical error rate for $|T\\rangle$ state cultivation compared to the $|S\\rangle$ Clifford proxy.",
+   "limits": "Depolarising SD6 circuit noise model, post-selection on all syndrome detectors and final noiseless decoding, classical simulation on commodity CPU.",
+   "tools": [
+    "matrix-product states (MPS)",
+    "Clifford-augmented MPS (CAMPS)",
+    "Pauli pre-screening",
+    "subset sampling",
+    "Stim"
+   ],
+   "figure": "S1.F1",
+   "figure_url": "https://arxiv.org/html/2609.19116v1/results_d3.svg",
+   "figure_caption": "Figure 1: Performance of cultivation schemes under uniform depolarising noise for $\\ket{S}$ and $\\ket{T}$ , at output code distance $d=3$ and $5$ . Reg 3/5 are based on Sahay et al. [ 41 ] circuits, which make use of the regular surface code fold-transversal S gate. Rot 3/5 and Rot 3×4 are circuits proposed in this work, based on the partially fault-tolerant fold-transversal S gate of the rotated surface code. The $\\ket{S}$ results are obtained with Stim, the $\\ket{T}$ results with CAMPS simulations. These results are obtained with the addition of the final noiseless syndrome extraction in the post-selection. Except for the $\\ket{S}$ results, the three points from each curve are obtained with the same samples through subset sampling and are thus not statistically independent. Error bars span the values whose likelihood is within a factor of 100 of the maximum ( $\\sim 3\\sigma$ ) in likelihood relative to the maximum-likelihood estimate, see Appendix D .",
+   "figure_gloss": "Logical error rate versus physical depolarising error rate $p$ for $d=3$ and $d=5$ magic state cultivation schemes comparing $|S\\rangle$ (Stim Clifford proxy) and $|T\\rangle$ (exact CAMPS simulation) outputs.",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.18922": {
+  "fields": {
+   "kind": "new method",
+   "result": "Exact logical error rates for magic state cultivation computed without Monte Carlo sampling; $P_{\\mathrm{L}}^{(5)}(p=10^{-3}) = 3.32842537\\dots \\times 10^{-9}$ with series expansion $P_{\\mathrm{L}}^{(5)}(x) = \\frac{574}{375}x^3 + \\frac{972959741}{810000}x^4 + O(x^5)$ for $x=p/(1-p)$.",
+   "question": "What are the exact post-selected logical error rates and acceptance probabilities of magic state cultivation circuits across all fault orders using actual $T$ gates instead of sampling with $S$-gate proxies?",
+   "prior": "",
+   "limits": "Standard uniform circuit-level depolarising noise at parameter $p$. Excludes escape, grafting, and decoding stages; logical readout is assumed noiseless.",
+   "tools": [
+    "Pauli propagation",
+    "binary tensor network contraction",
+    "Chinese remainder theorem over modular primes",
+    "exact polynomial series expansion in $x=p/(1-p)$"
+   ],
+   "figure": "S1.F1",
+   "figure_url": "https://arxiv.org/html/2609.18922v1/d5_comparison.svg",
+   "figure_caption": "Figure 1: $d=5$ cultivation: logical error (left), acceptance (middle), and relative error of the truncated series (right). Shading and error bars show the published LER sampling-error intervals.",
+   "figure_gloss": "Logical error rate (left), acceptance probability (middle), and truncated series relative error (right) for $d=5$ cultivation as functions of noise strength $p$. The analytical curves agree with published Monte Carlo sampling intervals from Clifft and SOFT.",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.17706": {
+  "fields": {
+   "kind": "new method",
+   "result": "Flagged double-check circuits restore fault distance of $T$-state cultivation, suppressing pre-escape logical error rate from $\\mathcal O(p^3)$ to $\\mathcal O(p^5)$, giving $4.9\\times$ error improvement at physical error rate $p = 10^{-3}$ at $1.36\\times$ overhead in attempts per accepted shot.",
+   "question": "Why does logical $T$-state cultivation suffer higher logical error rates than analogous $S$-state cultivation?",
+   "prior": "Unflagged distance-3 and distance-5 $T$-state cultivation degraded to fault distance 2 and 3 due to Pauli hook errors propagating into coherent Clifford errors.",
+   "limits": "Circuit-level depolarising noise; fixed logical-qubit count for the $\\mathcal O(n^3)$-time acceptance calculation.",
+   "tools": [
+    "magic state cultivation",
+    "circuit-level depolarising noise model",
+    "flag fault tolerance",
+    "Clifford error acceptance formula"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "abstract"
+ },
+ "2609.18002": {
+  "fields": {
+   "kind": "new method",
+   "result": "Linear quantum graph framework automates design of heralded linear optical circuits for multipartite entangled states, producing an $N=4$ cluster state circuit with 26 beam splitters (10 initial photons).",
+   "question": "How can heralded linear optical circuits for arbitrary multipartite entangled quantum states be designed systematically rather than via state-specific manual trial and error?",
+   "prior": "Generating an $N=4$ cluster state required 45 beam splitters with 9 photons at a success probability of $2.05\\times 10^{-3}$ (Banchi et al. 2024 / Ref. [16]).",
+   "limits": "Unweighted initial graph search; ideal photon-number-resolving detectors; computational scaling grows exponentially with ancilla mode count $M$.",
+   "tools": [
+    "effective perfect matching (EPM) bipartite graphs",
+    "linear quantum graph (LQG) translation rules",
+    "graph canonization",
+    "reduced density matrix spectral signature matching"
+   ],
+   "figure": "A3.F15",
+   "figure_url": "https://arxiv.org/html/2609.18002v1/cluster4_circuit.svg",
+   "figure_caption": "Figure 15: Heralded circuit generating the $N=4$ cluster state, translated from the graph of Fig. 8 (a). The vertical mark on the first output rail of $A_{1}$ denotes a $\\pi$ phase shifter.",
+   "figure_gloss": "Heralded linear optical circuit schematic for generating the 4-qubit cluster state using two ancilla panels, four system panels, and six photon-subtraction detection panels.",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.17690": {
+  "fields": {
+   "kind": "theory",
+   "result": "Proves equivalence between quantum decomposable randomized encodings (QDRE) and quantum private simultaneous message protocols (QPSM). Every $n$-to-$m$-qubit channel has an $m$-qubit quantum communication QPSM with exponential entanglement, while with $\\le c n$ pre-shared entanglement, communication is bounded by $\\Omega(n)$.",
+   "question": "Is the linear dependence of quantum randomized encoding size on circuit size inherent, or can it be characterized more tightly via pre-shared entanglement and communication complexity?",
+   "prior": "Prior QDRE constructions scaled encoding size linearly with circuit size $|Q|$.",
+   "limits": "Small quantum communication protocols for general channels require pre-shared entanglement exponential in $n$. Bounded linear entanglement yields an unavoidable worst-case $\\Omega(n)$ communication/encoding lower bound.",
+   "tools": [
+    "quantum private simultaneous message protocols (QPSM)",
+    "Pauli mixing",
+    "port-teleportation",
+    "distributed inner product estimation (DIPE) reductions"
+   ],
+   "figure": "S1.F1",
+   "figure_url": "https://arxave.com/figures/2609.17690-S1.F1.svg",
+   "figure_caption": "Figure 1: Pauli-Port Complementarity Protocol. The protocol is non-interactive. Teleportation arrows denote local teleportation measurements using pre-shared entanglement, not communication between Alice and Bob.",
+   "figure_gloss": "Schematic of the Pauli-Port Complementarity protocol showing non-interactive local teleportation using pre-shared entanglement before quantum and classical messages are forwarded to the referee.",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.18757": {
+  "fields": {
+   "kind": "theory",
+   "result": "Approximates Lindbladian evolution to diamond-norm error $\\varepsilon$ using $O\\!\\left(\\tau+\\frac{\\log(1/\\varepsilon)}{\\log(e+\\log(1/\\varepsilon)/\\tau)}\\right)$ oracle queries for $\\tau=(\\alpha_H+\\alpha_B^2)t$, matching the Hamiltonian simulation lower bound.",
+   "question": "What is the optimal query complexity of simulating Lindbladian dynamics as a function of evolution time and target precision?",
+   "prior": "Was $O(\\tau\\log(\\tau/\\varepsilon)/\\log\\log(\\tau/\\varepsilon))$ queries for general Lindbladians (Li and Wang 2023).",
+   "limits": "Requires block encoding of Hamiltonian and projected unitary encoding of stacked jump operators. Time-dependent case requires Lipschitz continuity and coherent time-indexed oracle access.",
+   "tools": [
+    "transducer framework",
+    "block encoding",
+    "projected unitary encoding",
+    "catalyst-removal error analysis",
+    "compressed Kraus-label representation"
+   ],
+   "figure": "S3.F1",
+   "figure_url": "https://arxave.com/figures/2609.18757-S3.F1.svg",
+   "figure_caption": "Figure 1: One query followed by $G$ implements $W_{\\delta}$ and restores $\\gamma\\psi$ . Here $h,z,b$ are the three components of the private input to $G$ . Blue connections show $M\\otimes I_{\\mathsf{S}}$ acting as in ( 51 ); the other connections implement the projections, swaps, and phases in the explicit action of $G$ in ( 53 ).",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.19090": {
+  "fields": {
+   "kind": "theory",
+   "result": "Passive syndrome-history distributions are exactly symmetric under coherent-rotation sign reversal $R_X(-\theta) = R_X(\theta)^\\dagger$, but signed terminal logical calibration resolves the ambiguity to certify QEC recovery updates. An evaluator using confidence sets and drift bounds blocks 100% of tested harmful AI advice proposals under valid drift premises while accepting 60 of 96 beneficial updates with a channel-specific derivative bound.",
+   "question": "Can an attacker turn influence over an AI adviser into a harmful quantum error-correction recovery update?",
+   "prior": "",
+   "limits": "Simulated evaluation assuming trusted records, evaluator, clock, and bounded noise drift rate $v$; violating the drift premise permits harmful updates.",
+   "tools": [
+    "odd-distance periodic square toric code",
+    "terminal logical measurement calibration",
+    "interval-bounded risk evaluator",
+    "LLM-assisted controller (Qwen3, Gemma 3, GPT-OSS)"
+   ],
+   "figure": "S4.F2",
+   "figure_url": "https://arxiv.org/html/2609.19090v1/fig_02_toric_evidence.svg",
+   "figure_caption": "Figure 2: The same passive record can conceal opposite recovery consequences. (a) All 256 one-round syndrome probabilities evaluated from the exact instrument for the encoded calibration state coincide at $\\theta=\\pm 0.10$ rad, displayed in one common ordering. The passive-history theorem extends the sign blindness to every history length. (b) Terminal logical measurements distinguish the signs: each circle or square is one of two independently simulated 8192-memory acquisitions at each angle, with a 99% binomial interval. (c–e) Independent estimates of excess recovery infidelity for every Qwen proposal under honest advice, misleading advice, and a sign flip that violates the drift bound. The same 12 calibration workloads are used in all three panels. Filled circles mark full-safeguard acceptance; open circles show the independently estimated consequence of applying a rejected proposal. Rejection retains the incumbent, giving zero deployed excess risk. Colors identify benefit or harm established beyond $\\pm 0.001$ . Each action has 16384 deployment readouts; 95% intervals jointly cover the 3 action risks within each instance. All panels use the $L=3$ instrument of Sec. II . Supplemental Fig. S23 includes both controllers and every rule.",
+   "figure_gloss": "Distribution of all 256 one-round syndrome probabilities for the encoded calibration state at $\\theta = \\pm 0.10$ rad and the corresponding recovery infidelity. Identical syndrome distributions across signs produce opposite recovery outcomes for a fixed correction table, demonstrating why passive records cannot distinguish harmful from beneficial updates.",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.17979": {
+  "fields": {
+   "kind": "new method",
+   "result": "Presents Qurrium, a Qiskit-based Python library implementing classical shadow and Haar-measure randomized measurement protocols to estimate purity, second-order Rényi entropy, Pauli expectation values, and asymmetric unbiased state overlap $\\hat{f}_{2}(\\rho,\\rho^{\\prime})$.",
+   "question": "How can randomized measurement protocols like classical shadows be implemented in a native Python/Qiskit workflow for both end-to-end execution and standalone hardware data analysis?",
+   "prior": "",
+   "limits": "Demonstrated on a two-qubit superconducting processor and noiseless 6-to-8 qubit circuit simulations; currently lacks integrated real-time end-to-end hardware execution.",
+   "tools": [
+    "Qurrium Python package",
+    "Qiskit AerSimulator",
+    "Classical shadow protocol",
+    "Superconducting QPU (Academia Sinica)",
+    "Quantum Machines OPX1000"
+   ],
+   "figure": "S4.F10",
+   "figure_url": "https://arxiv.org/html/2609.17979v1/2qIsingoverlap.svg",
+   "figure_caption": "Figure 10: Estimated overlap between the dunamical state $\\rho(t)$ under $ZZ$ Ising evolution and the initial state $\\rho(0)$ , using $\\hat{f}_{1}$ estimator (a), and $\\hat{f}_{2}$ estimator (b). The solid lines with filled markers are results from the AS QPU. The empty markers are results from Qiskit’s AerSimulator . A total of $N_{U}=90$ random Pauli settings are uniformly sampled from the set of tensor products of single-qubit Pauli measurements. Each random Pauli setting is measured with $N_{K}=32$ shots. The dashed lines represent analytical results.",
+   "figure_gloss": "State overlap $\\mathrm{Tr}(\\rho(t)\\rho(0))$ versus dimensionless evolution time $Jt$ under $ZZ$ Ising dynamics using linear estimator $\\hat{f}_{1}$ and two-state estimator $\\hat{f}_{2}$, comparing ideal AerSimulator simulation, analytical theory, and superconducting QPU hardware data.",
+   "code": "https://github.com/qurrium/qurrium"
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.17789": {
+  "fields": {
+   "kind": "new method",
+   "result": "Translating quantum rotation encoding and circuit interactions into classical trigonometric embeddings and gated mixing yields 78.3% top-1 accuracy on ImageNet-1K with 45.7M parameters and 11.5 GFLOPs. On a 1-epoch benchmark, QiT runs 882–997× faster than a 4-qubit PennyLane simulator while running 1.58–1.76× slower than standard classical ViT.",
+   "question": "Can quantum-motivated structural motifs like periodic angle encodings and multiplicative interactions be realized as scalable, fully classical Transformer operations for visual recognition without quantum hardware?",
+   "prior": "4-qubit simulated quantum Transformer in PennyLane, which is 882–997× slower on wall-clock time in 1-epoch testing.",
+   "limits": "All point estimates without repeated seeds or uncertainty intervals. No controlled component ablations against parameter-matched classical ViTs. Emulates functional motifs without physical entanglement or quantum speedup.",
+   "tools": [
+    "trigonometric angle-inspired token encoding",
+    "periodic-feature self-attention (cosine kernel)",
+    "gated multiplicative channel mixer",
+    "PennyLane circuit simulator baseline"
+   ],
+   "figure": "S1.F1",
+   "figure_url": "https://arxiv.org/html/2609.17789v1/fig/qit.png",
+   "figure_caption": "Figure 1 : QiT encoder block: Tokens are mapped to a quantum-inspired Hilbert space via angle encoding and Fourier features. Kernel attention approximates quantum fidelity, while local quantum mixers and a circuit surrogate layer emulate bounded-depth PQCs within a Transformer architecture.",
+   "figure_gloss": "Schematic of the QiT encoder block showing token angle encoding into sine/cosine features, followed by kernel attention and a gated surrogate mixer replacing quantum circuits with classical tensor operations.",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.18841": {
+  "fields": {
+   "kind": "review",
+   "result": "Compares four MPS-based TEBD algorithms for 1D Lindbladian dynamics (direct vectorization, positivity-preserving vectorization, quantum jump trajectories, and quantum state diffusion) and benchmarks performance against an exactly solvable free fermion model.",
+   "question": "How do different MPS and stochastic unravelling algorithms compare in accuracy and efficiency when integrating the Lindblad master equation for 1D open quantum lattice systems?",
+   "prior": "",
+   "limits": "One-dimensional quantum lattice systems under Markovian Lindblad dynamics.",
+   "tools": [
+    "Matrix Product States (MPS)",
+    "Time-Evolving Block Decimation (TEBD)",
+    "Quantum jump trajectory method",
+    "Quantum state diffusion (QSD)",
+    "Free fermion analytical benchmark"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "abstract"
+ },
+ "2609.18806": {
+  "fields": {
+   "kind": "new method",
+   "result": "Evaluates the complete Hadamard-reduced sixth-order time-convolutionless master-equation generator time series in $O(N_t\\log^2 N_t)$ operations and $O(N_t)$ storage at fixed system dimension.",
+   "question": "How can the two remaining ordered integrals in the sixth-order time-convolutionless master-equation generator be evaluated faster than direct quadrature?",
+   "prior": "Direct quadrature of the Hadamard-reduced TCL6 generator requires $O(N_t^3)$ operations at fixed system dimension.",
+   "limits": "Stationary centered Gaussian bath, finite-dimensional system, single Hermitian coupling operator, and dynamics within the perturbative TCL validity regime.",
+   "tools": [
+    "Hadamard reduction",
+    "exact dyadic recursion",
+    "1D causal convolutions (FFT)",
+    "ordered time-gap coordinates"
+   ],
+   "figure": "S7.F4",
+   "figure_url": "https://arxiv.org/html/2609.18806v1/phoenix-h012-k6-runtime-publication-nt25-distinct.svg",
+   "figure_caption": "Figure 4: Runtime scaling of isolated history kernels and the complete sixth-order generator $\\mathcal{K}_{6}$ on one CPU core. Kernel markers show medians of five measurements. Isolated-kernel timings cover the specified scalar sums. Full-generator timings include preparation of $\\Gamma$ and evaluation of the complete sixth-order coefficient, excluding compilation and subsequent validation. Dashed guides are proportional to $N_{t}$ for $H_{0}$ , $N_{t}(1+\\log_{2}N_{t})$ for $H_{1}$ , and $N_{t}(1+\\log_{2}N_{t})^{2}$ for $H_{2}$ and $\\mathcal{K}_{6}$ . The $H_{0}$ benchmark uses scalar recurrence loops, whereas $H_{1}$ uses an FFT convolution. The isolated kernels and full generator use different workloads, so their timings are not additive.",
+   "figure_gloss": "Runtime scaling versus grid size $N_t$ up to $2^{25}$ points on one CPU core, showing the $O(N_t\\log^2 N_t)$ scaling of the full TCL6 generator and isolated history kernels compared to direct integration.",
+   "code": "https://github.com/jcarrots/fasttcl"
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.17664": {
+  "fields": {
+   "kind": "new method",
+   "result": "Formulation of lattice detector operators via continuity current $j_{j}^{E}$ reproduces continuum energy-flow observables $\\mathcal{E}(\\hat{n})$ and matches $2$d Ising CFT predictions at criticality.",
+   "question": "Can asymptotic energy-flow detector observables be formulated and computed quantitatively on finite lattice spin systems?",
+   "prior": "",
+   "limits": "Exploratory calculations on 1D spin chains ($N=24, 48$ sites); results retain finite-bandwidth and packet-preparation systematic dependence.",
+   "tools": [
+    "DMRG",
+    "Time-Evolving Block Decimation (TEBD)",
+    "Matrix Product States (MPS)",
+    "Krylov subspace / Ritz states"
+   ],
+   "figure": "S0.F1",
+   "figure_url": "https://arxiv.org/html/2609.17664v1/fig05_chew_cft_dmrg.svg",
+   "figure_caption": "Figure 1: Top: $(\\Delta,s)$ decomposition of the CFT operator families. Small solid markers show the CFT predictions; larger translucent markers show the DMRG extraction. Bottom: $(a)$ Spin and energy two-point functions with chord distance fits. Standard error regression uncertainties at fixed $N$ , bond dimension, and fitting window, are quoted. $(b)$ Lattice test of the stress tensor Ward identity.",
+   "figure_gloss": "Scaling dimensions $\\Delta$ versus spin $s$ extracted via DMRG and Ritz methods on an $N=24$ lattice compared against exact CFT predictions (top); two-point correlator chord fits and stress-tensor Ward identity checks on $N=48$ (bottom).",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.18918": {
+  "fields": {
+   "kind": "new method",
+   "result": "Evaluates high-order graph lattice sums for long-range interacting quantum models deterministically, reducing compute times from tens of thousands of core-hours down to 10 minutes on a single core for a 10th-order series (7,136 graphs, up to 30-dimensional sums) on a 4,096-point 3D momentum grid.",
+   "question": "How can the high-dimensional oscillatory graph lattice sums in linked-cluster perturbation theory of long-range interacting quantum lattice models be computed without stochastic Monte Carlo methods?",
+   "prior": "Monte Carlo graph lattice sums required cluster-scale runtimes (typically a full day on a cluster per momentum evaluation) and suffered from stochastic error.",
+   "limits": "Monoatomic Bravais lattices; gapped quantum lattice models within the perturbative convergence radius.",
+   "tools": [
+    "Epstein zeta functions",
+    "graph block factorization and caching",
+    "series-parallel convolution algebra",
+    "tensor-network bucket elimination",
+    "fast Fourier transforms"
+   ],
+   "figure": "S9.F8",
+   "figure_url": "https://arxiv.org/html/2609.18918v1/cutaway_afm.svg",
+   "figure_caption": "Figure 8. Three-dimensional colour plot of the dispersion relation $\\omega(\\bm{k},\\lambda)$ of the 3D LRTFIM on the cubic lattice $\\Lambda=\\mathds{Z}^{3}$ with exponent $\\sigma=1$ ( $\\nu=d+\\sigma=4$ ) at antiferromagnetic coupling $\\lambda=-0.03$ , obtained from the order $r=10$ series expansion (7 136 graphs, up to $10d=30$ -dimensional sums) evaluated with graph zeta functions on a momentum grid of $N=16^{3}=4096$ points (colours interpolated linearly between grid points) with energies in units of the bare gap. The octant $k_{x}>0$ , $k_{y} 0$ is cut away to expose the planes $k_{x}=0$ , $k_{y}=0$ and $k_{z}=0$ through $\\Gamma$ , where the dispersion exhibits a nonanalyticity. The red dots mark the high-symmetry points, in units of the reciprocal lattice vectors, $\\Gamma=(0,0,0)^{T}$ , $\\mathrm{X}=(\\tfrac{1}{2},0,0)^{T}$ , $\\mathrm{M}=(\\tfrac{1}{2},0,-\\tfrac{1}{2})^{T}$ and $\\mathrm{R}=(\\tfrac{1}{2},-\\tfrac{1}{2},-\\tfrac{1}{2})^{T}$ . Note that M and R are equivalent to the standard $(\\tfrac{1}{2},\\tfrac{1}{2},0)^{T}$ and $(\\tfrac{1}{2},\\tfrac{1}{2},\\tfrac{1}{2})^{T}$ by the cubic symmetry. The evaluation of the full momentum grid on a single core of an Apple M1 Max processor required approximately 10 minutes.",
+   "figure_gloss": "Three-dimensional dispersion relation $\\omega(\\bm{k},\\lambda)$ across the Brillouin zone of a 3D long-range transverse-field Ising model on a cubic lattice at $\\lambda=-0.03$ and power-law exponent $\\nu=4$, showing non-analytic behaviour at the $\\Gamma$ point.",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.18327": {
+  "fields": {
+   "kind": "theory",
+   "result": "Reformulates non-relativistic quantum electrodynamics as a density-functional theory over combined internal and external Maxwell sources, yielding a Moreau--Yosida regularized universal functional that removes the ultraviolet cutoff non-perturbatively via a Kohn--Sham construction.",
+   "question": "How can equilibrium non-relativistic quantum electrodynamics be formulated non-perturbatively as an exact, mathematically regularized density-functional theory without unphysical representability issues and with the ultraviolet cutoff removed?",
+   "prior": "",
+   "limits": "Equilibrium ground states in Coulomb gauge. Requires confining potentials (e.g. harmonic) or periodic boundaries to break translational invariance.",
+   "tools": [
+    "Maxwell duality",
+    "Moreau--Yosida regularization",
+    "Kohn--Sham auxiliary construction",
+    "Pauli--Fierz Hamiltonian",
+    "Vainberg--Bregman distance"
+   ],
+   "figure": "S5.F2",
+   "figure_url": "https://arxave.com/figures/2609.18327-S5.F2.svg",
+   "figure_caption": "Figure 2: Comparison of standard functional theories, where external source quantities serve as a parametrization of the ground-state, with their Maxwell-regularized counterparts, where the sources receive a physical description and are combined with the internal quantities to form the mixed ones. Note that current DFT ( \\smaller CDFT) has no direct counterpart, but \\smaller MaxMDFT is instead derived in Sec. IX as an alternative theory for including magnetic fields.",
+   "figure_gloss": "Comparison between standard density-functional schemes (which treat external sources as fixed Hamiltonian parameters) and Maxwell-regularized functional theories (which incorporate field energy to combine internal observables with external sources into regularized mixed quantities).",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.18081": {
+  "fields": {
+   "kind": "theory",
+   "result": "Coaxial cable mediating multi-mode $ZZ$ interaction achieves remote adiabatic controlled-Z gate with optimized infidelity of $4.71\\times 10^{-7}$ and 376.7 ns duration for 30-cm cable length without tunable couplers.",
+   "question": "Can an adiabatic CZ gate be realized across a remote multi-mode coaxial cable coupling architecture with low leakage and high-fidelity conditional phase accumulation?",
+   "prior": "",
+   "limits": "Numerical simulation assuming zero decoherence. Ten standing-wave cable modes included.",
+   "tools": [
+    "time-dependent Hamiltonian evolution",
+    "multi-mode standing-wave coaxial cable model",
+    "virtual-$Z$ phase correction",
+    "transmon frequency tuning"
+   ],
+   "figure": "S0.F2",
+   "figure_url": "https://arxiv.org/html/2609.18081v1/2_1.png",
+   "figure_caption": "Figure 2 : (a) Optimized gate infidelity as a function of the two-qubit working frequencies. The gate duration is optimized independently at each frequency point. The minimum infidelity of $4.71\\times 10^{-7}$ is obtained at $(4.6390,4.5112)~\\mathrm{GHz}$ . The inset shows the control pulse. (b) Gate infidelity under qubit-frequency fluctuations of up to $\\pm 0.5~\\mathrm{MHz}$ , with the pulse amplitudes and gate duration fixed and only the single-qubit phases re-calibrated. (c) Optimized gate infidelity (left axis, blue bars) and gate duration (right axis, red bars) as functions of the cable length, sampled over $30.00\\pm 0.10~\\mathrm{cm}$ at intervals of $0.5~\\mathrm{mm}$ . The qubit working point is re-optimized at each cable length.",
+   "figure_gloss": "Infidelity mapped against both qubit working frequencies, showing a minimum of $4.71\\times 10^{-7}$ at $(4.6390, 4.5112)$ GHz. Panels also display infidelity under $\\pm 0.5$ MHz frequency drift and performance across cable lengths within $30.00 \\pm 0.10$ cm.",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.18035": {
+  "fields": {
+   "kind": "theory",
+   "result": "Perpendicular electric field $E_{\\perp}$ tunes exciton-dispersion anisotropy to produce linear transverse exciton transport in monolayer and twisted bilayer TiSiCO, with bilayer transverse conductivities reaching several $1/h$ at $100\\,\\mathrm{K}$.",
+   "question": "Can perpendicular electric fields in valley-layer-coupled 2D materials control exciton dispersion anisotropy to generate and tune linear transverse exciton transport?",
+   "prior": "",
+   "limits": "Zero-Berry-curvature limit; neglects side-jump and skew-scattering high-temperature disorder processes.",
+   "tools": [
+    "Effective exciton Hamiltonian",
+    "Semiclassical Boltzmann transport theory",
+    "Relaxation-time approximation",
+    "First-principles tight-binding parameters"
+   ],
+   "figure": "S3.F6",
+   "figure_url": "https://arxiv.org/html/2609.18035v1/fig6.png",
+   "figure_caption": "Figure 6: (color online) (a) Numerical calculation of layer-resolved transverse exciton conductivities $\\sigma_{H}^{\\mathrm{sys}}$ , $\\sigma_{\\mathrm{tra}}^{\\mathrm{sys},\\mathrm{AS}}$ , and $\\sigma_{\\mathrm{tra}}^{\\mathrm{sys},\\mathrm{S}}$ for perpendicular electric field $E_{\\perp}=-2\\,\\mathrm{eV/nm}$ and temperature $T=100\\,K$ . (b) Corresponding quantities $|\\sigma_{H}^{\\mathrm{sys}}|/r_{H}^{\\mathrm{sys}}=|\\sigma_{H}^{\\mathrm{sys}}|+|\\sigma_{\\mathrm{tra}}^{\\mathrm{sys},\\mathrm{AS}}\\sin(2\\theta_{1})|+|\\sigma_{\\mathrm{tra}}^{\\mathrm{sys},\\mathrm{S}}\\cos(2\\theta_{1})|$ and $|\\sigma_{H}^{\\mathrm{sys}}|$ , for different in-plane driving force directions $\\theta_{1}$ . (c) and (d): Similar plots as (a) and (b), but for $E_{\\perp}=0\\,\\mathrm{eV/nm}$ . $\\min(\\varepsilon_{n})-\\mu=10\\,\\mathrm{meV}$ and $\\tau=1\\,\\mathrm{ps}$ in all plots.",
+   "figure_gloss": "Twist angle $\\theta$ versus layer-resolved transverse exciton conductivities $\\sigma_H^{\\mathrm{sys}}$, $\\sigma_{\\mathrm{tra}}^{\\mathrm{sys},\\mathrm{AS}}$, and $\\sigma_{\\mathrm{tra}}^{\\mathrm{sys},\\mathrm{S}}$ at $E_{\\perp}=-2\\,\\mathrm{eV/nm}$ and $E_{\\perp}=0\\,\\mathrm{eV/nm}$ ($T=100\\,\\mathrm{K}$). Shows competition between the layer counterflow Hall response and dispersion-anisotropy-induced components.",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.17818": {
+  "fields": {
+   "kind": "new result",
+   "result": "Measured the total entropy of a two-site Hubbard molecule across transitions from two isolated dots to hybridized molecular states and a merged single dot, tracking the suppression of antibonding, singlet, and triplet occupations as tunnel splitting exceeds thermal energy.",
+   "question": "Which microscopic states remain thermally active as interdot tunneling competes with Coulomb interactions in a minimal two-site Hubbard molecule?",
+   "prior": "",
+   "limits": "Requires shifting both dot levels together at fixed detuning.",
+   "tools": [
+    "GaAs double quantum dot",
+    "Single-charge-sensor entropy measurement",
+    "Two-site Hubbard model"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-09-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "abstract"
+ },
+ "2609.18485": {
+  "fields": {
+   "kind": "theory",
+   "result": "Counterpropagating surface acoustic waves show gate-tunable spin-acoustic chirality up to $\\chi=0.996$, yielding a 470-fold transition-strength contrast that enables bichromatic coherence protection with $T_{2,2}^{*}=167~\\mu\\mathrm{s}$ (up from $T_{2}^{*}=7.19~\\mu\\mathrm{s}$).",
+   "question": "How do counterpropagating Rayleigh surface acoustic waves couple to gate-defined hole-spin qubits, and can their directional response be controlled electrostatically?",
+   "prior": "",
+   "limits": "Simulations assume planar Ge quantum well, weak-coupling regime with local defect-mode coupling $g_{0}/2\\pi\\sim 1~\\mathrm{kHz}$, ideal unit phonon-detection efficiency, zero dark counts, and zero reset time.",
+   "tools": [
+    "Six-band Luttinger-Kohn Hamiltonian",
+    "Bir-Pikus strain theory",
+    "3D piezoelectric finite-element method (FEM)",
+    "Master equation simulation"
+   ],
+   "figure": "S5.F6",
+   "figure_url": "https://arxiv.org/html/2609.18485v1/Fig_6.png",
+   "figure_caption": "Figure 6: Heralded Bell-state initialization in a shared $2$ GHz PnC defect mode. Timestamp-corrected conditional Bell-state fidelity $F_{\\text{Bell}}^{\\text{cond}}$ as a function of magnetic-field angle $\\theta_{B}$ and relative qubit displacement $s=2\\Delta x/\\lambda_{\\text{PnC}}$ . The upper and lower boundaries represent the same placement phase. The black contour marks $F_{\\text{Bell}}^{\\text{cond}}=0.85$ , the grey band denotes the herald-dark angular interval, and the star marks the reference point $(\\theta_{B},s)=(36^{\\circ},0)$ .",
+   "figure_gloss": "Timestamp-corrected conditional Bell-state fidelity $F_{\\text{Bell}}^{\\text{cond}}$ plotted against magnetic-field orientation $\\theta_{B}$ and relative qubit displacement $s=2\\Delta x/\\lambda_{\\text{PnC}}$. High-fidelity entanglement ridges broaden when acoustic chirality suppresses spatial standing-wave interference nodes.",
+   "code": ""
+  },
+  "seen": "2026-09-17",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
