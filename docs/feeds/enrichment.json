@@ -1,210 +1,4 @@
 {
- "2608.15760": {
-  "fields": {
-   "verdict": "skim",
-   "kind": "review",
-   "headline": "A survey of machine learning approaches to decoding topological quantum codes focuses on architectural principles, practical performance, and real-time considerations.",
-   "so_what": "This survey consolidates current machine learning approaches for quantum error decoding, offering a framework for understanding their architectural principles and practical implications.",
-   "caveat": "",
-   "tools": [
-    "machine learning",
-    "neural networks",
-    "discriminative learning",
-    "generative learning",
-    "reinforcement learning"
-   ]
-  },
-  "seen": "2026-08-18",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.16857": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new result",
-   "headline": "A fault-tolerance theorem is proven for quantum computation against adversarial noise, constructing a circuit on $N=\\text{poly}(\\bar{N})$ physical qudits of depth $\\bar{T}\\cdot\\bar{N}^{o(1)}$ robust against $N^{1-o(1)}$ physical qudit corruptions at each time step.",
-   "so_what": "This demonstrates that fault-tolerant quantum computation is possible under global, worst-case, and non-Markovian noise models, countering concerns that correlated noise could undermine quantum fault tolerance.",
-   "caveat": "",
-   "tools": [
-    "subsystem product codes",
-    "Floquet-like procedure",
-    "local testability of classical tensor codes",
-    "repeated code switching",
-    "hypercubic qudit architecture"
-   ]
-  },
-  "seen": "2026-08-18",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.15963": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new method",
-   "headline": "A new heuristic approach is proposed for constructing quantum circuits that are hard to classically simulate but efficiently verifiable classically.",
-   "so_what": "This work provides a new avenue toward classically verifiable quantum advantage, avoiding stringent implementation requirements of known approaches.",
-   "caveat": "The protocol is heuristic.",
-   "tools": [
-    "Clifford circuit obfuscation",
-    "quantum circuits",
-    "numerical evidence",
-    "theoretical evidence"
-   ]
-  },
-  "seen": "2026-08-18",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.15161": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new method",
-   "headline": "A classical algorithm achieves a near-optimal time complexity of $\\mathcal{O}(d\\log d)$ for constructing block encodings of matrix polynomials of degree $d$.",
-   "so_what": "This algorithm provides a direct and stable method for constructing block encodings of matrix polynomials with near-optimal classical time complexity, benefiting quantum algorithm development.",
-   "caveat": "for Hermitian matrices",
-   "tools": [
-    "circuit compiling algorithm",
-    "block encoding",
-    "Hamiltonian simulation",
-    "quantum-state preparation techniques",
-    "interpolation-based QSP framework"
-   ]
-  },
-  "seen": "2026-08-18",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.16568": {
-  "fields": {
-   "verdict": "skim",
-   "kind": "review",
-   "headline": "Quantum computing may offer scientific advantage in chemistry, materials science, and biochemistry by treating correlated active spaces, improving excited-state simulations, and accelerating combinatorial structure space exploration.",
-   "so_what": "This analysis guides researchers on promising directions for quantum computing applications in chemistry, materials science, and biochemistry, emphasizing chemically meaningful gains.",
-   "caveat": "Usefulness claims must be tied to specific quantum computing regimes and demonstrate reduced uncertainty after accounting for full costs.",
-   "tools": [
-    "quantum computing",
-    "classical hardware",
-    "noisy physical devices",
-    "error-mitigated utility experiments",
-    "fault-tolerant quantum computers"
-   ]
-  },
-  "seen": "2026-08-18",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.15528": {
-  "fields": {
-   "verdict": "read",
-   "kind": "theory",
-   "headline": "New rigorous, practical, and global upper bounds and success-probability guarantees are provided for quantum parameter learning.",
-   "so_what": "These new bounds allow researchers to rule out unattainable precision and certify attainable precision beyond standard Fisher-information analysis or binary hypothesis testing, and to characterize learning scheme performance without explicit simulation.",
-   "caveat": "for single-shot quantum parameter learning",
-   "tools": [
-    "quantum metrology",
-    "single-shot quantum parameter learning",
-    "Fisher-information analysis",
-    "binary hypothesis testing",
-    "Rabi-frequency-learning example"
-   ]
-  },
-  "seen": "2026-08-18",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.14891": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new method",
-   "headline": "A perturbative gauge-invariant parameterization for small Markovian errors in quantum gate sets is introduced.",
-   "so_what": "Researchers can now characterize small Markovian errors in quantum gate sets using a gauge-invariant parameterization, enabling physically relevant error metrics.",
-   "caveat": "for small Markovian errors and first-order gauge-invariant properties",
-   "tools": [
-    "transfer matrices",
-    "CPTP maps",
-    "superoperators",
-    "density matrix",
-    "quantum gate sets"
-   ]
-  },
-  "seen": "2026-08-18",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.14981": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new method",
-   "headline": "Qudit-ADAPT-VQE with a counterdiabatic operator pool achieves higher accuracy and lower native gates implementation than fixed ansatz approaches.",
-   "so_what": "This method provides a scalable framework for variational quantum algorithms with qudits, suggesting robustness against barren plateau effects and enabling navigation of local optimization traps.",
-   "caveat": "",
-   "tools": [
-    "Qudit-ADAPT-VQE algorithm",
-    "counterdiabatic operator pool",
-    "adiabatic evolution",
-    "warm-start strategy",
-    "burrowing mechanism"
-   ]
-  },
-  "seen": "2026-08-18",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.15715": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new method",
-   "headline": "Kraus-Parameterized Belief Reinforcement Learning achieves stable feedback control on a simulated qubit, maintaining a measurement-conditioned belief fidelity of approximately 0.77-0.80.",
-   "so_what": "Physics-informed neural memory provides a practical inductive bias for reliable quantum feedback control, leading to more stable control under measurement inefficiency and abrupt dynamics switches.",
-   "caveat": "Results were obtained on a simulated continuously monitored qubit.",
-   "tools": [
-    "Kraus-Parameterized Belief Reinforcement Learning",
-    "recurrent encoder",
-    "Stiefel manifold",
-    "Proximal Policy Optimization (PPO) actor",
-    "simulated continuously monitored qubit"
-   ]
-  },
-  "seen": "2026-08-18",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.16716": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new result",
-   "headline": "Longitudinal exchange in germanium spin qubits can be tuned from positive, through zero, to negative values via magnetic field orientation, enabling a single-pulse baseband iSWAP gate.",
-   "so_what": "This establishes native Hamiltonian engineering, allowing gate sets for quantum simulation and computation to be selected by global magnetic field orientation alone.",
-   "caveat": "The results were obtained using two hole spin qubits in a strained-germanium quantum well.",
-   "tools": [
-    "two hole spin qubits",
-    "strained-germanium quantum well",
-    "full vector magnetic field control",
-    "exchange tensor mapping"
-   ]
-  },
-  "seen": "2026-08-18",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
- "2608.15993": {
-  "fields": {
-   "verdict": "read",
-   "kind": "new result",
-   "headline": "An unheralded method narrows the median optical linewidth of T-centers in silicon p-i-n waveguides 3.5-fold to 0.57(11) GHz, with an optimized emitter reaching 128(22) MHz.",
-   "so_what": "This linewidth narrowing enables coherent optical Rabi oscillations and supports future device optimization for scalable quantum interconnects.",
-   "caveat": "The local electric field and charge-noise width were read out at 15 mK.",
-   "tools": [
-    "lateral p-i-n waveguides",
-    "above-band illumination",
-    "Stark-shift tuning",
-    "analytical model"
-   ]
-  },
-  "seen": "2026-08-18",
-  "model": "gemini-2.5-flash",
-  "shape": 2
- },
  "2608.17023": {
   "fields": {
    "verdict": "read",
@@ -8624,5 +8418,514 @@
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
+ },
+ "2609.19639": {
+  "fields": {
+   "kind": "review",
+   "result": "Defines architectural blueprint for utility-scale quantum systems treating QPUs as classical heterogeneous accelerators with specialized local hardware stacks for control, readout, and QEC below the ISA boundary.",
+   "question": "How should utility-scale quantum computing systems be architected and integrated with classical compute to optimize cost-performance?",
+   "prior": "",
+   "limits": "Architectural proposal and design blueprint; relies on scaling assumptions for physical qubit modalities and QEC decoding.",
+   "tools": [
+    "system architecture analysis",
+    "QEC integration models",
+    "classical accelerator design analogies"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "abstract"
+ },
+ "2609.20172": {
+  "fields": {
+   "kind": "new result",
+   "result": "Standing-wave optical tweezer atomic chain emits directional single photons with collection efficiency $\\eta > 70\\%$ into waveguide mode and second-order correlation $g^{(2)} < 0.01$ (with $g^{(2)} < 10^{-3}$ during radiation for $N=10$).",
+   "question": "How can neutral-atom arrays be efficiently and directionally coupled to on-chip waveguide networks as scalable, indistinguishable single-photon sources?",
+   "prior": "",
+   "limits": "Numerical simulation assuming $C_6 = 8\\text{ GHz}/\\mu\\text{m}^6$, sub-wavelength spacing $a < 0.5\\lambda_0$, instantaneous lossless mapping from Rydberg state $|r\\rangle$ to $|s\\rangle$, and neglecting thermal motion or laser field distortion.",
+   "tools": [
+    "Standing-wave optical tweezer (SWAT)",
+    "Rydberg blockade",
+    "Master equation solver",
+    "Phased-array collective emission modeling"
+   ],
+   "figure": "S0.F3",
+   "figure_url": "https://arxiv.org/html/2609.20172v1/x3.png",
+   "figure_caption": "Figure 3: Collection efficiency. (a) The collection efficiency $\\eta$ (solid) and second-order correlation function $g^{(2)}$ (dotted) versus the collection half-angle $\\theta$ for atom numbers $N=4,7$ , and $10$ , respectively. (b) $\\eta$ as functions with the atom number $N$ at fixed collection half-angles. (c) The mean performances of the antenna for atom loading probabilities $p_{L}=1,\\,0.8,\\,0.6$ at $N=10$ . Each data point for $p_{L}<1$ are averaged over 500 random loading configurations.",
+   "figure_gloss": "Solid lines show collection efficiency $\\eta$ and dotted lines show $g^{(2)}$ as functions of collection half-angle $\\theta$ and atom number $N$, demonstrating $\\eta = 90\\%$ at $\\theta = 0.6$ for $N=10$ with $g^{(2)} < 10^{-4}$.",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.20183": {
+  "fields": {
+   "kind": "new method",
+   "result": "Bidirectional middle-out CNOT cascade prepares surface-code logical states in depth $(d{+}3)/2$ with fault distance $d$ in the protected error direction, requiring $\\approx\\frac{3}{4}(d{+}3)$ collective AOD shuttles and $\\approx\\frac{1}{4}(d{+}3)$ row pickups.",
+   "question": "How can unitary stabilizer-expanding surface-code state preparation be adapted to minimize depth and shuttling constraints on neutral-atom processors?",
+   "prior": "Unitary single-pivot preparation was $3(d{-}1)$ CZ layers and $4(d{-}1)$ shuttles; unidirectional cascade was $d$ CZ layers and $\\approx\\frac{3}{2}d$ shuttles.",
+   "limits": "Fault-tolerant only in protected direction (conjugate direction allows weight-2 errors requiring an intermediate QEC round). Circuit-level numerical simulation up to $10^{7}$ shots under calibrated device noise, not physical hardware measurement.",
+   "tools": [
+    "Acousto-optic-deflector (AOD) shuttling",
+    "Global Rydberg CZ gates",
+    "Bloqade toolchain",
+    "Stim",
+    "PyMatching"
+   ],
+   "figure": "S4.F4",
+   "figure_url": "https://arxiv.org/html/2609.20183v1/x6.png",
+   "figure_caption": "Figure 4: Logical error rate vs. noise scaling factor ( $1=$ device-level neutral-atom noise). Colour and line style denote the construction, line opacity the distance.",
+   "figure_gloss": "Logical error rate versus noise scaling factor across code distances 3, 7, and 11. Bidirectional cascade remains sub-threshold at scaling factor 1 for both logical states, outperforming unidirectional and single-pivot methods.",
+   "code": "https://github.com/lsschmid/fast-surface-code"
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.20464": {
+  "fields": {
+   "kind": "review",
+   "result": "Neutral atom arrays scale past $10^{3}$ physical qubits and provide $>99.5\\%$ two-qubit gate fidelities, enabling continuous-time Hamiltonian simulation, QUBO/MWIS graph optimisation, and transversal logical operations for quantum chemistry and materials science.",
+   "question": "How do neutral atom quantum computing platforms address simulation and optimisation challenges in materials science and quantum chemistry across analogue and digital paradigms?",
+   "prior": "",
+   "limits": "Materials and chemistry applications require utility-scale hardware ($10^{5}$ physical qubits, $>10^{6}$ T-gates), far exceeding current device sizes. Single-species mid-circuit readout causes light scattering and crosstalk.",
+   "tools": [
+    "optical tweezer arrays",
+    "Rydberg dipole blockade",
+    "spatial light modulators (SLM)",
+    "acousto-optic deflectors (AOD)",
+    "dual-species/alkaline-earth atom registers"
+   ],
+   "figure": "S2.F1",
+   "figure_url": "https://arxiv.org/html/2609.20464v1/array.png",
+   "figure_caption": "Figure 1: (a) Schematic of a neutral atom quantum computer. Atom arrays are formed using arrays of microscopic optical tweezers created using reconfigurable holograms on a spatial light modulator (SLM) with atom sorting achieved using a fast mobile tweezer created using a crossed acousto-optical deflector (AOD) which can be combined on a polarising beam splitter (PBS). A high numerical-aperture objective lens is used to focus the tweezers and collect single atom fluorescence onto a camera for atom readout, using dichroic mirror to separate the wavelengths (DM). (b) An example image of atoms trapped in a $15\\times 15$ array using the experimental platform from [ 82 ] .",
+   "figure_gloss": "Schematic of a neutral atom computing setup and single-atom fluorescence imaging on a $15 \\times 15$ optical tweezer array generated via spatial light modulators and acousto-optic deflectors.",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.19250": {
+  "fields": {
+   "kind": "theory",
+   "result": "For stabilizer codes encoding $k\\geq 3$ logical qubits, largest logical group achievable via automorphisms is generated by all addressable $S$ and $\\mathrm{CX}$ gates, requiring $n=\\Theta(2^k)$ physical qubits ($n=2^k-1$ exactly). By contrast, all addressable diagonal Clifford gates require only $n=k(k+1)/2 = \\Theta(k^2)$ physical qubits via physical single-qubit Cliffords alone.",
+   "question": "What is the maximum logical gate group achievable by automorphism gates on stabilizer codes, and what is the minimum physical-qubit cost needed to realize it?",
+   "prior": "",
+   "limits": "Restricted to stabilizer codes (with refinements for CSS and self-dual CSS codes); physical operations limited to single-qubit Clifford gates and qubit permutations (extended to single-qubit diagonal gates for higher hierarchy levels).",
+   "tools": [
+    "stabilizer code theory",
+    "symplectic group and Clifford group classification",
+    "complete-hypergraph codes",
+    "concatenated non-CSS codes"
+   ],
+   "figure": "S2.F3",
+   "figure_url": "https://arxiv.org/html/2609.19250v1/Fig3.svg",
+   "figure_caption": "Figure 3: Number of logical gates in each logical group. Solid lines (other than grey) denote tight logical groups for automorphism, transversal, and permutation gates; dotted lines denote additional diagonal logical groups achievable by code constructions at level $t$ of the Clifford hierarchy. We plot the number of logical gates (i.e. order of the logical groups) against the number of logical qubits $k$ in (a) and the minimum required number of physical qubits in (b) . For scale, markers indicate $k=9$ on each curve when the corresponding point lies within the displayed range.",
+   "figure_gloss": "Gate group size as a function of the number of logical qubits $k$ across different gate implementations. Solid curves show automorphism, transversal, and permutation gate limits, while dotted lines show diagonal gate groups up to level $t$ of the Clifford hierarchy.",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.20182": {
+  "fields": {
+   "kind": "new method",
+   "result": "Created QECirc (qecirc.com), an open, verified library providing standardized Stim and OpenQASM implementations for quantum error correction circuits spanning encoders, state preparation, and logical gates.",
+   "question": "How can quantum error correction circuits scattered across papers and ad-hoc repositories be standardized, verified, and made interoperable?",
+   "prior": "Error Correction Zoo catalogs QEC code properties, but lacks concrete, format-agnostic implementation circuits.",
+   "limits": "Syndrome-extraction schedules and larger qLDPC code families such as bivariate-bicycle codes remain planned work.",
+   "tools": [
+    "QECirc",
+    "Stim",
+    "OpenQASM",
+    "Crumble",
+    "Quirk"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.20549": {
+  "fields": {
+   "kind": "review",
+   "result": "Defines scalable logical qubits across four coupled dimensions: reliability, scale, capability, and performance. Establishes criteria requiring repeated quantum error correction, low-latency real-time decoding/feedback, fault-tolerant universal operations, and replicability to hundreds or thousands of qubits.",
+   "question": "How can progress toward error-corrected logical qubits for utility-scale quantum computing be measured and compared systematically?",
+   "prior": "",
+   "limits": "Conceptual/framework paper; relies on theoretical trade-offs across reliability, scale, capability, and performance rather than a specific experimental implementation.",
+   "tools": [
+    "quantum error correction",
+    "real-time syndrome decoding",
+    "fault-tolerant universal gate architectures"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "abstract"
+ },
+ "2609.20537": {
+  "fields": {
+   "kind": "theory",
+   "result": "Proves general stabilizer qLDPC codes with distance $d_n = \\Omega(\\log n)$ have nonzero code capacity thresholds under local coherent noise, with logical diamond-distance error decaying as $\\sup_U \\varepsilon_n^{\\star}(U,\\eta) \\le C\\sqrt{n}e^{-cd_n}$ for optimal recovery and $\\sup_U \\varepsilon_n^{\\rm MW}(U,\\eta) \\le \\frac{2n}{\\chi_{\\rm MW}(1-\\rho_{\\rm MW})}\\rho_{\\rm MW}^{d_n}$ under minimum-weight decoding.",
+   "question": "Do general quantum LDPC codes admit rigorous nonzero error correction thresholds under coherent and general local noise?",
+   "prior": "Rigorous fault tolerance under coherent noise had been established for constant-rate qLDPC codes with linear distance $d = \\Theta(n)$ (Fawzi et al. 2024), but not for sublinear distance codes such as topological or quantum expander codes.",
+   "limits": "Applies to code capacity model: noiseless syndrome measurements and recovery circuits following depth-$D$, bounded-support ($r$) local coherent or local CPTP noise.",
+   "tools": [
+    "cluster resummation",
+    "approximate quantum error correction (AQEC)",
+    "diamond norm bounds on complementary channels",
+    "minimum-weight decoding analysis"
+   ],
+   "figure": "S3.F1",
+   "figure_url": "https://arxiv.org/html/2609.20537v1/cluster_resummation.svg",
+   "figure_caption": "Figure 1: Schematic illustration of cluster resummation. (a) A configuration in Eq. ( 7 ) that contains two large components and several small components. Each large component provides a factor $t$ . (b) Differentiating with respect to $t$ is equivalent to marking each large component $C$ of $B$ in turn and removing its associated factor of $t$ . (c) The terms are grouped by the marked component $C$ , and $F_{C}$ is factored out. Summing the remaining terms, with their associated powers of $t$ , over all configurations $B\\setminus C\\subseteq W\\setminus N_{W}[C]$ gives $\\mathcal{T}_{W\\setminus N_{W}[C]}(t)$ , yielding Eq. ( 8 ).",
+   "figure_gloss": "Schematic of the cluster resummation technique, showing how differentiating with respect to the interpolation parameter $t$ marks a single connected large component while resumming all disconnected error configurations.",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.19783": {
+  "fields": {
+   "kind": "new result",
+   "result": "Hybrid quantum repeater chains combining fast, multiplexable type-1 memories with long-coherence type-2 memories achieve higher end-to-end entanglement distribution rates than pure architectures of either platform alone, even when inter-platform gate errors are non-zero.",
+   "question": "How should heterogeneous quantum memory platforms and quantum error-correction capabilities be allocated along a repeater chain to maximize entanglement distribution rates under realistic hardware constraints?",
+   "prior": "",
+   "limits": "Circuit-level noise model simulations; fixed inter-node spacing of $l_{0}=20\\text{ km}$; independent logical error channels after physical combinatorial counting.",
+   "tools": [
+    "Monte Carlo circuit-level noise simulations",
+    "Fault-tolerant stabilizer measurement via GHZ ancillae",
+    "Modified swap-as-soon-as-possible (swap-ASAP) policy",
+    "Three-qubit repetition, Steane [[7,1,3]], and Shor [[9,1,3]] codes"
+   ],
+   "figure": "S3.F5",
+   "figure_url": "https://arxiv.org/html/2609.19783v1/skr_vs_N2_V1_pl0.01_T2_50ms.svg",
+   "figure_caption": "Figure 5: (top) Entanglement distribution rate $R_{\\infty}$ and (bottom) end-to-end fidelity as a function of total chain length $L=l_{0}(N_{2}-1)$ at fixed inter-node spacing $l_{0}=20$ km. $N_{2}$ is the total number of nodes. gate error rate for type-2 memories is fixed to $\\varepsilon_{g}^{(2)}=10^{-4}$ and $p_{\\ell}=0.01$ . For hybrid architecture we show both the $N_{1}=1$ and $N_{1}=2$ case. We set $N_{1}=1$ for all other architectures. The hybrid architecture achieves better entanglement distribution rate compared to pure architectures while using fewer of the expensive type-2 memories, directly reducing deployment cost.",
+   "figure_gloss": "Entanglement distribution rate and end-to-end fidelity plotted against total chain distance $L$ at $l_{0}=20\\text{ km}$ spacing. Encoded hybrid architectures maintain non-zero distribution rates out to thousands of kilometers, outperforming pure type-1 and type-2 setups.",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.20729": {
+  "fields": {
+   "kind": "new method",
+   "result": "Constructed blind quantum computation (Blind PBC) requiring a quantum server of only $t$ qubits for an $n$-qubit circuit with $t$ non-Clifford $T$ gates, achieving perfect information-theoretic input secrecy with four-way random state preparation and a single $t$-qubit quantum communication step.",
+   "question": "How can blind quantum computation be performed while minimizing the required quantum processor size on the server?",
+   "prior": "Server size was $n+t$ qubits for single-instance communication or $n+1$ qubits with $t$ sequential communication rounds in quantum computing on encrypted data (QCED).",
+   "limits": "Hides computational basis input $\\textbf{x}$ (or orthonormal stabilizer bases) but reveals circuit structure $C$. Qubit virtualization incurs classical sampling cost exponential in simulated virtual qubit count $k$.",
+   "tools": [
+    "Pauli-based computation (PBC)",
+    "Magic state teleportation gadgets",
+    "One-way four-phase quantum state encryption",
+    "Tailored resource computation (TRC)"
+   ],
+   "figure": "S0.F1",
+   "figure_url": "https://arxave.com/figures/2609.20729-S0.F1.svg",
+   "figure_caption": "Figure 1: (a) Pauli-based computation (PBC) and (b) Blind PBC, for a circuit $C$ with $t$ $T$ gates. Information flows from left to right; single (resp. double) lines denote quantum (resp. classical) information. Each protocol has three stages. (i) Preparation of an initial state. In Blind PBC, the client chooses secret random bits $c_{i},d_{i}\\in\\{0,1\\}$ and applies rotations. (ii) Measurement of $t^{\\prime}\\leq t$ Pauli observables $Q_{j}$ , with outcomes $b_{j}\\in\\{0,1\\}$ , selected adaptively by the classical PBC.Sel algorithm. In Blind PBC, the client runs PBC.Sel on a circuit $C^{*}_{\\textbf{x}}$ derived from $C$ and her secret classical input x . (iii) Output of a sample from the desired distribution, determined by PBC.Sel . In Blind PBC, the client corrects PBC.Sel classically before returning the output.",
+   "figure_gloss": "Comparison of standard Pauli-based computation (a) with Blind PBC (b), illustrating state preparation with client random phase rotations $S^{c_i}Z^{d_i}$, adaptive Pauli observable measurement via client-side circuit modification $\\mathsf{PBC.Sel}(C^*_{\\textbf{x}})$, and output sample decoding.",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.20331": {
+  "fields": {
+   "kind": "new method",
+   "result": "Realizes bounded finite impulse response (FIR) filtering on a quantum computer via a unitary state-space lattice decomposition without mid-circuit measurements or gain loss, demonstrated on $N=32$ samples with filter order $M=12$.",
+   "question": "How can discrete-time sample-based linear signal processing and FIR filters be implemented in a composable unitary quantum circuit without losing signal gain?",
+   "prior": "In prior quantum FIR filters (Majumdar et al. 2021), input samples were consumed without reuse, preventing composability without intermediate classical conversion.",
+   "limits": "Simulated on ideal quantum simulator with 1024-shot sampling; requires known power complementary transfer function and large circuit depths (59,292 elementary gates for $N=32, M=12$) requiring fault-tolerant hardware.",
+   "tools": [
+    "Vaidyanathan unitary lattice filterbank decomposition",
+    "quantum delay and transposition gates",
+    "Hadamard test",
+    "Qiskit simulator"
+   ],
+   "figure": "S5.F5",
+   "figure_url": "https://arxiv.org/html/2609.20331v1/Figure5.svg",
+   "figure_caption": "Figure 5: Two input signals (red) shown at the top, the impulse $x_{0}(n)$ and the randomly generated sequence $x_{1}(n)$ , are filtered with a lowpass FIR filter ( $M=12$ ) to produce the bottom outputs (blue), $y_{0}(n)$ and $y_{1}(n)$ , respectively. The input signals are encoded in the superposition $\\ket{0}\\ket{A_{x_{0}}}+\\ket{1}\\ket{A_{x_{1}}}$ and are filtered simultaneously. Data is extracted from the simulator QSV before (red) and after filtering (blue). The dotted lines show 1024-shot measurement results.",
+   "figure_gloss": "Sample index $n$ versus normalized amplitude for two parallel input signals (impulse $x_0(n)$ and fractal sequence $x_1(n)$, red) and their resulting lowpass filtered outputs ($y_0(n)$ and $y_1(n)$, blue), comparing exact statevector amplitudes with 1024-shot Hadamard test estimates.",
+   "code": "https://github.com/ollpu/quantum-fir/"
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.19931": {
+  "fields": {
+   "kind": "new method",
+   "result": "Defines Quantum WalkScore (QWS), an application-oriented benchmark quantifying the largest problem size $(n,d)$ on cycle and 2D-torus graphs where discrete-time quantum walks with amplitude amplification find a target node with measured success probability $p_{\\text{exp}}(n,d) \\geq p^{*}(n,d)$ before first failure.",
+   "question": "How can discrete-time quantum walks combined with amplitude amplification benchmark quantum computers on graph search problems?",
+   "prior": "",
+   "limits": "Applies to gate-based quantum computers on cycle and 2D-torus graphs; walk step counts require $\\textsf{num-w}\\geq d$ and $\\textsf{num-w}\\equiv d\\pmod{2}$.",
+   "tools": [
+    "Discrete-time quantum walks (DTQW)",
+    "Quantum amplitude amplification (AA)",
+    "IBM Heron r2, Heron r3, and Nighthawk r1 QPUs",
+    "Noiseless quantum circuit simulation"
+   ],
+   "figure": "S1.F1",
+   "figure_url": "https://arxiv.org/html/2609.19931v1/fig_cycle_graph.png",
+   "figure_caption": "(a) Cycle graph ( $16$ nodes)",
+   "figure_gloss": "Cycle and 2D-torus graph structures for nodefinding instances of sizes $n=4$ and $n=3$ with target nodes located at varied distances $d$ from the source.",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.19676": {
+  "fields": {
+   "kind": "new method",
+   "result": "Constructed an ODE-based QLSA reaching optimal matrix-query and RHS-query complexity $\\mathcal{O}(\\kappa_A \\log(1/\\varepsilon))$ without variable-time amplitude amplification (VTAA).",
+   "question": "Can quantum linear systems be solved with optimal query complexity $\\mathcal{O}(\\kappa \\log(1/\\varepsilon))$ using an ODE/Schrödingerization framework without requiring variable-time amplitude amplification?",
+   "prior": "LCU+VTAA (Childs et al. 2017) had query complexity $\\mathcal{O}(\\kappa \\operatorname{polylog}(\\kappa/\\varepsilon))$.",
+   "limits": "Requires auxiliary-state preparation oracles and a constant-factor estimate of the solution norm. Gate-level compilation and implementation not provided.",
+   "tools": [
+    "LC-Schrödingerization",
+    "Two-level LCHS",
+    "Gaussian-smoothed hat kernel",
+    "Auxiliary interval recovery",
+    "Block preconditioning"
+   ],
+   "figure": "S3.SS4.fig2",
+   "figure_url": "https://arxiv.org/html/2609.19676v1/kernel-functions.svg",
+   "figure_caption": "Fig. 1: Quantum circuit for the overall algorithm (see Eq. ( 3.17 )). The interval marker $O_{I}$ acts on the auxiliary grid and flag registers and as the identity on the system register. Success requires flag outcome one and zero outcomes in the coefficient and simulation registers. The auxiliary grid register is not measured; simulation work registers are omitted.",
+   "figure_gloss": "Quantum circuit schematic executing the two-level LCHS routine with interval marking $O_I$ and flag verification.",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.20651": {
+  "fields": {
+   "kind": "new result",
+   "result": "Finding a path from entrance to exit in a welded tree of height $n$ requires at least $\\Omega(2^{n/24})$ quantum queries (or $\\Omega(N^{1/24})$) to succeed with constant probability.",
+   "question": "Does there exist an efficient quantum algorithm that outputs a path between the entrance and exit vertices of a welded tree?",
+   "prior": "Childs, Coudron, and Gilani (CCG23) proved pathfinding hardness restricted to rooted and genuine quantum algorithms, but general quantum algorithms remained open.",
+   "limits": "Welded tree graphs of height $n$ ($N = 2^{n}$ leaves) with $q \\le \\sqrt{N}/100$ queries and a single-cycle weld distribution with fixed edge colorings.",
+   "tools": [
+    "compressed permutation oracles",
+    "fresh compressed oracle framework",
+    "quantum discrete walk column-direction states"
+   ],
+   "figure": "S1.F2",
+   "figure_url": "https://arxave.com/figures/2609.20651-S1.F2.svg",
+   "figure_caption": "Figure 2: Example of a fresh query of a welded edge. The blue node is the origin, gray nodes and edges represent the recorded information in $(L,C)$ , green nodes are available connections and red nodes are forbidden under the freshness condition. Note that in the actual oracle, every column in the middle of the graph behaves this way.",
+   "figure_gloss": "Schematic of the fresh compressed oracle rule restricting weld query assignments. Gray nodes mark visited database records, green nodes are valid fresh connections, and red nodes are forbidden to prevent cycles or premature component joining.",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.20406": {
+  "fields": {
+   "kind": "new result",
+   "result": "The number of quantum measurement shots required to reconstruct NMR spectra at fixed accuracy scales sub-exponentially with spin-chain length $L$, showing a pronounced flattening for 1D and 2D molecular geometries with distance-decaying couplings up to $L=50$.",
+   "question": "How does the number of projective measurement shots required to compute NMR spectra to a given accuracy scale with the number of nuclear spins?",
+   "prior": "",
+   "limits": "Low-field NMR setting only. All gate noise, decoherence, and Trotterization errors neglected (pure shot-noise limit). Full Heisenberg dynamics verified only up to $L=12$ and on four real molecules.",
+   "tools": [
+    "Exact diagonalization",
+    "Ising NMR toy Hamiltonian benchmark",
+    "Repeated-measurement shot-noise simulation",
+    "Fast Fourier transform (FFT)"
+   ],
+   "figure": "S4.F4",
+   "figure_url": "https://arxiv.org/html/2609.20406v1/Fig4_Heisenberg.svg",
+   "figure_caption": "Figure 4: Scaling of the infidelity for Heisenberg Hamiltonians. (a) Infidelity $\\mathcal{I}(R,L)$ as a function of system size $L$ for the one-dimensional geometry with broadening parameter $\\eta=3\\,\\mathrm{Hz}$ and $R=1024$ shots. The infidelity increases only weakly with system size and does not exhibit a pronounced growth over the considered range of $L$ , suggesting that the favorable shot noise behavior observed for the Ising model is not qualitatively changed by the more general Heisenberg interaction, although the data should be understood as an illustrative small-system check rather than a scaling analysis. (b) Infidelity $\\mathcal{I}(R,L)$ for four example molecules with Heisenberg couplings, evaluated from noisy spectra obtained with $R=500$ shots and compared to exact reference spectra with a field strength of $20\\,\\mathrm{MHz}$ and a broadening parameter of $\\eta=1\\,\\mathrm{Hz}$ . The infidelity does not show a steeply increasing trend with $L$ .",
+   "figure_gloss": "Spectral infidelity versus system size $L$ (at $R=1024$ shots) for 1D chains and four real molecules under full Heisenberg interactions, demonstrating weak growth with $L$.",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.19484": {
+  "fields": {
+   "kind": "new method",
+   "result": "Unitary propagators for real-time molecular and condensed-phase dynamics are synthesized via Solovay-Kitaev braiding of Fibonacci and Ising anyons, achieving an accuracy target of $10^{-8}$ across two-level, spin-boson, and molecular reaction systems.",
+   "question": "Can real-time quantum dynamics in molecular and condensed-phase systems be represented and executed using non-Abelian anyon braiding on topological quantum hardware?",
+   "prior": "",
+   "limits": "Classical digital simulation of anyon braiding circuits rather than execution on topological quantum hardware; requires probabilistic imaginary time evolution for thermal states.",
+   "tools": [
+    "Fibonacci and Ising anyon braiding",
+    "Solovay-Kitaev algorithm",
+    "Givens rotations",
+    "Tensor network path integrals",
+    "Probabilistic imaginary time evolution (PITE)"
+   ],
+   "figure": "S1.F2",
+   "figure_url": "https://arxiv.org/html/2609.19484v1/test.png",
+   "figure_caption": "Figure 2: Braiding sequences generated for a two-level system using the Solovay-Kitaev algorithm are employed to simulate the time propagation of the system. In panel (A), the exact propagation of population dynamics, obtained by directly exponentiating the Hamiltonian, is depicted with solid lines, while the result obtained from Fibonacci anyon braiding is shown with scattered dots. The first 10 elements of the Fibonacci braiding sequence are displayed above panel (B). Panel (B) also shows the matrix elements for the braiding operations and the individual braiding diagrams for 4 gates; $\\sigma_{1}$ , $\\sigma_{2}$ , and their inverses. Panel (C) presents the population dynamics of a similar Hamiltonian, where we utilized Ising anyon braiding. The first few braiding sequences and the matrix elements of the braiding elements are shown in panel (D). The set of gates for Ising anyons possess a non-topological gate, specifically a rotation gate ( $T$ in the figure), which is represented by a dashed circle in the braiding diagram to stress that the rotation is not a topological gate. $\\Delta t=0.1\\hbar$ is used in both cases, the braiding word above approximates the unitary propagator $e^{-i\\Delta tH/\\hbar}$ with infidelity $10^{-7}$ .",
+   "figure_gloss": "Population dynamics versus time for a two-level system under exact unitary evolution compared to Fibonacci and Ising anyon braiding sequences generated by the Solovay-Kitaev algorithm with $10^{-7}$ infidelity.",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.19485": {
+  "fields": {
+   "kind": "new method",
+   "result": "Efficient classical sampling and decoding success estimation for fault-tolerant third-order circuits (CSS operations plus diagonal gates in the third level of the Clifford hierarchy like $T$, $\\mathrm{CS}$, $\\mathrm{CCZ}$) with non-Clifford simulation overhead independent of logical qubit count.",
+   "question": "How can the logical failure rate and decoding performance of fault-tolerant quantum circuits implementing non-Clifford gates be estimated efficiently?",
+   "prior": "",
+   "limits": "Logical failure rate estimate is an overestimate. Efficient sampling requires combined $X$-like errors to satisfy a contractibility condition (Condition C); checking this condition exactly is exponentially hard in circuit volume without topological or geometric structure.",
+   "tools": [
+    "spacetime fault complex cohomology",
+    "twisted detector-error model",
+    "contractibility condition verification",
+    "$\\mathbb{Z}_2$ linear solvers",
+    "Pauli frame tracking"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.19184": {
+  "fields": {
+   "kind": "review",
+   "result": "Reviews Suzuki-Trotter splitting methods, multi-product formulas, and alternative integrators for quantum time evolution, focusing on modern error-bound estimation and implementation trade-offs for noisy quantum hardware.",
+   "question": "How do modern Suzuki-Trotter product formulas and alternative time-evolution algorithms perform, scale, and compare in practical quantum and classical simulations?",
+   "prior": "",
+   "limits": "Mathematical proofs and low-level technical details omitted; pedagogical review oriented toward practical usage.",
+   "tools": [
+    "Suzuki-Trotter product formulas",
+    "multi-product formulas",
+    "quantum signal processing",
+    "time-dependent variational principle (TDVP)",
+    "symplectic integrators"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "abstract"
+ },
+ "2609.20775": {
+  "fields": {
+   "kind": "new result",
+   "result": "Flopping-mode hole spin qubit in planar Ge achieves $99.76\\%$ single-qubit gate fidelity ($t_{X\\pi} = 88\\text{ ns}$) and $T_2^{\\phi,\\mathrm{CPMG32}} = 130\\text{ }\\mu\\mathrm{s}$ with $-52\\text{ dBm}$ drive power.",
+   "question": "Can flopping-mode hole spin qubits simultaneously achieve strong transverse spin-electric coupling, suppressed charge-noise sensitivity, and long relaxation times at low magnetic fields?",
+   "prior": "EDSR on planar Ge single-QD qubits required drive powers around $-27\\text{ dBm}$ ($10\\text{ mV}$ gate voltage) at low magnetic fields.",
+   "limits": "Measured at $|\t{B}| = 5\\text{ mT}$ nearly in-plane magnetic field and dilution refrigerator temperatures ($20\\text{ mK}$ base); coherent control operates at Zeeman-degeneracy sweet-spots.",
+   "tools": [
+    "planar strained Ge/SiGe heterostructure",
+    "flopping-mode double quantum dot hole qubit",
+    "single-hole transistor charge sensor",
+    "electric dipole spin resonance (EDSR)",
+    "Pauli spin blockade (PSB) readout"
+   ],
+   "figure": "Sx1.F5",
+   "figure_url": "https://arxiv.org/html/2609.20775v1/figure_RB_final.png",
+   "figure_caption": "Figure 5: a. ( b. ) Single-qubit Clifford randomized benchmarking experiments for B orientations $\\hat{\\bm{b}}_{1}$ ( $\\hat{\\bm{b}}_{3}$ ) for $|\\mathrm{\\textbf{B}}|{}=$5\\text{\\,}\\mathrm{mT}$$ and $t_{c}/h=$13\\text{\\,}\\mathrm{GHz}$$ . The qubit is driven with an rf amplitude $A_{\\mathrm{d,\\mathrm{P2}}}{}=$460\\text{\\,}\\mathrm{\\SIUnitSymbolMicro V}$$ ( $550\\text{\\,}\\mathrm{\\SIUnitSymbolMicro V}$ ) at the device. The average physical gate fidelity calculated from the exponential fits (black lines) is shown in the insets. Corresponding longitudinal and transverse coherence metrics are summarized in Supplementary Table S2 . c. Compiled data from references [ 8 , 12 , 7 , 36 ] , showing the square of the drive amplitude at the device, $V_{\\rm drive}^{2}$ and the physical single-qubit gate infidelity. Stars denote the two measured configurations in a. and b. Triangle denotes an LD qubit measured at the hyperfine sweet-spot in the same device (Supplementary subsection S12 ). Points are color coded according to qubit frequency.",
+   "figure_gloss": "Single-qubit randomized benchmarking survival probability versus number of Clifford gates, demonstrating gate fidelities up to $99.76\\%$ driven with sub-millivolt amplitudes at $5\\text{ mT}$.",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.20043": {
+  "fields": {
+   "kind": "new result",
+   "result": "300mm wafer-scale QSOI platform achieves $69\\%$ yield for first-electron charge detection across 546 plunger-gate stability diagrams, with first-electron position dispersion of $21\\text{ mV} \\pm 35\\text{ mV}$ over 377 quantum dots.",
+   "question": "Can an adapted commercial 28nm FD-SOI CMOS platform achieve wafer-scale electrostatic uniformity and reproducible few-electron quantum dot operation?",
+   "prior": "Standard 28nm FD-SOI had room-temperature threshold-voltage dispersion $\\sigma_{V_{\\text{TH}}} = 385\\text{ mV}$ (reduced to $41.1\\text{ mV}$ here); matched-pair $\\Delta V_{\\text{TH}}/\\sqrt{2}$ standard deviation was 59 mV in prior 300mm Si qubit arrays.",
+   "limits": "Tested on a single best-performing wafer split at $\\sim 2\\text{ K}$ wafer temperature under DC probing; automated charge detection routine did not dynamically optimize detector sensitivity.",
+   "tools": [
+    "300mm QSOI quantum platform",
+    "cryogenic semi-automatic wafer prober (sub-2K)",
+    "charge sensing with single-electron transistors (SET)",
+    "TCAD electrostatics simulation"
+   ],
+   "figure": "S4.F5",
+   "figure_url": "https://arxiv.org/html/2609.20043v1/wafermapandhistogram.png",
+   "figure_caption": "Fig. 5: Left: Wafermap of charge detection at the wafer scale for a pair of facing plunger gates. Only 4 dies were not measured since our protocol to find the first Coulomb peak rejected these dies. Each die shows the measurement between plunger gates G3T and G3B. Right: Histogram of the first electron position across the wafer measured for all the possible detectors in our device.",
+   "figure_gloss": "Left: wafer map showing charge-stability diagrams across 91 dies. Right: histogram of the gate voltage corresponding to the first detected electron across 377 quantum dots, centered at $21\\text{ mV}$ with a $\\pm 35\\text{ mV}$ spread.",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.20426": {
+  "fields": {
+   "kind": "new result",
+   "result": "Coplanar lateral-gating of ${\\rm MoS_2}$ on single-crystal ${\\rm SrTiO_3}$ eliminates dedicated gate insulator; quantum paraelectricity of ${\\rm SrTiO_3}$ enhances gate-channel coupling upon cooling, decreasing threshold voltage and subthreshold swing.",
+   "question": "Can lateral coplanar gating on a quantum paraelectric substrate provide strong electrostatic control in ${\\rm MoS_2}$ FETs without depositing a top dielectric?",
+   "prior": "",
+   "limits": "Cryogenic to room temperature measurements on single-crystal ${\\rm SrTiO_3}$.",
+   "tools": [
+    "${\\rm MoS_2}$ field-effect transistors",
+    "single-crystal ${\\rm SrTiO_3}$ substrate",
+    "coplanar lateral gating",
+    "cryogenic transport measurement"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "abstract"
  }
 }
