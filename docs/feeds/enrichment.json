@@ -8421,15 +8421,16 @@
  },
  "2609.19639": {
   "fields": {
-   "kind": "review",
-   "result": "Defines architectural blueprint for utility-scale quantum systems treating QPUs as classical heterogeneous accelerators with specialized local hardware stacks for control, readout, and QEC below the ISA boundary.",
-   "question": "How should utility-scale quantum computing systems be architected and integrated with classical compute to optimize cost-performance?",
+   "kind": "theory",
+   "result": "Proposes architecture blueprint treating utility-scale quantum systems as classical heterogeneous accelerators with clean instruction set architecture (ISA) boundaries and specialized hardware for control, readout, and error correction.",
+   "question": "How should utility-scale quantum computing systems be architected to optimize cost-performance across coupled quantum-classical infrastructure?",
    "prior": "",
-   "limits": "Architectural proposal and design blueprint; relies on scaling assumptions for physical qubit modalities and QEC decoding.",
+   "limits": "Architectural proposal without physical hardware implementation or empirical benchmarking.",
    "tools": [
-    "system architecture analysis",
-    "QEC integration models",
-    "classical accelerator design analogies"
+    "heterogeneous accelerator design principles",
+    "layered instruction set architecture (ISA)",
+    "high-performance network stack analogies",
+    "classical-quantum co-design"
    ],
    "figure": "",
    "figure_url": "",
@@ -8568,14 +8569,14 @@
  "2609.20549": {
   "fields": {
    "kind": "review",
-   "result": "Defines scalable logical qubits across four coupled dimensions: reliability, scale, capability, and performance. Establishes criteria requiring repeated quantum error correction, low-latency real-time decoding/feedback, fault-tolerant universal operations, and replicability to hundreds or thousands of qubits.",
-   "question": "How can progress toward error-corrected logical qubits for utility-scale quantum computing be measured and compared systematically?",
+   "result": "Defines scalable logical qubits and establishes a unified framework evaluating them across four coupled dimensions: reliability, scale, capability, and performance.",
+   "question": "How to define, benchmark, and compare progress in fault-tolerant logical qubits for utility-scale quantum computing.",
    "prior": "",
-   "limits": "Conceptual/framework paper; relies on theoretical trade-offs across reliability, scale, capability, and performance rather than a specific experimental implementation.",
+   "limits": "Conceptual/benchmarking framework; assumes fault-tolerant operations, real-time decoding, and scaling to hundreds or thousands of logical qubits.",
    "tools": [
-    "quantum error correction",
-    "real-time syndrome decoding",
-    "fault-tolerant universal gate architectures"
+    "quantum error correction (QEC)",
+    "fault-tolerant universal operations",
+    "real-time decoding and feedback"
    ],
    "figure": "",
    "figure_url": "",
@@ -8833,16 +8834,16 @@
  "2609.19184": {
   "fields": {
    "kind": "review",
-   "result": "Reviews Suzuki-Trotter splitting methods, multi-product formulas, and alternative integrators for quantum time evolution, focusing on modern error-bound estimation and implementation trade-offs for noisy quantum hardware.",
-   "question": "How do modern Suzuki-Trotter product formulas and alternative time-evolution algorithms perform, scale, and compare in practical quantum and classical simulations?",
+   "result": "Reviews recent advances in Suzuki-Trotter decompositions, improved error bounds, and alternative quantum time-evolution methods for classical and noisy quantum computing platforms.",
+   "question": "How do modern Suzuki-Trotter splitting methods and alternative algorithms perform in practical quantum time evolution?",
    "prior": "",
-   "limits": "Mathematical proofs and low-level technical details omitted; pedagogical review oriented toward practical usage.",
+   "limits": "Mathematical proofs and technical implementation details omitted.",
    "tools": [
-    "Suzuki-Trotter product formulas",
-    "multi-product formulas",
-    "quantum signal processing",
-    "time-dependent variational principle (TDVP)",
-    "symplectic integrators"
+    "Suzuki-Trotter decompositions",
+    "Multi-product formulae",
+    "Quantum signal processing",
+    "Time-dependent variational principle (TDVP)",
+    "Processed methods and symplectic integrators"
    ],
    "figure": "",
    "figure_url": "",
@@ -8927,5 +8928,53 @@
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "abstract"
+ },
+ "2609.19798": {
+  "fields": {
+   "kind": "new method",
+   "result": "Variational method adapted with ${\\cal PT}$-conjugate wave functions and complex contour integration computes real spectra and order parameters in non-Hermitian $-g\\phi^4$ theory in $d=2$ without sign problems, identifying a crossover in $\\langle\\phi\\rangle$ without spontaneous ${\\cal PT}$ breaking.",
+   "question": "Can the Hamiltonian variational method be extended to solve non-Hermitian and ${\\cal PT}$-symmetric quantum field theories in two dimensions?",
+   "prior": "was limited to smaller volumes by brute-force numerical integration (Romatschke 2023) or exact diagonalization",
+   "limits": "Small lattice volumes $D \\le 7$ due to exponential state growth with volume; finite lattice spacing; inconclusive finite-temperature transition signals.",
+   "tools": [
+    "variational method",
+    "Hamiltonian lattice formulation",
+    "${\\cal PT}$-symmetric inner product",
+    "complex contour integration"
+   ],
+   "figure": "S3.F9",
+   "figure_url": "https://arxiv.org/html/2609.19798v1/fig9-pressure.svg",
+   "figure_caption": "Figure 9: Pressure as a function of temperature for $m_{B}^{2}a^{2}=0.5,ga^{2}=0.05$ . Shown are variational method results from the partition function ( 40 ) using the entire Hamiltonian spectrum for $D=7$ (thick line) and the space-time symmetry results ( 41 ) using only the ground state energy from $D=2$ to $D=7$ (symbols), see Tab. 2 . In addition, results from the approximate saddle point method ( 50 ) are shown (thin and dashed line, respectively). See text for details.",
+   "figure_gloss": "Pressure versus temperature for $m_B^2 a^2 = 0.5$ and $ga^2 = 0.05$. Compares full variational Hamiltonian spectrum at $D=7$ with ground-state space-time symmetry evaluation and saddle-point approximations.",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.20500": {
+  "fields": {
+   "kind": "review",
+   "result": "Review synthesizes quantum algorithms for nonperturbative quantum field theory dynamics alongside quantum sensing platforms (cavities, circuits, magnetometry, and pair-breaking superconducting detectors with thresholds around 0.1 meV) for dark matter and gravitational wave searches.",
+   "question": "How can quantum simulation and quantum sensing technologies be applied to resolve nonperturbative dynamics and detect subtle beyond-the-Standard-Model physics?",
+   "prior": "",
+   "limits": "Digital quantum field theory algorithms are limited by digitization of higher-dimensional non-Abelian gauge theories, state preparation, and continuum extrapolation; sensor sensitivity is limited by low-energy excess events, excess quasiparticles, and two-level system noise.",
+   "tools": [
+    "digital quantum simulation",
+    "superconducting cavities and LC circuits",
+    "quantum magnetometry",
+    "pair-breaking superconducting sensors (TES, KID, SNSPD)"
+   ],
+   "figure": "S1.F1",
+   "figure_url": "https://arxiv.org/html/2609.20500v1/cartoon-for-review.png",
+   "figure_caption": "Figure 1 : Quantum sensing and quantum simulation with superconducting platforms. Left: quantum sensing with superconducting cavities and pair-breaking detectors, probing weak signals from dark matter and gravitational waves. Right: quantum simulations using transmon-based superconducting processors, enabling first-principles studies of non-perturbative quantum field dynamics. Images include a superconducting quantum chip (IBM) and conceptual cavity-based sensor designs (adapted from [ 469 ] ).",
+   "figure_gloss": "Schematic overview connecting superconducting platforms to particle physics applications: cavity and pair-breaking quantum sensors for dark matter and gravitational waves (left) and transmon-based processors for non-perturbative quantum field simulations (right).",
+   "code": ""
+  },
+  "seen": "2026-09-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
  }
 }
