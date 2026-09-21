@@ -8591,5 +8591,29 @@
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
+ },
+ "2609.21588": {
+  "fields": {
+   "kind": "theory",
+   "result": "Optimal lead-system coupling $\\tau_L=\\tau_R=4\\tau$ in a finite Hofstadter lattice yields near-unit transmission plateaus $T(\\omega)\\approx 1$ via topologically protected boundary modes, violating standard thermodynamic uncertainty relation bounds and enhancing thermoelectric power and cooling currents.",
+   "question": "How do non-equilibrium transport statistics and thermoelectric performance behave across finite-size Hofstadter lattices coupled to reservoirs?",
+   "prior": "",
+   "limits": "Non-interacting single-particle transport, single-site lead-to-system contacts, stationary regime.",
+   "tools": [
+    "Non-equilibrium Green's functions (NEGF)",
+    "Levitov-Lesovik counting statistics",
+    "Hofstadter lattice Hamiltonian",
+    "Tight-binding semi-infinite chain leads"
+   ],
+   "figure": "S4.F7",
+   "figure_url": "https://arxiv.org/html/2609.21588v1/currentsandefficiency.svg",
+   "figure_caption": "Figure 7: The top panel shows dimensionless power $P=-I_{M}V$ (solid red) and cooling current $I_{Q}=I_{E}-\\mu_{L}I_{M}$ (solid blue) vs. dimensionless bias voltage. Each operational regime has an optimal bias voltage. Choosing the optimal system-reservoir coupling strength greatly enhances transmission and thereby charging power and cooling current (solid vs. dotted curves). The performance is also quite robust with respect to variations of the on-site energies ( 26 ): Symbols and error bars denote average and statistical error of 100 realizations with $\\alpha=0.1$ (hollow symbols with smaller error bars) and $\\alpha=1.0$ (filled symbols with larger error bars). Dashed lines indicate maximum power (red) and maximum cooling current (blue) that are attainable for boxcar transmission functions by varying $V$ and $\\bar{\\mu}$ at fixed temperatures. The bottom panel demonstrates that the corresponding efficiency (red) and coefficient of performance (blue) well respect tighter-than Carnot bounds discussed in App. B (dash-dotted curves). Parameters: $\\tau_{0}=10\\tau$ , $\\tau_{c}=\\tau_{L}=\\tau_{R}=4\\tau$ (solid and dashed curves) or $\\tau_{c}=\\tau_{L}=\\tau_{R}=0.5\\tau$ (dotted curves), ${\\cal B}=2.5$ , $N_{x}=N_{y}=10$ , $\\bar{\\mu}=-3.5\\tau$ , $\\beta_{R}\\tau=1$ , $\\beta_{L}=2\\beta_{R}$ (compare red rectangle with arrows in Fig. 2 ).",
+   "figure_gloss": "Dimensionless output power $P$ and cooling current $I_Q$ (top), along with efficiency $\\eta$ and coefficient of performance $\\kappa$ (bottom), plotted against dimensionless bias voltage across a finite Hofstadter system.",
+   "code": ""
+  },
+  "seen": "2026-09-21",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
  }
 }
