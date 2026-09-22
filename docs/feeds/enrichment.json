@@ -9176,15 +9176,15 @@
  "2608.19696": {
   "fields": {
    "kind": "new method",
-   "result": "Phase-modulated concatenated continuous driving (CCD) stabilizes Rabi oscillations and extends oscillation decay time for silicon hole spin qubits while protecting coherence during gate operations in the CCD frame.",
-   "question": "Can phase-modulated continuous driving protect a silicon hole spin qubit from low-frequency charge noise and residual hyperfine interactions?",
+   "result": "Phase-modulated concatenated continuous driving (CCD) stabilizes Rabi oscillations and extends oscillation decay time for silicon hole spin qubits while maintaining coherent gate control.",
+   "question": "Can low-frequency charge and hyperfine noise in silicon hole spin qubits be suppressed during coherent driving via microwave phase modulation?",
    "prior": "",
-   "limits": "Subject to residual noise not decoupled by the concatenated driving frequency.",
+   "limits": "Subject to low-frequency noise from intrinsic spin-orbit coupling and residual nuclear spins in the silicon substrate.",
    "tools": [
-    "silicon quantum dots",
-    "hole spin qubit",
+    "silicon quantum dot hole spin qubit",
     "phase-modulated concatenated continuous driving (CCD)",
-    "microwave phase modulation"
+    "microwave phase modulation",
+    "all-electrical spin-orbit control"
    ],
    "figure": "",
    "figure_url": "",
@@ -9297,15 +9297,15 @@
  "2609.24734": {
   "fields": {
    "kind": "new result",
-   "result": "Demonstrated Kondo interactions in hexalayer rhombohedral graphene moiré superlattices. With increasing magnetic field, magnetoresistance undergoes increase-decrease transition across $B_c$ and Hall resistance $R_{xy}$ reverses sign near $B_c$; longitudinal resistance $R_{xx}$ increases logarithmically then drops as $T^2$ with decreasing temperature.",
-   "question": "Can the Kondo effect emerge from localized Wannier orbitals coupling to itinerant carriers in rhombohedral graphene moiré superlattices?",
+   "result": "Kondo effect observed in hexalayer rhombohedral graphene moiré superlattices. With increasing magnetic field, longitudinal magnetoresistance transitions from increasing to decreasing across critical field $B_c$, while Hall resistance $R_{xy}$ reverses sign near $B_c$; longitudinal resistance $R_{xx}$ increases logarithmically as temperature decreases before transitioning to a $T^2$ heavy-fermion liquid behavior.",
+   "question": "Can the Kondo effect be realized and tuned via topological flat bands in rhombohedral graphene moiré superlattices?",
    "prior": "",
-   "limits": "Observed in hexalayer rhombohedral graphene aligned with hBN; requires tuning carrier density $n$ and displacement field $D$ into correlated flat-band regime.",
+   "limits": "Observed in hexalayer rhombohedral graphene moiré structures under low temperatures and external magnetic and displacement fields.",
    "tools": [
     "hexalayer rhombohedral graphene moiré superlattice",
     "magneto-transport measurements",
-    "temperature-dependent transport",
-    "electrostatic gating ($n$ and $D$ field tuning)"
+    "temperature-dependent transport measurements",
+    "electrostatic gating (carrier density $n$ and displacement field $D$ tuning)"
    ],
    "figure": "",
    "figure_url": "",
