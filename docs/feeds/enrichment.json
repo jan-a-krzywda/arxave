@@ -9516,16 +9516,15 @@
  "2609.25641": {
   "fields": {
    "kind": "review",
-   "result": "Mamba-based neural decoder reduces surface-code inference cost scaling from quartic to quadratic in code distance while matching Transformer baseline performance and improving effective thresholds under decoder latency noise. Multi-shift stochastic reconfiguration lowers checkpoint-local validation residuals and update variance for neural quantum states.",
-   "question": "How can learned quantum embeddings, linear-scaling sequence decoders, and regularized stochastic reconfiguration improve quantum machine learning and neural quantum system methods?",
-   "prior": "",
-   "limits": "Demonstrated under specific benchmark settings, finite Monte Carlo sample regimes, and simulated decoder-induced latency noise models.",
+   "result": "Mamba-based neural decoder matches Transformer accuracy on surface codes while dropping inference-cost scaling from quartic to quadratic in code distance. Multi-shift stochastic reconfiguration reduces validation residuals and update variance in neural quantum states.",
+   "question": "How do learned representations, statistical regularization, and hardware constraints optimize quantum machine learning and classical neural methods for quantum error correction and simulation?",
+   "prior": "Transformer neural decoders scaled quartically with surface code distance; fixed-shift stochastic reconfiguration suffered from sample-noise trade-offs.",
+   "limits": "NMR demonstrations limited to small-scale DQC1; multi-shift SR adds computational cost; Mamba decoder evaluated under specific decoder-induced noise models.",
    "tools": [
-    "Neural Quantum Embedding (NQE)",
-    "Deterministic Quantum Computation with 1 qubit (DQC1)",
-    "Mamba state-space neural decoder",
-    "Multi-shift stochastic reconfiguration (SR)",
-    "NMR quantum processor"
+    "Neural Quantum Embedding",
+    "DQC1 on NMR processor",
+    "Mamba state-space decoder",
+    "multi-shift stochastic reconfiguration"
    ],
    "figure": "",
    "figure_url": "",
@@ -9662,13 +9661,13 @@
  "2609.25223": {
   "fields": {
    "kind": "theory",
-   "result": "Increasing Kitaev chain length from 4 to 6 quantum dots does not universally improve Rabi or Ramsey coherence times. 6-dot qubits suffer larger leakage during Ramsey oscillations and only improve coherence if interchain tunneling fluctuations or target energy splittings are kept small.",
-   "question": "How do Rabi and Ramsey coherence times scale when extending quantum-dot artificial Kitaev chain qubits from 4 to 6 dots under realistic disorder?",
+   "result": "Rabi and Ramsey coherence times do not improve universally when scaling from four-dot to six-dot artificial Kitaev chain qubits under realistic disorder. Six-dot qubits suffer from increased leakage during Ramsey rotations due to larger detuning needed to overcome suppression of energy splitting.",
+   "question": "How do Rabi and Ramsey coherence times scale when expanding quantum-dot-based Majorana qubits from four dots to six dots?",
    "prior": "",
-   "limits": "Theoretical simulation. Considers four-dot and six-dot chains under three parameter regimes (small and large superconducting gaps, and experimental parameter sets).",
+   "limits": "Theoretical simulations with modeled quasi-static disorder under three parameter regimes (small gap, large gap, experimental parameters); non-adiabatic transitions out of Majorana subspace included.",
    "tools": [
-    "double $N$-site quantum-dot Kitaev chain model",
-    "Rabi and Ramsey oscillation simulations",
+    "Kitaev chain model",
+    "qubit rotation simulations",
     "disorder averaging"
    ],
    "figure": "",
