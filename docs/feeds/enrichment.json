@@ -9317,5 +9317,393 @@
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "abstract"
+ },
+ "2609.25248": {
+  "fields": {
+   "kind": "new result",
+   "result": "Demonstrated an in-orbit programmable quantum photonic processor operating on a nanosatellite, generating and manipulating two-photon states in a six-mode universal integrated circuit and observing two-photon Hong-Ou-Mandel interference.",
+   "question": "Can quantum interference conditions (spectral degeneracy, phase stability, and optical alignment) be established and maintained on a programmable photonic circuit in space?",
+   "prior": "",
+   "limits": "Payload constrained to 10 W average power, 9.8 kg mass, and 15 x 15 x 45.3 cm volume; low-noise coincidence measurements restricted to ~30 min per 92 min orbit during Earth shadow due to sunlight leakage and radiation-induced detector noise.",
+   "tools": [
+    "Type-II SPDC in ppKTP crystal",
+    "6x6 reconfigurable universal photonic integrated circuit (uPIC)",
+    "Single-photon avalanche photodiodes (SPADs)",
+    "Custom FPGA System on a Module (SoM)"
+   ],
+   "figure": "S1.F5",
+   "figure_url": "https://arxiv.org/html/2609.25248v1/hom_interference_and_ratio_outlier_max_main_text_2.png",
+   "figure_caption": "Figure 5: Hong-Ou-Mandel interference in space. ( a ) Two-photon interference scan with respect to the crystal temperature, including data from three different operation days. The uPIC is set such that two input photons (corresponding to the state $|010010\\rangle$ ) are sent to MZI6, whose internal phase is set to $\\varphi=\\pi/2$ and whose outputs are then routed to detector pairs CC 05 (green) or CC 15 (light blue, violet). Individual data points of normalized coincidence counts for consecutive days in orbit (i.O.) are marked in the background while the inverse-variance weighted average of these points (dark blue) highlights the overall trend. Error bars indicate one standard deviation, obtained by Gaussian uncertainty propagation, and there is an explicit dip in coincidences around a crystal temperature of $\\sim 32.5\\,{}^{\\circ}\\mathrm{C}$ , which also corresponds to the value measured on Earth (red-shaded area). The peak in coincidences just before the dip is discussed in the Supplemental Material [ 28 ] (Sec. S9 N). ( b ) The registered average coincidence rate of distinguishable photons when the internal phase of MZI6 is set to $\\varphi=\\pi/2$ (light blue), is half with respect to the setting of $\\varphi=\\pi$ (violet), as can be seen exemplarily for detector pair CC 15 . This feature served as a reference measurement for the HOM scan. It was consistently observed when routing photons from MZI6 across all detector pairs (inset) and shows good agreement with theoretical predictions (grey) [ 2 ] . ( c ) Close-up of the HOM dip around the expected degeneracy temperature (red-shaded area) highlights the explicit drop of coincidence counts for the individual operation days (light blue, green) and the corresponding weighted average (dark blue).",
+   "figure_gloss": "Normalized two-photon coincidence counts plotted against the ppKTP crystal temperature, showing the characteristic Hong-Ou-Mandel interference dip observed during orbital operation across multiple days.",
+   "code": ""
+  },
+  "seen": "2026-09-23",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.25232": {
+  "fields": {
+   "kind": "new result",
+   "result": "Strong atom-cavity coupling on the telecom ${}^{3}\\mathrm{P}_{0}\\leftrightarrow{}^{3}\\mathrm{D}_{1}$ transition of ${}^{171}\\mathrm{Yb}$ at 1389 nm reaches single-atom internal cooperativity $C_{\\mathrm{in}}=5.6(1.0)$ with single-atom coupling strength $g/2\\pi=1.86(17)$ MHz. Collective coupling scales as $\\sqrt{N}$ up to $N=5$ atoms across a $\\sim 200~\\mu\\mathrm{m}$ length.",
+   "question": "Can neutral atoms in a reconfigurable tweezer array achieve the single-atom strong-coupling cavity-QED regime directly on a telecom-band transition using a nanofiber cavity?",
+   "prior": "Strong coupling in nanofiber cavities was previously demonstrated only with single trapped alkali atoms at non-telecom wavelengths (e.g. Kato 2015, Goban 2012), while prior telecom atom-cavity interfaces lacked single-atom strong coupling.",
+   "limits": "Operated with single-sided cavity geometry at $1~\\mu\\mathrm{m}$ standoff from the nanofiber axis; internal loss rate $\\kappa_{\\mathrm{in}}/2\\pi=1.28(6)$ MHz; entanglement rate projection of 40 kHz neglects detector and transmission losses.",
+   "tools": [
+    "550-nm-diameter nanofiber cavity with fiber Bragg gratings",
+    "759-nm optical tweezer array",
+    "${}^{171}\\mathrm{Yb}$ atoms on ${}^{3}\\mathrm{P}_{0}\\leftrightarrow{}^{3}\\mathrm{D}_{1}$ transition at 1389 nm",
+    "cavity reflection spectroscopy"
+   ],
+   "figure": "S1.F1",
+   "figure_url": "https://arxiv.org/html/2609.25232v1/fig1.png",
+   "figure_caption": "Figure 1: Telecom-band nanofiber cavity with an array of 171 Yb atoms in optical tweezers. a , Overview of the platform. The nanofiber cavity is formed by a pair of fiber Bragg gratings (FBG1, FBG2) inscribed in the standard-fiber sections on either side of the nanofiber region, directly connected to the detection system. 171 Yb atoms are loaded into a 759-nm optical tweezer array and transported to $1\\,\\upmu$ m from nanofiber axis, where the atoms are strongly coupled to the evanescent cavity mode. b , Single-shot raw image of a five-site tweezer array, measured with standard 556-nm fluorescence imaging for ground-state atoms. Individual sites remain clearly resolved under illumination by two retroreflected excitation beams propagating in the $y$ – $z$ plane, with atoms placed at $1\\,\\upmu\\mathrm{m}$ from the nanofiber axis; the black dashed line denotes the nanofiber axis at $x=0$ . For illustrative purpose, this image was taken without light-assisted collision, while for all other data presented in this paper we perform it to ensure single occupancies. c , Scanning electron micrograph of a fabricated nanofiber, with a nominal diameter of 550 nm. d , Calculated 759-nm tweezer potential in the transverse plane of the nanofiber; the dashed line marks the contour of atom-cavity coupling strength, $g_{\\mathrm{0}}/2\\pi=$ 2.95 MHz, calculated from the $\\mathrm{HE}_{11}$ mode for the 550-nm-diameter nanofiber at the position of the trap center (white cross). Dash-dotted and dotted lines are the contours for $1.7g_{\\mathrm{0}}$ and $0.3g_{\\mathrm{0}}$ , respectively. e , Cavity-reflection spectra with (purple) and without single atom (gray) loaded to a single-site tweezer next to the nanofiber, where the reported photon-detector (PD) counts are scaled to correct for the frequency-dependent input power (Methods). Solid lines are fits to the input-output model, yielding $g/2\\pi=1.86(17)$ MHz. The lower panel shows the residuals of the fit to the single-atom ( $N=1$ ) spectrum, with no evident systematic structure. f , Relevant 171 Yb levels. Atoms initialized in ${}^{1}\\mathrm{S}_{0}$ are optically pumped (OP) to ${}^{3}\\mathrm{P}_{0}$ using 556- and 1539-nm light and coupled to the cavity whose resonance is tuned to the ${}^{3}\\mathrm{P}_{0}\\leftrightarrow{}^{3}\\mathrm{D}_{1}$ transition at $1389\\,$ nm.",
+   "figure_gloss": "Cavity reflection as a function of detuning from the cavity resonance, showing the empty cavity dip (gray) versus vacuum Rabi splitting (purple) induced by a single trapped ${}^{171}\\mathrm{Yb}$ atom positioned $1~\\mu\\mathrm{m}$ from the nanofiber axis.",
+   "code": ""
+  },
+  "seen": "2026-09-23",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.26784": {
+  "fields": {
+   "kind": "new method",
+   "result": "Heterogeneous-distance lattice surgery with an enlarged ancilla ($d_{A}=2d+1$) spanning the inter-QPU boundary achieves logical readout error rates nearly independent of link noise, cutting $5-11-5$ physical qubit sites by 28.4% compared to uniform distance-9 (373 vs 521 qubits).",
+   "question": "How effectively can additional fault-tolerant error protection be concentrated at a noisy quantum processor interface while preserving the code distance of local data patches?",
+   "prior": "Uniform distance-3 and distance-5 implementations, which exhibit steep increases in logical error rates as link noise grows; at $p_{\\mathrm{link}}=10^{-2}$, heterogeneous $3-7-3$ reduces decoding failure by factors of $\\approx 13$ and $\\approx 19$ relative to uniform distance-3.",
+   "limits": "Evaluated under circuit-level stochastic depolarizing noise with fixed local noise $p_{\\mathrm{local}}=10^{-4}$; excludes idle noise, link-generation latency/failures, leakage, and correlated link faults. Requires more total inter-QPU gate applications despite fewer physical sites.",
+   "tools": [
+    "Rotated surface codes",
+    "8-DAM (eight-data-patch ancilla-mediated) architecture",
+    "Traveling stabilizer syndrome scheduling",
+    "Circuit-level Stim simulations"
+   ],
+   "figure": "S3.F13",
+   "figure_url": "https://arxiv.org/html/2609.26784v1/large_footprint_logical_x_LER.svg",
+   "figure_caption": "Figure 13: Control- $X$ decoding failure probability per CNOT for mixed $5-11-5$ (blue circles) and uniform distance-5, -7, and -9 circuits (cyan squares, orange diamonds, and red triangles), with local noise parameter $10^{-4}$ . The inset resolves the mixed and distance-9 results. Each point uses 45 million shots; error bars show 95% Clopper–Pearson intervals.",
+   "figure_gloss": "Control-$X$ decoding failure probability per CNOT plotted against physical link error probability $p_{\\mathrm{link}}$ from $10^{-3}$ to $10^{-2}$. Heterogeneous $5-11-5$ stays nearly flat and matches uniform distance-9 at high link noise while outperforming uniform distance-5 and -7.",
+   "code": ""
+  },
+  "seen": "2026-09-23",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.26516": {
+  "fields": {
+   "kind": "new method",
+   "result": "DMRG-based tensor network simulation natively evaluates dynamic circuits via single-path stochastic sampling and multi-path branch ensemble tracking on MPS and TTN structures, achieving scalable branch propagation with bounded peak memory on 27-qubit random circuits.",
+   "question": "How can tensor-network DMRG algorithms be extended to classically simulate dynamic quantum circuits with mid-circuit measurements and classical feedforward without exponential path overhead?",
+   "prior": "",
+   "limits": "Evaluated up to 27 qubits and depth 8; fixed bond dimensions $\\chi \\in \\{8, 16, 32\\}$; multi-path branch count capped at $M=8$.",
+   "tools": [
+    "DMRG quantum circuit simulation",
+    "Matrix Product States (MPS)",
+    "Tree Tensor Networks (TTN)",
+    "Single-path stochastic sampling",
+    "Multi-path branch pruning"
+   ],
+   "figure": "S5.F4",
+   "figure_url": "https://arxave.com/figures/2609.26516-S5.F4.svg",
+   "figure_caption": "(a)",
+   "figure_gloss": "Runtime (left) and peak memory usage (right) versus qubit count for dynamic GHZ state preparation comparing unpruned multi-path simulation against single-path sampling with 16, 64, and 256 runs.",
+   "code": ""
+  },
+  "seen": "2026-09-23",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.26736": {
+  "fields": {
+   "kind": "new method",
+   "result": "Seam construction for distributed lattice surgery maintains minimum CNOT depth of 4, achieves fault distance $d-1$, and delivers lower, more stable logical error rates than alternating or interleaving schedules under link noise swept from $10p$ to $100p$ (with bulk noise $p = 10^{-4}$).",
+   "question": "How can distributed lattice surgery merge rotated surface-code patches with arbitrary boundaries across noisy inter-module links while avoiding distance-reducing hook errors and minimizing CNOT depth?",
+   "prior": "Prior Bell-measurement lattice surgery achieved a fault distance of $3d/4$ under noisy bulk conditions (and standard interleaving schedules required larger qubit overheads and higher CNOT depth).",
+   "limits": "Evaluated via circuit-level numerical simulations under uniform depolarizing noise with fixed bulk error rate $p = 10^{-4}$. Requires native three-qubit CXX gates at module seams.",
+   "tools": [
+    "Bell-state mediated split ancilla checks",
+    "Three-qubit native CXX parity measurements",
+    "Algebraic detector annotation",
+    "Stim quantum circuit simulator"
+   ],
+   "figure": "S1.F3",
+   "figure_url": "https://arxiv.org/html/2609.26736v1/figures/pauliXX-bell.png",
+   "figure_caption": "Figure 3 : Merged surface-code layout for a logical Pauli- $XX$ measurement. Red (blue) plaquettes denote X (Z) type stabilizers. Each ancilla at the seam is split into two two-body checks. This allows us to join patches of differing boundary structure across a module boundary.",
+   "figure_gloss": "Merged rotated surface-code layout for logical Pauli-$XX$ measurement, showing weight-4 stabilizers at module seams split into paired weight-2 checks mediated across the boundary.",
+   "code": "https://github.com/Pritesh402/modular-surgery"
+  },
+  "seen": "2026-09-23",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.26660": {
+  "fields": {
+   "kind": "theory",
+   "result": "Quantum error correction matrices are morphisms of group representations; Schur's lemma forces error matrix blocks to vanish when the symmetric power of the error representation shares no irreducible component with the codespace representation, reducing Knill-Laflamme conditions to character decomposition checks.",
+   "question": "How can finite-group representation theory be used to systematically construct multimode covariant bosonic codes and determine their error-correction capabilities?",
+   "prior": "",
+   "limits": "Analyzes finite subgroups of $SU(2)$ under the amplitude damping channel; predicts error correctability in principle without specifying recovery protocols.",
+   "tools": [
+    "Jordan-Schwinger map",
+    "Finite-group representation theory",
+    "Schur's lemma",
+    "Knill-Laflamme conditions",
+    "Near-optimal fidelity"
+   ],
+   "figure": "S5.F1",
+   "figure_url": "https://arxiv.org/html/2609.26660v1/Q8-24.svg",
+   "figure_caption": "Figure 1: Error-correction performance of the two-mode quaternion ( $Q_{8}$ ) code with logical representation $\\lambda\\cong\\rho_{2}\\oplus\\rho_{4}$ , evaluated against the amplitude damping channel for $\\gamma=0.095$ . a) Near-optimal infidelity, $1-\\tilde{F}$ , Eq. 15 as a function of the initial coherent state $\\ket{\\sqrt{r}\\alpha,\\sqrt{1-r}e^{i\\theta}\\alpha}$ where $r$ is the energy ratio between the first mode and the total energy and $\\theta$ is the relative phase between modes. The near-optimal fidelity is plotted for the optimal initial state energy and results in $1-\\tilde{F}\\approx 0.023$ . b) Uncorrectable part of the QEC matrix plotted for the optimal initial parameters $r=0.5$ , $\\theta=0$ and $|\\alpha|^{2}\\approx 0.528$ . Rows and columns are indexed by the two-mode loss label $\\hat{E}_{k_{1}}^{\\dagger}\\otimes\\hat{E}_{k_{2}}^{\\dagger}$ and $\\hat{E}_{l_{1}}\\otimes\\hat{E}_{l_{2}}$ and grouped (solid lines) by total error order $|l|=l_{1}+l_{2}$ . c) Minimum near-optimal infidelity optimized over $r$ and $\\theta$ as a function of total energy $|\\alpha|^{2}$ .",
+   "figure_gloss": "Plots near-optimal infidelity $1-\\tilde{F}$ against initial coherent state parameters under the amplitude damping channel with photon loss probability $\\gamma = 0.095$ for the two-mode quaternion code.",
+   "code": ""
+  },
+  "seen": "2026-09-23",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.25251": {
+  "fields": {
+   "kind": "new method",
+   "result": "Alternating mixed Hadamard deformations within each concatenation level (`Alternate_Mixed_within_Level`) yields near-identical $X$ and $Z$ logical error rates while minimizing total logical error rate across one to four concatenation levels. Undeformed concatenation exhibits up to a $60\\times$ higher $Z$ error rate than $X$ error rate at concatenation level $l=4$.",
+   "question": "How can Clifford deformations balance the asymmetric $X$ and $Z$ syndrome checks and logical error rates in concatenated $[[4,1,2]]$ Iceberg codes?",
+   "prior": "Undeformed concatenated $[[4,1,2]]$ Iceberg code produced skewed $X$ and $Z$ error rates due to having asymmetric check counts ($2\\times X$ and $1\\times Z$).",
+   "limits": "Code capacity phenomenological depolarizing noise (unbiased and $8\\times$ biased), single-qubit Hadamard deformations only, simulated up to four concatenation levels with $500,000$ Monte Carlo shots.",
+   "tools": [
+    "Hadamard Clifford deformations",
+    "Concatenated $[[4,1,2]]$ Iceberg code",
+    "Level-by-level soft-information maximum-likelihood decoding",
+    "Monte-Carlo error simulations"
+   ],
+   "figure": "S2.F3",
+   "figure_url": "https://arxiv.org/html/2609.25251v1/nobias.svg",
+   "figure_caption": "Fig. 3 : LER under unbiased noise across one to four levels of concatenation.",
+   "figure_gloss": "Logical error rate versus physical error rate under unbiased noise across concatenation levels $l=1$ to $4$, comparing total, $X$, and $Z$ LER and the $Z/X$ error ratio across six deformation strategies.",
+   "code": ""
+  },
+  "seen": "2026-09-23",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.26691": {
+  "fields": {
+   "kind": "new result",
+   "result": "Asymptotically good $[\fld{N},\fld{\\Theta(N)},\fld{\\Theta(N)}]$ qLDPC and qLTC codes with soundness $\\Theta(1)$ support nontrivial transversal logical $\\mathrm{C}^{r-1}Z$ non-Clifford gates for any integer $r\\ge 2$.",
+   "question": "Can asymptotically good quantum LDPC codes and quantum locally testable codes directly support transversal non-Clifford logical gates simultaneously with linear distance and constant soundness?",
+   "prior": "Nontrivial transversal logical multi-controlled-$Z$ gates were achieved on almost-good qLDPC codes and qLTCs with polylogarithmic losses in distance and soundness (Li-Li-Liu 2026).",
+   "limits": "Characteristic 2 base fields; odd-sheeted covering towers; asymptotic $N\\to\\infty$ regime.",
+   "tools": [
+    "arithmetic cubical complexes",
+    "projective Reed-Solomon local codes",
+    "cup product pairing with sheaf coefficients",
+    "covering space transfer map",
+    "Moore determinants"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-09-23",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.25641": {
+  "fields": {
+   "kind": "review",
+   "result": "Mamba-based neural decoder reduces surface-code inference cost scaling from quartic to quadratic in code distance while matching Transformer baseline performance and improving effective thresholds under decoder latency noise. Multi-shift stochastic reconfiguration lowers checkpoint-local validation residuals and update variance for neural quantum states.",
+   "question": "How can learned quantum embeddings, linear-scaling sequence decoders, and regularized stochastic reconfiguration improve quantum machine learning and neural quantum system methods?",
+   "prior": "",
+   "limits": "Demonstrated under specific benchmark settings, finite Monte Carlo sample regimes, and simulated decoder-induced latency noise models.",
+   "tools": [
+    "Neural Quantum Embedding (NQE)",
+    "Deterministic Quantum Computation with 1 qubit (DQC1)",
+    "Mamba state-space neural decoder",
+    "Multi-shift stochastic reconfiguration (SR)",
+    "NMR quantum processor"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-09-23",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "abstract"
+ },
+ "2609.26677": {
+  "fields": {
+   "kind": "new result",
+   "result": "Strong $\\varepsilon$-approximate relative error matchgate $k$-designs can be generated in depth $\\mathcal{O}(k^2 {\\rm rt}(\\mathsf{G})\\log n\\log(n/\\varepsilon))$ on a graph $\\mathsf{G}$ with routing number ${\\rm rt}(\\mathsf{G})$, and exact strong matchgate $3$-designs in depth $\\mathcal{O}({\\rm rt}(\\mathsf{G})\\log n)$ without ancillae.",
+   "question": "Can non-local qubit connectivity enable the formation of matchgate designs in sublinear circuit depth, circumventing the linear-depth barrier present in one-dimensional architectures?",
+   "prior": "1D nearest-neighbour circuits require $\\Omega(n)$ depth to form approximate 2-designs over matchgates.",
+   "limits": "Applies to ancilla-free circuits; depth requires connectivity graphs $\\mathsf{G}$ with low routing number (${\\rm rt}(\\mathsf{G})=2$ for all-to-all connectivity).",
+   "tools": [
+    "random walks on the matchgate group",
+    "fermionic routing algorithm",
+    "representation theory of $\\mathbb{SO}(2n)$",
+    "circuit layer compression"
+   ],
+   "figure": "S3.F1",
+   "figure_url": "https://arxiv.org/html/2609.26677v1/logdepth_matchgate.svg",
+   "figure_caption": "Figure 1. Our construction proceeds in three steps: (1) Randomly sample $m\\in\\mathcal{O}(k^{2}n\\log(n/\\varepsilon))$ pairs $1\\leqslant a_{i}<b_{i}\\leqslant 2n$ , and $m$ angles $\\vartheta_{i}$ ; apply the corresponding Majorana rotations $\\{R_{a_{i},b_{i}}(\\vartheta_{i})\\}_{i=1}^{m}$ . (2) Check if those rotations can be parallelised into $\\mathcal{O}(k^{2}\\log(n/\\varepsilon))$ layers of commuting gates; if not, go back to step one. (3) Compile each parallel layer of Majorana rotations into two qubit gates of depth $\\mathcal{O}({\\rm rt}(\\mathsf{G})\\log n)$ via a fermionic router. Concatenate two such independently accepted circuits; the total depth is then given by (# Layers) $\\times\\,\\mathcal{O}({\\rm rt}(\\mathsf{G})\\log n)=\\mathcal{O}(k^{2}{\\rm rt}(\\mathsf{G})\\log(n/\\varepsilon)\\log n)$ .",
+   "figure_gloss": "Schematic of the design construction showing generation via random 2-Majorana rotations, compression into parallel non-overlapping commuting layers, and compilation through a fermionic routing permutation.",
+   "code": ""
+  },
+  "seen": "2026-09-23",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.26735": {
+  "fields": {
+   "kind": "new result",
+   "result": "Explicit quantum locally testable CSS codes over binary alphabet with constant rate, quantum distance, soundness, and locality, conditional on Reed-Solomon product expansion conjecture.",
+   "question": "Can structured local codes with compatible symmetries overcome the polylogarithmic distance and soundness bottleneck in high-dimensional expander quantum locally testable code constructions?",
+   "prior": "Almost-good qLTCs with constant rate and locality but inverse-polylogarithmic relative distance and soundness (Dinur, Lin, and Vidick 2023).",
+   "limits": "Conditioned on validity of product expansion conjecture (Conjecture 5.6) for Reed-Solomon codes; asymptotic code family over $\\mathbb{F}_2$.",
+   "tools": [
+    "Dinur-Lin-Vidick HDX framework",
+    "Rungtanapirom-Stix-Vdovina 4D non-Abelian cubical complexes",
+    "Reed-Solomon local codes",
+    "Morgenstern Ramanujan graph spectral bounds"
+   ],
+   "figure": "S4.F1",
+   "figure_url": "https://arxave.com/figures/2609.26735-S4.F1.svg",
+   "figure_caption": "Figure 1: The local view of vertex $v$ is a tensor code up to rescaling and permutations.",
+   "figure_gloss": "Schematic of local view at vertex $v$ showing how edge symmetries and coordinate changes map local views into tensor codes via rescaling and permutations.",
+   "code": ""
+  },
+  "seen": "2026-09-23",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.25211": {
+  "fields": {
+   "kind": "theory",
+   "result": "Any classical machine solving the structureless Yamakawa–Zhandry search problem with constant success probability must generate entropy $S[\\rho] \\ge \\Theta(\\lambda 2^{\\lambda^c})$, requiring exponential Landauer heat dissipation and energy consumption $W \\ge k_B T S[\\rho]$, whereas the quantum solver needs only polynomial energy.",
+   "question": "Does the exponential quantum advantage for unstructured search persist for macroscopic physical resources like energy consumption?",
+   "prior": "Exponential quantum energy advantage was proven only for Simon's problem with a highly structured oracle (Meier & Yamasaki 2024), leaving unstructured search open.",
+   "limits": "Asymptotic security parameter $\\lambda$, random oracle model, constant success probability $\\Delta > 0$, cyclic computation reset to standard initial state.",
+   "tools": [
+    "Yamakawa–Zhandry search problem",
+    "Landauer's principle",
+    "random oracle model",
+    "stopping-time entropy minimization"
+   ],
+   "figure": "S0.F3",
+   "figure_url": "https://arxiv.org/html/2609.25211v1/energy.svg",
+   "figure_caption": "Figure 3: Classical energy-consumption lower bound for a representative parameter choice at $T=300\\,{\\rm K}$ . The dots show $k_{B}TS$ using the explicit entropy bound from the Supplemental Material. The comparison lines indicate the annual energy consumption of CERN [ 16 ] and the annual luminosity of the observable universe [ 47 ] .",
+   "figure_gloss": "Classical energy-consumption lower bound $k_B T S$ at $T = 300\\text{ K}$ versus security parameter $\\lambda$, compared against macroscopic benchmarks like CERN annual energy consumption.",
+   "code": ""
+  },
+  "seen": "2026-09-23",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.26372": {
+  "fields": {
+   "kind": "new result",
+   "result": "Simulates generic lattice Lindbladian observables with gate count $\\mathcal{O}((Nt)^{3/2 - 1/(4d+2)}\\,\\mathrm{polylog}(Nt/\\varepsilon))$ per sample (in 1D, $\\mathcal{O}((Nt)^{4/3}\\,\\mathrm{polylog}(Nt/\\varepsilon))$) at sampling complexity $\\Theta(\\varepsilon^{-2})$. Achieves $\\mathcal{O}(Nt\\,\\mathrm{polylog}(Nt/\\varepsilon))$ for sparsely dissipative lattice dynamics.",
+   "question": "Can quantum simulation algorithms for generic lattice Lindbladians achieve gate counts approaching the fundamental lower bound $\\Omega(Nt)$ while retaining polylogarithmic error scaling?",
+   "prior": "Best previous gate count for generic lattice Lindbladian observables with polylogarithmic error scaling was $\\mathcal{O}((Nt)^{3/2}\\,\\mathrm{polylog}(Nt/\\varepsilon))$ via extrapolation of second-order product formulas.",
+   "limits": "Finite-range interactions and dissipation on $d$-dimensional lattices with $d \\in \\mathcal{O}(1)$. Generic algorithm estimates observables via sampling rather than outputting coherent quantum states.",
+   "tools": [
+    "dissipative patching lemma",
+    "reversed dynamics merging",
+    "quasi-probabilistic sampling",
+    "linear combination of unitaries"
+   ],
+   "figure": "S5.F4",
+   "figure_url": "https://arxiv.org/html/2609.26372v1/Fig_patch_generic.png",
+   "figure_caption": "Figure 4: (a) The patching strategy for generic local Lindbladians, giving $\\mathcal{U}_{\\mathrm{Patch}}(\\tau)$ by Eq. ( 97 ). We optimize the block size $R_{\\mathrm{p}}$ to minimize the gate count while we set $R\\in\\Theta(\\log(Nt/\\varepsilon))$ . (b) The merging strategy based on Eqs. ( 103 ) and ( 104 ). The internal layers are merged and regarded as a set of disjoint green blocks with the size $\\order{R}$ . (c) The outline of Algorithm 2 . We repeat the operation with the time $\\tau=t/r_{t}$ . The orange blocks with the size $\\order{R_\\mr{p}}$ are reproduced by the LCU based approach for Lindbladian dynamics, while we use quasi-probabilistic sampling for the merged green blocks. The repetition number $r_{t}$ is determined so that the sampling overhead can be suppressed.",
+   "figure_gloss": "Schematic of patching and merging strategies for generic local Lindbladians: decomposition into blocks of size $R_{\\mathrm{p}}$ with boundary regions of size $R$, followed by merging to absorb backward time evolution.",
+   "code": ""
+  },
+  "seen": "2026-09-23",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.26703": {
+  "fields": {
+   "kind": "new method",
+   "result": "Diagrammatic many-body perturbation theory is solved directly on real-frequency axis using systematically improvable complex pole and moment expansions. Controlled ESPRIT-based recompression truncates pole count, avoiding pole proliferation in self-consistent $GW$ and second-order Born (GF2) calculations.",
+   "question": "Can real-frequency finite-temperature diagrammatics be evaluated self-consistently without grid discretization or numerical analytic continuation while controlling pole proliferation?",
+   "prior": "",
+   "limits": "Equilibrium Keldysh framework, weak-coupling conserving approximations without vertex corrections.",
+   "tools": [
+    "Keldysh formalism",
+    "Prony-type approximation",
+    "ESPRIT signal processing",
+    "self-consistent GW and GF2",
+    "Cauchy-Stieltjes transforms"
+   ],
+   "figure": "S4.F10",
+   "figure_url": "https://arxiv.org/html/2609.26703v1/pole_budget_v2.svg",
+   "figure_caption": "Figure 10: Pole count of $\\Sigma^{R}$ , $W^{R}$ , and $A$ after the re-compression step within the GW approximation, for the half-filled Bethe lattice at $\\beta t=10$ and $U/t=2$ , (a) as a function of the specified compression tolerance $\\varepsilon$ at convergence and (b) as a function of iteration for $\\varepsilon=10^{-8}$ . (c) Enlarged view of $\\mathrm{Im}\\,\\Sigma^{R}(\\omega)/U^{2}$ from Fig. 6 (c) at convergence for tolerances $\\varepsilon=10^{-3}$ to $10^{-12}$ . Inset: deviation from the $\\varepsilon=10^{-12}$ result as a function of $\\varepsilon$ .",
+   "figure_gloss": "Pole counts for retarded self-energy, screened interaction, and spectral function versus compression tolerance $\\varepsilon$ (left) and iteration step (right) for GW on a half-filled Bethe lattice ($U/t=2$, $\\beta t=10$). Recompression bounds the number of poles across self-consistency iterations.",
+   "code": ""
+  },
+  "seen": "2026-09-23",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.25223": {
+  "fields": {
+   "kind": "theory",
+   "result": "Increasing Kitaev chain length from 4 to 6 quantum dots does not universally improve Rabi or Ramsey coherence times. 6-dot qubits suffer larger leakage during Ramsey oscillations and only improve coherence if interchain tunneling fluctuations or target energy splittings are kept small.",
+   "question": "How do Rabi and Ramsey coherence times scale when extending quantum-dot artificial Kitaev chain qubits from 4 to 6 dots under realistic disorder?",
+   "prior": "",
+   "limits": "Theoretical simulation. Considers four-dot and six-dot chains under three parameter regimes (small and large superconducting gaps, and experimental parameter sets).",
+   "tools": [
+    "double $N$-site quantum-dot Kitaev chain model",
+    "Rabi and Ramsey oscillation simulations",
+    "disorder averaging"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-09-23",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "abstract"
+ },
+ "2609.26344": {
+  "fields": {
+   "kind": "theory",
+   "result": "Electron-phonon coupling $g$ increases the effective interaction-to-hopping ratio $u^{\\text{eff}}/t^{\\text{eff}}$, enhancing bias-driven spin currents and transport spin polarization in asymmetric quantum ring junctions despite suppressing charge transport current.",
+   "question": "How do electron-electron and electron-phonon interactions affect bias-driven circular charge and spin currents in an open quantum ring nanojunction?",
+   "prior": "",
+   "limits": "Tight-binding 1D ring, zero temperature, dispersionless out-of-plane optical Einstein phonons, acoustic phonon modes neglected.",
+   "tools": [
+    "Hubbard-Holstein model",
+    "Lang-Firsov transformation",
+    "Hartree-Fock mean-field scheme",
+    "Non-equilibrium Green's function formalism"
+   ],
+   "figure": "S3.F9",
+   "figure_url": "https://arxiv.org/html/2609.26344v1/sp.png",
+   "figure_caption": "Figure 9: (Color online). Spin polarization (SP) coefficient as a function of bias voltage $V$ for four different sets of $u$ and $g$ , as described in the figure using four distinct colors.",
+   "figure_gloss": "Spin polarization coefficient plotted against bias voltage $V$ across different electron-electron interaction strengths $u$ and electron-phonon coupling strengths $g$. Increasing $g$ enhances spin polarization at low bias, which collapses toward zero at higher voltages where transport windows overlap.",
+   "code": ""
+  },
+  "seen": "2026-09-23",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
  }
 }
