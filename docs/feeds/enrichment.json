@@ -9878,10 +9878,10 @@
  "2609.28369": {
   "fields": {
    "kind": "new method",
-   "result": "Simulates full battery cell electrochemical dynamics via Single Particle Model with electrolyte (SPMe) using hybrid quantum-classical Feynman-Kitaev Hamiltonian formulation.",
-   "question": "How to execute scalable quantum simulations of non-linear PDE systems describing battery cell electrochemical reactions and transport on NISQ-era quantum hardware?",
+   "result": "Hybrid quantum-classical implementation of the Feynman-Kitaev Hamiltonian solves non-linear transport and reaction PDEs, demonstrating the first quantum simulation of a battery cell using the Single Particle Model with electrolyte (SPMe).",
+   "question": "Can non-linear partial differential equations modeling electrochemical battery transport and reactions be solved efficiently on quantum hardware?",
    "prior": "",
-   "limits": "Formulated for hybrid quantum-classical execution with problem decomposition for noisy quantum hardware.",
+   "limits": "Demonstrated for the Single Particle Model with electrolyte (SPMe) approximation; tailored to divide non-linear PDE computational tasks for noisy quantum systems.",
    "tools": [
     "Feynman-Kitaev Hamiltonian",
     "hybrid quantum-classical algorithm",
