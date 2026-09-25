@@ -9606,15 +9606,15 @@
  "2609.29482": {
   "fields": {
    "kind": "theory",
-   "result": "Theoretical demonstration that metal-insulator-metal heterostructures using diamond and metal thin films support quantum cascade lasing spanning from UV to THz frequencies.",
-   "question": "Can metal-insulator-metal heterostructures with diamond films form quantum cascade lasers across UV to THz ranges?",
+   "result": "Theoretical demonstration of a quantum cascade laser using diamond-metal MIM heterostructures capable of spanning UV to THz radiation ranges via metastable quantum well levels.",
+   "question": "Can metal-insulator-metal (MIM) heterostructures based on diamond and metal films support optical quantum cascade lasing across wide frequency bands?",
    "prior": "",
-   "limits": "Theoretical and analytical modeling only; assumes quasi-periodic thin-film geometries.",
+   "limits": "Theoretical calculation only.",
    "tools": [
     "metal-insulator-metal (MIM) heterostructures",
-    "diamond thin films",
-    "quantum potential profile modeling",
-    "metastable level analysis in quantum wells"
+    "diamond and metal thin films",
+    "quantum potential profiling",
+    "metastable level modeling"
    ],
    "figure": "",
    "figure_url": "",
