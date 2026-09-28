@@ -9351,16 +9351,15 @@
  "2609.31502": {
   "fields": {
    "kind": "new method",
-   "result": "Dynamic fermionic encoding via combinatorial covering designs reduces inter-QPU communication cost to $\\mathcal{O}(M r)$ for $M$ fermionic modes and Trotter number $r$.",
-   "question": "How can Trotterized fermionic Hamiltonian simulation be efficiently parallelized and distributed across multiple quantum processing units with minimal communication overhead?",
-   "prior": "Static encoding bound for $q$ QPUs scaled as $\\mathcal{O}(M^4 q r)$.",
-   "limits": "Combines best communication scaling across molecular systems except in the sparsest Hamiltonians.",
+   "result": "Dynamic fermion-qubit encoding via combinatorial covering designs reduces communication cost in distributed Trotterized simulation across multiple QPUs to $\\mathcal{O}(M r)$ for $M$ fermionic modes and Trotter number $r$.",
+   "question": "How to minimize inter-QPU communication cost when parallelizing and distributing Trotterized fermionic Hamiltonian simulation across multiple quantum processing units.",
+   "prior": "Communication cost was bounded by $\\mathcal{O}(M^4 q r)$ for static encodings across $q$ QPUs.",
+   "limits": "Applies to distributed Trotterized quantum simulation; combinatorial covering yields lowest communication cost in all but the sparsest Hamiltonians.",
    "tools": [
     "Combinatorial covering designs",
-    "Dynamic fermion-qubit encoding",
+    "Dynamic fermion-to-qubit encodings",
     "Trotterized Hamiltonian simulation",
-    "Hypergraph partitioning",
-    "Pauli-weight optimization"
+    "Hypergraph partitioning comparison"
    ],
    "figure": "",
    "figure_url": "",
@@ -9521,16 +9520,16 @@
  "2609.31372": {
   "fields": {
    "kind": "new method",
-   "result": "Constructs quantum algorithms for matrix exponentiation of banded Toeplitz matrices by decomposing lower and upper shift operators into circulant and skewcirculant generators diagonalised via QFT, enabling block encoding of heat equation propagators across periodic, Dirichlet, and Neumann boundary conditions with a frequency cutoff.",
-   "question": "How to efficiently implement the quantum matrix exponential of banded Toeplitz matrices despite potentially large matrix norms.",
+   "result": "Constructs quantum algorithms to directly exponentiate banded Toeplitz matrices by decomposing lower/upper shift operators into circulant and skew-circulant generators diagonalized by QFT, avoiding norm-dependent scaling. Applies construction to block-encode discretized heat equation propagators across periodic, Dirichlet, and Neumann boundary conditions via frequency cutoff.",
+   "question": "How to efficiently implement the matrix exponential of banded Toeplitz matrices on quantum computers without scaling with large matrix norms.",
    "prior": "",
-   "limits": "Applies specifically to banded Toeplitz matrices and discretised heat equation propagators subject to frequency cutoffs.",
+   "limits": "Applies to banded Toeplitz matrices and discretized heat equation under frequency cutoff.",
    "tools": [
     "LCU-based block encoding",
-    "circulant and skewcirculant decomposition",
+    "circulant and skew-circulant matrix decomposition",
     "Quantum Fourier Transform (QFT)",
     "Pauli-string truncation",
-    "QFT-Trotter product formula"
+    "QFT-Trotter product formulas"
    ],
    "figure": "",
    "figure_url": "",
@@ -9643,15 +9642,14 @@
  "2609.30282": {
   "fields": {
    "kind": "theory",
-   "result": "Virtual excitation channel interferes with Floquet and Volkov quantum paths in semiconductor RABBIT spectroscopy, encoding local Berry curvature into the time shift of RABBIT sidebands.",
-   "question": "How to theoretically integrate attosecond RABBIT spectroscopy with semiconductor tr-ARPES to probe ultrafast electronic topological properties.",
+   "result": "Virtual excitation channel interferes with Floquet and Volkov quantum paths in semiconductor RABBIT spectroscopy, encoding local Berry curvature directly into RABBIT sideband time shifts.",
+   "question": "How can RABBIT spectroscopy and tr-ARPES theoretical frameworks be integrated to probe semiconductor quantum path interference?",
    "prior": "",
-   "limits": "Theoretical framework based on perturbation theory for semiconductors.",
+   "limits": "Theoretical perturbation theory framework applied to semiconductors.",
    "tools": [
-    "Second-order time-dependent perturbation theory",
+    "second-order time-dependent perturbation theory",
     "RABBIT spectroscopy framework",
-    "tr-ARPES formalism",
-    "Floquet-Volkov state interference models"
+    "Floquet-Volkov path analysis"
    ],
    "figure": "",
    "figure_url": "",
