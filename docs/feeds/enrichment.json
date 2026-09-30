@@ -9665,14 +9665,15 @@
  "2609.34793": {
   "fields": {
    "kind": "new method",
-   "result": "Hybrid discrete- and continuous-variable density matrices can be simulated without Fock-space truncation by block-decomposing in DV basis and representing each block as a linear combination of complex Gaussians (LCoG), updating each Gaussian term in polynomial time with mode count under controlled Gaussian operations and channels.",
-   "question": "How to efficiently simulate hybrid discrete- and continuous-variable quantum circuits classically without incurring exponential costs from continuous-variable Fock-space truncation?",
+   "result": "Hybrid density matrix decomposed into DV basis blocks with LCoG expansions allows exact analytic updates under controlled Gaussian operations and state-dependent noise channels. Per-Gaussian term updates scale polynomially with mode count, avoiding CV Fock-space truncation.",
+   "question": "How to efficiently simulate hybrid discrete- and continuous-variable quantum circuits without Fock-space truncation bottlenecks?",
    "prior": "",
-   "limits": "Number of required Gaussian terms can grow depending on non-Gaussianity and circuit depth; demonstrated on cavity-QED GKP state preparation simulation.",
+   "limits": "Classical simulation complexity scales with number of generated Gaussian components.",
    "tools": [
-    "linear combination of Gaussian (LCoG) decomposition",
-    "block density matrix representation",
-    "analytical propagation formulas for controlled Gaussian channels"
+    "Linear combination of Gaussian (LCoG) decomposition",
+    "Discrete-variable block matrix decomposition",
+    "Analytic controlled-Gaussian propagation formulas",
+    "Numerical benchmark on cavity-QED GKP state generation"
    ],
    "figure": "",
    "figure_url": "",
@@ -9680,7 +9681,7 @@
    "figure_gloss": "",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "abstract"
@@ -9704,7 +9705,7 @@
    "figure_gloss": "Register infidelity $1-F$ plotted against annealing time $T$ for $N=24$ spins, showing that cavity-assisted annealing ($F_{\\rm spin}$) reduces error by orders of magnitude compared to bare annealing and optimal spin catalysts.",
    "code": "https://github.com/hao-zhang-quantum/cavity-quantum-annealing"
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -9728,7 +9729,7 @@
    "figure_gloss": "Nonlinear squeezing variance $V[\\rho](\\lambda)$ versus parameter $\\lambda$ for theoretical vacuum and the experimental $N=14$ cubic phase state. The cubic state variance drops below vacuum for $\\lambda \\lesssim -0.23$, demonstrating cubic nonlinearity.",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -9752,7 +9753,7 @@
    "figure_gloss": "Wineland spin-squeezing parameter $\\xi_{R}^{2}$ versus evolution time in microseconds for $N=10^{4}$ atoms. Ideal two-axis twisting approaches the Heisenberg limit near $4.5~\\mu\\mathrm{s}$, while phenomenological decoherence shifts the optimal extraction time to $3.34~\\mu\\mathrm{s}$, well below the one-axis twisting baseline.",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -9776,7 +9777,7 @@
    "figure_gloss": "Plots equal-time correlation $g^{(2)}(t)$ versus time and steady-state $g^{(2)}(0)$ over detuning space $(\\Delta_{c}/\\kappa, \\Delta_{i}/\\kappa)$. Bi-tone modulation reaches deep antibunching ($0.30$) inaccessible under static conditions or single-tone modulation.",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -9800,7 +9801,7 @@
    "figure_gloss": "Bar charts of open-destination teleportation fidelity across all seven remote receivers (left) and average $1\\!\\rightarrow\\!7$ quantum telecloning fidelity per agent (right), compared against the $2/3$ classical limit and the $5/7$ optimal cloning bound.",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -9824,7 +9825,7 @@
    "figure_gloss": "Quantum memory metrics $F_\\text{q}$, $F_\\text{c}$, and $\\eta$ plotted against retrieval time $t_\\text{r}$ alongside stored/retrieved photon fluxes and control pulses $\\delta(t)$, demonstrating exponential decay of storage fidelity governed by dephasing $\\Gamma_\\phi$.",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -9848,7 +9849,7 @@
    "figure_gloss": "",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -9872,7 +9873,7 @@
    "figure_gloss": "Word logical error rate versus displacement noise width $\\sigma$ for BB and tricycle codes under the full propagated circuit model, showing analog-informed BP-OSD crossings at $\\sigma_{\\mathrm{th}} \\simeq 0.212$ and $0.142$, respectively.",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -9897,7 +9898,7 @@
    "figure_gloss": "",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -9922,7 +9923,7 @@
    "figure_gloss": "Normalized circuit depth relative to Qiskit across benchmarks as multi-chip module size scales from 3 to 16 chiplets, demonstrating increasing depth reduction advantages.",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -9946,7 +9947,7 @@
    "figure_gloss": "Conceptual schematic distinguishing physically attainable states in a proposed quantum architecture from unphysical hypothetical states where conjectured noise properties are tested.",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -9970,7 +9971,7 @@
    "figure_gloss": "",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -9995,7 +9996,7 @@
    "figure_gloss": "The $N\\times M$ multi-version execution topology, mapping one test case across 3 framework builders to 3 quantum devices for 9 parallel execution paths that converge at an oracle.",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -10020,7 +10021,7 @@
    "figure_gloss": "",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -10045,7 +10046,7 @@
    "figure_gloss": "Quantum circuit schematic for the compression gadget used to implement the ordered product $A_L \\dots A_1$ while reducing ancilla overhead to logarithmic scaling in $L$.",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -10070,7 +10071,7 @@
    "figure_gloss": "Heatmaps of the Kraus weight $d_1/D$, non-unitarity norm, and $X^2_{\\mathrm{RMT}}$ goodness-of-fit against RMT for dominant Kraus and Floquet superoperator eigenvectors as a function of Trotter step size $\\tau$ (x-axis) and dissipation scaling factor $f_\\gamma$ (y-axis). Highlighted regions show 99% confidence agreement with RMT beyond the Trotterisation threshold.",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -10094,7 +10095,7 @@
    "figure_gloss": "Decomposition of an expectation value $\\operatorname{tr}(O\\,\\mathcal{C}(\\psi))$ into space-time Pauli paths (a) and extraction of the reactivity $R(w)$ across Pauli path weights $w$ via response to local perturbations (b).",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -10118,7 +10119,7 @@
    "figure_gloss": "Plots show time $gt$ versus MPO autocorrelation deviation $|C_A(t) - \\mathcal{C}_W(t)|$ compared to the finite-window error threshold $2\\mathcal{B}_C(t)$ (left panels) and bounded trajectory $\\mathcal{C}_A(t) \\pm \\mathcal{B}_A(t)$ for bond dimension $\\chi=150$ (right panels).",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -10142,7 +10143,7 @@
    "figure_gloss": "Plots $\\text{H}_8$ SVWN total energy against basis-set size across classical plane-wave cutoffs, Gaussian-basis references, and $K=8$ dual-basis quantum calculations.",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -10192,7 +10193,7 @@
    "figure_gloss": "Gate infidelities for $X/2$, $Y/2$, and $I$ gates as a function of the in-plane magnetic field angle $\\theta_{\\rm xy}$. Infidelities drop by nearly an order of magnitude at the optimal field orientation where longitudinal spin-electric susceptibility is minimized.",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -10217,7 +10218,7 @@
    "figure_gloss": "Gate fidelities for geometric and dynamical $I$, $X/2$, and $Y/2$ gates as a function of microwave detuning $\\Delta f$. Geometric gates retain $>99\\%$ fidelity up to detunings of $\\pm 2.5\\text{ MHz}$ for $X/2$ and $Y/2$ ($\\,\\pm 1.2\\text{ MHz}$ for $I$), decaying significantly slower than dynamical gates.",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -10241,7 +10242,7 @@
    "figure_gloss": "Total signal sensed ($n_{\\mathrm{shots}}(2N+1)$) versus target bandwidth $\\Delta f$. Shows Grover iterations exceeding non-Grover baseline performance for bandwidths above 10 MHz.",
    "code": ""
   },
-  "seen": "2026-09-29",
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -10313,6 +10314,30 @@
    "code": ""
   },
   "seen": "2026-09-29",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.37034": {
+  "fields": {
+   "kind": "theory",
+   "result": "Cavity dressing creates a crossover boundary scaling as $G_{\\rm c}\\propto\\sqrt{\\Omega}$ in a single-electron double quantum dot, where increasing Rashba coupling from $\\alpha/J=1$ to $\\alpha/J=2$ increases maximum ergotropy from $\\mathcal{E}_{\\max}/J\\simeq 2.84$ to $\\mathcal{E}_{\\max}/J\\simeq 4.48$.",
+   "question": "How do cavity-photon couplings and Rashba spin-orbit interaction jointly control quantum correlations, stored energy, and ergotropy in a semiconductor double quantum dot?",
+   "prior": "Prior work investigated Rashba coupling alone without cavity-photon interactions [Ferreira et al., Phys. Rev. A 107, 052408 (2023)].",
+   "limits": "Numerical truncation of cavity photon number to $N=5$; closed unitary charging without explicit environment dissipation or cavity photon decay.",
+   "tools": [
+    "Reduced thermal density matrix",
+    "Concurrence and $l_1$-norm coherence",
+    "Jaynes-Cummings spin-photon and charge-photon model",
+    "Ergotropy work extraction"
+   ],
+   "figure": "S4.F7",
+   "figure_url": "https://arxiv.org/html/2609.37034v1/fig7a.png",
+   "figure_caption": "Figure 7: Maximum ergotropy $\\mathcal{E}_{\\max}/J$ achieved within the $(g_{\\mathrm{c}}^{\\mathrm{opt}}/g_{\\mathrm{c}}^{\\mathrm{max}};G/J;tJ)$ grid for (a) $\\alpha/J=1$ and (b) $\\alpha/J=2$ . We have assumed $k_{\\text{B}}T/J=0.01$ , $B/J=2$ , $\\Omega/J=5$ and $N=5$ .",
+   "figure_gloss": "Normalized optimal charge-photon coupling $g_{\\rm c}^{\\rm opt}/g_{\\rm c}^{\\max}$ (vertical axis) and maximum ergotropy $\\mathcal{E}_{\\max}/J$ (color scale) as functions of spin-photon coupling $G/J$ and charging time $tJ$ for $\\alpha/J=1$ and $\\alpha/J=2$.",
+   "code": ""
+  },
+  "seen": "2026-09-30",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
