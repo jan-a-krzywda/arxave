@@ -10223,15 +10223,15 @@
  "2609.39758": {
   "fields": {
    "kind": "theory",
-   "result": "Unifies Clifford spacetime codes, Gottesman gadget framework, fault complexes, and ZX calculus into a single spacetime chain complex derived from tensor networks. Directly maps spacetime code distances to Gottesman gadget correctness conditions across phenomenological and circuit-level noise models.",
-   "question": "How to formulate a unified algebraic framework that captures all Clifford spacetime quantum fault tolerance schemes and noise models.",
+   "result": "Formulated unified algebraic framework for Clifford spacetime fault tolerance using spacetime chain complexes constructed from tensor networks, capturing gauge/stabilizer structures, fault propagation, and logical operations.",
+   "question": "Can spacetime codes, gadget-level fault tolerance, and various noise models be unified into a single algebraic formalism?",
    "prior": "",
-   "limits": "Restricted to Clifford circuits and Pauli fault models.",
+   "limits": "Restricted to Clifford spacetime circuits and Pauli fault models.",
    "tools": [
-    "tensor network representations of Clifford circuits",
     "spacetime chain complexes",
-    "stabilizer and gauge algebra",
-    "Gottesman gadget framework"
+    "tensor network representations",
+    "Clifford circuit gauge/stabilizer structures",
+    "homological algebra"
    ],
    "figure": "",
    "figure_url": "",
@@ -10844,6 +10844,31 @@
    "figure_url": "https://arxiv.org/html/2609.40268v1/Temperature_6.svg",
    "figure_caption": "(a)",
    "figure_gloss": "Faraday rotation and electronic magnetization versus magnetic field, showing hysteresis loops and relaxation dynamics at sub-Kelvin temperatures under varying sweep rates and transverse fields.",
+   "code": ""
+  },
+  "seen": "2026-10-01",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2609.38569": {
+  "fields": {
+   "kind": "new method",
+   "result": "Real-time simulation amplitudes classically reweight into thermal traces and correlators at target inverse temperature $\\beta$, Euclidean time $\\tau$, and chemical potential $\\mu$. Truncating the redundant odd kernel component converts $1/t_{\\rm cut}$ convergence to $O(\\tau/[(E-c)t_{\\rm cut}^2])$ and near-exponential $O(\\log^{1/\\alpha}(1/\\epsilon_{\\rm trunc}))$.",
+   "question": "Can imaginary-time evolution and thermal observables at finite $\\theta$ and $\\mu$ be extracted from real-time quantum simulations without thermal state preparation?",
+   "prior": "Guo, Shibu, Lin, and Zhao (2024) achieved $O(1/\\epsilon_{\\rm trunc})$ convergence via an exact real-time integral transform for pure-state matrix elements.",
+   "limits": "Depolarizing noise dampens real-time evolution, limiting accessible inverse temperature to $\\beta=O(1/\\lambda)$. Lower bound $c$ must fall within $O(1/\\beta)$ of ground-state energy $E_{\\min}$ to avoid an exponential variance penalty $e^{2\\beta(F-c)}$.",
+   "tools": [
+    "continuous linear combination of unitaries",
+    "Hadamard tests",
+    "E$\\rho$OQ trace expansion",
+    "An-Childs-Lin filter kernels",
+    "second-order Trotter product formula"
+   ],
+   "figure": "S2.F2",
+   "figure_url": "https://arxiv.org/html/2609.38569v1/fig1_kernels.svg",
+   "figure_caption": "Figure 2: Worst-case relative error of the reconstructed filter $e^{-E\\tau}$ over the spectrum versus $t_{\\rm cut}/\\tau$ , for the kernels of Eq. ( 1 ) [ 18 ] , Eq. ( 4 ), and Eq. ( 5 ) [ 20 ] . Dotted lines and their adjacent labels show the predicted convergence laws.",
+   "figure_gloss": "Worst-case relative error of reconstructed $e^{-E\\tau}$ against dimensionless cutoff $t_{\\rm cut}/\\tau$. Demonstrates $1/t_{\\rm cut}$ algebraic scaling for the full kernel versus quadratic and near-exponential convergence for even and An-Childs-Lin kernels.",
    "code": ""
   },
   "seen": "2026-10-01",
