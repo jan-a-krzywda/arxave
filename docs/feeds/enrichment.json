@@ -10340,14 +10340,14 @@
  "2610.01923": {
   "fields": {
    "kind": "new method",
-   "result": "Hybrid fusion-network protocols for distributed rotated surface code lattice surgery reach a 50% interface-erasure threshold without local noise. They increase merge-observable interface distance from $d+1$ to $2d+1$ and restore perpendicular-observable interface distance from $\\lfloor(d+1)/2\\rfloor$ to $d$.",
-   "question": "How to design loss-tolerant distributed lattice surgery protocols across photonic links between networked quantum processing units using fusion networks?",
+   "result": "Hybrid fusion-network protocols for distributed rotated surface code lattice surgery achieve a $50\\%$ interface-erasure threshold without local noise. Hybrid protocols with linear cluster states increase merge-observable interface distance from $d+1$ to $2d+1$ and restore perpendicular-observable interface distance from $\\lfloor(d+1)/2\\rfloor$ to $d$.",
+   "question": "How can photonic fusion networks and measurement-based protocols be integrated into distributed surface code lattice surgery to tolerate high photon loss and probabilistic operations at QPU interfaces?",
    "prior": "Straight Bell-pair interface geometry had merge-observable interface distance $d+1$ and perpendicular-observable interface distance $\\lfloor(d+1)/2\\rfloor$.",
-   "limits": "Numerical/theoretical modeling. Local circuit and resource-state noise rates around $10^{-3}$ mask interface-distance advantages; benefit requires local noise rates at or below $10^{-4}$.",
+   "limits": "Numerical simulations under phenomenological and circuit-level Pauli noise models. Interface distance advantages are masked at local noise rates of $10^{-3}$, becoming effective only at local noise of $10^{-4}$ and below.",
    "tools": [
-    "ZX calculus",
+    "ZX calculus transformations",
     "fusion-based quantum computing (FBQC)",
-    "rotated surface codes",
+    "rotated surface code lattice surgery",
     "fusion boosting"
    ],
    "figure": "",
@@ -10752,15 +10752,15 @@
  "2610.01125": {
   "fields": {
    "kind": "theory",
-   "result": "Multivariate QSP establishes a multiport IIR transfer-function framework for transforming multiple noncommuting nonnormal block-encoded matrices, achieving additive logarithmic error scaling $\\mathcal{O}(\\|\\vec C\\|_1\\log(1/\\varepsilon))$ and weighted quasinorm query cost $\\approx t\\langle\\vec\\lambda,\\vec C\\rangle_{1/2}$ for multi-term Hamiltonian simulation.",
-   "question": "How to design general matrix-valued polynomial and rational transformations of multiple noncommuting, nonnormal block-encoded matrices with optimal query complexities?",
+   "result": "Characterizes multivariate quantum signal processing (MQSP) via multiport IIR transfer functions. Achieves multi-oracle Hamiltonian simulation under $H=\\sum_j H_j$ with query cost $\\approx t\\langle\\vec{\\lambda},\\vec{C}\\rangle_{1/2}+\\mathcal{O}(\\|\\vec{C}\\|_1\\log(1/\\epsilon))$ and optimal sparse simulation query cost $\\Theta(\\sqrt{d}\\|H\\|_{\\rm 1\\to2}t)$ with additive error dependence.",
+   "question": "Can quantum signal processing and quantum singular value transformation be generalized to implement multivariate matrix transformations of multiple noncommuting, nonnormal block-encoded operators?",
    "prior": "",
-   "limits": "Analytic bounds hold uniformly within the oracle promise; assumes access to standard block encodings of multi-operator inputs.",
+   "limits": "Analytic bounds hold uniformly across oracle promises; requires block encodings of input matrices.",
    "tools": [
-    "multiport Infinite-Impulse-Response (IIR) quantum transducers",
-    "multivariate transfer-function analysis",
-    "block-encoding algebra",
-    "quantum signal processing (QSP/QSVT)"
+    "multivariate quantum signal processing",
+    "multiport infinite-impulse-response (IIR) filters",
+    "transfer function methodology",
+    "block encoding"
    ],
    "figure": "",
    "figure_url": "",
@@ -10922,14 +10922,14 @@
  "2610.00950": {
   "fields": {
    "kind": "new method",
-   "result": "Single Trotter step for atomic orbital electronic structure Hamiltonians runs in depth $\\mathcal{O}(\\mathrm{polylog}(N))$ without ancillas, achieving sublinear simulation depth and total gate count $N^{5/3 + o(1)}$.",
-   "question": "Can electronic structure simulation in atomic orbital bases match the sublinear quantum circuit depth and gate count scalings of plane-wave and real-space grid bases?",
-   "prior": "Atomic orbital Hamiltonians previously required $\\mathcal{O}(N^4)$ terms with high depth and gate complexity, lagging behind plane-wave and grid approaches.",
-   "limits": "Holds under constant number of orbitals per atom and exponentially decaying localized atomic orbitals in an asymptotic regime.",
+   "result": "Single Trotter step for atomic orbital Hamiltonians implemented in depth $\\mathcal{O}(\\mathrm{polylog}(N))$ without ancillas, achieving sublinear simulation depth and total gate count $N^{5/3 + o(1)}$.",
+   "question": "Can quantum simulation of electronic structure using atomic orbital bases match the low circuit depth and gate count scalings achieved by plane-wave and real-space representations?",
+   "prior": "Atomic orbital Trotter steps typically required deep circuits due to up to $\\mathcal{O}(N^4)$ interaction terms with irregular spatial structure, trailing plane-wave and grid basis scalings.",
+   "limits": "Assumes a constant number of orbitals per atom, fixed minimum interatomic separation, and asymptotic regime in orbital number $N$.",
    "tools": [
-    "Orbital localization bounds",
-    "Hierarchical Fast Multipole Method (FMM) decomposition",
-    "Quantum Fourier arithmetic circuits",
+    "exponentially localized atomic orbitals",
+    "Fast Multipole Method (FMM) hierarchical decomposition",
+    "quantum Fourier arithmetic circuits",
     "Trotter error bounds"
    ],
    "figure": "",
@@ -11055,6 +11055,29 @@
    "figure_url": "https://arxiv.org/html/2610.01164v1/Nutational_Spin_Puming.svg",
    "figure_caption": "Figure 1 : The precessing magnetization pumps spin currents into the normal metal with two contributions, the conventional contribution $J_{s,z}^{\\text{sp}}$ linear in the driving frequency $\\omega$ and the nutational contribution $J_{s,z}^{\\text{nsp}}$ quadratic in $\\omega$ . Both contributions exhibit resonance peaks for right-handed driving fields at the FMR frequency, and for left-handed driving fields at the NR frequency.",
    "figure_gloss": "Schematic of spin pumping into an adjacent normal metal, showing linear conventional spin current $J_{s,z}^{\\text{sp}}\\propto\\omega$ alongside the quadratic nutational spin current $J_{s,z}^{\\text{nsp}}\\propto\\omega^2$.",
+   "code": ""
+  },
+  "seen": "2026-10-02",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2610.00473": {
+  "fields": {
+   "kind": "new method",
+   "result": "Realized kinetic inductance broadside cavities with $\\sim 10^7$ volume compression and slow plasmons ($v_{\\text{p}}\\approx c/100$), observing underdamped cavity-plasmon polaritons down to 0.04 THz and avoided crossings with $\\sim 15\\text{ ps}$ graphene plasmon lifetime.",
+   "question": "Can sub-terahertz cavity-matter polaritonic modes in van der Waals heterostructures be probed with high frequency resolution at millikelvin temperatures?",
+   "prior": "was 30 to 40 times lower plasmon lifetime using normal metal counter-plates",
+   "limits": "Measurements restricted to $T_{\\text{base}}\\approx 10\\text{ mK}$ under frequency limit $4\\Delta/h\\approx 190\\text{ GHz}$ set by Al Josephson junction gap; plasmon lifetime appears limited by cavity length via edge scattering.",
+   "tools": [
+    "Josephson junction sub-THz spectrometer",
+    "NbN/hBN/graphene heterostructures",
+    "dilution refrigerator ($T_{\\text{base}}\\approx 10\\text{ mK}$)"
+   ],
+   "figure": "Sx4.F4",
+   "figure_url": "https://arxiv.org/html/2610.00473v1/fig_trilayer_15ps_v9_revtexLabels.png",
+   "figure_caption": "Fig. 4 : Hybrid graphene-superconducting confined plasmons and strong cavity coupling. (a) Schematic of NbN-graphene-NbN plasmonic trilayer structure. (b) Experimental Josephson impedance spectra of an NbN/graphene/NbN trilayer device measured as a function of density. Frequencies below 50 GHz are saturated to highlight the weak SNGP $(\\lambda/2)$ mode. The blue arrows indicate avoided crossings (corresponding to the level crossing highlighted in Fig. 4c). (c) Dispersion of the KIBC $(\\lambda/2)$ and SNGP $(\\lambda/2)$ modes, along with several harmonics. The mode frequencies are calculated for an infinite NbN/graphene/NbN trilayer system with no Nb couplers. $\\lambda/2$ is set to 34 µm. The starred KIBC $(\\lambda)$ mode is formally forbidden and only appears in the presence of mirror symmetry breaking. The blue arrow indicates a level crossing. (d) Simulated input impedance of an NbN/graphene/NbN trilayer using the circuit model discussed in the text. Modes are highlighted in black, red and grey, and the blue arrows highlight the avoided crossings observed in the experiment. The relaxation time is set to 15 ps.",
+   "figure_gloss": "Real input impedance plotted against carrier density and frequency up to 200 GHz for an NbN/graphene/NbN trilayer cavity. Avoided crossings between the nondispersing cavity mode at $\\sim 170\\text{ GHz}$ and dispersing graphene plasmon mode demonstrate strong light-matter coupling.",
    "code": ""
   },
   "seen": "2026-10-02",
