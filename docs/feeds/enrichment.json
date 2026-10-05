@@ -9951,14 +9951,14 @@
  "2610.02757": {
   "fields": {
    "kind": "new method",
-   "result": "Gray code quantum read-only memory (GQROM) and an automated EDA design flow enable programmable classical data loading into quantum circuits with reduced state-transition complexity.",
-   "question": "Can Gray-code addressing reduce gate complexity and initialization overhead in quantum read-only memory architectures?",
+   "result": "Gray code quantum read-only memory (GQROM) and an automated EDA flow reduce state transition complexity and gate-induced errors for loading classical data into quantum circuits.",
+   "question": "How to design a scalable, low-overhead programmable quantum read-only memory to load classical data into quantum circuits?",
    "prior": "",
-   "limits": "Validated via Qiskit simulation.",
+   "limits": "Simulated and validated on Qiskit framework.",
    "tools": [
     "Gray code encoding",
     "Qiskit platform",
-    "quantum EDA design flow"
+    "electronic design automation (EDA) flow"
    ],
    "figure": "",
    "figure_url": "",
@@ -10022,17 +10022,17 @@
  },
  "2610.03682": {
   "fields": {
-   "kind": "new method",
-   "result": "Modular hyperbolic surface and color codes with sparse inter-module boundary wiring reduce physical qubit overhead by tenfold or more compared to planar surface codes under circuit-level noise, reaching $k/n=1/16$ and $d\\geq 22$ (over $30\\times$ overhead reduction).",
-   "question": "Can high-rate quantum LDPC codes achieve significant qubit overhead reductions using planar modules connected only via sparse boundary wiring?",
-   "prior": "Planar surface codes require high physical qubit overhead ($k/n \\ll 1$), and existing bivariate bicycle codes like $[[288,12,18]]$ demand complex non-local 2D routing.",
-   "limits": "Circuit-level numerical simulations; assumes sparse static inter-module boundary connections and flat 2D Euclidean layouts within modules.",
+   "kind": "new result",
+   "result": "Constructing modular hyperbolic surface and color codes by wiring static boundary connections between Euclidean planar modules reduces physical qubit overhead by $\\ge 10\\times$ compared to planar surface codes under circuit-level noise. Larger modular codes reach encoding rate $k/n=1/16$ with distance $d\\ge 22$, exceeding the $[[288,12,18]]$ bivariate bicycle code.",
+   "question": "Can low-overhead quantum error-correcting codes be implemented using mostly nearest-neighbor connectivity on flat planar modules connected only via sparse boundary links?",
+   "prior": "Planar surface codes require high physical qubit overhead; standard high-rate LDPC codes like the $[[288,12,18]]$ bivariate bicycle code require non-planar 2D routing across all qubits.",
+   "limits": "Circuit-level numerical simulations, assumes static inter-module links restricted to module boundaries and standard depolarizing noise models.",
    "tools": [
-    "semi-hyperbolic modular surface and color codes",
-    "circuit-level Pauli noise simulation",
-    "neural network and matching decoders",
-    "fault-tolerant walking circuits via automorphisms",
-    "modular syndrome extractor circuits"
+    "Semi-hyperbolic surface and color codes",
+    "Boundary-connected Euclidean planar modules",
+    "Circuit-level noise simulations",
+    "Neural network and minimum-weight perfect matching decoders",
+    "Fault-tolerant walking circuits"
    ],
    "figure": "",
    "figure_url": "",
@@ -10244,15 +10244,15 @@
  "2610.03528": {
   "fields": {
    "kind": "new method",
-   "result": "ASPIRE generates state-preparation circuits by greedily disentangling qubit pairs based on entanglement geometry and hardware connectivity, achieving shallower circuit depths and higher fidelities than standard nearest-neighbour sequential staircase compilation.",
-   "question": "How to compile shallow, high-fidelity state-preparation circuits for structured quantum states by exploiting native hardware connectivity and non-local entanglement geometry?",
-   "prior": "Approximate MPS compilation relied on layered sequential staircases of nearest-neighbour gates.",
-   "limits": "Heuristic greedy gate selection; demonstrated on numerical simulations of Hamiltonian ground states and amplitude-encoded functions under NISQ and early fault-tolerant settings.",
+   "result": "ASPIRE compiles approximate state-preparation circuits by greedily removing entanglement across hardware-native qubit connectivity. Yields shallower circuits and higher state fidelity than standard sequential staircase circuits, especially for states with long-range entanglement.",
+   "question": "How to compile shallow, hardware-native state preparation circuits for matrix product states without relying on sequential nearest-neighbour gate staircases?",
+   "prior": "Approximate matrix product state preparation relies on layered sequential staircases of nearest-neighbour gates.",
+   "limits": "Heuristic greedy compilation. Evaluated on empirical simulations of Hamiltonian ground states and amplitude-encoded functions under NISQ noise and early fault-tolerant settings.",
    "tools": [
-    "Adaptive State Preparation by Iterative Removal of Entanglement (ASPIRE)",
-    "Matrix product states (MPS)",
-    "Entanglement removability scoring",
-    "Circuit synthesis under hardware connectivity constraints"
+    "matrix product states",
+    "ASPIRE algorithm",
+    "entanglement removability scoring",
+    "circuit compilation"
    ],
    "figure": "",
    "figure_url": "",
