@@ -10826,15 +10826,15 @@
  "2610.03920": {
   "fields": {
    "kind": "new method",
-   "result": "Constructed a general framework to fault-tolerantly measure transversal Clifford logical operators across arbitrary QLDPC codes via code deformation with ancillae. Proved the deformed Clifford-stabilized code remains LDPC, preserves code distance up to an $N$-independent constant factor, and achieves fault distance growing linearly with the original code distance.",
-   "question": "How can transversal Clifford logical operators be fault-tolerantly measured in arbitrary quantum low-density parity-check (QLDPC) codes to enable non-Clifford gates and magic state preparation?",
+   "result": "Constructed fault-tolerant protocol to measure transversal Clifford logical operators in arbitrary QLDPC codes via ancilla-based code deformation. Resulting Clifford-stabilized code remains LDPC, preserves code distance up to a constant factor independent of physical qubit count, and has fault distance against data and measurement errors scaling linearly with original code distance.",
+   "question": "How to fault-tolerantly measure transversal Clifford logical operators in arbitrary quantum low-density parity check (QLDPC) codes to enable non-Clifford gates and magic state preparation?",
    "prior": "",
-   "limits": "Applies to transversal Clifford logical operator measurements; distance preservation is up to a constant factor independent of physical qubit count $N$.",
+   "limits": "Applies to transversal Clifford logical operators; preserves code distance up to a constant factor.",
    "tools": [
     "quantum low-density parity check (QLDPC) codes",
-    "quantum code surgery",
-    "stabilizer deformation",
-    "magic state preparation"
+    "lattice/code surgery",
+    "transversal Clifford logical operator measurement",
+    "ancilla qubit code deformation"
    ],
    "figure": "",
    "figure_url": "",
@@ -11240,14 +11240,13 @@
  "2610.04821": {
   "fields": {
    "kind": "new result",
-   "result": "Epitaxial NbN/AlN/NbN self-shunted flux qubit achieves anharmonicity of 797 MHz with lifetime $T_1$ of 13 to 25 $\\mu$s without external shunt capacitor.",
-   "question": "Can full epitaxially grown NbN/AlN/NbN junctions realize an ultracompact, highly anharmonic self-shunted flux qubit with long coherence times?",
-   "prior": "Conventional NbN-based C-shunt flux qubits require large shunt capacitors, and typical Al-based flux qubits with comparable coherence use junction areas more than 10 times smaller.",
-   "limits": "Measured coherence lifetimes restricted to 13 to 25 $\\mu$s regime.",
+   "result": "Epitaxial NbN/AlN/NbN self-shunted flux qubit achieves anharmonicity of 797 MHz with qubit lifetime of 13 - 25 $\\mu$s without external shunt capacitor.",
+   "question": "Can high anharmonicity, long lifetime, and compact footprint be achieved simultaneously in a flux qubit using epitaxial NbN Josephson junctions without external shunt capacitors?",
+   "prior": "Conventional capacitively shunted flux qubits require large shunt capacitors, while typical Al-based flux qubits use $>10\\times$ smaller junction areas.",
+   "limits": "",
    "tools": [
-    "Epitaxial NbN/AlN/NbN Josephson junctions",
-    "Self-shunted superconducting flux qubit (SSFQ)",
-    "Dispersive readout setup"
+    "epitaxial NbN/AlN/NbN Josephson junctions",
+    "self-shunted superconducting flux qubit (SSFQ)"
    ],
    "figure": "",
    "figure_url": "",
@@ -11312,13 +11311,13 @@
  "2610.05713": {
   "fields": {
    "kind": "new result",
-   "result": "Demonstrated gate-tunable second-order and third-order nonlinear Hall effects in dual-gated $\\mathrm{BiSbTeSe_2}$ devices. Second-order response persists up to room temperature with higher generation efficiency than prior topological insulator systems.",
-   "question": "Can large, highly gate-tunable second-order and third-order nonlinear Hall effects be realized and electrically controlled in topological insulator $\\mathrm{BiSbTeSe_2}$ devices?",
+   "result": "Observation of large, highly gate-tunable second- and third-order nonlinear Hall effects in dual-gated $\\mathrm{BiSbTeSe_2}$. Second-order NLHE shows higher generation efficiency than prior topological insulator systems and persists up to room temperature.",
+   "question": "Can high-efficiency second- and third-order nonlinear Hall effects be realized and tuned electrostatically in $\\mathrm{BiSbTeSe_2}$ devices?",
    "prior": "",
-   "limits": "Observed up to room temperature.",
+   "limits": "Second-order NLHE persists up to room temperature; third-order generation efficiency is comparable to previously reported systems.",
    "tools": [
     "dual-gated $\\mathrm{BiSbTeSe_2}$ devices",
-    "nonlinear Hall effect measurements",
+    "nonlinear Hall transport measurements",
     "scaling analysis"
    ],
    "figure": "",
