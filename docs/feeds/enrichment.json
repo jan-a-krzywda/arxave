@@ -11529,15 +11529,15 @@
  "2610.07308": {
   "fields": {
    "kind": "incremental",
-   "result": "Complex synchronized networks mapped via quantum-like (QL) gates simulate transverse-field Ising model wavepacket preparation, time evolution, and magnetization extraction, while graph metrics quantify microscopic coupling, phase coherence, and inter-block connectivity.",
-   "question": "Can quantum-like circuits built from synchronized classical networks simulate the dynamic time evolution and physical observables of interacting spin systems?",
+   "result": "Constructs quantum-like (QL) gate circuits on complex synchronized networks to prepare wavepackets and simulate transverse-field Ising model time evolution and magnetization, mapping network topology transformations via microscopic coupling, phase coherence, and inter-block coupling metrics.",
+   "question": "Can classical complex synchronized networks and quantum-like gates simulate the dynamical time evolution and physical observables of interacting spin systems?",
    "prior": "",
-   "limits": "Numerical and theoretical framework without hardware realization; limited to systems where classical synchronized network resources scale appropriately.",
+   "limits": "Classical network simulation rather than physical hardware implementation; constrained by classical resource scaling and synchronization requirements.",
    "tools": [
-    "quantum-like (QL) logic circuits",
-    "complex synchronized network dynamics",
-    "transverse field Ising model simulation",
-    "graph connection metrics"
+    "quantum-like (QL) bits and gates",
+    "complex synchronized networks",
+    "transverse-field Ising model Hamiltonian simulation",
+    "graph connectivity metrics"
    ],
    "figure": "",
    "figure_url": "",
