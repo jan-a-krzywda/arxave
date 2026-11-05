@@ -7,5 +7,8 @@
     "fast-xml-parser": "^4.5.0",
     "temml": "^0.13.4",
     "yaml": "^2.8.0"
+  },
+  "optionalDependencies": {
+    "@huggingface/transformers": "^3.7.6"
   }
 }

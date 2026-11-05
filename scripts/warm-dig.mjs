@@ -17,6 +17,11 @@
  *   retry ladder around a cold HF pull, and the quantization constant all went
  *   with it.
  *
+ *   `--embed-local` puts an encoder back for the nights the hosted function
+ *   cannot answer (see embed-local.mjs). Same model, same arithmetic, so the
+ *   cache still sees one geometry — the flag is there so a spent credit is a
+ *   slow night rather than a failed one.
+ *
  * WHY THIS IS STILL A SCRIPT AND NOT THE EDGE FUNCTION ITSELF: a night is
  * ~870 abstracts across the popular archives, chunked into requests that each
  * wait on somebody else's CPU. That is a job with a clock, not a request.
@@ -31,6 +36,7 @@
  *   --presets      directory of preset claims to warm as well (docs/presets)
  *   --endpoint     dig-cache URL (default: the project's deployed function)
  *   --embed        embed URL (default: the project's deployed function)
+ *   --embed-local  embed with SPECTER2 on this machine, not the hosted pick
  *   --dry-run      fetch and embed, write nothing
  */
 
@@ -38,6 +44,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { XMLParser } from 'fast-xml-parser';
+
+import { chooseEmbedder } from './embed-local.mjs';
 
 /* Must match docs/assets/filter.js and supabase/functions/embed/hf.ts exactly —
    these two strings are the cache key, and a mismatch is not an error but a
@@ -73,6 +81,7 @@ function arg(name, fallback = null) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 const DRY_RUN = process.argv.includes('--dry-run');
+const EMBED_LOCAL = process.argv.includes('--embed-local');
 
 /** Collapse exactly as filter.js and store.py do — all three must agree. */
 export function cacheKeyText(text) {
@@ -675,6 +684,10 @@ async function main() {
     console.error('warm-dig: ' + err.message);
     process.exit(2);
   }
+  /* `--embed-local` swaps the hosted pick for SPECTER2 on this runner. Both
+     answer `(texts) => Float32Array[]`, so the loop below does not care which. */
+  const embed = chooseEmbedder({ embedLocal: EMBED_LOCAL }, { embedChunk, embedUrl });
+  console.log(`warm-dig: embedding with ${EMBED_LOCAL ? 'SPECTER2 on this runner' : 'the hosted pick'}`);
   const writeKey = process.env.DIG_WRITE_KEY ?? '';
   if (!writeKey && !DRY_RUN) {
     console.error('warm-dig: $DIG_WRITE_KEY is unset. Set it, or pass --dry-run.');
@@ -833,7 +846,7 @@ async function main() {
   const items = [];
   for (let i = 0; i < todo.length; i += BATCH) {
     const chunk = todo.slice(i, i + BATCH);
-    const rows = await embedChunk(chunk.map((u) => u.text), embedUrl);
+    const rows = await embed(chunk.map((u) => u.text));
     for (let r = 0; r < rows.length; r++) {
       items.push({ sha: chunk[r].sha, vector: toBase64(rows[r]), source: chunk[r].source });
     }

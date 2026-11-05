@@ -30,6 +30,7 @@
  *   --endpoint  dig-cache URL (default: the project's deployed function)
  *   --top       how many papers per feed (default 8)
  *   --embed     embed URL (default: the project's deployed function)
+ *   --embed-local  embed with SPECTER2 on this machine, not the hosted pick
  *   --site      absolute base URL used for links back into the Dig
  */
 
@@ -42,6 +43,7 @@ import {
   loadPresets, resolveEndpoint, sha256Hex,
 } from './warm-dig.mjs';
 import { enrichItems } from './enrich.mjs';
+import { chooseEmbedder } from './embed-local.mjs';
 import { standaloneSvg } from './fulltext.mjs';
 import { deMath } from './demath.mjs';
 import { mathHtml } from './mathml.mjs';
@@ -63,6 +65,7 @@ function arg(name, fallback = null) {
   const i = process.argv.indexOf('--' + name);
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
+const EMBED_LOCAL = process.argv.includes('--embed-local');
 
 /**
  * One stone's blended grade. The browser's formula, deliberately verbatim.
@@ -391,7 +394,7 @@ async function cacheRead(endpoint, shas) {
  * every text is a hit and the pick is never called. Calling it is the fallback
  * that keeps a cache outage from emptying the feed.
  */
-async function vectorize(texts, endpoint, embedUrl) {
+async function vectorize(texts, endpoint, embed) {
   const shas = await Promise.all(texts.map(sha256Hex));
   const hits = await cacheRead(endpoint, [...new Set(shas)]);
   const out = new Array(texts.length);
@@ -405,7 +408,7 @@ async function vectorize(texts, endpoint, embedUrl) {
   if (missing.length) {
     for (let i = 0; i < missing.length; i += BATCH) {
       const chunk = missing.slice(i, i + BATCH);
-      const rows = await embedChunk(chunk.map((m) => texts[m]), embedUrl);
+      const rows = await embed(chunk.map((m) => texts[m]));
       for (let r = 0; r < chunk.length; r++) out[chunk[r]] = rows[r];
     }
   }
@@ -910,6 +913,9 @@ async function main() {
     console.error('preset-feed: ' + err.message);
     process.exit(2);
   }
+  /* `--embed-local` swaps the hosted pick for SPECTER2 on this runner; both
+     answer `(texts) => Float32Array[]`, so `vectorize` does not care which. */
+  const embed = chooseEmbedder({ embedLocal: EMBED_LOCAL }, { embedChunk, embedUrl });
 
   const { bySlug, failures } = await loadPresets(presetDir);
   if (failures.length) console.warn('preset-feed: ' + failures.join(' | '));
@@ -982,7 +988,7 @@ async function main() {
     }
 
     const vectors = await vectorize(
-      stones.map((s) => s.abstract).concat(rows.map((r) => r.text)), endpoint, embedUrl);
+      stones.map((s) => s.abstract).concat(rows.map((r) => r.text)), endpoint, embed);
     /* Centred here, once, before anything scores — the page does the same at
        the same point (`state.A = vectors.map(center)`). `grade()` itself stays
        verbatim: the transform is on the inputs, not in the blend, so the
