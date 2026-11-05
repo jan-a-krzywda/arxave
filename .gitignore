@@ -25,3 +25,6 @@ supabase/.branches/
 docs/dig-spec.md
 docs/legacy/ranking-spec.md
 docs/legacy/enrichment-spec.md
+
+# local spec, not tracked
+surf-spec.md
