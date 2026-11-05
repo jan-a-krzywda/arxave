@@ -8,7 +8,7 @@ benchmarking, calibration, software or HPC-integration problems of such a machin
 ## relevance (1-5, absolute, not relative to today's other papers)
 
 - 5: changes how the machine is operated, calibrated, benchmarked or integrated, or reports a result directly on the
-  tender-level figures of merit for spin qubits (fidelity, readout, coherence, gate speed, scale).
+  headline figures of merit for spin qubits (fidelity, readout, coherence, gate speed, scale).
 - 4: strong, directly usable method or measurement for spin qubits, or for calibration, benchmarking, compilation,
   scheduling or HPC integration of a small noisy QPU.
 - 3: useful background or adjacent platform result worth skimming; transferable idea with some adaptation.
