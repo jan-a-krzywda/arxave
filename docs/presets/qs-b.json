@@ -1,0 +1,73 @@
+{
+  "arxave_claim": 1,
+  "preset": "qs-b",
+  "name": "Gate and device benchmarking",
+  "blurb": "Papers relevant to operating, benchmarking, integrating and using a semiconductor spin-qubit quantum computer of at least 16 qubits that is co-located with and integrated into an HPC system.",
+  "saved": "2026-11-05",
+  "scout": {
+    "categories": "quant-ph, cond-mat.mes-hall",
+    "lookback_days": 2,
+    "max_results": 200
+  },
+  "touchstones": [
+    {
+      "text": "randomized benchmarking, interleaved and cycle benchmarking of gate fidelity",
+      "weight": 1
+    },
+    {
+      "text": "gate set tomography of a qubit device",
+      "weight": 1
+    },
+    {
+      "text": "quantum volume and volumetric benchmarks for quantum computers",
+      "weight": 1
+    }
+  ],
+  "cores": [
+    {
+      "doi": "10.1103/physreva.77.012307",
+      "weight": 1
+    },
+    {
+      "doi": "10.1103/physrevlett.106.180504",
+      "weight": 1
+    },
+    {
+      "doi": "10.1103/physrevlett.109.080505",
+      "weight": 1
+    },
+    {
+      "arxiv": "1210.7011",
+      "weight": 1
+    },
+    {
+      "doi": "10.1103/physrevx.9.021011",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/ncomms14485",
+      "weight": 1
+    },
+    {
+      "doi": "10.22331/q-2021-10-05-557",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41467-019-13068-7",
+      "weight": 1
+    },
+    {
+      "doi": "10.1103/physreva.100.032328",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41567-021-01409-7",
+      "weight": 1
+    }
+  ],
+  "blend": {
+    "paydirt_n": 10
+  },
+  "unlisted": true,
+  "axis": "B"
+}

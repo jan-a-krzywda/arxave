@@ -16,7 +16,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  bareArxivId, cacheKeyText, coreEmbedText, cutoffDate, deLatex, DIM, doiKey,
+  bareArxivId, cacheKeyText, coreEmbedText, coreRefs, cutoffDate, deLatex, DIM, doiKey,
   embedChunk, feedBuildDate, fetchEarlier, MODEL, parseAtom, parseFeed,
   presetUnits, reconstructAbstract, resolveEndpoint, withinCutoff,
 } from './warm-dig.mjs';
@@ -372,6 +372,34 @@ test('a bare DOI becomes the form OpenAlex resolves', () => {
   assert.equal(doiKey('  10.1038/nature02693  '), 'doi:10.1038/nature02693');
   assert.equal(doiKey(''), '');
   assert.equal(doiKey(null), '');
+});
+
+test('a core row names its paper by DOI, or by arXiv id when it has no DOI', () => {
+  // A seed with neither id is dropped rather than fetched blind; a seed that
+  // carries both is a DOI, because that is the better-resolved record.
+  assert.deepEqual(coreRefs({
+    cores: [
+      { doi: '10.1038/nature02693', weight: 0.8 },
+      { arxiv: 'arXiv:1210.7011v2', weight: 1.0 },
+      { weight: 1.0 },
+      { doi: '10.1/x', arxiv: '1210.7011' },
+    ],
+  }), [
+    { kind: 'doi', id: '10.1038/nature02693', weight: 0.8 },
+    { kind: 'arxiv', id: '1210.7011', weight: 1.0 },
+    { kind: 'doi', id: '10.1/x', weight: 1.0 },
+  ]);
+  assert.deepEqual(coreRefs({}), []);
+});
+
+test('an arXiv core is named by the title the search API already carries', () => {
+  // fetchCoreArxiv builds the embed text from title + abstract, so the Atom
+  // parse has to surface the title it used to throw away.
+  const [entry] = parseAtom(atom(['<entry><id>http://arxiv.org/abs/1210.7011v2</id>' +
+    '<title>Process verification of two-qubit gates</title>' +
+    '<summary>We verify two-qubit gates.</summary></entry>']));
+  assert.equal(entry.title, 'Process verification of two-qubit gates');
+  assert.equal(entry.arxivId, '1210.7011');
 });
 
 test('an inverted index rebuilds into the prose the page embeds', () => {

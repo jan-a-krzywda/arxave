@@ -1,0 +1,41 @@
+{
+  "arxave_claim": 1,
+  "preset": "qs-h",
+  "name": "Error correction route",
+  "blurb": "Papers relevant to operating, benchmarking, integrating and using a semiconductor spin-qubit quantum computer of at least 16 qubits that is co-located with and integrated into an HPC system.",
+  "saved": "2026-11-05",
+  "scout": {
+    "categories": "quant-ph, cond-mat.mes-hall",
+    "lookback_days": 2,
+    "max_results": 200
+  },
+  "touchstones": [
+    {
+      "text": "surface code and quantum error correction with spin qubits",
+      "weight": 1
+    },
+    {
+      "text": "real-time decoding of error-correcting codes on classical hardware",
+      "weight": 1
+    },
+    {
+      "text": "logical qubit overhead on limited-connectivity devices",
+      "weight": 1
+    }
+  ],
+  "cores": [
+    {
+      "doi": "10.1103/physreva.86.032324",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41586-022-04986-6",
+      "weight": 1
+    }
+  ],
+  "blend": {
+    "paydirt_n": 10
+  },
+  "unlisted": true,
+  "axis": "H"
+}

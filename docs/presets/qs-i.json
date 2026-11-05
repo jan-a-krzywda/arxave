@@ -1,0 +1,101 @@
+{
+  "arxave_claim": 1,
+  "preset": "qs-i",
+  "name": "NISQ algorithms",
+  "blurb": "Papers relevant to operating, benchmarking, integrating and using a semiconductor spin-qubit quantum computer of at least 16 qubits that is co-located with and integrated into an HPC system.",
+  "saved": "2026-11-05",
+  "scout": {
+    "categories": "quant-ph, cond-mat.mes-hall",
+    "lookback_days": 2,
+    "max_results": 200
+  },
+  "touchstones": [
+    {
+      "text": "variational quantum algorithms on noisy intermediate-scale devices",
+      "weight": 1
+    },
+    {
+      "text": "quantum error mitigation: zero-noise extrapolation and probabilistic error cancellation",
+      "weight": 1
+    },
+    {
+      "text": "readout error mitigation",
+      "weight": 1
+    },
+    {
+      "text": "trainability and barren plateaus of variational circuits",
+      "weight": 1
+    },
+    {
+      "text": "quantum simulation of spin models on small quantum processors",
+      "weight": 1
+    }
+  ],
+  "cores": [
+    {
+      "doi": "10.1103/revmodphys.94.015004",
+      "weight": 1
+    },
+    {
+      "doi": "10.7566/jpsj.90.032001",
+      "weight": 1
+    },
+    {
+      "doi": "10.1016/j.physrep.2022.08.003",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/nature23879",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41467-019-10988-2",
+      "weight": 1
+    },
+    {
+      "doi": "10.1103/physrevx.10.021067",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41467-018-07090-4",
+      "weight": 1
+    },
+    {
+      "doi": "10.1103/physrevlett.119.180509",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41586-019-1040-7",
+      "weight": 1
+    },
+    {
+      "doi": "10.1109/qce49297.2020.00045",
+      "weight": 1
+    },
+    {
+      "doi": "10.1103/prxquantum.2.040326",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41534-022-00618-z",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41586-023-06096-3",
+      "weight": 1
+    },
+    {
+      "doi": "10.1021/acs.chemrev.9b00829",
+      "weight": 1
+    },
+    {
+      "doi": "10.1103/physrevx.11.041025",
+      "weight": 1
+    }
+  ],
+  "blend": {
+    "paydirt_n": 10
+  },
+  "unlisted": true,
+  "axis": "I"
+}

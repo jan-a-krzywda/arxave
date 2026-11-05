@@ -1,0 +1,65 @@
+{
+  "arxave_claim": 1,
+  "preset": "qs-e",
+  "name": "Control electronics and cryogenics",
+  "blurb": "Papers relevant to operating, benchmarking, integrating and using a semiconductor spin-qubit quantum computer of at least 16 qubits that is co-located with and integrated into an HPC system.",
+  "saved": "2026-11-05",
+  "scout": {
+    "categories": "quant-ph, cond-mat.mes-hall",
+    "lookback_days": 2,
+    "max_results": 200
+  },
+  "touchstones": [
+    {
+      "text": "cryogenic control electronics and cryo-CMOS for spin qubits",
+      "weight": 1
+    },
+    {
+      "text": "wiring, filtering and readout chain of a dilution-refrigerator quantum computer",
+      "weight": 1
+    },
+    {
+      "text": "power budget and heat load of qubit control at scale",
+      "weight": 1
+    },
+    {
+      "text": "spin qubit operation at elevated temperature",
+      "weight": 1
+    }
+  ],
+  "cores": [
+    {
+      "doi": "10.1038/s41534-017-0038-y",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/npjqi.2015.11",
+      "weight": 1
+    },
+    {
+      "doi": "10.1103/physrevapplied.3.024010",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41586-021-03469-4",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41586-020-2170-7",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41586-020-2171-6",
+      "weight": 1
+    },
+    {
+      "doi": "10.1140/epjqt/s40507-019-0072-0",
+      "weight": 1
+    }
+  ],
+  "blend": {
+    "paydirt_n": 10
+  },
+  "unlisted": true,
+  "axis": "E"
+}

@@ -1,0 +1,105 @@
+{
+  "arxave_claim": 1,
+  "preset": "qs-a",
+  "name": "Spin qubit devices and figures of merit",
+  "blurb": "Papers relevant to operating, benchmarking, integrating and using a semiconductor spin-qubit quantum computer of at least 16 qubits that is co-located with and integrated into an HPC system.",
+  "saved": "2026-11-05",
+  "scout": {
+    "categories": "quant-ph, cond-mat.mes-hall",
+    "lookback_days": 2,
+    "max_results": 200
+  },
+  "touchstones": [
+    {
+      "text": "exchange gates and two-qubit logic in semiconductor spin qubits",
+      "weight": 1
+    },
+    {
+      "text": "single-qubit and two-qubit gate fidelity above 99% in silicon or germanium quantum dots",
+      "weight": 1
+    },
+    {
+      "text": "spin qubit readout, single-shot fidelity and radio-frequency reflectometry",
+      "weight": 1
+    },
+    {
+      "text": "coherence time and charge noise limits for spin qubits",
+      "weight": 1
+    },
+    {
+      "text": "shared control and crossbar arrays of many quantum dots",
+      "weight": 1
+    }
+  ],
+  "cores": [
+    {
+      "doi": "10.1103/revmodphys.95.025003",
+      "weight": 1
+    },
+    {
+      "doi": "10.1103/revmodphys.85.961",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41578-020-00262-z",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/nature15263",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/nature25766",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41565-017-0014-x",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41586-021-04273-w",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41586-021-04182-y",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41586-021-04292-7",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41586-022-05117-x",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41586-021-03332-6",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41565-023-01491-3",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41928-022-00727-9",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/nature02693",
+      "weight": 1
+    },
+    {
+      "doi": "10.1103/physrevx.8.021046",
+      "weight": 1
+    },
+    {
+      "doi": "10.1063/5.0088229",
+      "weight": 1
+    }
+  ],
+  "blend": {
+    "paydirt_n": 10
+  },
+  "unlisted": true,
+  "axis": "A"
+}

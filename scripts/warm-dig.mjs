@@ -319,6 +319,59 @@ export async function fetchCore(doi, slug) {
 }
 
 /**
+ * A core sample that names its paper by arXiv id instead of a DOI.
+ *
+ * `fetchCore` resolves DOIs through OpenAlex; a seed with no DOI (an old
+ * conference paper, say) has only an arXiv id to go on, and dropping it — which
+ * is what this loop used to do — silently removed the row from the preset it
+ * was there to anchor, with nothing but a short count to show for it. The
+ * search API's Atom already carries the title and the abstract the embed text
+ * is built from, so this reuses `parseAtom` rather than a second parser.
+ */
+export async function fetchCoreArxiv(arxivId, slug) {
+  const id = bareArxivId(arxivId);
+  if (!id) throw new Error(`${arxivId}: not an arXiv id`);
+  const url = 'https://export.arxiv.org/api/query?id_list=' + encodeURIComponent(id) +
+    '&max_results=1';
+  const resp = await fetch(url, {
+    headers: { 'User-Agent': 'arxave-warmer/0.1 (+https://github.com/jan-a-krzywda/arxave)' },
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!resp.ok) throw new Error(`${id}: arXiv HTTP ${resp.status}`);
+  const [entry] = parseAtom(await resp.text());
+  if (!entry) throw new Error(`${id}: no abstract`);
+  return {
+    text: coreEmbedText(entry.title, entry.abstract),
+    title: entry.title,
+    source: `preset:${slug}`, kind: 'core', weight: 1.0, arxiv: id,
+  };
+}
+
+/**
+ * The core rows a preset asks the warmer to resolve, one per `cores` entry.
+ *
+ * A core names its paper by `doi` or, when it has no DOI, by `arxiv`; a row
+ * with neither is dropped rather than fetched blind. `weight` rides along so
+ * the caller need not re-read the preset. Exported and pure because the arXiv
+ * branch is otherwise only reachable through the network.
+ */
+export function coreRefs(preset) {
+  const out = [];
+  for (const core of preset.cores ?? []) {
+    const weight = Number.isFinite(parseFloat(core.weight)) ? parseFloat(core.weight) : 1.0;
+    if (core.doi) out.push({ kind: 'doi', id: core.doi, weight });
+    else if (core.arxiv) out.push({ kind: 'arxiv', id: bareArxivId(core.arxiv), weight });
+  }
+  return out;
+}
+
+/** DOI cores go through OpenAlex; arXiv-only cores through the search API. */
+async function coreFetchDefault(ref, slug) {
+  return ref.kind === 'doi' ? fetchCore(ref.id, slug) : fetchCoreArxiv(ref.id, slug);
+}
+
+
+/**
  * Every preset's touchstones and core samples, ready to embed.
  *
  * WHY PRESET TOUCHSTONES MAY BE CACHED AND TYPED ONES MAY NOT (spec §6c.3):
@@ -329,7 +382,7 @@ export async function fetchCore(doi, slug) {
  * same line from the other side: a preset row that the user edits loses its
  * provenance flag and goes back to being embedded locally.
  */
-export async function loadPresets(dir) {
+export async function loadPresets(dir, { coreFetch = coreFetchDefault } = {}) {
   let names;
   try {
     names = (await fs.readdir(dir))
@@ -364,11 +417,10 @@ export async function loadPresets(dir) {
     const rows = presetUnits(preset, slug);
     units.push(...rows);
     bySlug.set(slug, { preset, rows });
-    for (const core of preset.cores ?? []) {
-      if (!core.doi) continue;
+    for (const ref of coreRefs(preset)) {
       try {
-        const unit = await fetchCore(core.doi, slug);
-        unit.weight = Number.isFinite(parseFloat(core.weight)) ? parseFloat(core.weight) : 1.0;
+        const unit = await coreFetch(ref, slug);
+        unit.weight = ref.weight;
         units.push(unit);
         bySlug.get(slug).rows.push(unit);
       } catch (err) {
@@ -447,6 +499,10 @@ export function parseAtom(xml) {
     out.push({
       arxivId,
       abstract,
+      /* Display only, exactly as parseFeed carries it — `abstract` above is the
+         only field that reaches the cache key. A core sample with no DOI is
+         named by this title, which is why it is parsed at all. */
+      title: cacheKeyText(String(entry.title ?? '')),
       published: String(entry.published ?? '').trim().substring(0, 10),
       link: 'https://arxiv.org/abs/' + arxivId,
     });
