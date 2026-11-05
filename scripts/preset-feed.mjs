@@ -455,16 +455,32 @@ export function bandOf(z, opts = {}) {
  * different message from a feed that looks broken. Rides in the channel so it
  * is visible before any item is opened.
  */
+/* The bands a tally knows how to name. Two vocabularies share this function:
+   the z bands the site's presets use (`bandOf`) and the relevance bands the
+   ranking pipeline uses (`bandOfRelevance` in rank.mjs). A band outside both is
+   counted as a long shot rather than dropped — an unlabelled item still shipped,
+   and a tally that silently omits it under-reports the day. */
+const TALLY_BANDS = ['paydirt', 'look', 'longshot', 'Must read', 'Read', 'Skim'];
+
 export function tallyOf(items) {
   if (!items.length) return '';
-  const n = { paydirt: 0, look: 0, longshot: 0 };
-  for (const it of items) n[it.band || 'longshot']++;
+  const n = { paydirt: 0, look: 0, longshot: 0, 'Must read': 0, Read: 0, Skim: 0 };
+  for (const it of items) n[TALLY_BANDS.includes(it.band) ? it.band : 'longshot']++;
+  /* The top band is the pay-dirt line for a z feed and the must-read line for a
+     relevance feed; both answer the same question — did anything exceptional
+     arrive — so both lead the sentence, and everything below them is the rest. */
+  const top = [
+    n.paydirt ? `${n.paydirt} pay dirt` : '',
+    n['Must read'] ? `${n['Must read']} must read` : '',
+  ].filter(Boolean).join(' · ');
   const rest = [
     n.look ? `${n.look} worth a look` : '',
     n.longshot ? `${n.longshot} long shot${n.longshot === 1 ? '' : 's'}` : '',
+    n.Read ? `${n.Read} to read` : '',
+    n.Skim ? `${n.Skim} to skim` : '',
   ].filter(Boolean).join(' · ');
-  if (!n.paydirt) return `No pay dirt today${rest ? ' — ' + rest : ''}.`;
-  return [`${n.paydirt} pay dirt`, rest].filter(Boolean).join(' · ') + '.';
+  if (!top) return `No pay dirt today${rest ? ' — ' + rest : ''}.`;
+  return [top, rest].filter(Boolean).join(' · ') + '.';
 }
 
 /**
@@ -521,8 +537,33 @@ export function archiveEntry(items) {
          page reading the archive falls back to the flat field it always read —
          which is why this is a side car and not a replacement. */
       ...mathFields(e),
+      /* The ranking pipeline's own fields, and only when the item actually
+         carries them. A feed built by `preset-feed` has none of these keys, so
+         its archive records are byte-identical to before — the spread adds
+         nothing rather than adding a row of nulls to every stockpiled day. */
+      ...rankFields(it),
     };
   });
+}
+
+/**
+ * The fields `rank.mjs` adds to an item, carried into the stockpile unchanged.
+ *
+ * `undefined` means "this feed never had the field" and is left out; `null`
+ * means "the grader was not available" and is kept, because the difference
+ * between an ungraded paper and one graded 1 is the difference between no
+ * signal and a bad one.
+ */
+function rankFields(it) {
+  const out = {};
+  for (const key of ['relevance', 'novelty', 'redundancy', 'z_ref']) {
+    if (it[key] !== undefined) out[key] = it[key] === null ? null : Number(it[key]);
+  }
+  if (it.nearest_seed !== undefined) out.nearest_seed = it.nearest_seed || '';
+  if (it.refs !== undefined) out.refs = it.refs || [];
+  if (it.axis !== undefined) out.axis = it.axis || '';
+  if (it.actions !== undefined) out.actions = it.actions || [];
+  return out;
 }
 
 /** The `_html` renderings an entry actually has, or nothing. */
@@ -543,9 +584,15 @@ function mathFields(e) {
  * than appending to it — the workflow can be re-run by hand after a failure,
  * and a stockpile that shows a day twice is worse than one that shows it late.
  */
-export function mergeMonth(prior, date, feeds) {
+export function mergeMonth(prior, date, feeds, summary) {
   const days = { ...(prior?.days || {}) };
-  days[date] = feeds;
+  const day = { ...feeds };
+  /* The day-level summary sits beside the feeds, under the date, because it is
+     a fact about the day and not about any one preset. `undefined` means the
+     caller has no summary and the key is not written at all, so a preset-feed
+     day stays byte-identical to the one it wrote before this existed. */
+  if (summary !== undefined) day.summary = summary;
+  days[date] = day;
   const ordered = {};
   for (const d of Object.keys(days).sort()) ordered[d] = days[d];
   return { month: date.slice(0, 7), days: ordered };
@@ -565,9 +612,13 @@ export function archiveIndex(months) {
       month: m,
       days: Object.keys(days).sort().reverse().map((date) => ({
         date,
-        feeds: Object.fromEntries(Object.entries(days[date]).map(([slug, f]) => [
-          slug, { items: f.items.length, paydirt: f.items.filter((i) => i.band === 'paydirt').length },
-        ])),
+        /* Only the feeds, not the day's own `summary` string that rank.mjs
+           stores beside them — a non-object entry has no items to count. */
+        feeds: Object.fromEntries(Object.entries(days[date])
+          .filter(([, f]) => f && typeof f === 'object')
+          .map(([slug, f]) => [
+            slug, { items: f.items.length, paydirt: f.items.filter((i) => i.band === 'paydirt').length },
+          ])),
       })),
     });
   }
@@ -692,7 +743,7 @@ export function selectItems(scored, opts = {}) {
     .map((r) => ({ ...r, band: bandOf(r.z, { minZ, softZ }) }));
 }
 
-export function renderFeed({ preset, slug, items, site, builtOn }) {
+export function renderFeed({ preset, slug, items, site, builtOn, summary }) {
   const self = new URL(`feeds/${slug}.xml`, site).href;
   const digLink = new URL(`?preset=${encodeURIComponent(slug)}`, site).href;
   const tally = tallyOf(items);
@@ -719,13 +770,17 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
     `    <title>${xmlEscape('The Dig — ' + (preset.name || slug))}</title>`,
     `    <link>${xmlEscape(digLink)}</link>`,
     `    <atom:link href="${xmlEscape(self)}" rel="self" type="application/rss+xml"/>`,
-    /* The tally rides in the description as well as in its own element: a
-       reader shows the description and never sees arxave:*, and the one thing
-       worth knowing before opening an item is whether the top band is empty. */
+    /* The summary and the tally ride in the description as well as in their own
+       elements: a reader shows the description and never sees arxave:*, and the
+       two things worth knowing before opening an item are what the day held and
+       whether the top band is empty. `summary` is the ranking pipeline's daily
+       line and is absent for a preset feed, so those files are unchanged. */
     `    <description>${xmlEscape(
       (preset.blurb || '') +
       ` Today's arXiv announcement, ranked against the ${preset.name || slug} preset.` +
+      (summary ? ' ' + summary : '') +
       (tally ? ' ' + tally : ''))}</description>`,
+    ...(summary ? [`    <arxave:summary>${xmlEscape(summary)}</arxave:summary>`] : []),
     ...(tally ? [`    <arxave:tally>${xmlEscape(tally)}</arxave:tally>`] : []),
     '    <language>en-us</language>',
     `    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>`,
@@ -759,7 +814,14 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
        to trust everything after it, and an unenriched item has nothing else on
        that line at all — so the band is what guarantees a first line exists. */
     const band = it.band || 'longshot';
-    const bandChip = `<strong class="band band-${band}">${xmlEscape(BAND_LABEL[band])}</strong>`;
+    /* Two vocabularies reach this line. A preset feed's bands are the slugs
+       `bandOf` returns and BAND_LABEL names; the ranking pipeline's are the
+       relevance labels `bandOfRelevance` returns, which name themselves. The
+       element carries the slug either way, because the stylesheet builds its
+       class from it and a space in a class name is not a class name. */
+    const bandSlug = String(band).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const bandLabel = BAND_LABEL[band] || band;
+    const bandChip = `<strong class="band band-${bandSlug}">${xmlEscape(bandLabel)}</strong>`;
     const said = e
       ? (e.kind ? xmlEscape(e.kind) : '') +
         (e.result ? `${e.kind ? ' — ' : ''}${fieldHtml(e, 'result')}` : '')
@@ -813,8 +875,8 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
          parsing RFC-822 — the XSL below is XSLT 1.0, which has no date
          arithmetic at all, and the archive wants a sortable key anyway. */
       it.published ? `      <arxave:announced>${xmlEscape(it.published)}</arxave:announced>` : '',
-      `      <arxave:band>${band}</arxave:band>`,
-      `      <arxave:bandname>${xmlEscape(BAND_LABEL[band])}</arxave:bandname>`,
+      `      <arxave:band>${bandSlug}</arxave:band>`,
+      `      <arxave:bandname>${xmlEscape(bandLabel)}</arxave:bandname>`,
       `      <arxave:grade>${it.grade.toFixed(3)}</arxave:grade>`,
       Number.isFinite(it.z) ? `      <arxave:z>${it.z.toFixed(1)}</arxave:z>` : '',
       it.matched ? `      <arxave:matched>${xmlEscape(it.matched.label)}</arxave:matched>` : '',
@@ -841,6 +903,21 @@ export function renderFeed({ preset, slug, items, site, builtOn }) {
         ? `      <arxave:figurecaptionmath>${captionMath}</arxave:figurecaptionmath>` : '',
       e?.tools?.length
         ? `      <arxave:tools>${xmlEscape(e.tools.join(' · '))}</arxave:tools>` : '',
+      /* The ranking pipeline's own fields, emitted only when the item carries
+         them so a preset feed's XML is unchanged. `relevance`/`novelty` are
+         null when the grader was unavailable and are then omitted rather than
+         written as an empty number a consumer would have to special-case. */
+      Number.isFinite(it.relevance) ? `      <arxave:relevance>${it.relevance}</arxave:relevance>` : '',
+      Number.isFinite(it.novelty) ? `      <arxave:novelty>${it.novelty}</arxave:novelty>` : '',
+      Number.isFinite(it.redundancy)
+        ? `      <arxave:redundancy>${it.redundancy.toFixed(2)}</arxave:redundancy>` : '',
+      Number.isFinite(it.z_ref) ? `      <arxave:zref>${it.z_ref.toFixed(1)}</arxave:zref>` : '',
+      it.nearest_seed ? `      <arxave:nearestseed>${xmlEscape(it.nearest_seed)}</arxave:nearestseed>` : '',
+      it.axis ? `      <arxave:axis>${xmlEscape(it.axis)}</arxave:axis>` : '',
+      ...(it.refs || []).map((id) => `      <arxave:ref>${xmlEscape(id)}</arxave:ref>`),
+      ...(it.actions || []).map((a) =>
+        `      <arxave:action type="${xmlEscape(a.type)}" title="${xmlEscape(a.title)}">` +
+        `${xmlEscape(a.body)}</arxave:action>`),
       `      <arxave:abstract>${xmlEscape(it.abstract)}</arxave:abstract>`,
     ].filter(Boolean);
 
