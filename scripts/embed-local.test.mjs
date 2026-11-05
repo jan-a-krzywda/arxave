@@ -9,8 +9,8 @@
  * local encoder that disagrees by a hair does not throw — it files a second
  * geometry under the same key, and every later reader trusts it. So the
  * expected values below are hand-computed from the arithmetic the hosted
- * function runs (mean over the token grid, then L2), not read back from this
- * module's output.
+ * function runs (take `[CLS]`, token 0 of the grid, then L2), not read back
+ * from this module's output.
  *
  * The model is never loaded: a fake `pipelineFactory` hands back a token grid
  * the test already knows, so what is under test is this module's pooling and
@@ -24,7 +24,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { DIM, MODEL } from './warm-dig.mjs';
-import { chooseEmbedder, embedLocal, meanPool } from './embed-local.mjs';
+import { chooseEmbedder, clsPool, embedLocal } from './embed-local.mjs';
 
 /** A token: DIM wide, with `values` laid into the leading indices. */
 function token(...values) {
@@ -56,42 +56,44 @@ function fakePipeline(table) {
 
 /* ── The arithmetic ─────────────────────────────────────────────────────── */
 
-test('a stone is the mean over its tokens', () => {
-  // (e0 + e1) / 2 = (0.5, 0.5, 0, …), unit-normalised → 1/√2 on each.
-  const v = meanPool([token(1, 0), token(0, 1)]);
+test('a stone is its [CLS] token, not the mean over its tokens', () => {
+  /* Token 0 is [CLS] and token 1 is deliberately different, so a mean-pooling
+     implementation cannot pass this: it would land between the two, at 1/√2
+     on indices 0 and 1. [CLS] is (1, 0, 0, …) → unit-normalised, itself. */
+  const v = clsPool([token(1, 0), token(0, 1)]);
   assert.equal(v.length, DIM);
-  assert.ok(Math.abs(v[0] - Math.SQRT1_2) < 1e-6);
-  assert.ok(Math.abs(v[1] - Math.SQRT1_2) < 1e-6);
+  assert.equal(v[0], 1);
+  assert.equal(v[1], 0);
   assert.equal(v[2], 0);
 });
 
 test('a single-token row is that token, normalised', () => {
   // (3, 4, 0, …) → (0.6, 0.8, 0, …).
-  const v = meanPool([token(3, 4)]);
+  const v = clsPool([token(3, 4)]);
   assert.ok(Math.abs(v[0] - 0.6) < 1e-6);
   assert.ok(Math.abs(v[1] - 0.8) < 1e-6);
 });
 
 test('every stone is a unit vector, whatever the token magnitudes', () => {
   for (const tokens of [[token(3, 4)], [token(1), token(2)], [token(5, 0), token(0, 12)]]) {
-    const v = meanPool(tokens);
+    const v = clsPool(tokens);
     let sum = 0;
     for (const x of v) sum += x * x;
     assert.ok(Math.abs(Math.sqrt(sum) - 1) < 1e-6);
   }
 });
 
-test('a grid that pools to zero stays zero rather than NaN', () => {
+test('a zero [CLS] stays zero rather than NaN', () => {
   // A zero vector cannot be normalised; NaN would poison every cosine it
   // touched instead of scoring 0.
-  const v = meanPool([token(0), token(0)]);
+  const v = clsPool([token(0), token(0)]);
   assert.ok(v.every(Number.isFinite));
   assert.equal(v[0], 0);
 });
 
 test('a token of the wrong width is refused, not filed under the cache key', () => {
   // A 512-wide row under a 768-wide key poisons every read, silently.
-  assert.throws(() => meanPool([[1, 0, 0]]), /expected 768/);
+  assert.throws(() => clsPool([[1, 0, 0]]), /expected 768/);
 });
 
 /* ── embedLocal ─────────────────────────────────────────────────────────── */
@@ -107,9 +109,9 @@ test('one DIM-long unit vector per text, in order', async () => {
     assert.ok(v instanceof Float32Array);
     assert.equal(v.length, DIM);
   }
-  assert.ok(Math.abs(out[0][0] - Math.SQRT1_2) < 1e-6);   // a: mean of e0, e1
-  assert.ok(Math.abs(out[0][1] - Math.SQRT1_2) < 1e-6);
-  assert.equal(out[1][5], 1);                              // b: e5
+  assert.equal(out[0][0], 1);                             // a: [CLS] = e0
+  assert.equal(out[0][1], 0);                             // a mean would be 1/√2 here
+  assert.equal(out[1][5], 1);                              // b: [CLS] = e5
 });
 
 test('the extractor is asked for the token grid, not a pooled answer', async () => {
@@ -122,11 +124,12 @@ test('the extractor is asked for the token grid, not a pooled answer', async () 
 
 test('the grid may be plain arrays, as tolist() returns', async () => {
   const { pipelineFactory } = fakePipeline({
-    a: [Array.from(token(1, 0)), Array.from(token(0, 1))],
+    a: [Array.from(token(3, 4)), Array.from(token(0, 1))],
   });
   const [v] = await embedLocal(['a'], { pipelineFactory });
-  assert.ok(Math.abs(v[0] - Math.SQRT1_2) < 1e-6);
-  assert.ok(Math.abs(v[1] - Math.SQRT1_2) < 1e-6);
+  // [CLS] (3, 4, 0, …) → (0.6, 0.8, 0, …); the mean would have been (0.5, 0.5).
+  assert.ok(Math.abs(v[0] - 0.6) < 1e-6);
+  assert.ok(Math.abs(v[1] - 0.8) < 1e-6);
 });
 
 test('a run longer than one batch is chunked, and the rows stay in order', async () => {

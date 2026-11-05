@@ -15,20 +15,15 @@
  * hair does not throw — it files a second geometry under the same key, and
  * every later reader trusts it. So this is a drop-in for `embedChunk`: same
  * text in, the same 768-dim unit vector out. The arithmetic is the hosted
- * function's (`toVectors` in supabase/functions/embed/hf.ts): pool the token
- * grid, then L2-normalise.
+ * function's (`toVectors` in supabase/functions/embed/hf.ts): take `[CLS]`
+ * from the token grid, then L2-normalise.
  *
- * WHY MEAN POOLING, AND THE TENSION. INTERFACES.md, and the pre-#68 warm-dig
- * this file is ported from, both say mean pooling, and that is what this does.
- * The hosted function's `toVectors` pools on `[CLS]` instead — its own comment
- * insists mean-pooling a CLS-trained checkpoint is the classic way to get
- * SPECTER2 wrong. The two cannot both be right; the contract is binding, so
- * the mean it is.
- *
- *   PROBE — pooling. If the hosted function is the oracle rather than the
- *   contract, the fix is one line: take token 0 instead of the mean in
- *   `meanPool`. Flagged rather than chosen silently, because it is the
- *   difference between a warm cache and a poisoned one.
+ * WHY CLS POOLING, NOT THE MEAN. SPECTER2 is trained with a CLS objective: the
+ * sentence representation is token 0, `[CLS]`. Averaging the token axis
+ * instead returns a vector of the right shape and the wrong geometry — nothing
+ * throws, the dimension guard passes, and every cosine taken against a warmed
+ * row is quietly off. `toVectors` takes token 0, so this does too; the mean
+ * would file a second geometry under the one shared cache key.
  *
  * WHY THE DEPENDENCY IS OPTIONAL. `@huggingface/transformers` is a 32 MB native
  * pull, and the test suite has to run without it: the tests inject a
@@ -73,22 +68,21 @@ export async function defaultPipelineFactory() {
 }
 
 /**
- * A token grid → one vector: the mean over the token axis, L2-normalised.
+ * A token grid → one vector: token 0, `[CLS]`, L2-normalised. The row the
+ * hosted `toVectors` takes, for the reason in the header.
  *
  * A wrong dimension throws rather than filing a short row — the cache is keyed
  * on `DIM`, and a 512-wide vector under a 768-wide key poisons every read. A
- * grid that pools to the zero vector is left at zero rather than NaN, which
- * would poison every cosine it touched instead of scoring 0.
+ * `[CLS]` of all zeros is left at zero rather than NaN, which would poison
+ * every cosine it touched instead of scoring 0.
  */
-export function meanPool(tokens) {
-  const out = new Float32Array(DIM);
-  for (const token of tokens) {
-    if (token.length !== DIM) {
-      throw new Error(`the model returned ${token.length} dims, expected ${DIM}`);
-    }
-    for (let k = 0; k < DIM; k++) out[k] += token[k];
+export function clsPool(tokens) {
+  const cls = tokens[0];
+  if (!cls) throw new Error(`the model returned no tokens, expected ${DIM} dims`);
+  if (cls.length !== DIM) {
+    throw new Error(`the model returned ${cls.length} dims, expected ${DIM}`);
   }
-  if (tokens.length) for (let k = 0; k < DIM; k++) out[k] /= tokens.length;
+  const out = new Float32Array(cls);
   let sum = 0;
   for (let k = 0; k < DIM; k++) sum += out[k] * out[k];
   const norm = Math.sqrt(sum);
@@ -116,7 +110,7 @@ export async function embedLocal(texts, { pipelineFactory = defaultPipelineFacto
     if (grid.length !== chunk.length) {
       throw new Error(`the model returned ${grid.length} rows for ${chunk.length} texts`);
     }
-    for (const tokens of grid) out.push(meanPool(tokens));
+    for (const tokens of grid) out.push(clsPool(tokens));
   }
   return out;
 }

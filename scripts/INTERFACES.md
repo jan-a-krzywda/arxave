@@ -95,8 +95,9 @@ export async function embedLocal(texts, { pipelineFactory })  // -> Float32Array
 
 Drop-in for `embedChunk(texts, embedUrl)` from `warm-dig.mjs`: same text in, same vector out, so the cache key
 (`cacheKeyText`, `MODEL`) stays valid. Loads `allenai/specter2_base` with `@huggingface/transformers` (the
-pre-PR #68 history of `warm-dig.mjs` shows how it used to be done: `git log -S transformers`). Mean pooling and
-L2 normalisation must match what the hosted `embed` function returns. Add a `--embed-local` flag to
+pre-PR #68 history of `warm-dig.mjs` shows how it used to be done: `git log -S transformers`). CLS pooling
+(token 0 of the token grid, the row `toVectors` takes) and L2 normalisation must match what the hosted
+`embed` function returns. Add a `--embed-local` flag to
 `warm-dig.mjs` and `preset-feed.mjs` and `rank.mjs` entry points that switches `embedChunk` to `embedLocal`.
 The dependency `@huggingface/transformers` is the ONE allowed new dependency, added to `scripts/package.json`
 `optionalDependencies` so the test suite runs without it (tests inject `pipelineFactory`).
