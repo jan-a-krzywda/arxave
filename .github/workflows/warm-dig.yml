@@ -59,6 +59,21 @@ jobs:
       # unauthenticated huggingface.co pull from shared CI egress gets 429s.
       # The warmer calls the hosted `embed` function now, so the runner
       # downloads nothing and holds no model.
+      #
+      # EXCEPT ON THE NIGHTS THE WARM RUNS `--embed-local`, WHICH IT DOES NOW.
+      # That flag is the fallback for when the hosted `embed` function is out of
+      # inference credit — it answers 402 (reported as 502) and the whole warm
+      # fails (see scripts/embed-local.mjs). Running the model here brings the
+      # 429 straight back: one SPECTER2 pull per run from shared CI egress. So
+      # the model is cached again. The path is the one embed-local.mjs parks it
+      # in — `scripts/.model-cache`, deliberately outside node_modules, which
+      # `npm install` recreates on every run — and the key is the model name, so
+      # a model change misses and can never file a second geometry under the
+      # cache key every vector is looked up by.
+      - uses: actions/cache@v4
+        with:
+          path: scripts/.model-cache
+          key: hf-allenai-specter2_base
 
       - name: Install warmer dependencies
         working-directory: scripts
@@ -70,7 +85,7 @@ jobs:
       # feed recommend papers the page would not. Both report success.
       - name: Check the parse and the blend still match the browser's
         working-directory: scripts
-        run: node --test warm-dig.test.mjs preset-feed.test.mjs enrich.test.mjs fulltext.test.mjs demath.test.mjs mathml.test.mjs
+        run: node --test warm-dig.test.mjs preset-feed.test.mjs enrich.test.mjs fulltext.test.mjs demath.test.mjs mathml.test.mjs pack.test.mjs score.test.mjs llm.test.mjs embed-local.test.mjs background.test.mjs rank.test.mjs
 
       - name: Warm
         working-directory: scripts
@@ -82,9 +97,10 @@ jobs:
           EMBED_URL: ${{ vars.ARXAVE_EMBED_URL }}
         run: |
           node warm-dig.mjs \
-            --categories "${{ inputs.categories || vars.ARXAVE_WARM_CATEGORIES || 'quant-ph, cond-mat.mes-hall, cond-mat.str-el, cs.AI, cs.LG' }}" \
+            --categories "${{ inputs.categories || vars.ARXAVE_WARM_CATEGORIES || 'quant-ph, cond-mat.mes-hall' }}" \
             --lookback "${{ inputs.lookback || vars.ARXAVE_WARM_LOOKBACK || '2' }}" \
             --presets ../docs/presets \
+            --embed-local \
             ${{ inputs.dry_run && '--dry-run' || '' }}
 
       # Runs after the warm, so in the normal case every vector it needs is a
@@ -99,6 +115,44 @@ jobs:
           # abstracts and no verdict line — the enricher fails soft by design.
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: node preset-feed.mjs --presets ../docs/presets --out ../docs/feeds
+
+      # The ranking pipeline, wired in beside the preset feeds. It writes the
+      # same `docs/feeds` tree (ranked items carry `relevance`, `novelty`,
+      # `z_ref`, `nearest_seed`, `refs`, `axis`, `actions`), so the commit and
+      # Pages steps below pick it up with no change.
+      #
+      # `continue-on-error: true` IS THE POINT, NOT A SHRUG. The preset feeds
+      # above are the site's existing product and they are already built by the
+      # time this runs; the rank pack is the new thing and the likeliest to
+      # break — a grader endpoint that moved, an unbuilt background, a model
+      # pull that failed. A failure here must cost the ranking and nothing else,
+      # so it can never fail the job and take the feeds' commit down with it.
+      # The step still reports red in the run's log, which is how a break gets
+      # noticed; it just does not block.
+      #
+      # ONE-TIME SETUP, NOT PER RUN. `rank.mjs` measures against a fixed
+      # yardstick, `criteria/quantum-systems/background.json`, built once and
+      # committed with
+      #   node background.mjs --pack ../criteria/quantum-systems \
+      #     --config ../config/quantum-systems.yml \
+      #     --out ../criteria/quantum-systems/background.json --embed-local
+      # (see scripts/INTERFACES.md) — it is not a nightly product and this job
+      # never rebuilds it. If it is missing, `rank.mjs` warns and falls back to
+      # the day's own `z_day`, so an absent file weakens the ranking rather than
+      # failing the run.
+      - name: Rank the quantum-systems pack
+        if: ${{ !inputs.dry_run }}
+        continue-on-error: true
+        working-directory: scripts
+        env:
+          DIG_CACHE_URL: ${{ vars.ARXAVE_DIG_CACHE_URL }}
+          # The grader's key, looked up by the env name in
+          # `config/quantum-systems.yml` (`llm.api_key_env: SAIL_API_KEY`).
+          # Without it `rank.mjs` ships the shortlist ungraded, not empty.
+          SAIL_API_KEY: ${{ secrets.SAIL_API_KEY }}
+          # Enrichment, as in the preset-feed step above: optional, fails soft.
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: node rank.mjs --config ../config/quantum-systems.yml --out ../docs/feeds --embed-local
 
       # The commit step below only ever runs on main, which is right — see the
       # ref guard there — but it also means a branch dispatch builds the feeds
