@@ -1,0 +1,49 @@
+# Ranking pipeline knobs. Read by scripts/rank.mjs. No secrets: keys are looked up by env name.
+criterion: quantum-systems   # active criterion pack in criteria/<name>/
+
+feed:
+  categories: [quant-ph, cond-mat.mes-hall]
+  lookback_weekdays: 2
+
+shortlist:
+  max: 20
+  min: 3
+  sensitivity: normal        # strict | normal | broad
+  tau_ref: null              # explicit override; null = from sensitivity
+  tau_seed: null             # explicit override; null = from sensitivity
+
+sensitivity_presets:
+  strict: { background_pass: 0.005 }
+  normal: { background_pass: 0.01 }
+  broad:  { background_pass: 0.03 }
+
+llm:
+  provider: openai-compatible
+  base_url: "https://sail.invalid/v1"      # PLACEHOLDER: set the real endpoint
+  model: deepseek-ai/DeepSeek-V4.1-Flash-1017
+  api_key_env: SAIL_API_KEY
+  grade_read: abstract+intro               # abstract | abstract+intro | trim
+  grade_chars: 8000
+  enrich_read: trim                        # abstract | trim
+  enrich_chars: 24000
+
+store:
+  relevance: 4
+  novelty: 4
+  novelty_min_relevance: 3
+
+ship:
+  relevance: 3
+  max: 8
+  longshots_on_empty: 2
+
+axes:
+  A: 1.0
+  B: 1.0
+  C: 1.0
+  D: 1.0
+  E: 1.0
+  F: 1.0
+  G: 1.0
+  H: 1.0
+  I: 1.0

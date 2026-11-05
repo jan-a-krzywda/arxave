@@ -1,0 +1,551 @@
+axes:
+  A:
+    name: Spin qubit devices and figures of merit
+    touchstones:
+    - text: exchange gates and two-qubit logic in semiconductor spin qubits
+      weight: 1.0
+    - text: single-qubit and two-qubit gate fidelity above 99% in silicon or germanium quantum dots
+      weight: 1.0
+    - text: spin qubit readout, single-shot fidelity and radio-frequency reflectometry
+      weight: 1.0
+    - text: coherence time and charge noise limits for spin qubits
+      weight: 1.0
+    - text: shared control and crossbar arrays of many quantum dots
+      weight: 1.0
+    seeds:
+    - first_author: Burkard
+      year: 2023
+      title: Semiconductor spin qubits
+      weight: 1.0
+      doi: 10.1103/revmodphys.95.025003
+      anchor: Review, start here
+    - first_author: Zwanenburg
+      year: 2013
+      title: Silicon quantum electronics
+      weight: 1.0
+      doi: 10.1103/revmodphys.85.961
+      anchor: Review, Si
+    - first_author: Scappucci
+      year: 2020
+      title: The germanium quantum information route
+      weight: 1.0
+      doi: 10.1038/s41578-020-00262-z
+      anchor: Review, Ge
+    - first_author: Veldhorst
+      year: 2015
+      title: A two-qubit logic gate in silicon
+      weight: 1.0
+      doi: 10.1038/nature15263
+      anchor: 2Q gate
+    - first_author: Watson
+      year: 2018
+      title: A programmable two-qubit quantum processor in silicon
+      weight: 1.0
+      doi: 10.1038/nature25766
+      anchor: Programmability
+    - first_author: Yoneda
+      year: 2017
+      title: A quantum-dot spin qubit with coherence limited by charge noise and fidelity higher than 99.9%
+      weight: 1.0
+      doi: 10.1038/s41565-017-0014-x
+      anchor: 1Q fidelity
+    - first_author: Xue
+      year: 2022
+      title: Quantum logic with spin qubits crossing the surface code threshold
+      weight: 1.0
+      doi: 10.1038/s41586-021-04273-w
+      anchor: 2Q >99%
+    - first_author: Noiri
+      year: 2022
+      title: Fast universal quantum gate above the fault-tolerance threshold in silicon
+      weight: 1.0
+      doi: 10.1038/s41586-021-04182-y
+      anchor: 2Q speed and fidelity
+    - first_author: Mądzik
+      year: 2022
+      title: Precision tomography of a three-qubit donor quantum processor in silicon
+      weight: 1.0
+      doi: 10.1038/s41586-021-04292-7
+      anchor: Donors, GST
+    - first_author: Philips
+      year: 2022
+      title: Universal control of a six-qubit quantum processor in silicon
+      weight: 1.0
+      doi: 10.1038/s41586-022-05117-x
+      anchor: Multi-qubit control
+    - first_author: Hendrickx
+      year: 2021
+      title: A four-qubit germanium quantum processor
+      weight: 1.0
+      doi: 10.1038/s41586-021-03332-6
+      anchor: Ge, 2D
+    - first_author: Borsoi
+      year: 2023
+      title: Shared control of a 16 semiconductor quantum dot crossbar array
+      weight: 1.0
+      doi: 10.1038/s41565-023-01491-3
+      anchor: 16 dots, upgrade path
+    - first_author: Zwerver
+      year: 2022
+      title: Qubits made by advanced semiconductor manufacturing
+      weight: 1.0
+      doi: 10.1038/s41928-022-00727-9
+      anchor: Industrial fab
+    - first_author: Elzerman
+      year: 2004
+      title: Single-shot read-out of an individual electron spin in a quantum dot
+      weight: 1.0
+      doi: 10.1038/nature02693
+      anchor: Readout
+    - first_author: Harvey-Collard
+      year: 2018
+      title: High-fidelity single-shot readout for a spin qubit via an enhanced latching mechanism
+      weight: 1.0
+      doi: 10.1103/physrevx.8.021046
+      anchor: Readout ≥97%
+    - first_author: Vigneau
+      year: 2023
+      title: Probing quantum devices with radio-frequency reflectometry
+      weight: 1.0
+      doi: 10.1063/5.0088229
+      anchor: RF readout chain
+  B:
+    name: Gate and device benchmarking
+    touchstones:
+    - text: randomized benchmarking, interleaved and cycle benchmarking of gate fidelity
+      weight: 1.0
+    - text: gate set tomography of a qubit device
+      weight: 1.0
+    - text: quantum volume and volumetric benchmarks for quantum computers
+      weight: 1.0
+    seeds:
+    - first_author: Knill
+      year: 2008
+      title: Randomized benchmarking of quantum gates
+      weight: 1.0
+      doi: 10.1103/physreva.77.012307
+      anchor: RB origin
+    - first_author: Magesan
+      year: 2011
+      title: Scalable and robust randomized benchmarking of quantum processes
+      weight: 1.0
+      doi: 10.1103/physrevlett.106.180504
+      anchor: Standard RB
+    - first_author: Magesan
+      year: 2012
+      title: Efficient measurement of quantum gate error by interleaved randomized benchmarking
+      weight: 1.0
+      doi: 10.1103/physrevlett.109.080505
+      anchor: Interleaved RB
+    - first_author: Córcoles
+      year: 2013
+      title: Process verification of two-qubit quantum gates by randomized benchmarking
+      weight: 1.0
+      arxiv: '1210.7011'
+      anchor: 2Q RB
+    - first_author: Xue
+      year: 2019
+      title: Benchmarking gate fidelities in a Si/SiGe two-qubit device
+      weight: 1.0
+      doi: 10.1103/physrevx.9.021011
+      anchor: spin GST and RB
+    - first_author: Blume-Kohout
+      year: 2017
+      title: Demonstration of qubit operations below a rigorous fault tolerance threshold with gate set tomography
+      weight: 1.0
+      doi: 10.1038/ncomms14485
+      anchor: GST
+    - first_author: Nielsen
+      year: 2021
+      title: Gate set tomography
+      weight: 1.0
+      doi: 10.22331/q-2021-10-05-557
+      anchor: GST tutorial
+    - first_author: Erhard
+      year: 2019
+      title: Characterizing large-scale quantum computers via cycle benchmarking
+      weight: 1.0
+      doi: 10.1038/s41467-019-13068-7
+      anchor: Many-qubit errors
+    - first_author: Cross
+      year: 2019
+      title: Validating quantum computers using randomized model circuits
+      weight: 1.0
+      doi: 10.1103/physreva.100.032328
+      anchor: Quantum volume
+    - first_author: Proctor
+      year: 2021
+      title: Measuring the capabilities of quantum computers
+      weight: 1.0
+      doi: 10.1038/s41567-021-01409-7
+      anchor: Volumetric benchmarks
+  C:
+    name: Application benchmarks
+    touchstones:
+    - text: application-oriented benchmarks of quantum computers
+      weight: 1.0
+    - text: GHZ state fidelity and parity oscillations on a quantum processor
+      weight: 1.0
+    - text: QAOA MaxCut and VQE benchmarked on hardware
+      weight: 1.0
+    - text: Bernstein-Vazirani algorithm success probability on noisy devices
+      weight: 1.0
+    seeds:
+    - first_author: Martiel
+      year: 2021
+      title: Benchmarking quantum coprocessors in an application-centric, hardware-agnostic, and scalable way
+      weight: 1.0
+      doi: 10.1109/tqe.2021.3090207
+      anchor: Q-score
+    - first_author: Lubinski
+      year: 2023
+      title: Application-oriented performance benchmarks for quantum computing
+      weight: 1.0
+      doi: 10.1109/tqe.2023.3253761
+      anchor: QED-C suite
+    - first_author: Quetschlich
+      year: 2023
+      title: 'MQT Bench: benchmarking software and design automation tools for quantum computing'
+      weight: 1.0
+      doi: 10.22331/q-2023-07-20-1062
+      anchor: MQT Bench
+    - first_author: Mooney
+      year: 2021
+      title: Generation and verification of 27-qubit GHZ states in a superconducting quantum computer
+      weight: 1.0
+      doi: 10.1088/2399-6528/ac1df7
+      anchor: GHZ
+    - first_author: Wei
+      year: 2020
+      title: Verifying multipartite entangled GHZ states via multiple quantum coherences
+      weight: 1.0
+      doi: 10.1103/physreva.101.032343
+      anchor: MQC
+    - first_author: Monz
+      year: 2011
+      title: '14-qubit entanglement: creation and coherence'
+      weight: 1.0
+      doi: 10.1103/physrevlett.106.130506
+      anchor: Parity oscillations
+    - first_author: Leibfried
+      year: 2005
+      title: Creation of a six-atom 'Schrödinger cat' state
+      weight: 1.0
+      doi: 10.1038/nature04251
+      anchor: Parity oscillations
+    - first_author: Vidal
+      year: 2003
+      title: Efficient classical simulation of slightly entangled quantum computations
+      weight: 1.0
+      doi: 10.1103/physrevlett.91.147902
+      anchor: Why entanglement
+    - first_author: Farhi
+      year: 2014
+      title: A quantum approximate optimization algorithm
+      weight: 1.0
+      doi: 10.48550/arxiv.1411.4028
+      anchor: QAOA
+    - first_author: Peruzzo
+      year: 2014
+      title: A variational eigenvalue solver on a photonic quantum processor
+      weight: 1.0
+      doi: 10.1038/ncomms5213
+      anchor: VQE
+    - first_author: Cerezo
+      year: 2021
+      title: Variational quantum algorithms
+      weight: 1.0
+      doi: 10.1038/s42254-021-00348-9
+      anchor: VQA review
+    - first_author: Harrigan
+      year: 2021
+      title: Quantum approximate optimization of non-planar graph problems on a planar superconducting processor
+      weight: 1.0
+      doi: 10.1038/s41567-020-01105-y
+      anchor: QAOA MaxCut on hardware
+    - first_author: Bernstein
+      year: 1997
+      title: Quantum complexity theory
+      weight: 1.0
+      doi: 10.1137/s0097539796300921
+      anchor: BV origin
+    - first_author: Linke
+      year: 2017
+      title: Experimental comparison of two quantum computing architectures
+      weight: 1.0
+      doi: 10.1073/pnas.1618020114
+      anchor: BV on hardware
+    - first_author: Preskill
+      year: 2018
+      title: Quantum computing in the NISQ era and beyond
+      weight: 1.0
+      doi: 10.22331/q-2018-08-06-79
+      anchor: Context
+  D:
+    name: Calibration, tuning and drift
+    touchstones:
+    - text: automated tuning and calibration of quantum dot devices
+      weight: 1.0
+    - text: drift and charge-noise tracking with closed-loop recalibration of qubits
+      weight: 1.0
+    - text: calibration graphs and automated recalibration of a quantum processor
+      weight: 1.0
+    seeds:
+    - first_author: Zwolak
+      year: 2023
+      title: 'Colloquium: Advances in automation of quantum dot devices control'
+      weight: 1.0
+      doi: 10.1103/revmodphys.95.011006
+    - first_author: Moon
+      year: 2020
+      title: Machine learning enables completely automatic tuning of a quantum device faster than human experts
+      weight: 1.0
+      doi: 10.1038/s41467-020-17835-9
+    - first_author: Baart
+      year: 2016
+      title: Computer-automated tuning of semiconductor double quantum dots into the single-electron regime
+      weight: 1.0
+      doi: 10.1063/1.4952624
+    - first_author: Kelly
+      year: 2018
+      title: Physical qubit calibration on a directed acyclic graph
+      weight: 1.0
+      doi: 10.48550/arxiv.1803.03226
+  E:
+    name: Control electronics and cryogenics
+    touchstones:
+    - text: cryogenic control electronics and cryo-CMOS for spin qubits
+      weight: 1.0
+    - text: wiring, filtering and readout chain of a dilution-refrigerator quantum computer
+      weight: 1.0
+    - text: power budget and heat load of qubit control at scale
+      weight: 1.0
+    - text: spin qubit operation at elevated temperature
+      weight: 1.0
+    seeds:
+    - first_author: Vandersypen
+      year: 2017
+      title: 'Interfacing spin qubits in quantum dots and donors: hot, dense, and coherent'
+      weight: 1.0
+      doi: 10.1038/s41534-017-0038-y
+    - first_author: Reilly
+      year: 2015
+      title: Engineering the quantum-classical interface of solid-state qubits
+      weight: 1.0
+      doi: 10.1038/npjqi.2015.11
+    - first_author: Hornibrook
+      year: 2015
+      title: Cryogenic control architecture for large-scale quantum computing
+      weight: 1.0
+      doi: 10.1103/physrevapplied.3.024010
+    - first_author: Xue
+      year: 2021
+      title: CMOS-based cryogenic control of silicon quantum circuits
+      weight: 1.0
+      doi: 10.1038/s41586-021-03469-4
+    - first_author: Petit
+      year: 2020
+      title: Universal quantum logic in hot silicon qubits
+      weight: 1.0
+      doi: 10.1038/s41586-020-2170-7
+    - first_author: Yang
+      year: 2020
+      title: Operation of a silicon quantum processor unit cell above one kelvin
+      weight: 1.0
+      doi: 10.1038/s41586-020-2171-6
+    - first_author: Krinner
+      year: 2019
+      title: Engineering cryogenic setups for 100-qubit scale superconducting circuit systems
+      weight: 1.0
+      doi: 10.1140/epjqt/s40507-019-0072-0
+  F:
+    name: 'Software stack: compilers and pulse level'
+    touchstones:
+    - text: pulse-level programming and OpenQASM compilation for quantum processors
+      weight: 1.0
+    - text: noise-aware qubit mapping and routing on limited connectivity
+      weight: 1.0
+    - text: transpiler optimisation for native gate sets
+      weight: 1.0
+    seeds:
+    - first_author: Cross
+      year: 2022
+      title: 'OpenQASM 3: A broader and deeper quantum assembly language'
+      weight: 1.0
+      doi: 10.1145/3505636
+    - first_author: Li
+      year: 2019
+      title: Tackling the qubit mapping problem for NISQ-era quantum devices
+      weight: 1.0
+      doi: 10.1145/3297858.3304023
+    - first_author: Murali
+      year: 2019
+      title: Noise-adaptive compiler mappings for noisy intermediate-scale quantum computers
+      weight: 1.0
+      doi: 10.1145/3297858.3304075
+    - first_author: Alexander
+      year: 2020
+      title: 'Qiskit Pulse: programming quantum computers through the cloud with pulses'
+      weight: 1.0
+      doi: 10.1088/2058-9565/aba404
+    - first_author: Last
+      year: 2020
+      title: 'Quantum Inspire: QuTech''s platform for co-development and collaboration in quantum computing'
+      weight: 1.0
+      doi: 10.1117/12.2551853
+  G:
+    name: HPC-QC integration and resource management
+    touchstones:
+    - text: integrating quantum processors into HPC centres and job schedulers
+      weight: 1.0
+    - text: quantum resource management, queueing and QPU-as-a-resource
+      weight: 1.0
+    - text: hybrid quantum-classical workflows with HPC co-scheduling
+      weight: 1.0
+    - text: monitoring and software interfaces between HPC and quantum hardware
+      weight: 1.0
+    seeds:
+    - first_author: Britt
+      year: 2017
+      title: High-performance computing with quantum processing units
+      weight: 1.0
+      doi: 10.1145/3007651
+    - first_author: Humble
+      year: 2021
+      title: Quantum computers for high-performance computing
+      weight: 1.0
+      doi: 10.1109/mm.2021.3099140
+    - first_author: Schulz
+      year: 2022
+      title: 'Accelerating HPC with quantum computing: it is a software challenge too'
+      weight: 1.0
+      doi: 10.1109/mcse.2022.3221845
+    - first_author: Elsharkawy
+      year: 2025
+      title: 'Integration of quantum accelerators with HPC: a review of quantum programming tools'
+      weight: 1.0
+      doi: 10.1145/3743149
+  H:
+    name: Error correction route
+    touchstones:
+    - text: surface code and quantum error correction with spin qubits
+      weight: 1.0
+    - text: real-time decoding of error-correcting codes on classical hardware
+      weight: 1.0
+    - text: logical qubit overhead on limited-connectivity devices
+      weight: 1.0
+    seeds:
+    - first_author: Fowler
+      year: 2012
+      title: 'Surface codes: towards practical large-scale quantum computation'
+      weight: 1.0
+      doi: 10.1103/physreva.86.032324
+    - first_author: Takeda
+      year: 2022
+      title: Quantum error correction with silicon spin qubits
+      weight: 1.0
+      doi: 10.1038/s41586-022-04986-6
+  I:
+    name: NISQ algorithms
+    touchstones:
+    - text: variational quantum algorithms on noisy intermediate-scale devices
+      weight: 1.0
+    - text: 'quantum error mitigation: zero-noise extrapolation and probabilistic error cancellation'
+      weight: 1.0
+    - text: readout error mitigation
+      weight: 1.0
+    - text: trainability and barren plateaus of variational circuits
+      weight: 1.0
+    - text: quantum simulation of spin models on small quantum processors
+      weight: 1.0
+    seeds:
+    - first_author: Bharti
+      year: 2022
+      title: Noisy intermediate-scale quantum algorithms
+      weight: 1.0
+      doi: 10.1103/revmodphys.94.015004
+      anchor: Review, start here
+    - first_author: Endo
+      year: 2021
+      title: Hybrid quantum-classical algorithms and quantum error mitigation
+      weight: 1.0
+      doi: 10.7566/jpsj.90.032001
+      anchor: Review, hybrid
+    - first_author: Tilly
+      year: 2022
+      title: 'The variational quantum eigensolver: a review of methods and best practices'
+      weight: 1.0
+      doi: 10.1016/j.physrep.2022.08.003
+      anchor: VQE review
+    - first_author: Kandala
+      year: 2017
+      title: Hardware-efficient variational quantum eigensolver for small molecules and quantum magnets
+      weight: 1.0
+      doi: 10.1038/nature23879
+      anchor: VQE on hardware
+    - first_author: Grimsley
+      year: 2019
+      title: An adaptive variational algorithm for exact molecular simulations on a quantum computer
+      weight: 1.0
+      doi: 10.1038/s41467-019-10988-2
+      anchor: ADAPT-VQE
+    - first_author: Zhou
+      year: 2020
+      title: 'Quantum approximate optimization algorithm: performance, mechanism, and implementation on near-term devices'
+      weight: 1.0
+      doi: 10.1103/physrevx.10.021067
+      anchor: QAOA parameters
+    - first_author: McClean
+      year: 2018
+      title: Barren plateaus in quantum neural network training landscapes
+      weight: 1.0
+      doi: 10.1038/s41467-018-07090-4
+      anchor: Trainability limit
+    - first_author: Temme
+      year: 2017
+      title: Error mitigation for short-depth quantum circuits
+      weight: 1.0
+      doi: 10.1103/physrevlett.119.180509
+      anchor: ZNE and PEC origin
+    - first_author: Kandala
+      year: 2019
+      title: Error mitigation extends the computational reach of a noisy quantum processor
+      weight: 1.0
+      doi: 10.1038/s41586-019-1040-7
+      anchor: ZNE on hardware
+    - first_author: Giurgică-Tiron
+      year: 2020
+      title: Digital zero noise extrapolation for quantum error mitigation
+      weight: 1.0
+      doi: 10.1109/qce49297.2020.00045
+      anchor: Gate-level ZNE, no pulse access
+    - first_author: Nation
+      year: 2021
+      title: Scalable mitigation of measurement errors on quantum computers
+      weight: 1.0
+      doi: 10.1103/prxquantum.2.040326
+      anchor: Readout mitigation (97% readout)
+    - first_author: Takagi
+      year: 2022
+      title: Fundamental limits of quantum error mitigation
+      weight: 1.0
+      doi: 10.1038/s41534-022-00618-z
+      anchor: Cost of mitigation
+    - first_author: Kim
+      year: 2023
+      title: Evidence for the utility of quantum computing before fault tolerance
+      weight: 1.0
+      doi: 10.1038/s41586-023-06096-3
+      anchor: Utility-scale mitigation
+    - first_author: Bauer
+      year: 2020
+      title: Quantum algorithms for quantum chemistry and quantum materials science
+      weight: 1.0
+      doi: 10.1021/acs.chemrev.9b00829
+      anchor: Application domain
+    - first_author: van Diepen
+      year: 2021
+      title: Quantum simulation of antiferromagnetic Heisenberg chain with gate-defined quantum dots
+      weight: 1.0
+      doi: 10.1103/physrevx.11.041025
+      anchor: Algorithm-style use of spin hardware

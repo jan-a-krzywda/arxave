@@ -1,0 +1,26 @@
+# Citable anchors. The grader may cite ONLY ids listed here.
+requirements:
+  - { id: Req_10, text: "Universal gate set on spin qubits (electrons or holes in GaAs, Si or Ge)" }
+  - { id: Req_11, text: "At least 16 addressable qubits" }
+  - { id: Req_15, text: "Single-qubit fidelity >=99.5% and two-qubit fidelity >=99.0% on 80% of qubits/pairs" }
+  - { id: Req_20, text: "Readout fidelity >=97%" }
+  - { id: Req_22, text: "T2 >=100 us" }
+  - { id: Req_25, text: "Single- and two-qubit gate times <=1 us" }
+  - { id: Req_27, text: "At least one native two-qubit gate (CZ/CX/iSWAP/SWAP)" }
+  - { id: Req_29, text: "QPU upgrade within 24 months (more qubits, better fidelities, faster readout)" }
+  - { id: Req_33, text: "Cryostat, control electronics, parametric amplifier pumps, filters" }
+  - { id: Req_36, text: "<=40 kW total power" }
+  - { id: Req_45, text: "Manual and automated calibration" }
+  - { id: Req_48, text: "Automated re-calibration for drift" }
+  - { id: Req_50, text: "API to query calibration state and fidelities" }
+  - { id: Req_52, text: "High-level frameworks and OpenQASM transpilation" }
+  - { id: Req_55, text: "Noise- and connectivity-aware circuit optimizer" }
+  - { id: Req_58, text: "Pulse-level API with safe envelope" }
+  - { id: Req_61, text: "FIFO queue for circuit and pulse jobs with open interfaces" }
+  - { id: Req_65, text: "Co-development: health monitoring, calibration data formats, moving control to HPC, routing QEC to HPC" }
+  - { id: Req_66, text: "Unsupervised data-centre operation, vibration, temperature and cooling constraints" }
+  - { id: Req_73, text: "Benchmarks every 3 months to detect degradation" }
+  - { id: Sec_7, text: "Availability >75% first 3 months, >80% year 1, then >90%; <=20 maintenance days per year" }
+  - { id: Annex8_1, text: "Gate benchmarks: qubit count, 1Q/2Q randomized benchmarking, readout fidelity and speed, T2 echo" }
+  - { id: Annex8_2, text: "Application benchmarks: GHZ fidelity >0.5, QAOA/VQE MaxCut with Q-score, Bernstein-Vazirani success vs n" }
+  - { id: Acceptance, text: "Power under load on a dedicated algorithm; an application benchmark run end to end from the HPC system" }

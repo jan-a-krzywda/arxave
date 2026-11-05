@@ -1,0 +1,10 @@
+name: quantum-systems
+title: "Quantum systems: from hardware to algorithms"
+owner: personal
+description: >
+  Papers relevant to operating, benchmarking, integrating and using a
+  semiconductor spin-qubit quantum computer of at least 16 qubits that is
+  co-located with and integrated into an HPC system.
+axes: [A, B, C, D, E, F, G, H, I]
+# Optional overrides of config/quantum-systems.yml values for this pack.
+overrides: {}
