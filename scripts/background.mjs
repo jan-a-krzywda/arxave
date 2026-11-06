@@ -67,6 +67,9 @@ const BATCH = 64;
    category, so on a very busy archive arXiv may cap it before the 60th weekday;
    the sample is then smaller but still valid. Upgrade path: paginate `start`. */
 const RESULTS_PER_WEEKDAY = 400;
+/* arXiv's API answers HTTP 500 above ~10000 results in one slice (measured:
+   8000 ok, 12000 fails), so the window is capped below that. */
+const MAX_WINDOW = 8000;
 
 /* The same dispatcher `loadPresets` uses internally: a DOI resolves through
    OpenAlex, an arXiv-only seed through the search API. Local because that
@@ -99,7 +102,7 @@ export async function buildBackground({
 } = {}) {
   const categories = config?.feed?.categories ?? [];
   if (!categories.length) throw new Error('background: config.feed.categories is empty');
-  const window = Number.isFinite(maxResults) ? maxResults : weekdays * RESULTS_PER_WEEKDAY;
+  const window = Number.isFinite(maxResults) ? maxResults : Math.min(MAX_WINDOW, weekdays * RESULTS_PER_WEEKDAY);
 
   const stones = await fetch(categories, weekdays, window, now);
   if (!stones.length) throw new Error('background: the lookback window returned no papers');
