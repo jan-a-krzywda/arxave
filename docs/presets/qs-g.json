@@ -1,0 +1,53 @@
+{
+  "arxave_claim": 1,
+  "preset": "qs-g",
+  "name": "HPC-QC integration and resource management",
+  "blurb": "Papers relevant to operating, benchmarking, integrating and using a semiconductor spin-qubit quantum computer of at least 16 qubits that is co-located with and integrated into an HPC system.",
+  "saved": "2026-11-05",
+  "scout": {
+    "categories": "quant-ph, cond-mat.mes-hall",
+    "lookback_days": 2,
+    "max_results": 200
+  },
+  "touchstones": [
+    {
+      "text": "integrating quantum processors into HPC centres and job schedulers",
+      "weight": 1
+    },
+    {
+      "text": "quantum resource management, queueing and QPU-as-a-resource",
+      "weight": 1
+    },
+    {
+      "text": "hybrid quantum-classical workflows with HPC co-scheduling",
+      "weight": 1
+    },
+    {
+      "text": "monitoring and software interfaces between HPC and quantum hardware",
+      "weight": 1
+    }
+  ],
+  "cores": [
+    {
+      "doi": "10.1145/3007651",
+      "weight": 1
+    },
+    {
+      "doi": "10.1109/mm.2021.3099140",
+      "weight": 1
+    },
+    {
+      "doi": "10.1109/mcse.2022.3221845",
+      "weight": 1
+    },
+    {
+      "doi": "10.1145/3743149",
+      "weight": 1
+    }
+  ],
+  "blend": {
+    "paydirt_n": 10
+  },
+  "unlisted": true,
+  "axis": "G"
+}

@@ -1,0 +1,97 @@
+{
+  "arxave_claim": 1,
+  "preset": "qs-c",
+  "name": "Application benchmarks",
+  "blurb": "Papers relevant to operating, benchmarking, integrating and using a semiconductor spin-qubit quantum computer of at least 16 qubits that is co-located with and integrated into an HPC system.",
+  "saved": "2026-11-05",
+  "scout": {
+    "categories": "quant-ph, cond-mat.mes-hall",
+    "lookback_days": 2,
+    "max_results": 200
+  },
+  "touchstones": [
+    {
+      "text": "application-oriented benchmarks of quantum computers",
+      "weight": 1
+    },
+    {
+      "text": "GHZ state fidelity and parity oscillations on a quantum processor",
+      "weight": 1
+    },
+    {
+      "text": "QAOA MaxCut and VQE benchmarked on hardware",
+      "weight": 1
+    },
+    {
+      "text": "Bernstein-Vazirani algorithm success probability on noisy devices",
+      "weight": 1
+    }
+  ],
+  "cores": [
+    {
+      "doi": "10.1109/tqe.2021.3090207",
+      "weight": 1
+    },
+    {
+      "doi": "10.1109/tqe.2023.3253761",
+      "weight": 1
+    },
+    {
+      "doi": "10.22331/q-2023-07-20-1062",
+      "weight": 1
+    },
+    {
+      "doi": "10.1088/2399-6528/ac1df7",
+      "weight": 1
+    },
+    {
+      "doi": "10.1103/physreva.101.032343",
+      "weight": 1
+    },
+    {
+      "doi": "10.1103/physrevlett.106.130506",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/nature04251",
+      "weight": 1
+    },
+    {
+      "doi": "10.1103/physrevlett.91.147902",
+      "weight": 1
+    },
+    {
+      "doi": "10.48550/arxiv.1411.4028",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/ncomms5213",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s42254-021-00348-9",
+      "weight": 1
+    },
+    {
+      "doi": "10.1038/s41567-020-01105-y",
+      "weight": 1
+    },
+    {
+      "doi": "10.1137/s0097539796300921",
+      "weight": 1
+    },
+    {
+      "doi": "10.1073/pnas.1618020114",
+      "weight": 1
+    },
+    {
+      "doi": "10.22331/q-2018-08-06-79",
+      "weight": 1
+    }
+  ],
+  "blend": {
+    "paydirt_n": 10
+  },
+  "unlisted": true,
+  "axis": "C"
+}

@@ -17,6 +17,11 @@
  *   retry ladder around a cold HF pull, and the quantization constant all went
  *   with it.
  *
+ *   `--embed-local` puts an encoder back for the nights the hosted function
+ *   cannot answer (see embed-local.mjs). Same model, same arithmetic, so the
+ *   cache still sees one geometry — the flag is there so a spent credit is a
+ *   slow night rather than a failed one.
+ *
  * WHY THIS IS STILL A SCRIPT AND NOT THE EDGE FUNCTION ITSELF: a night is
  * ~870 abstracts across the popular archives, chunked into requests that each
  * wait on somebody else's CPU. That is a job with a clock, not a request.
@@ -31,6 +36,7 @@
  *   --presets      directory of preset claims to warm as well (docs/presets)
  *   --endpoint     dig-cache URL (default: the project's deployed function)
  *   --embed        embed URL (default: the project's deployed function)
+ *   --embed-local  embed with SPECTER2 on this machine, not the hosted pick
  *   --dry-run      fetch and embed, write nothing
  */
 
@@ -38,6 +44,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { XMLParser } from 'fast-xml-parser';
+
+import { chooseEmbedder } from './embed-local.mjs';
 
 /* Must match docs/assets/filter.js and supabase/functions/embed/hf.ts exactly —
    these two strings are the cache key, and a mismatch is not an error but a
@@ -73,6 +81,7 @@ function arg(name, fallback = null) {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 const DRY_RUN = process.argv.includes('--dry-run');
+const EMBED_LOCAL = process.argv.includes('--embed-local');
 
 /** Collapse exactly as filter.js and store.py do — all three must agree. */
 export function cacheKeyText(text) {
@@ -319,6 +328,59 @@ export async function fetchCore(doi, slug) {
 }
 
 /**
+ * A core sample that names its paper by arXiv id instead of a DOI.
+ *
+ * `fetchCore` resolves DOIs through OpenAlex; a seed with no DOI (an old
+ * conference paper, say) has only an arXiv id to go on, and dropping it — which
+ * is what this loop used to do — silently removed the row from the preset it
+ * was there to anchor, with nothing but a short count to show for it. The
+ * search API's Atom already carries the title and the abstract the embed text
+ * is built from, so this reuses `parseAtom` rather than a second parser.
+ */
+export async function fetchCoreArxiv(arxivId, slug) {
+  const id = bareArxivId(arxivId);
+  if (!id) throw new Error(`${arxivId}: not an arXiv id`);
+  const url = 'https://export.arxiv.org/api/query?id_list=' + encodeURIComponent(id) +
+    '&max_results=1';
+  const resp = await fetch(url, {
+    headers: { 'User-Agent': 'arxave-warmer/0.1 (+https://github.com/jan-a-krzywda/arxave)' },
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!resp.ok) throw new Error(`${id}: arXiv HTTP ${resp.status}`);
+  const [entry] = parseAtom(await resp.text());
+  if (!entry) throw new Error(`${id}: no abstract`);
+  return {
+    text: coreEmbedText(entry.title, entry.abstract),
+    title: entry.title,
+    source: `preset:${slug}`, kind: 'core', weight: 1.0, arxiv: id,
+  };
+}
+
+/**
+ * The core rows a preset asks the warmer to resolve, one per `cores` entry.
+ *
+ * A core names its paper by `doi` or, when it has no DOI, by `arxiv`; a row
+ * with neither is dropped rather than fetched blind. `weight` rides along so
+ * the caller need not re-read the preset. Exported and pure because the arXiv
+ * branch is otherwise only reachable through the network.
+ */
+export function coreRefs(preset) {
+  const out = [];
+  for (const core of preset.cores ?? []) {
+    const weight = Number.isFinite(parseFloat(core.weight)) ? parseFloat(core.weight) : 1.0;
+    if (core.doi) out.push({ kind: 'doi', id: core.doi, weight });
+    else if (core.arxiv) out.push({ kind: 'arxiv', id: bareArxivId(core.arxiv), weight });
+  }
+  return out;
+}
+
+/** DOI cores go through OpenAlex; arXiv-only cores through the search API. */
+async function coreFetchDefault(ref, slug) {
+  return ref.kind === 'doi' ? fetchCore(ref.id, slug) : fetchCoreArxiv(ref.id, slug);
+}
+
+
+/**
  * Every preset's touchstones and core samples, ready to embed.
  *
  * WHY PRESET TOUCHSTONES MAY BE CACHED AND TYPED ONES MAY NOT (spec §6c.3):
@@ -329,7 +391,7 @@ export async function fetchCore(doi, slug) {
  * same line from the other side: a preset row that the user edits loses its
  * provenance flag and goes back to being embedded locally.
  */
-export async function loadPresets(dir) {
+export async function loadPresets(dir, { coreFetch = coreFetchDefault } = {}) {
   let names;
   try {
     names = (await fs.readdir(dir))
@@ -364,11 +426,10 @@ export async function loadPresets(dir) {
     const rows = presetUnits(preset, slug);
     units.push(...rows);
     bySlug.set(slug, { preset, rows });
-    for (const core of preset.cores ?? []) {
-      if (!core.doi) continue;
+    for (const ref of coreRefs(preset)) {
       try {
-        const unit = await fetchCore(core.doi, slug);
-        unit.weight = Number.isFinite(parseFloat(core.weight)) ? parseFloat(core.weight) : 1.0;
+        const unit = await coreFetch(ref, slug);
+        unit.weight = ref.weight;
         units.push(unit);
         bySlug.get(slug).rows.push(unit);
       } catch (err) {
@@ -447,6 +508,10 @@ export function parseAtom(xml) {
     out.push({
       arxivId,
       abstract,
+      /* Display only, exactly as parseFeed carries it — `abstract` above is the
+         only field that reaches the cache key. A core sample with no DOI is
+         named by this title, which is why it is parsed at all. */
+      title: cacheKeyText(String(entry.title ?? '')),
       published: String(entry.published ?? '').trim().substring(0, 10),
       link: 'https://arxiv.org/abs/' + arxivId,
     });
@@ -619,6 +684,10 @@ async function main() {
     console.error('warm-dig: ' + err.message);
     process.exit(2);
   }
+  /* `--embed-local` swaps the hosted pick for SPECTER2 on this runner. Both
+     answer `(texts) => Float32Array[]`, so the loop below does not care which. */
+  const embed = chooseEmbedder({ embedLocal: EMBED_LOCAL }, { embedChunk, embedUrl });
+  console.log(`warm-dig: embedding with ${EMBED_LOCAL ? 'SPECTER2 on this runner' : 'the hosted pick'}`);
   const writeKey = process.env.DIG_WRITE_KEY ?? '';
   if (!writeKey && !DRY_RUN) {
     console.error('warm-dig: $DIG_WRITE_KEY is unset. Set it, or pass --dry-run.');
@@ -777,7 +846,7 @@ async function main() {
   const items = [];
   for (let i = 0; i < todo.length; i += BATCH) {
     const chunk = todo.slice(i, i + BATCH);
-    const rows = await embedChunk(chunk.map((u) => u.text), embedUrl);
+    const rows = await embed(chunk.map((u) => u.text));
     for (let r = 0; r < rows.length; r++) {
       items.push({ sha: chunk[r].sha, vector: toBase64(rows[r]), source: chunk[r].source });
     }

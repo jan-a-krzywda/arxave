@@ -1,0 +1,53 @@
+{
+  "arxave_claim": 1,
+  "preset": "qs-f",
+  "name": "Software stack: compilers and pulse level",
+  "blurb": "Papers relevant to operating, benchmarking, integrating and using a semiconductor spin-qubit quantum computer of at least 16 qubits that is co-located with and integrated into an HPC system.",
+  "saved": "2026-11-05",
+  "scout": {
+    "categories": "quant-ph, cond-mat.mes-hall",
+    "lookback_days": 2,
+    "max_results": 200
+  },
+  "touchstones": [
+    {
+      "text": "pulse-level programming and OpenQASM compilation for quantum processors",
+      "weight": 1
+    },
+    {
+      "text": "noise-aware qubit mapping and routing on limited connectivity",
+      "weight": 1
+    },
+    {
+      "text": "transpiler optimisation for native gate sets",
+      "weight": 1
+    }
+  ],
+  "cores": [
+    {
+      "doi": "10.1145/3505636",
+      "weight": 1
+    },
+    {
+      "doi": "10.1145/3297858.3304023",
+      "weight": 1
+    },
+    {
+      "doi": "10.1145/3297858.3304075",
+      "weight": 1
+    },
+    {
+      "doi": "10.1088/2058-9565/aba404",
+      "weight": 1
+    },
+    {
+      "doi": "10.1117/12.2551853",
+      "weight": 1
+    }
+  ],
+  "blend": {
+    "paydirt_n": 10
+  },
+  "unlisted": true,
+  "axis": "F"
+}
