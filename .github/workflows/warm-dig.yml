@@ -147,9 +147,9 @@ jobs:
         env:
           DIG_CACHE_URL: ${{ vars.ARXAVE_DIG_CACHE_URL }}
           # The grader's key, looked up by the env name in
-          # `config/quantum-systems.yml` (`llm.api_key_env: SAIL_API_KEY`).
+          # `config/quantum-systems.yml` (`llm.api_key_env: LLM_API_KEY`).
           # Without it `rank.mjs` ships the shortlist ungraded, not empty.
-          SAIL_API_KEY: ${{ secrets.SAIL_API_KEY }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           # Enrichment, as in the preset-feed step above: optional, fails soft.
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: node rank.mjs --config ../config/quantum-systems.yml --out ../docs/feeds --embed-local
