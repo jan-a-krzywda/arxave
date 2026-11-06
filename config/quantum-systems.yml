@@ -20,7 +20,7 @@ sensitivity_presets:
 llm:
   provider: openai-compatible
   base_url: "https://api.sailresearch.com/v1"
-  model: deepseek-ai/DeepSeek-V4-Flash-0731
+  model: deepseek-ai/DeepSeek-V4.1-Flash-1017
   api_key_env: LLM_API_KEY
   grade_read: abstract+intro               # abstract | abstract+intro | trim
   grade_chars: 8000
