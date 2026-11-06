@@ -209,7 +209,9 @@ test('the sample is the configured categories over `weekdays` weekdays', async (
   await first.promise;
   assert.deepEqual(first.calls[0].categories, ['quant-ph', 'cond-mat.mes-hall']);
   assert.equal(first.calls[0].lookback, 60);
-  assert.equal(first.calls[0].window, 60 * 400);
+  // 60 x 400 = 24000 would be refused by arXiv (HTTP 500 above ~10000), so the
+  // window is capped at 8000.
+  assert.equal(first.calls[0].window, 8000);
   assert.equal(first.calls[0].at, NOW);
 
   const short = run({ weekdays: 3 });

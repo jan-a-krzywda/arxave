@@ -48,6 +48,13 @@ const BATCH = 64;
 const CACHE_DIR = process.env.HF_CACHE_DIR ||
   path.join(path.dirname(fileURLToPath(import.meta.url)), '.model-cache');
 
+/* The official checkpoint ships PyTorch weights only, which transformers.js
+   cannot load. This repo carries the same weights exported to ONNX; measured
+   against the PyTorch model on 5 title/abstract texts (fp32, [CLS] pooling,
+   L2 norm) the vectors agree to cosine 1.000000, max element diff ~1e-7. Rows
+   are still filed under `MODEL`, the identity of the weights, not of the file. */
+export const ONNX_WEIGHTS = 'benchoi93/specter2-base-onnx-web';
+
 let pipelinePromise = null;
 
 /**
@@ -62,7 +69,12 @@ export async function defaultPipelineFactory() {
   pipelinePromise ??= (async () => {
     const { env, pipeline } = await import('@huggingface/transformers');
     env.cacheDir = CACHE_DIR;
-    return pipeline('feature-extraction', MODEL, { dtype: 'fp32' });
+    const extractor = await pipeline('feature-extraction', ONNX_WEIGHTS, { dtype: 'fp32' });
+    /* The ONNX repo's tokenizer config carries no length limit, so a long
+       abstract reaches the model as 587 tokens and onnxruntime refuses it (the
+       position table is 512 wide). The official checkpoint truncates at 512. */
+    extractor.tokenizer.model_max_length = 512;
+    return extractor;
   })();
   return pipelinePromise;
 }
