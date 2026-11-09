@@ -111,6 +111,14 @@ this release.
 
 ---
 
+## The whole pipeline
+
+![arXiv to embedding, corpus match, LLM grade, pick, human selection, archive, digest, and reports for agents (MCP) and humans (GitHub)](docs/diagrams/pipeline.png)
+
+Source: [`docs/diagrams/pipeline.tex`](docs/diagrams/pipeline.tex) ([PDF](docs/diagrams/pipeline.pdf)).
+
+---
+
 ## Two ways to dig
 
 | Way | Where it run | Need what |

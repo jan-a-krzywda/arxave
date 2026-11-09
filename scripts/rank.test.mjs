@@ -513,3 +513,15 @@ test('presets from loadPresets (a Map) rank the same as a plain object', async (
   assert.deepEqual(fromMap.feeds, fromObject.feeds);
   assert.deepEqual(fromMap.shipped, fromObject.shipped);
 });
+
+test('a run with no axis presets throws instead of ending green with nothing written', async () => {
+  await assert.rejects(
+    runRank({
+      config: CONFIG, pack: PACK, presets: new Map(), stones: STONES, embed: embedStub,
+      center: (v) => v, background: BACKGROUND, fs: memFs(), env: {},
+      log: { log() {}, warn() {} }, site: 'https://arxave.com/', outDir: '/out',
+      now: new Date('2026-11-04T06:00:00Z'),
+    }),
+    /no axis presets loaded/,
+  );
+});
