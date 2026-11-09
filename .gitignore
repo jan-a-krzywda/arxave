@@ -14,6 +14,9 @@ scripts/node_modules/
 scripts/package-lock.json
 scripts/.model-cache/
 
+# Sieve corpus build scratch — the interrupted-run embedding resume log, not an asset
+docs/assets/corpus/.vec-cache.jsonl
+
 # Jekyll local build (docs/)
 docs/_site/
 docs/.jekyll-cache/
