@@ -301,7 +301,11 @@ export async function runRank({
   const axisRows = {};
   const slugOf = {};
   const presetOf = {};
-  for (const [slug, entry] of Object.entries(presets || {})) {
+  /* `loadPresets` hands back a Map; the tests hand a plain object. Object.entries
+     of a Map is [], which left the run with no axes, wrote nothing, and still
+     exited 0 — green in CI with no ranked feed. Take either. */
+  const presetEntries = presets instanceof Map ? [...presets] : Object.entries(presets || {});
+  for (const [slug, entry] of presetEntries) {
     const preset = entry.preset || entry;
     const axis = preset.axis || /^qs-([a-i])$/.exec(slug)?.[1]?.toUpperCase();
     if (!axis) continue;
