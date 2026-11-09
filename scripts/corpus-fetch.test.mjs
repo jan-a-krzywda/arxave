@@ -11,7 +11,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  ARXIV_PAGE, buildRaw, percentiles, sliceWeeks,
+  ARXIV_PAGE, arxivIdFromUrl, buildRaw, percentiles, sliceWeeks,
 } from './corpus-fetch.mjs';
 
 /* ── fixtures ──────────────────────────────────────────────────────────── */
@@ -34,8 +34,36 @@ const ok = (body, isJson) => ({
 });
 const down = (status) => ({ ok: false, status, text: async () => '', json: async () => ({}) });
 
-/** The OpenAlex row shape for one paper. */
+/** The OpenAlex row shape for one paper OpenAlex still keys by the arXiv DOI. */
 const citeRow = (id, n) => ({ doi: `https://doi.org/10.48550/arxiv.${id}`, cited_by_count: n });
+
+/* The real OpenAlex row for a preprint since published: the work's own DOI is
+   the journal DOI, so only `locations` still name the arXiv id. Querying
+   arXiv.2509.01234 came back with doi 10.1002/aidi.202500214 and
+   cited_by_count 11. */
+const PREPRINT_ROW = {
+  doi: 'https://doi.org/10.1002/aidi.202500214',
+  cited_by_count: 11,
+  locations: [
+    { landing_page_url: 'https://doi.org/10.1002/aidi.202500214' },
+    { landing_page_url: 'http://arxiv.org/abs/2509.01234',
+      pdf_url: 'https://arxiv.org/pdf/2509.01234' },
+    { landing_page_url: 'https://doi.org/10.48550/arxiv.2509.01234' },
+  ],
+};
+
+/** An arXiv-phase checkpoint as buildRaw writes it, for the resume tests. */
+const checkpoint = (window, categories, papers) =>
+  JSON.stringify({ window, categories, papers });
+
+/** An in-memory `readFile`/`writeFile` pair over one `files` object. */
+const memoryFs = (files) => ({
+  readFile: async (file) => {
+    if (!(file in files)) throw new Error(`ENOENT: ${file}`);
+    return files[file];
+  },
+  writeFile: async (file, data) => { files[file] = data; },
+});
 
 const NOW = new Date('2026-01-01T00:00:00Z');
 
@@ -87,6 +115,20 @@ test('sliceWeeks handles a single day, an empty range, and a month boundary', ()
     { from: '2025-09-29', to: '2025-10-05' },
     { from: '2025-10-06', to: '2025-10-07' },
   ]);
+});
+
+/* ── arxivIdFromUrl ────────────────────────────────────────────────────── */
+
+test('arxivIdFromUrl reads every arXiv location spelling, version-free', () => {
+  assert.equal(arxivIdFromUrl('http://arxiv.org/abs/2509.01234'), '2509.01234');
+  assert.equal(arxivIdFromUrl('https://arxiv.org/pdf/2509.01234v2'), '2509.01234');
+  assert.equal(arxivIdFromUrl('https://arxiv.org/pdf/2509.01234.pdf'), '2509.01234');
+  assert.equal(arxivIdFromUrl('https://doi.org/10.48550/arxiv.2509.01234'), '2509.01234');
+  assert.equal(arxivIdFromUrl('https://doi.org/10.48550/ARXIV.2509.01234v1'), '2509.01234');
+  // A published paper's journal DOI is not an arXiv id, nor is an empty value.
+  assert.equal(arxivIdFromUrl('https://doi.org/10.1002/aidi.202500214'), null);
+  assert.equal(arxivIdFromUrl(''), null);
+  assert.equal(arxivIdFromUrl(undefined), null);
 });
 
 /* ── buildRaw ──────────────────────────────────────────────────────────── */
@@ -154,15 +196,64 @@ test('buildRaw: a fake arXiv page and a fake OpenAlex page give the exact object
   assert.equal(q.searchParams.get('start'), '0');
   assert.equal(q.searchParams.get('max_results'), String(ARXIV_PAGE));
 
-  // OpenAlex is asked for the arXiv DOIs, 50 at a time, selecting the two fields.
+  // OpenAlex is asked for the arXiv DOIs, 50 at a time, selecting three fields.
   const oa = new URL(urls.find((u) => u.includes('api.openalex.org')));
   assert.equal(oa.searchParams.get('filter'),
-    'doi:10.48550/arXiv.2509.00001|doi:10.48550/arXiv.2509.00002|' +
-    'doi:10.48550/arXiv.2509.00003|doi:10.48550/arXiv.2509.00004|' +
-    'doi:10.48550/arXiv.2509.00005');
+    'doi:10.48550/arXiv.2509.00001|10.48550/arXiv.2509.00002|' +
+    '10.48550/arXiv.2509.00003|10.48550/arXiv.2509.00004|' +
+    '10.48550/arXiv.2509.00005');
   assert.equal(oa.searchParams.get('per-page'), '50');
-  assert.equal(oa.searchParams.get('select'), 'doi,cited_by_count');
+  assert.equal(oa.searchParams.get('select'), 'doi,cited_by_count,locations');
   assert.equal(oa.searchParams.get('mailto'), null); // env did not set one
+});
+
+test('buildRaw matches a published preprint by its arXiv location, not its DOI', async () => {
+  const fetchImpl = async (url) => {
+    if (url.includes('export.arxiv.org')) return ok(atom([entry({ id: '2509.01234' })]));
+    return ok({ results: [PREPRINT_ROW] }, true);
+  };
+
+  const raw = await buildRaw({
+    categories: ['quant-ph'], from: '2025-09-01', to: '2025-09-07',
+    now: NOW, fetchImpl, env: {}, sleep: async () => {},
+  });
+
+  // The work's own DOI is the journal DOI, so a DOI match would lose it; only the
+  // locations name arXiv 2509.01234, and cited_by_count 11 lands on that paper.
+  assert.deepEqual(raw.papers, [{
+    id: '2509.01234', title: 'Paper 2509.01234', abstract: 'Abstract 2509.01234',
+    cat: 'quant-ph', cites: 11, pct: 0.5,
+  }]);
+});
+
+test('buildRaw reads an arXiv id from each location spelling, version-free', async () => {
+  const rows = [
+    { doi: 'https://doi.org/10.1002/x.1', cited_by_count: 1,
+      locations: [{ landing_page_url: 'http://arxiv.org/abs/2509.00011v3' }] },
+    { doi: 'https://doi.org/10.1002/x.2', cited_by_count: 2,
+      locations: [{ landing_page_url: 'https://doi.org/10.1002/x.2' },
+                  { pdf_url: 'https://arxiv.org/pdf/2509.00012v1.pdf' }] },
+    { doi: 'https://doi.org/10.48550/ARXIV.2509.00013', cited_by_count: 3, locations: [] },
+  ];
+  const fetchImpl = async (url) => {
+    if (url.includes('export.arxiv.org')) {
+      return ok(atom([
+        entry({ id: '2509.00011' }), entry({ id: '2509.00012' }), entry({ id: '2509.00013' }),
+      ]));
+    }
+    return ok({ results: rows }, true);
+  };
+
+  const raw = await buildRaw({
+    categories: ['quant-ph'], from: '2025-09-01', to: '2025-09-07',
+    now: NOW, fetchImpl, env: {}, sleep: async () => {},
+  });
+  const cites = Object.fromEntries(raw.papers.map((p) => [p.id, p.cites]));
+  assert.deepEqual(cites, {
+    '2509.00011': 1, // landing_page_url, version suffix stripped
+    '2509.00012': 2, // pdf_url, .pdf and version stripped
+    '2509.00013': 3, // no locations: the doi fallback, case-insensitive
+  });
 });
 
 test('buildRaw pages past a full page and stops on the first short page', async () => {
@@ -262,4 +353,120 @@ test('the window is clipped to `now` so no future week is fetched', async () => 
   });
   assert.equal(urls.length, 1);
   assert.deepEqual(raw.window, { from: '2025-09-01', to: '2025-09-03' });
+});
+
+/* ── the arXiv checkpoint ──────────────────────────────────────────────── */
+
+test('buildRaw writes the arXiv crawl to `<out>.arxiv.json`', async () => {
+  const files = {};
+  const fetchImpl = async (url) => {
+    if (url.includes('export.arxiv.org')) return ok(atom(PAGES['quant-ph']));
+    return ok({ results: [] }, true); // OpenAlex: nothing known
+  };
+
+  await buildRaw({
+    categories: ['quant-ph'], from: '2025-09-01', to: '2025-09-07',
+    out: 'corpus-raw.json', now: NOW, fetchImpl, env: {}, sleep: async () => {},
+    ...memoryFs(files),
+  });
+
+  // Only the checkpoint is written here; main writes corpus-raw.json itself.
+  assert.deepEqual(Object.keys(files), ['corpus-raw.json.arxiv.json']);
+  assert.deepEqual(JSON.parse(files['corpus-raw.json.arxiv.json']), {
+    window: { from: '2025-09-01', to: '2025-09-07' },
+    categories: ['quant-ph'],
+    papers: [
+      { id: '2509.00001', title: 'Paper 2509.00001', abstract: 'Abstract 2509.00001',
+        cat: 'quant-ph' },
+      { id: '2509.00002', title: 'Paper 2509.00002', abstract: 'Abstract 2509.00002',
+        cat: 'quant-ph' },
+      { id: '2509.00003', title: 'Paper 2509.00003', abstract: 'Abstract 2509.00003',
+        cat: 'quant-ph' },
+    ],
+  });
+});
+
+test('buildRaw reuses a matching checkpoint and skips the arXiv phase', async () => {
+  const papers = [
+    { id: '2509.00007', title: 'Paper 2509.00007', abstract: 'Abstract 2509.00007',
+      cat: 'quant-ph' },
+  ];
+  const files = {
+    'corpus-raw.json.arxiv.json': checkpoint(
+      { from: '2025-09-01', to: '2025-09-07' }, ['quant-ph'], papers),
+  };
+  const urls = [];
+  const fetchImpl = async (url) => {
+    urls.push(url);
+    return ok({ results: [] }, true); // only OpenAlex is expected
+  };
+
+  const raw = await buildRaw({
+    categories: ['quant-ph'], from: '2025-09-01', to: '2025-09-07',
+    out: 'corpus-raw.json', now: NOW, fetchImpl, env: {}, sleep: async () => {},
+    ...memoryFs(files),
+  });
+
+  // arXiv is never touched, and the reused paper flows through the OpenAlex and
+  // percentile passes like a freshly crawled one.
+  assert.equal(urls.filter((u) => u.includes('export.arxiv.org')).length, 0);
+  assert.deepEqual(raw, {
+    window: { from: '2025-09-01', to: '2025-09-07' },
+    categories: ['quant-ph'],
+    papers: [{ ...papers[0], cites: 0, pct: 0.5 }],
+  });
+});
+
+test('buildRaw ignores a checkpoint whose window or categories differ', async () => {
+  const files = {
+    'corpus-raw.json.arxiv.json': checkpoint(
+      { from: '2025-09-01', to: '2025-09-07' }, ['cond-mat.mes-hall'],
+      [{ id: '2509.00009', title: 'Paper 2509.00009', abstract: 'Abstract 2509.00009',
+         cat: 'cond-mat.mes-hall' }]),
+  };
+  const arxivUrls = [];
+  const fetchImpl = async (url) => {
+    if (url.includes('export.arxiv.org')) {
+      arxivUrls.push(url);
+      return ok(atom([entry({ id: '2509.00001' })]));
+    }
+    return ok({ results: [] }, true);
+  };
+
+  const raw = await buildRaw({
+    categories: ['quant-ph'], from: '2025-09-01', to: '2025-09-07',
+    out: 'corpus-raw.json', now: NOW, fetchImpl, env: {}, sleep: async () => {},
+    ...memoryFs(files),
+  });
+
+  assert.equal(arxivUrls.length, 1); // different categories → refetched
+  assert.deepEqual(raw.papers.map((p) => p.id), ['2509.00001']);
+});
+
+test('buildRaw with fresh ignores the checkpoint and refetches arXiv', async () => {
+  const files = {
+    'corpus-raw.json.arxiv.json': checkpoint(
+      { from: '2025-09-01', to: '2025-09-07' }, ['quant-ph'],
+      [{ id: '2509.00007', title: 'Paper 2509.00007', abstract: 'Abstract 2509.00007',
+         cat: 'quant-ph' }]),
+  };
+  let reads = 0;
+  const fetchImpl = async (url) => {
+    if (url.includes('export.arxiv.org')) return ok(atom([entry({ id: '2509.00001' })]));
+    return ok({ results: [] }, true);
+  };
+
+  const raw = await buildRaw({
+    categories: ['quant-ph'], from: '2025-09-01', to: '2025-09-07',
+    out: 'corpus-raw.json', fresh: true,
+    now: NOW, fetchImpl, env: {}, sleep: async () => {},
+    readFile: async (file) => { reads += 1; return files[file]; },
+    writeFile: async (file, data) => { files[file] = data; },
+  });
+
+  assert.equal(reads, 0); // --fresh never even looks at the checkpoint
+  assert.deepEqual(raw.papers.map((p) => p.id), ['2509.00001']);
+  // and the stale checkpoint is overwritten from the fresh crawl
+  assert.deepEqual(JSON.parse(files['corpus-raw.json.arxiv.json']).papers.map((p) => p.id),
+    ['2509.00001']);
 });

@@ -29,6 +29,13 @@
  * bucket of the first configured category that matched it, which is the same
  * first-match rule `fetchEarlier` and the page use for dedupe.
  *
+ * WHY THE ARXIV PHASE CHECKPOINTS. arXiv is the slow half — one request every
+ * three seconds across dozens of page-pairs — and OpenAlex runs after it, so an
+ * OpenAlex failure used to mean paying for the whole crawl a second time. The
+ * crawl is written to `<out>.arxiv.json` as soon as it finishes, and a later run
+ * over the same window and categories starts from that file instead. `--fresh`
+ * ignores the checkpoint and refetches.
+ *
  * Usage:
  *   node scripts/corpus-fetch.mjs --from 2025-09-01 --to 2025-12-31 \
  *     --categories quant-ph,cond-mat.mes-hall --out corpus-raw.json
@@ -38,6 +45,7 @@
  *   --to          last day of the window  (YYYY-MM-DD, default 2025-12-31)
  *   --categories  comma-separated arXiv categories (default the sieve's two)
  *   --out         where to write corpus-raw.json (default corpus-raw.json)
+ *   --fresh       ignore the `<out>.arxiv.json` checkpoint and refetch arXiv
  *   --help        print this and exit
  */
 
@@ -45,7 +53,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import { parseAtom } from './warm-dig.mjs';
+import { bareArxivId, parseAtom } from './warm-dig.mjs';
 
 export const DEFAULT_FROM = '2025-09-01';
 export const DEFAULT_TO = '2025-12-31';
@@ -141,16 +149,37 @@ function arxivUrl(cat, slice, start) {
 /** `10.48550/arXiv.2509.01234`, the DOI arXiv mints for a paper. */
 const arxivDoi = (id) => `10.48550/arXiv.${id}`;
 
-/** OpenAlex spells DOIs as full URLs, lower-cased; ours are bare and mixed case. */
-const normalizeDoi = (doi) => String(doi ?? '').trim()
-  .replace(/^https?:\/\/(dx\.)?doi\.org\//i, '')
-  .replace(/^doi:/i, '')
-  .toLowerCase();
+/**
+ * The bare arXiv id an OpenAlex URL names, or null.
+ *
+ * OpenAlex keeps a preprint's arXiv identity in its `locations`, not in `doi`:
+ * once a paper is published, `doi` becomes the journal DOI and only a location
+ * still points at arXiv. Three spellings turn up — `arxiv.org/abs/<id>`,
+ * `arxiv.org/pdf/<id>` (sometimes `…/<id>.pdf`, sometimes versioned), and the
+ * arXiv DOI `doi.org/10.48550/arxiv.<id>`. Case is not stable, so the match is
+ * case-insensitive; `bareArxivId` strips the version suffix.
+ */
+export function arxivIdFromUrl(url) {
+  const m = String(url ?? '').match(
+    /arxiv\.org\/(?:abs|pdf)\/([^\s?#]+)|doi\.org\/10\.48550\/arxiv\.([^\s?#]+)/i);
+  if (!m) return null;
+  return bareArxivId((m[1] ?? m[2]).replace(/\.pdf$/i, ''));
+}
+
+/** One OpenAlex work → the arXiv id it answers, via `locations`, else its `doi`. */
+function arxivIdFromRow(row) {
+  for (const loc of row?.locations ?? []) {
+    const id = arxivIdFromUrl(loc?.landing_page_url) ?? arxivIdFromUrl(loc?.pdf_url);
+    if (id) return id;
+  }
+  return arxivIdFromUrl(row?.doi);
+}
 
 /** One batch of DOIs → the OpenAlex works URL. `mailto` only when we have one. */
 function openAlexUrl(ids, mailto) {
-  const filter = ids.map((id) => `doi:${arxivDoi(id)}`).join('|');
-  const params = [`filter=${filter}`, `per-page=${OPENALEX_BATCH}`, 'select=doi,cited_by_count'];
+  const filter = 'doi:' + ids.map(arxivDoi).join('|');
+  const params = [`filter=${filter}`, `per-page=${OPENALEX_BATCH}`,
+    'select=doi,cited_by_count,locations'];
   if (mailto) params.push('mailto=' + encodeURIComponent(mailto));
   return `${OPENALEX}?${params.join('&')}`;
 }
@@ -174,9 +203,16 @@ async function request(url, { fetchImpl, sleep, what }) {
   }
 }
 
-/** Every id's citation count from OpenAlex, batched 50 DOIs per request. */
+/**
+ * Every id's citation count from OpenAlex, batched 50 DOIs per request.
+ *
+ * The result is keyed by the arXiv id OpenAlex's answer names, not by the DOI we
+ * asked with: a preprint that has since been published comes back under its
+ * journal DOI, so the requested DOI no longer identifies it — `arxivIdFromRow`
+ * recovers the arXiv id from the work's locations.
+ */
 async function fetchCitations(ids, { fetchImpl, sleep, env }) {
-  const citeByDoi = new Map();
+  const citeById = new Map();
   const mailto = env?.OPENALEX_MAILTO;
   for (let i = 0; i < ids.length; i += OPENALEX_BATCH) {
     const batch = ids.slice(i, i + OPENALEX_BATCH);
@@ -185,85 +221,134 @@ async function fetchCitations(ids, { fetchImpl, sleep, env }) {
     const data = await resp.json();
     let known = 0;
     for (const row of data?.results ?? []) {
-      const key = normalizeDoi(row.doi);
-      if (!key) continue;
-      citeByDoi.set(key, Number.isFinite(row.cited_by_count) ? row.cited_by_count : 0);
+      const id = arxivIdFromRow(row);
+      if (!id) continue;
+      citeById.set(id, Number.isFinite(row.cited_by_count) ? row.cited_by_count : 0);
       known += 1;
     }
     console.log(`corpus-fetch: OpenAlex ${i + batch.length}/${ids.length} → ${known} known`);
   }
-  return citeByDoi;
+  return citeById;
+}
+
+/**
+ * A checkpoint file → its object, or null when it is missing or unreadable.
+ */
+async function loadCheckpoint(file, readFile) {
+  try {
+    return JSON.parse(await readFile(file)) ?? null;
+  } catch {
+    return null; // no checkpoint, or a corrupt one: fetch it fresh
+  }
+}
+
+/** Does a checkpoint name the same window and categories we were asked for? */
+function sameWindow(cached, { from, to, categories }) {
+  return cached?.window?.from === from
+    && cached?.window?.to === to
+    && Array.isArray(cached?.categories)
+    && cached.categories.length === categories.length
+    && cached.categories.every((c, i) => c === categories[i])
+    && Array.isArray(cached?.papers);
 }
 
 /**
  * The corpus window → the `corpus-raw.json` object.
  *
- * All I/O sits behind `fetchImpl` and `sleep`, and the clock behind `now`, so
- * the tests pin the whole pipeline with a fake fetch and never touch a socket.
- * `to` is clipped to `now`: a window that reaches into the future has no papers
- * to find and would otherwise cost one request per empty week.
+ * All I/O sits behind `fetchImpl`, `sleep`, `readFile` and `writeFile`, and the
+ * clock behind `now`, so the tests pin the whole pipeline with a fake fetch and
+ * never touch a socket or a file. `to` is clipped to `now`: a window that reaches
+ * into the future has no papers to find and would otherwise cost one request per
+ * empty week.
+ *
+ * `out` names where the caller writes the result; the arXiv crawl is
+ * checkpointed to `<out>.arxiv.json` beside it (see the header). With no `out`
+ * there is nowhere to checkpoint, so nothing is read or written.
  */
 export async function buildRaw({
   categories = DEFAULT_CATEGORIES,
   from = DEFAULT_FROM,
   to = DEFAULT_TO,
+  out = null,
+  fresh = false,
   fetchImpl = fetch,
   sleep = wait,
   now = new Date(),
   env = process.env,
+  readFile = (file) => fs.readFile(file, 'utf8'),
+  writeFile = (file, data) => fs.writeFile(file, data),
 } = {}) {
   const cap = (now instanceof Date ? now.toISOString() : String(now)).slice(0, 10);
   const end = to > cap ? cap : to;
   const slices = sliceWeeks(from, end);
 
-  /* arXiv owns a global three-second budget, so the wait is spent between every
-     pair of calls, whichever category or week they belong to. */
-  let arxivCalls = 0;
-  const arxivGet = async (url) => {
-    if (arxivCalls > 0) await sleep(ARXIV_WAIT_MS);
-    arxivCalls += 1;
-    return request(url, { fetchImpl, sleep, what: 'arXiv' });
-  };
-
-  const seen = new Set();
-  const papers = [];
-  for (const cat of categories) {
-    for (const slice of slices) {
-      for (let start = 0; ; start += ARXIV_PAGE) {
-        const resp = await arxivGet(arxivUrl(cat, slice, start));
-        const page = parseAtom(await resp.text());
-        let added = 0;
-        for (const entry of page) {
-          if (seen.has(entry.arxivId)) continue;
-          seen.add(entry.arxivId);
-          papers.push({ id: entry.arxivId, title: entry.title, abstract: entry.abstract, cat });
-          added += 1;
-        }
-        console.log(`corpus-fetch: ${cat} ${slice.from}..${slice.to} start=${start} ` +
-                    `→ ${page.length} listed, ${added} new`);
-        if (page.length < ARXIV_PAGE) break;
-      }
+  /* The arXiv crawl is the slow half, so its result is checkpointed; a matching
+     checkpoint — same window and categories — is reused instead of refetched,
+     which is what saves the night when OpenAlex falls over after arXiv. */
+  const checkpoint = out ? `${out}.arxiv.json` : null;
+  let papers = null;
+  if (checkpoint && !fresh) {
+    const cached = await loadCheckpoint(checkpoint, readFile);
+    if (sameWindow(cached, { from, to: end, categories })) {
+      papers = cached.papers;
+      console.log(`corpus-fetch: reusing ${papers.length} arXiv papers from ${checkpoint}`);
     }
   }
 
-  const citeByDoi = await fetchCitations(papers.map((p) => p.id), { fetchImpl, sleep, env });
+  if (!papers) {
+    /* arXiv owns a global three-second budget, so the wait is spent between every
+       pair of calls, whichever category or week they belong to. */
+    let arxivCalls = 0;
+    const arxivGet = async (url) => {
+      if (arxivCalls > 0) await sleep(ARXIV_WAIT_MS);
+      arxivCalls += 1;
+      return request(url, { fetchImpl, sleep, what: 'arXiv' });
+    };
+
+    const seen = new Set();
+    papers = [];
+    for (const cat of categories) {
+      for (const slice of slices) {
+        for (let start = 0; ; start += ARXIV_PAGE) {
+          const resp = await arxivGet(arxivUrl(cat, slice, start));
+          const page = parseAtom(await resp.text());
+          let added = 0;
+          for (const entry of page) {
+            if (seen.has(entry.arxivId)) continue;
+            seen.add(entry.arxivId);
+            papers.push({ id: entry.arxivId, title: entry.title, abstract: entry.abstract, cat });
+            added += 1;
+          }
+          console.log(`corpus-fetch: ${cat} ${slice.from}..${slice.to} start=${start} ` +
+                      `→ ${page.length} listed, ${added} new`);
+          if (page.length < ARXIV_PAGE) break;
+        }
+      }
+    }
+    if (checkpoint) {
+      await writeFile(checkpoint,
+        JSON.stringify({ window: { from, to: end }, categories, papers }, null, 2) + '\n');
+    }
+  }
+
+  const citeById = await fetchCitations(papers.map((p) => p.id), { fetchImpl, sleep, env });
   /* Citations first, then percentiles: `pct` is a rank over `cites`, so it must
      read them off the papers, not off a parallel map. OpenAlex does not know
      every paper, and not knowing a paper is not the same as knowing it has no
      citations — the contract scores both as 0. */
-  for (const p of papers) p.cites = citeByDoi.get(normalizeDoi(arxivDoi(p.id))) ?? 0;
+  for (const p of papers) p.cites = citeById.get(p.id) ?? 0;
   const pct = percentiles(papers);
 
-  const out = papers
+  const rows = papers
     .map((p) => ({
       id: p.id, title: p.title, abstract: p.abstract, cat: p.cat,
       cites: p.cites, pct: pct.get(p.id),
     }))
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
-  console.log(`corpus-fetch: ${out.length} papers across ${categories.length} categories, ` +
-              `${citeByDoi.size} known to OpenAlex`);
-  return { window: { from, to: end }, categories, papers: out };
+  console.log(`corpus-fetch: ${rows.length} papers across ${categories.length} categories, ` +
+              `${citeById.size} known to OpenAlex`);
+  return { window: { from, to: end }, categories, papers: rows };
 }
 
 const USAGE = `corpus-fetch — fetch the sieve corpus window from arXiv and OpenAlex.
@@ -277,6 +362,7 @@ Flags:
   --to          last day of the window  (YYYY-MM-DD, default ${DEFAULT_TO})
   --categories  comma-separated arXiv categories (default ${DEFAULT_CATEGORIES.join(',')})
   --out         where to write corpus-raw.json (default corpus-raw.json)
+  --fresh       ignore the \`<out>.arxiv.json\` checkpoint and refetch arXiv
   --help        print this and exit`;
 
 function arg(name, fallback = null) {
@@ -298,11 +384,16 @@ async function main() {
   const from = arg('from', DEFAULT_FROM);
   const to = arg('to', DEFAULT_TO);
   const outFile = arg('out', 'corpus-raw.json');
+  const fresh = process.argv.includes('--fresh');
 
-  console.log(`corpus-fetch: ${from}..${to} for ${categories.join(', ')}`);
-  const raw = await buildRaw({ categories, from, to });
-
+  /* The arXiv crawl checkpoints to `<outFile>.arxiv.json` while buildRaw runs, so
+     the output's directory has to exist before the fetch, not just before the
+     final write. */
   await fs.mkdir(path.dirname(outFile), { recursive: true });
+
+  console.log(`corpus-fetch: ${from}..${to} for ${categories.join(', ')}${fresh ? ' (fresh)' : ''}`);
+  const raw = await buildRaw({ categories, from, to, out: outFile, fresh });
+
   await fs.writeFile(outFile, JSON.stringify(raw, null, 2) + '\n');
   console.log(`corpus-fetch: ${raw.papers.length} papers → ${outFile}`);
 }
