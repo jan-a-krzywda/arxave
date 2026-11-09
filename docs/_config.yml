@@ -13,6 +13,7 @@ plugins:
 # filter-moved.md and seams-moved.md only redirect and stay out of the nav.
 header_pages:
   - filter.md
+  - sieve.md
   - haul.md
   - stockpile.md
   - details.md
