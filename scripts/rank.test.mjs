@@ -495,3 +495,21 @@ test('a dry run decides everything and writes nothing', async () => {
   assert.deepEqual(disk.disk, { '/out/background.json': JSON.stringify(BACKGROUND) });
 });
 
+
+test('presets from loadPresets (a Map) rank the same as a plain object', async () => {
+  /* warm-dig's loadPresets returns `bySlug` as a Map. Object.entries(Map) is [],
+     so rank once found no axes, wrote no feed, and exited 0. */
+  const run = (presets) => runRank({
+    config: CONFIG, pack: PACK, presets, stones: STONES, embed: embedStub,
+    center: (v) => v, background: BACKGROUND,
+    grade: async (args) => GRADES[args.paper.id],
+    summarize: async () => '', enrich: async (items) => items,
+    fs: memFs(), env: { SAIL_KEY: 'test' }, log: { log() {}, warn() {} },
+    site: 'https://arxave.com/', outDir: '/out', now: new Date('2026-11-04T06:00:00Z'),
+  });
+  const fromObject = await run(PRESETS);
+  const fromMap = await run(new Map(Object.entries(PRESETS)));
+  assert.ok(Object.keys(fromObject.feeds).length > 0, 'the fixture must produce feeds');
+  assert.deepEqual(fromMap.feeds, fromObject.feeds);
+  assert.deepEqual(fromMap.shipped, fromObject.shipped);
+});

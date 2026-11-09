@@ -19,9 +19,9 @@ sensitivity_presets:
 
 llm:
   provider: openai-compatible
-  base_url: "https://sail.invalid/v1"      # PLACEHOLDER: set the real endpoint
+  base_url: "https://api.sailresearch.com/v1"
   model: deepseek-ai/DeepSeek-V4.1-Flash-1017
-  api_key_env: SAIL_API_KEY
+  api_key_env: LLM_API_KEY
   grade_read: abstract+intro               # abstract | abstract+intro | trim
   grade_chars: 8000
   enrich_read: trim                        # abstract | trim
