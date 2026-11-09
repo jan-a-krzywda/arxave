@@ -1,0 +1,410 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Sieve page — additive on top of the cave palette. Colours come from
+   cave.scss's tokens and nothing here redefines one, so the page follows the
+   theme the way style.css and filter.css do (the site has one: dark, via
+   `color-scheme: dark` and the :root tokens).
+
+   Every selector is prefixed .sv- and every rule is scoped to the page's own
+   markup, so this file cannot reach the Dig page (which keeps filter.css) or the
+   header nav.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.sv-app {
+  max-width: 46rem;
+  margin: 0 auto;
+}
+
+.sv-lede {
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: var(--text);
+  margin: 0 0 1rem;
+}
+
+/* ── the one text box ─────────────────────────────────────────────────── */
+
+.sv-field {
+  display: block;
+  margin: 0 0 1rem;
+}
+
+.sv-label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.35rem;
+}
+
+.sv-app textarea,
+.sv-app input[type="number"],
+.sv-app input[type="password"],
+.sv-app select {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.6rem;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--rock);
+  border: 1px solid var(--rock-edge);
+  border-radius: 6px;
+}
+
+.sv-app textarea {
+  min-height: 4.6rem;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.sv-app textarea:focus-visible,
+.sv-app input:focus-visible,
+.sv-app select:focus-visible,
+.sv-app button:focus-visible,
+.sv-app summary:focus-visible,
+.sv-app a:focus-visible {
+  outline: 2px solid var(--lamp);
+  outline-offset: 1px;
+}
+
+/* ── sliders ──────────────────────────────────────────────────────────── */
+
+.sv-topics,
+.sv-sliders {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0 0 1.1rem;
+}
+
+.sv-slider {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.15rem 0.5rem;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.sv-slider-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sv-slider-val {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.sv-app input[type="range"] {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin: 0;
+  accent-color: var(--lamp);
+}
+
+/* The ends of the range, in plain words. Out of the accessible name on purpose
+   — the slider's value is announced, and a name made of two phrases reads as
+   one long label. */
+.sv-ends {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-faint);
+}
+
+/* ── the one button ───────────────────────────────────────────────────── */
+
+.sv-dig {
+  display: block;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--cave-air);
+  background: var(--gold);
+  border: 1px solid var(--gold-dim);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.sv-dig:hover:not(:disabled) {
+  background: var(--ore-6);
+}
+
+.sv-dig:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.sv-status {
+  min-height: 1.3rem;
+  margin: 0.6rem 0 0;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.sv-status.is-error {
+  color: var(--ember);
+}
+
+.sv-status.is-demo {
+  color: var(--pyrite);
+}
+
+/* ── the folded-away rest ─────────────────────────────────────────────── */
+
+.sv-more {
+  margin: 0.9rem 0 0;
+  border-top: 1px solid var(--rock-edge);
+}
+
+.sv-more > summary {
+  padding: 0.6rem 0;
+  font-size: 0.92rem;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.sv-more > summary:hover {
+  color: var(--lamp);
+}
+
+.sv-more-body {
+  padding: 0.2rem 0 0.9rem;
+}
+
+.sv-hint {
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-faint);
+}
+
+.sv-touch-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.sv-touch-row textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 3.2rem;
+}
+
+.sv-add,
+.sv-drop {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  background: var(--rock);
+  border: 1px solid var(--rock-edge);
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+}
+
+.sv-drop {
+  flex: 0 0 auto;
+}
+
+.sv-add:hover,
+.sv-drop:hover {
+  color: var(--text);
+  border-color: var(--rock-lit);
+}
+
+/* Category chips: what the scout reads, one click to add or drop. */
+.sv-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin-bottom: 0.7rem;
+}
+
+.sv-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--rock);
+  border: 1px solid var(--rock-edge);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+}
+
+.sv-chip-btn span {
+  color: var(--text-faint);
+}
+
+.sv-chip-btn:hover {
+  border-color: var(--rock-lit);
+}
+
+.sv-cat-add {
+  width: auto;
+  max-width: 12rem;
+}
+
+.sv-row2 {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  align-items: end;
+  margin-top: 0.6rem;
+}
+
+.sv-how {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.87rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+/* The optional key. Typed, used, forgotten — nothing here writes it down. */
+.sv-key-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.sv-key-row input {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.sv-key-note {
+  font-size: 0.8rem;
+  color: var(--text-faint);
+  margin: 0.4rem 0 0;
+}
+
+/* ── results ──────────────────────────────────────────────────────────── */
+
+.sv-results {
+  margin: 1.2rem 0 0;
+}
+
+.sv-empty {
+  padding: 0.9rem 1rem;
+  font-size: 0.92rem;
+  color: var(--text-dim);
+  background: var(--rock-deep);
+  border: 1px solid var(--rock-edge);
+  border-radius: 8px;
+}
+
+.sv-card {
+  padding: 0.8rem 0.9rem;
+  margin-bottom: 0.6rem;
+  background: var(--rock-deep);
+  border: 1px solid var(--rock-edge);
+  border-radius: 8px;
+}
+
+.sv-card-title {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.sv-card-title a {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rock-lit);
+}
+
+.sv-card-title a:hover {
+  color: var(--lamp);
+  border-bottom-color: var(--lamp);
+}
+
+/* One line of why: it wraps rather than scrolls, and the chips are small enough
+   that three of them still read as one line on a phone. */
+.sv-why {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.5rem;
+}
+
+.sv-chip {
+  font-size: 0.78rem;
+  line-height: 1.3;
+  color: var(--text-dim);
+  background: var(--rock);
+  border: 1px solid var(--rock-edge);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+}
+
+.sv-chip-fit {
+  color: var(--lamp);
+  border-color: var(--lamp-dim);
+}
+
+.sv-chip-impact {
+  color: var(--gold);
+  border-color: var(--gold-dim);
+}
+
+.sv-refine {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--lamp);
+  background: var(--rock);
+  border: 1px solid var(--rock-edge);
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+
+.sv-refine:hover:not(:disabled) {
+  background: var(--rock-lit);
+}
+
+.sv-refine:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.sv-refine-out:empty {
+  display: none;
+}
+
+.sv-refine-text {
+  margin: 0.5rem 0 0;
+  font-size: 0.87rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.sv-refine-adds {
+  color: var(--text);
+}
+
+.sv-refine-err {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--ember);
+}
+
+@media (max-width: 380px) {
+  .sv-lede {
+    font-size: 1rem;
+  }
+  .sv-dig {
+    font-size: 1rem;
+  }
+}
