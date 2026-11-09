@@ -1,6 +1,6 @@
 # Edge functions
 
-Four functions back the browser filter page (`docs/filter.md`). All are
+Five functions back the browser filter page (`docs/filter.md`). All are
 callable without a JWT — the page is static and has no Supabase session.
 
 | Function | Why it exists |
@@ -9,6 +9,7 @@ callable without a JWT — the page is static and has no Supabase session.
 | `embed`  | **The pick.** Every vector the page uses comes from here. It used to be optional, back when the page carried its own 32 MB encoder and this only served people who chose "Hosted" for speed; the browser has no encoder now, so a deployment without this function is a page that cannot rank anything. |
 | `dig-cache` | The shared vector cache. Embedding a day of abstracts in the browser costs ~60 s; the vectors are ~200 kB. So the *second* person to haul a day downloads instead of re-embedding. Reads are public; writes need `x-dig-key`. |
 | `wagon-name` | Names the train's wagons from their titles. The clustering is local and free; this only says what each cluster is *about*. Cache reads are free and unmetered; a miss spends against a daily budget in Postgres. |
+| `refine` | The optional "Refine with AI" second opinion on one result card. Nothing else needs it — the page ranks with embeddings and arithmetic — so every press is one metered call, bounded per address and globally, and a BYO `x-llm-key` skips the meter and is never stored. |
 
 ## dig-cache
 
@@ -349,3 +350,74 @@ vectors × 768 × 4 B ≈ **400 kB**, and the batch's rolling-window prune
 the table to the retention window. Its reads are the one thing that could get
 hot, which is why they are a single `POST` per haul rather than one request per
 paper.
+
+## refine
+
+The page already ranks a night of arXiv with embeddings and arithmetic, and it
+does that with no key. This is the one optional extra: a **Refine with AI**
+button on a single result card, which asks a hosted model whether the paper fits
+the reader's touchstones and what it adds over its nearest proven neighbours.
+
+```
+POST /refine  { "paper": {"title","abstract"},
+                "neighbours": [ {"title","pct"} ×≤5 ],
+                "touchstones": ["…" ×≤6] }
+  → { "relevance": 1..5, "novelty": 1..5,
+      "why": "≤240 chars", "adds": "≤240 chars" }
+```
+
+**The provider shape is `scripts/llm.mjs`'s** — an OpenAI-compatible
+`/chat/completions`, `Bearer` auth, `response_format: json_object` — so the two
+call the same model the same way. The key is the deployment's `LLM_API_KEY`
+(the same secret the nightly rank uses); the model is `REFINE_MODEL`, defaulting
+to `config/quantum-systems.yml`'s. The prompt carries the paper, its neighbours
+with their citation percentiles, and the touchstones, and asks for JSON only;
+the reply is validated before it is returned, and a `relevance` of 0, an empty
+`why`, or prose that is not JSON is a **502**, not a card that renders nothing.
+
+**There is no cache here, and that is the difference from `wagon-name`.** Two
+readers asking about the same paper with different interests are asking
+different questions, so every press is one call. Hence the meter is the whole
+design: **30 calls per address per UTC day and `REFINE_DAILY_CAP` (default 500)
+across everyone**, counted in `refine_usage` by
+[`refine_usage_spend`](../refine-usage.sql) — the same transactional
+per-client-and-global meter as `wagon_name_spend`, for the same reason (an
+isolate-local Map resets on recycle, which is fine for CPU and not for a metered
+API). Over budget is **429 `{"error":"budget"}`**.
+
+**A BYO key skips the meter and is stored nowhere.** If the request carries
+`x-llm-key` — the browser sends it only when the reader typed one — the call
+uses that key instead of the deployment's, spends nothing, and the header never
+reaches a log, a response, or a row. It is the caller's money and the caller's
+key; that is the only reason it can be passed straight through.
+
+Like `wagon-name`, this needs [`refine-usage.sql`](../refine-usage.sql) run
+first (table, meter, nightly prune, RLS on with no policies — service role
+only). Deploy with:
+
+```bash
+supabase secrets set LLM_API_KEY="$(grep '^LLM_API_KEY=' ../../.env | cut -d= -f2-)"
+supabase secrets set REFINE_SALT="$(openssl rand -hex 16)"
+# Optional — the defaults are 30 and 500, and the sailresearch model:
+# supabase secrets set REFINE_MODEL=… REFINE_BASE_URL=… REFINE_IP_DAILY=30 REFINE_DAILY_CAP=500
+supabase functions deploy refine
+```
+
+`config.toml` needs `[functions.refine] verify_jwt = false` like the other four
+— it is the one line this repo's copy does not yet carry.
+
+```bash
+# refine: should return relevance/novelty/why/adds
+curl -s -X POST "$BASE/refine" -H 'Content-Type: application/json' \
+  -d '{"paper":{"title":"Valley splitting in Si/SiGe",
+                "abstract":"We measure valley splitting by magnetospectroscopy."},
+       "neighbours":[{"title":"Charge noise in silicon dots","pct":0.9}],
+       "touchstones":["valley splitting in silicon"]}' | jq
+
+# refine: a malformed body is a 400 with a message, never a silent empty
+curl -s -X POST "$BASE/refine" -H 'Content-Type: application/json' -d '{}'
+
+# the meter is durable — 30 presses from one address, and the 31st should come
+# back 429 {"error":"budget"} rather than billing the provider.
+```
+
