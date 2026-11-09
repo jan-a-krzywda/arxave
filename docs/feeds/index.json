@@ -1,35 +1,89 @@
 {
-  "built": "2026-10-30",
+  "built": "2026-11-09",
   "feeds": {
     "atoms-ions-photons": {
       "name": "Atoms, ions and photons",
-      "items": 4,
-      "paydirt": 2,
-      "updated": "2026-10-07"
+      "items": 8,
+      "paydirt": 4,
+      "updated": "2026-11-09"
     },
     "fault-tolerant-architecture": {
       "name": "Fault-tolerant architecture",
+      "items": 6,
+      "paydirt": 3,
+      "updated": "2026-11-09"
+    },
+    "qs-a": {
+      "name": "Spin qubit devices and figures of merit",
+      "items": 8,
+      "paydirt": 8,
+      "updated": "2026-11-09"
+    },
+    "qs-b": {
+      "name": "Gate and device benchmarking",
+      "items": 8,
+      "paydirt": 7,
+      "updated": "2026-11-09"
+    },
+    "qs-c": {
+      "name": "Application benchmarks",
+      "items": 8,
+      "paydirt": 7,
+      "updated": "2026-11-09"
+    },
+    "qs-d": {
+      "name": "Calibration, tuning and drift",
+      "items": 8,
+      "paydirt": 6,
+      "updated": "2026-11-09"
+    },
+    "qs-e": {
+      "name": "Control electronics and cryogenics",
+      "items": 8,
+      "paydirt": 7,
+      "updated": "2026-11-09"
+    },
+    "qs-f": {
+      "name": "Software stack: compilers and pulse level",
+      "items": 8,
+      "paydirt": 8,
+      "updated": "2026-11-09"
+    },
+    "qs-g": {
+      "name": "HPC-QC integration and resource management",
+      "items": 8,
+      "paydirt": 7,
+      "updated": "2026-11-09"
+    },
+    "qs-h": {
+      "name": "Error correction route",
+      "items": 8,
+      "paydirt": 8,
+      "updated": "2026-11-09"
+    },
+    "qs-i": {
+      "name": "NISQ algorithms",
       "items": 8,
       "paydirt": 3,
-      "updated": "2026-10-07"
+      "updated": "2026-11-09"
     },
     "quantum-algorithms": {
       "name": "Quantum algorithms",
-      "items": 6,
-      "paydirt": 2,
-      "updated": "2026-10-07"
+      "items": 8,
+      "paydirt": 4,
+      "updated": "2026-11-09"
     },
     "quantum-simulation": {
       "name": "Quantum simulation and many-body",
-      "items": 7,
-      "paydirt": 1,
-      "updated": "2026-10-07"
+      "items": 8,
+      "paydirt": 5,
+      "updated": "2026-11-09"
     },
     "solid-state-qubits": {
       "name": "Solid-state qubits",
-      "items": 7,
-      "paydirt": 1,
-      "updated": "2026-10-07"
+      "items": 8,
+      "paydirt": 4,
+      "updated": "2026-11-09"
     }
   }
 }

@@ -1,6 +1,72 @@
 {
-  "built": "2026-10-07",
+  "built": "2026-11-09",
   "months": [
+    {
+      "month": "2026-11",
+      "days": [
+        {
+          "date": "2026-11-09",
+          "feeds": {
+            "atoms-ions-photons": {
+              "items": 8,
+              "paydirt": 4
+            },
+            "fault-tolerant-architecture": {
+              "items": 6,
+              "paydirt": 3
+            },
+            "qs-a": {
+              "items": 8,
+              "paydirt": 8
+            },
+            "qs-b": {
+              "items": 8,
+              "paydirt": 7
+            },
+            "qs-c": {
+              "items": 8,
+              "paydirt": 7
+            },
+            "qs-d": {
+              "items": 8,
+              "paydirt": 6
+            },
+            "qs-e": {
+              "items": 8,
+              "paydirt": 7
+            },
+            "qs-f": {
+              "items": 8,
+              "paydirt": 8
+            },
+            "qs-g": {
+              "items": 8,
+              "paydirt": 7
+            },
+            "qs-h": {
+              "items": 8,
+              "paydirt": 8
+            },
+            "qs-i": {
+              "items": 8,
+              "paydirt": 3
+            },
+            "quantum-algorithms": {
+              "items": 8,
+              "paydirt": 4
+            },
+            "quantum-simulation": {
+              "items": 8,
+              "paydirt": 5
+            },
+            "solid-state-qubits": {
+              "items": 8,
+              "paydirt": 4
+            }
+          }
+        }
+      ]
+    },
     {
       "month": "2026-10",
       "days": [
