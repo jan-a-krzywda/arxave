@@ -317,6 +317,12 @@ export async function runRank({
     }));
   }
   const axisIds = Object.keys(axisRows).sort();
+  /* No axes means no preset was recognised: nothing can be scored, no feed is
+     written, and the run used to end with a clean exit and a green CI step. A
+     run that cannot rank says so. */
+  if (!axisIds.length) {
+    throw new Error('no axis presets loaded (expected qs-a … qs-i, or presets with an `axis`)');
+  }
 
   /* ── 3. Embed once, centre once, then hand the rows their vectors ────── */
   const rowQueue = [];
