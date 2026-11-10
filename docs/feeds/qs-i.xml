@@ -5,10 +5,9 @@
     <title>The Dig — NISQ algorithms</title>
     <link>https://arxave.com/?preset=qs-i</link>
     <atom:link href="https://arxave.com/feeds/qs-i.xml" rel="self" type="application/rss+xml"/>
-    <description>Papers relevant to operating, benchmarking, integrating and using a semiconductor spin-qubit quantum computer of at least 16 qubits that is co-located with and integrated into an HPC system. Today&apos;s arXiv announcement, ranked against the NISQ algorithms preset. Today&apos;s ranked reading list collects five relevance-3 skims at the application and tooling edge of quantum computing: 2611.08151 on an ML surrogate for hybrid quantum Monte Carlo, 2611.08220 on differential testing for quantum software stacks, 2611.09873 on trajectory-dependent decoherence and leakage in shuttled multi-spin qubits, 2611.09659 on an OpenQASM3-to-QuEST compiler and HPC-quantum offload model, and 2611.09779 on differentiable digital twins for calibration and characterization of neutral-atom and trapped-ion systems; together they inform workflow acceleration, compiler validation, scaling theory, HPC integration, and calibration methodology, though none directly addresses operation or benchmarking of the current static 16-qubit spin-qubit QPU.</description>
-    <arxave:summary>Today&apos;s ranked reading list collects five relevance-3 skims at the application and tooling edge of quantum computing: 2611.08151 on an ML surrogate for hybrid quantum Monte Carlo, 2611.08220 on differential testing for quantum software stacks, 2611.09873 on trajectory-dependent decoherence and leakage in shuttled multi-spin qubits, 2611.09659 on an OpenQASM3-to-QuEST compiler and HPC-quantum offload model, and 2611.09779 on differentiable digital twins for calibration and characterization of neutral-atom and trapped-ion systems; together they inform workflow acceleration, compiler validation, scaling theory, HPC integration, and calibration methodology, though none directly addresses operation or benchmarking of the current static 16-qubit spin-qubit QPU.</arxave:summary>
+    <description>Papers relevant to operating, benchmarking, integrating and using a semiconductor spin-qubit quantum computer of at least 16 qubits that is co-located with and integrated into an HPC system. Today&apos;s arXiv announcement, ranked against the NISQ algorithms preset.</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 09 Nov 2026 12:04:58 GMT</lastBuildDate>
-    <pubDate>Mon, 09 Nov 2026 12:04:58 GMT</pubDate>
+    <lastBuildDate>Tue, 10 Nov 2026 06:21:32 GMT</lastBuildDate>
+    <pubDate>Tue, 10 Nov 2026 06:21:32 GMT</pubDate>
   </channel>
 </rss>
