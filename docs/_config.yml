@@ -24,7 +24,7 @@ github_repo: https://github.com/jan-a-krzywda/arxave
 # Where the Cave's "Discuss" threads live (GitHub Discussions). Set it to the
 # repo you host the discussions in and enable Discussions there; unset falls
 # back to github_repo above. Category is the discussion category slug.
-# discussions_repo: owner/name
+discussions_repo: jan-a-krzywda/arxave-campfire
 # discussions_category: general
 
 collections:
