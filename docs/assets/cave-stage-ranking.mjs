@@ -27,12 +27,21 @@
  * again. The bar counts the picks that are in tonight's ranking, which is what
  * "Act on picks" can actually act on.
  *
+ * THE NUDGES ARE PART OF THE SAME PASS. "More like this" adds the paper's own
+ * night vector to the touchstones (so it pulls its neighbours up, exactly as
+ * the box's words do), and "less like this" is `applyLess` from
+ * `cave-nudge.mjs`: the disliked papers leave the list and everything else pays
+ * `0.25 × cosine` to its nearest dislike. Both are `ctx.prefs` reads, so a
+ * nudge re-runs `caveScore` over the night already in memory — no refetch, no
+ * re-embed, and the picked flags never move.
+ *
  * THE PURE HALF IS EXPORTED — `meters`, `rowHtml`, `applyPicks`,
  * `rankingSummary` — because every number in this card is arithmetic a test can
  * hold without a browser (`scripts/cave-stage-ranking.test.mjs`). The page half
  * is behind `mount`, and the stylesheet is fetched from beside this module once,
  * the way every stage card carries its own CSS.
  */
+import { LESS_WEIGHT, applyLess, vecsFor } from './cave-nudge.mjs';
 import { caveScore, defaultSetting } from './sieve-core.mjs';
 import { cacheKeyText, escapeHtml, joinUrl, refineHtml, refineResultFrom } from './sieve-ui.mjs';
 import { wagonLabel } from './cave-wagon-views.mjs';
@@ -366,6 +375,12 @@ export function mount(body, ctx) {
       topic2: night.topic2 ? (night.topic2[i] ?? -1) : -1,
     }));
 
+    /* The nudges, resolved against tonight. A "more like" paper's vector is a
+       touchstone like the box's words; a "less like" paper's is a penalty. An
+       id from an older night is simply absent from both lists. */
+    const moreVecs = vecsFor(prefs.more, night);
+    const lessVecs = vecsFor(prefs.less, night);
+
     let ranked;
     try {
       ranked = caveScore({
@@ -374,7 +389,7 @@ export function mount(body, ctx) {
         axes: ctx.axes,
         setting: prefs.setting || defaultSetting(ctx.topics),
         sliders: prefs.sliders || {},
-        touchstones: prefs.touchstones || [],
+        touchstones: [...(Array.isArray(prefs.touchstones) ? prefs.touchstones : []), ...moreVecs],
         candidates,
       });
     } catch (err) {
@@ -390,6 +405,11 @@ export function mount(body, ctx) {
     }
 
     if (prefs.ml4q) ranked = ranked.filter((item) => item.ml4q >= 0.5);
+
+    /* The dislikes last, on scores `caveScore` has already normalised: the
+       paper itself leaves, its neighbours sink by a quarter of their cosine,
+       and the list is ordered again. No refetch — the vectors are in memory. */
+    ranked = applyLess(ranked, lessVecs, { weight: LESS_WEIGHT });
 
     state.ranked = applyPicks(ranked, ctx.picks);
     state.stats = meters(ranked);

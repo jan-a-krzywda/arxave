@@ -105,6 +105,29 @@
   color: var(--text-faint);
 }
 
+/* ── more like / less like chips ─────────────────────────────────── */
+
+/* They share the topic chips' row (renderChips appends them), so only the
+   accent differs: gold for "more like", a dashed dim chip for "less like".
+   A real title can outlast a phone, so a chip wraps its own text instead of
+   widening the row past 360 px. No motion here to reduce. */
+
+.cave-tchip--more,
+.cave-tchip--less {
+  max-width: 100%;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.cave-tchip--more {
+  border-color: var(--gold-dim);
+}
+
+.cave-tchip--less {
+  border-style: dashed;
+  color: var(--text-dim);
+}
+
 /* ── the three sliders ───────────────────────────────────────────── */
 
 .cave-priorities-sliders {

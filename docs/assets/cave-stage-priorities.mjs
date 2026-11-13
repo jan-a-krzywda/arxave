@@ -28,10 +28,18 @@
  * line. Without a night the tree still works — counts read "—" until Dig
  * hands a `night` over the bus.
  *
+ * MORE LIKE THIS / LESS LIKE THIS lives here too, because it is a priority the
+ * reader sets, not a paper they pick. The Act stage dispatches a `nudge`
+ * ({ id, sign }); `applyNudge` from `cave-nudge.mjs` keeps `prefs.more` and
+ * `prefs.less` disjoint and this stage draws them as removable chips beside the
+ * topic chips. The lists persist with the rest of the prefs, so a dislike
+ * survives a reload the way a topic weight does.
+ *
  * Pure helpers sit above `mount` so `node --test` can hold the arithmetic and
  * the codec: counts, leaf → wagons, weights, the one-line summary, and the
  * serialise/parse pair v3's tests already covered.
  */
+import { applyNudge } from './cave-nudge.mjs';
 import { centreUnit, defaultSetting } from './sieve-core.mjs';
 import {
   cacheKeyText, embedTexts, escapeHtml, readStore, writeStore,
@@ -192,6 +200,42 @@ export function removeChip(topics, setting, chip) {
 }
 
 /**
+ * A paper's title, cut to something a chip can hold at 360 px. Word boundaries
+ * where there is one, an ellipsis always, and the empty string stays empty so
+ * the caller can fall back to the id.
+ */
+export const NUDGE_TITLE_MAX = 40;
+
+export function shortTitle(raw, max = NUDGE_TITLE_MAX) {
+  const text = String(raw ?? '').replace(/\s+/g, ' ').trim();
+  const limit = Number.isFinite(Number(max)) && Number(max) > 4 ? Math.floor(Number(max)) : NUDGE_TITLE_MAX;
+  if (text.length <= limit) return text;
+  const cut = text.slice(0, limit - 1);
+  const space = cut.lastIndexOf(' ');
+  const kept = space > limit * 0.5 ? cut.slice(0, space) : cut;
+  return kept.replace(/[,.;:]+$/, '') + '…';
+}
+
+/**
+ * The nudge chips, more first, then less: `[{ sign, id, label, title }]`.
+ * `titleOf` is a function (id → full title) so the page can look in tonight's
+ * stones and the ranking, and a test can hand over a plain lookup.
+ */
+export function nudgeChips(prefs, titleOf) {
+  const titleFor = typeof titleOf === 'function' ? titleOf : () => '';
+  const out = [];
+  for (const [sign, ids] of [[1, prefs?.more], [-1, prefs?.less]]) {
+    for (const raw of Array.isArray(ids) ? ids : []) {
+      const id = String(raw ?? '').trim();
+      if (!id) continue;
+      const full = String(titleFor(id) ?? '');
+      out.push({ sign, id, label: sign > 0 ? 'more like' : 'less like', title: shortTitle(full) || id });
+    }
+  }
+  return out;
+}
+
+/**
  * Tonight's primary topics counted per parent and per leaf, keyed by id.
  *
  * `night.topic` is a leaf index per stone (-1 when nothing was assigned), so
@@ -306,6 +350,11 @@ function experimentText(value) {
 
 const plural = (n) => (n === 1 ? 'paper' : 'papers');
 
+/** Ids out of the prefs store: strings, trimmed, deduplicated, order kept. */
+const idListOf = (raw) => (Array.isArray(raw)
+  ? [...new Set(raw.map((id) => String(id ?? '').trim()).filter(Boolean))]
+  : []);
+
 
 export function mount(body, ctx) {
   if (!body || !ctx) return;
@@ -342,6 +391,8 @@ export function mount(body, ctx) {
     sliders: restored.sliders,
     text: typeof stored.text === 'string' ? stored.text : restored.text,
     touchstones: vectors,
+    more: idListOf(stored.more),
+    less: idListOf(stored.less),
     ml4q: shipMl ? restored.ml4q : false,
     counts: null,
   };
@@ -399,7 +450,7 @@ export function mount(body, ctx) {
         '<p class="cave-priorities-hint">Empty is fine — the topics and the sliders still rank the night.</p>' +
         '<p class="cave-priorities-note" role="status"></p>' +
       '</div>' +
-      '<div class="cave-priorities-chips" role="group" aria-label="Applied topic weights"></div>' +
+      '<div class="cave-priorities-chips" role="group" aria-label="Applied topic weights and paper nudges"></div>' +
       '<div class="cave-priorities-sliders" role="group" aria-label="Ranking sliders">' +
         sliderRowHtml('match', 'Topic match', SLIDERS.match.min, SLIDERS.match.max,
           state.sliders.match, ['any topic', 'only close matches']) +
@@ -453,6 +504,8 @@ export function mount(body, ctx) {
       sliders: { ...state.sliders },
       touchstones: state.touchstones,
       text: state.text,
+      more: state.more,
+      less: state.less,
       ml4q: state.ml4q,
     };
   }
@@ -465,6 +518,8 @@ export function mount(body, ctx) {
     const payload = {
       q: serialisePrefs(topics, currentPrefs()),
       text: state.text,
+      more: state.more,
+      less: state.less,
     };
     if (state.touchstones.length) {
       payload.touchstones = state.touchstones.map((vec) => Array.from(vec));
@@ -642,6 +697,22 @@ export function mount(body, ctx) {
 
   /* ── the chips ──────────────────────────────────────────────────────── */
 
+  /** The full title behind a nudge id: tonight's stone first, then the ranking. */
+  function titleFor(id) {
+    const stone = (state.night?.stones ?? []).find((row) => row && String(row.id) === id);
+    if (stone && stone.title) return String(stone.title);
+    const item = (ctx.ranked ?? []).find((row) => row && String(row.id) === id);
+    return item && item.title ? String(item.title) : '';
+  }
+
+  function nudgeChipHtml(chip) {
+    return '<button type="button" class="cave-tchip cave-tchip--' +
+      (chip.sign > 0 ? 'more' : 'less') + '" data-unnudge="' + escapeHtml(chip.id) + '"' +
+      ' aria-label="Remove ' + chip.label + ': ' + escapeHtml(chip.title) + '">' +
+      (chip.sign > 0 ? '+' : '−') + ' ' + chip.label + ': ' + escapeHtml(chip.title) +
+      '<span aria-hidden="true">×</span></button>';
+  }
+
   function renderChips() {
     const chips = chipsFromSetting(topics, state.setting);
     chipsEl.innerHTML = chips.map((chip) =>
@@ -649,7 +720,10 @@ export function mount(body, ctx) {
         '" aria-label="Remove filter: ' + escapeHtml(chip.label) + ' ' + CHOICE_LABEL[chip.choice] + '">' +
         escapeHtml(chip.label) + ' · ' + CHOICE_LABEL[chip.choice] +
         '<span aria-hidden="true">×</span></button>',
-    ).join('');
+    ).join('') +
+      /* The nudge chips sit in the same row, so "more like" is one glance away
+         from "Computing · Prefer" — they are all priorities the reader set. */
+      nudgeChips(currentPrefs(), titleFor).map(nudgeChipHtml).join('');
   }
 
   /* ── the sliders ────────────────────────────────────────────────────── */
@@ -691,6 +765,23 @@ export function mount(body, ctx) {
     state.counts = treeCounts(state.night, topics);
     emptyEl.hidden = !!state.night;
     renderTree();      // new counts, and open leaf lists filled with the new wagons
+    renderChips();     // the nudge chips may now know titles they did not before
+  }
+
+  /* ── the nudges ─────────────────────────────────────────────────────── */
+
+  /**
+   * One "more like" (+1), "less like" (-1) or "clear" (0), from a chip's × or
+   * from the Act stage over the bus. `applyNudge` owns the one-list rule; this
+   * only stores and announces, like every other pref change.
+   */
+  function setNudge(id, sign) {
+    if (!id) return;
+    const next = applyNudge(currentPrefs(), { id, sign });
+    state.more = next.more;
+    state.less = next.less;
+    renderChips();
+    publish();
   }
 
 
@@ -778,6 +869,11 @@ export function mount(body, ctx) {
   });
 
   chipsEl.addEventListener('click', (event) => {
+    const nudgeDrop = event.target.closest('[data-unnudge]');
+    if (nudgeDrop) {
+      setNudge(nudgeDrop.dataset.unnudge, 0);
+      return;
+    }
     const drop = event.target.closest('[data-drop]');
     if (!drop) return;
     const at = drop.dataset.drop.indexOf(':');
@@ -797,6 +893,17 @@ export function mount(body, ctx) {
   });
 
   ctx.bus.addEventListener('night', (event) => setNight(event.detail));
+
+  /* The Act stage's "more like / less like" is a priority, so it takes the same
+     path as a slider: store it, redraw the chips, announce the new prefs. */
+  ctx.bus.addEventListener('nudge', (event) => {
+    const detail = event.detail || {};
+    setNudge(detail.id, detail.sign);
+  });
+
+  /* The ranking usually knows a title before this card does; a re-rank is free
+     to read, so relabel the nudge chips when one lands. */
+  ctx.bus.addEventListener('ranked', () => renderChips());
 
   /* A named wagon (or a re-cut) changes what the leaf lists say; rebuild just
      those lists, leaving counts and expanded state where they are. */
