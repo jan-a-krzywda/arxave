@@ -1,0 +1,387 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Cave stage 8 — Story.
+
+   A reader-mode panel: the ask line, the button, the wait, and then the
+   story as a card you read rather than a bubble you dismiss (Spellbook /
+   Plane AI summary shape). This stage sits in the firelight, so the accent
+   is `--gold`; the prose is `--text` on `--rock-deep`, links are the lamp,
+   and the read-first callout carries a gold edge.
+
+   Colours come only from `_sass/cave.scss` — no hex here, so the palette
+   stays in one place. Type is the site's; the only drawing is the wait's
+   ember, which is a dot with a gold glow and is still under reduced motion.
+
+   At 360 px the card keeps its padding, the tools wrap onto their own
+   rows, and every button keeps a 44 px tap target.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.cave-story {
+  min-width: 0;
+}
+
+/* ── The ask line and the button ──────────────────────────────── */
+
+.st-line {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.st-count {
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.st-over {
+  margin: 0.35rem 0 0;
+  color: var(--gold-dim);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.st-missing {
+  margin: 0.35rem 0 0;
+  color: var(--text-faint);
+  font-size: 0.86rem;
+  font-style: italic;
+  line-height: 1.45;
+}
+
+.st-over[hidden],
+.st-missing[hidden],
+.st-error[hidden],
+.st-wait[hidden],
+.st-card[hidden] {
+  display: none;
+}
+
+.st-ask {
+  margin-top: 0.7rem;
+}
+
+.st-tell {
+  min-height: 2.75rem;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--gold-dim);
+  border-radius: 6px;
+  background: var(--gold);
+  color: var(--cave-air);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.st-tell:hover {
+  background: var(--ore-6);
+}
+
+.st-tell:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.st-tell:disabled {
+  border-color: var(--rock-edge);
+  background: transparent;
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.st-error {
+  margin: 0.6rem 0 0;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--ember);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ember) 10%, transparent);
+  color: var(--text);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+/* ── The wait: the campfire mood ─────────────────────────────── */
+
+.st-wait {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+  padding: 0.9rem 0.85rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 8px;
+  background: radial-gradient(110% 130% at 20% 110%,
+    color-mix(in srgb, var(--gold) 14%, transparent), transparent 70%),
+    var(--rock-deep);
+}
+
+.st-ember {
+  flex: none;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 12px 4px color-mix(in srgb, var(--gold) 45%, transparent);
+  animation: st-ember-glow 1.6s ease-in-out infinite;
+}
+
+@keyframes st-ember-glow {
+  0%, 100% { opacity: 0.55; transform: translateY(0); }
+  50%      { opacity: 1;    transform: translateY(-2px); }
+}
+
+.st-wait-line {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* ── The card ────────────────────────────────────────────────── */
+
+.st-card {
+  margin-top: 0.9rem;
+  padding: 0.95rem 0.9rem 1rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 10px;
+  background:
+    radial-gradient(140% 90% at 50% 0%,
+      color-mix(in srgb, var(--gold) 8%, transparent), transparent 62%),
+    var(--rock-deep);
+  min-width: 0;
+}
+
+.st-head {
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--rock-edge);
+}
+
+.st-eyebrow {
+  margin: 0;
+  color: var(--gold);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.st-title {
+  margin: 0.2rem 0 0;
+  color: var(--text);
+  font-size: 1.15rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.st-meta {
+  margin: 0.3rem 0 0;
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── The prose ───────────────────────────────────────────────── */
+
+.st-prose {
+  margin-top: 0.8rem;
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.st-prose p {
+  margin: 0 0 0.75rem;
+}
+
+.st-prose ul {
+  margin: 0 0 0.75rem;
+  padding-left: 1.15rem;
+}
+
+.st-prose li {
+  margin-bottom: 0.3rem;
+}
+
+.st-prose > :last-child {
+  margin-bottom: 0;
+}
+
+.st-prose strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.st-prose em {
+  color: var(--text);
+}
+
+.st-paper,
+.st-paper:visited {
+  color: var(--lamp);
+  text-decoration: underline;
+  text-decoration-color: var(--rock-lit);
+  text-underline-offset: 2px;
+}
+
+.st-paper:hover {
+  color: var(--lamp-dim);
+  text-decoration-color: var(--lamp);
+}
+
+.st-paper:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ── Read first, Threads ─────────────────────────────────────── */
+
+.st-label {
+  margin: 0;
+  color: var(--text-faint);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.st-readfirst {
+  margin-top: 1rem;
+  padding: 0.55rem 0.7rem 0.6rem;
+  border-left: 3px solid var(--gold);
+  border-radius: 0 6px 6px 0;
+  background: color-mix(in srgb, var(--gold) 8%, transparent);
+}
+
+.st-rf-title {
+  margin: 0.22rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.st-rf-why {
+  margin: 0.25rem 0 0;
+  color: var(--text-dim);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.st-threads {
+  margin-top: 1rem;
+}
+
+.st-thread-list {
+  margin: 0.35rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.st-thread {
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--rock-edge);
+}
+
+.st-thread:first-child {
+  border-top: none;
+  padding-top: 0.2rem;
+}
+
+.st-thread-papers {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.st-thread-sep {
+  color: var(--text-faint);
+  font-weight: 400;
+}
+
+.st-thread-why {
+  margin: 0.18rem 0 0;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* ── The tools ───────────────────────────────────────────────── */
+
+.st-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--rock-edge);
+}
+
+.st-tools button {
+  min-height: 2.5rem;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 6px;
+  background: var(--rock);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.st-tools button:hover {
+  border-color: var(--gold-dim);
+  color: var(--text);
+}
+
+.st-tools button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* Two classes, so this beats `.st-tools button` without `!important`. */
+.st-tools .st-speak {
+  border-color: var(--gold-dim);
+  color: var(--gold);
+}
+
+.st-speak[hidden] {
+  display: none;
+}
+
+/* ── Narrow: 360 px keeps the whole card readable ────────────── */
+
+@media (max-width: 600px) {
+  .st-card {
+    padding: 0.8rem 0.7rem 0.85rem;
+  }
+
+  .st-title {
+    font-size: 1.05rem;
+  }
+
+  .st-prose {
+    font-size: 0.92rem;
+  }
+
+  .st-tools {
+    gap: 0.4rem;
+  }
+
+  .st-tools button {
+    flex: 1 1 auto;
+  }
+}
+
+/* ── Reduced motion: the ember glows still, it does not pulse ── */
+
+@media (prefers-reduced-motion: reduce) {
+  .st-ember {
+    animation: none;
+    opacity: 0.85;
+  }
+}
+
