@@ -1,0 +1,425 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Stage 5 — Priorities.
+
+   Colours come only from the site palette (docs/_sass/cave.scss): rock for
+   surfaces, lamp for the sliders, gold for what the reader is reaching for.
+   The stage is lit by the fire, so focus rings are gold rather than the blue
+   lamp stages 1–3 use.
+
+   Everything is one column that reflows at 360 px: the label takes the
+   leftover width, the dropdown and the weight bar keep fixed small widths.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.cave-priorities {
+  display: grid;
+  gap: 0.95rem;
+  min-width: 0;
+}
+
+.cave-priorities [hidden] {
+  display: none !important;
+}
+
+.cave-priorities-muted,
+.cave-priorities-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-faint);
+}
+
+/* ── the box ─────────────────────────────────────────────────────── */
+
+.cave-priorities-text {
+  display: block;
+  width: 100%;
+  min-height: 4.5rem;
+  box-sizing: border-box;
+  padding: 0.55rem 0.65rem;
+  background: var(--rock);
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.cave-priorities-text:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+  border-color: var(--gold);
+}
+
+.cave-priorities-hint {
+  margin-top: 0.35rem;
+}
+
+.cave-priorities-note {
+  margin: 0.35rem 0 0;
+  min-height: 1.1em;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.cave-priorities-note.is-error {
+  color: var(--ember);
+}
+
+/* ── applied-topic chips ─────────────────────────────────────────── */
+
+.cave-priorities-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.cave-priorities-chips:empty {
+  display: none;
+}
+
+.cave-tchip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  padding: 0.18rem 0.55rem;
+  background: var(--rock);
+  border: 1px solid var(--rock-lit);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 0.8rem;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.cave-tchip:hover {
+  border-color: var(--gold);
+}
+
+.cave-tchip:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+.cave-tchip span {
+  color: var(--text-faint);
+}
+
+/* ── the three sliders ───────────────────────────────────────────── */
+
+.cave-priorities-sliders {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.cave-priorities-ctl-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.15rem;
+}
+
+.cave-priorities-ctl-head label {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.cave-priorities-val {
+  flex: none;
+  font-size: 0.82rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.cave-priorities-slider {
+  display: block;
+  width: 100%;
+  margin: 0;
+  accent-color: var(--lamp);
+}
+
+.cave-priorities-slider:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.cave-priorities-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.1rem;
+  font-size: 0.72rem;
+  color: var(--text-faint);
+}
+
+/* ── the ML chip ─────────────────────────────────────────────────── */
+
+.cave-priorities-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.cave-ml4q {
+  padding: 0.22rem 0.7rem;
+  background: var(--rock);
+  border: 1px solid var(--rock-edge);
+  border-radius: 999px;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.cave-ml4q:hover {
+  border-color: var(--rock-lit);
+  color: var(--text);
+}
+
+.cave-ml4q[aria-pressed="true"] {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 12%, var(--rock));
+}
+
+.cave-ml4q:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+
+/* ── the topic tree ──────────────────────────────────────────────── */
+
+.cave-priorities-tree-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+}
+
+.cave-priorities-tree-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cave-reset-topics {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--lamp);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.cave-reset-topics:hover {
+  text-decoration: underline;
+}
+
+.cave-reset-topics:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.cave-tree-empty {
+  margin-bottom: 0.35rem;
+}
+
+.cave-priorities-tree {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.cave-trow {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 0.32rem 0.1rem;
+  border-bottom: 1px solid var(--rock-edge);
+}
+
+.cave-trow--parent {
+  cursor: pointer;
+}
+
+.cave-trow--parent:hover {
+  background: var(--rock);
+}
+
+.cave-trow--leaf {
+  padding-left: 1rem;
+}
+
+.cave-trow-toggle {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cave-trow-toggle:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.cave-twisty {
+  flex: none;
+  width: 0.85rem;
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.cave-trow-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.88rem;
+}
+
+.cave-trow--parent .cave-trow-label {
+  font-weight: 600;
+}
+
+.cave-trow-count {
+  flex: none;
+  min-width: 1.7em;
+  padding: 0 0.35rem;
+  background: var(--rock);
+  border-radius: 999px;
+  color: var(--text-dim);
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.cave-tselect {
+  flex: none;
+  max-width: 5.2rem;
+  padding: 0.12rem 0.15rem;
+  background: var(--rock);
+  border: 1px solid var(--rock-edge);
+  border-radius: 3px;
+  color: var(--text);
+  font-size: 0.78rem;
+}
+
+.cave-tselect:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+/* The bar is the weight, drawn: prefer 1.5 fills it, equal 1 is two thirds,
+   avoid 0.5 one third, off empty. The colour says the same thing again. */
+.cave-weight-bar {
+  display: block;
+  flex: none;
+  width: 2.4rem;
+  height: 0.4rem;
+  overflow: hidden;
+  background: var(--rock);
+  border: 1px solid var(--rock-edge);
+  border-radius: 999px;
+}
+
+.cave-weight-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--lamp-dim);
+  transition: width 0.18s ease;
+}
+
+.cave-weight-bar[data-choice="prefer"] .cave-weight-fill {
+  background: var(--gold);
+}
+
+.cave-weight-bar[data-choice="avoid"] .cave-weight-fill {
+  background: var(--pyrite);
+}
+
+.cave-weight-bar[data-choice="off"] .cave-weight-fill {
+  background: transparent;
+}
+
+
+/* ── wagons under a leaf ─────────────────────────────────────────── */
+
+.cave-wagons {
+  padding: 0 0 0.35rem;
+}
+
+.cave-wagons .cave-priorities-muted {
+  padding: 0.1rem 0 0.3rem 1.7rem;
+}
+
+.cave-wagon-list {
+  display: grid;
+  gap: 0.12rem;
+  margin: 0.1rem 0 0.4rem;
+  padding: 0 0 0 1.7rem;
+  list-style: none;
+}
+
+.cave-wagon-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.cave-wagon-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cave-wagon-size {
+  flex: none;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── phone ───────────────────────────────────────────────────────── */
+
+@media (max-width: 420px) {
+  .cave-tselect {
+    max-width: 4.6rem;
+    font-size: 0.75rem;
+  }
+
+  .cave-weight-bar {
+    width: 1.8rem;
+  }
+
+  .cave-trow--leaf {
+    padding-left: 0.7rem;
+  }
+}
+
+/* A weight moving is decoration, not information. */
+@media (prefers-reduced-motion: reduce) {
+  .cave-weight-fill {
+    transition: none;
+  }
+}
+
