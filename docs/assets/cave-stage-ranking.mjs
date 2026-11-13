@@ -72,7 +72,7 @@ let styled = false;
 function ensureStyles() {
   if (styled || typeof document === 'undefined') return;
   styled = true;
-  const href = new URL('./cave-ranking.css', import.meta.url).href;
+  const href = new URL('./cave-ranking.css' + new URL(import.meta.url).search, import.meta.url).href;
   if (document.head.querySelector('link[href="' + href + '"]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';

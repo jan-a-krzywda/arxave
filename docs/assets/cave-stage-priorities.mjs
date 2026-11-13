@@ -338,7 +338,7 @@ export const ART_HREF = new URL('./cave-art/campfire.svg', import.meta.url).href
 
 /** Load this stage's stylesheet once; the page links none of its own. */
 function ensureStyles() {
-  const href = new URL('./cave-priorities.css', import.meta.url).href;
+  const href = new URL('./cave-priorities.css' + new URL(import.meta.url).search, import.meta.url).href;
   if (!document.head || document.head.querySelector(`link[href="${href}"]`)) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';

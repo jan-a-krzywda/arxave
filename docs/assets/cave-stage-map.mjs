@@ -183,7 +183,7 @@ export function mount(body, ctx) {
       '<div class="wagon-table-wrap"></div>' +
       '<div class="cell-tooltip wagon-tooltip cave-wagon-tooltip" role="tooltip" style="display:none"></div>' +
       '<div class="button-bar cave-map-continue">' +
-        '<button type="button" class="cave-continue-btn cave-primary" disabled>Sit by the fire</button>' +
+        '<button type="button" class="cave-continue-btn cave-primary" disabled>Into the cave</button>' +
       '</div>' +
     '</div>';
 

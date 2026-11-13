@@ -205,17 +205,30 @@ function startPage() {
    * and the one lift is kept, with only its `--lift-floor` updated: CSS does
    * the rest of the descent, and the cable shortens with it.
    */
+  let openFloor = -1;
+  let visitFloor = null; // a floor the reader rode to from the rail
+
   function paintRail(snapshot) {
     const rail = byId('cave-rail');
     if (!rail) return;
+    /* A newly opened stage calls the lift back down to it; until then it
+       stays where the reader last sent it. */
+    const floor = liftFloor(snapshot, STAGES);
+    if (floor !== openFloor) visitFloor = null;
+    openFloor = floor;
     const lift = rail.querySelector('.cave-lift');
     if (!lift) {
       rail.innerHTML = stageRailHtml(snapshot, STAGES);
       return;
     }
-    lift.style.setProperty('--lift-floor', String(liftFloor(snapshot, STAGES)));
+    moveLift(visitFloor ?? floor);
     const list = rail.querySelector('.cave-rail-list');
     if (list) list.innerHTML = stageRailStepsHtml(snapshot, STAGES);
+  }
+
+  function moveLift(floor) {
+    const lift = document.querySelector('#cave-rail .cave-lift');
+    if (lift) lift.style.setProperty('--lift-floor', String(floor));
   }
 
   function wireFolds() {
@@ -243,6 +256,8 @@ function startPage() {
         const id = String(link.getAttribute('href') || '').replace(/^#stage-/, '');
         if (!STAGES.includes(id) || flow.status(id) === 'locked') return;
         if (!flow.expanded(id)) flow.toggle(id);
+        visitFloor = STAGES.indexOf(id);
+        moveLift(visitFloor);
         const section = byId('stage-' + id);
         if (section && section.scrollIntoView) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });

@@ -75,7 +75,7 @@ let styled = false;
 function ensureStyles() {
   if (styled || typeof document === 'undefined') return;
   styled = true;
-  const href = new URL('./cave-story.css', import.meta.url).href;
+  const href = new URL('./cave-story.css' + new URL(import.meta.url).search, import.meta.url).href;
   const head = document.head;
   if (head && typeof head.querySelector === 'function'
     && head.querySelector('link[href="' + href + '"]')) return;

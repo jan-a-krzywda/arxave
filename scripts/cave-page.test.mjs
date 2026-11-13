@@ -174,6 +174,25 @@ test('the lift descends by whole floors and honours reduced motion', () => {
   assert.match(CSS, /@media \(prefers-reduced-motion: reduce\) \{\s*\.cave-lift \{\s*transition: none;/);
 });
 
+/* ── cache busting for modules ─────────────────────────────────────────── */
+
+// Only cave.js carries ?v= in its <script>; a stale cave-flow.mjs from the
+// browser cache once ran the new shell against the old stage list.
+test('cave.md maps every assets/*.mjs to a ?v= URL before the first module', () => {
+  const md = read('docs/cave.md');
+  const map = md.indexOf('<script type="importmap">');
+  assert.ok(map !== -1, 'no import map');
+  assert.ok(map < md.indexOf('<script type="module"'), 'import map after the module script');
+  assert.match(md, /f\.extname == '\.mjs' and f\.path contains '\/assets\/'/);
+});
+
+test('stage stylesheets carry the version of the module that loads them', () => {
+  for (const f of ['act', 'priorities', 'ranking', 'story']) {
+    assert.match(read(`docs/assets/cave-stage-${f}.mjs`),
+      new RegExp(`new URL\\('\\./cave-${f}\\.css' \\+ new URL\\(import\\.meta\\.url\\)\\.search, import\\.meta\\.url\\)`));
+  }
+});
+
 /* ── the site theme import ─────────────────────────────────────────────── */
 
 // Sass looks beside main.scss before _sass/, so an assets/<name>.css would
