@@ -120,4 +120,16 @@ nav_icon: dig
   window.ARXAVE_CORPUS_BASE = "{{ '/assets/corpus/' | relative_url }}";
   window.ARXAVE_DISCUSSIONS_REPO = "{{ site.discussions_repo | default: site.github_repo }}";
 </script>
+<!-- The same ?v= for every module cave.js pulls in. Without it the browser
+     keeps a stale cave-flow.mjs or stage module for up to ten minutes after a
+     deploy, and the new shell runs against the old flow (a stage list that no
+     longer matches the page). The map must come before the first module. -->
+<script type="importmap">
+{ "imports": {
+{%- for f in site.static_files -%}{%- if f.extname == '.mjs' and f.path contains '/assets/' %}
+  "{{ f.path | relative_url }}": "{{ f.path | relative_url }}?v={{ site.time | date: '%s' }}",
+{%- endif -%}{%- endfor %}
+  "{{ '/assets/cave.js' | relative_url }}": "{{ '/assets/cave.js' | relative_url }}?v={{ site.time | date: '%s' }}"
+} }
+</script>
 <script type="module" src="{{ '/assets/cave.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>

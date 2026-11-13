@@ -63,7 +63,7 @@ let styled = false;
 function ensureStyles() {
   if (styled || typeof document === 'undefined') return;
   styled = true;
-  const href = new URL('./cave-act.css', import.meta.url).href;
+  const href = new URL('./cave-act.css' + new URL(import.meta.url).search, import.meta.url).href;
   if (document.head && typeof document.head.querySelector === 'function'
     && document.head.querySelector('link[href="' + href + '"]')) return;
   if (typeof document.createElement !== 'function') return;
