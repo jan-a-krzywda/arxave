@@ -8,146 +8,119 @@ nav_icon: dig
 
 <noscript>
   <div class="warn-banner">
-    JavaScript is disabled. This page needs it to rank the night. Please enable JavaScript and reload.
+    JavaScript is disabled. This page needs it to dig tonight's arXiv. Please enable JavaScript and reload.
   </div>
 </noscript>
 
-<!-- The merged Dig + Sieve page. The markup here is the parts that do not move:
-     the header band, the box, the three sliders, the tree's containers and the
-     results area. The tree rows, the chips and the cards are drawn by
-     assets/cave.js from topics.json and tonight's haul; the text in this file is
-     what a browser can draw before a byte of JavaScript has run.
+<!-- The staged Cave: eight cards top to bottom, one rail, one side wall per
+     gutter. The markup here is the part that does not move — the hero, the
+     rail's container, one section per stage with its head and body, and the
+     notice line. `assets/cave.js` draws the rail inside #cave-rail, mounts
+     each stage's module into its body, and classes the sections done / open /
+     locked. Stage modules own everything inside their own body. -->
 
-     The header SVG is included rather than pointed at with <img> so `.cv-flame`
-     can animate — cave-art.mjs says as much, and CSS cannot reach inside an
-     <img>. Everything after the layout is one script and two stylesheets. -->
-<div class="cv-page" id="cv-app">
+<div id="cave-app">
 
-  <div class="cv-band">
-    {% include_relative assets/cave-art/cave-header.svg %}
-  </div>
+  <div class="cave-wall cave-wall-left" aria-hidden="true"></div>
+  <div class="cave-wall cave-wall-right" aria-hidden="true"></div>
 
-  <div class="cv-layout">
+  <header class="cave-hero">
+    <p class="cave-lede">
+      arXiv drops hundreds of papers a night. Dig tonight's announcement, watch
+      the haul train fill, then read the night as wagons — and keep what is
+      worth reading.
+    </p>
+    <p class="cave-sub">Eight stages, top to bottom. Each opens once the one before it is done.</p>
+  </header>
 
-    <!-- ── left column: what you care about, how much, and which topics ── -->
-    <div class="cv-side">
+  <nav class="cave-rail" id="cave-rail" aria-label="Tonight's stages"></nav>
 
-      <p class="cv-lede">
-        arXiv drops hundreds of papers a night. Say what you care about, or let
-        the topics do it, and this page ranks the whole night against a corpus of
-        papers that already mattered.
-      </p>
+  <div class="cave-stages">
 
-      <label class="cv-field" for="cv-text">
-        <span class="cv-label">What do you care about?</span>
-        <textarea id="cv-text" class="cv-text" rows="3"
-                  placeholder="A phrase, a sentence, or an abstract you liked"></textarea>
-      </label>
-      <p class="cv-hint">Empty is fine — the topics and the sliders still rank the night.</p>
+    <section class="cave-stage" id="stage-dig" data-stage="dig">
+      <button type="button" class="cave-stage-head" aria-expanded="true">
+        <span class="cave-stage-n">1</span><span class="cave-stage-name">Dig</span>
+        <span class="cave-stage-summary"></span>
+      </button>
+      <div class="cave-stage-body"></div>
+    </section>
 
-      <div class="cv-sliders" role="group" aria-label="Ranking sliders">
+    <section class="cave-stage" id="stage-train" data-stage="train">
+      <button type="button" class="cave-stage-head" aria-expanded="false">
+        <span class="cave-stage-n">2</span><span class="cave-stage-name">Train</span>
+        <span class="cave-stage-summary"></span>
+      </button>
+      <div class="cave-stage-body"></div>
+    </section>
 
-        <div class="cv-control">
-          <div class="cv-control-head">
-            <label class="cv-control-name" for="cv-match">Topic match</label>
-            <output class="cv-control-val" id="cv-match-val" for="cv-match">50</output>
-          </div>
-          <input class="cv-slider" type="range" id="cv-match" min="0" max="100" step="1" value="50"
-                 aria-valuetext="Topic match: 50 of 100">
-          <div class="cv-ends" aria-hidden="true"><span>any topic</span><span>only close matches</span></div>
-        </div>
+    <section class="cave-stage" id="stage-map" data-stage="map">
+      <button type="button" class="cave-stage-head" aria-expanded="false">
+        <span class="cave-stage-n">3</span><span class="cave-stage-name">Map</span>
+        <span class="cave-stage-summary"></span>
+      </button>
+      <div class="cave-stage-body"></div>
+    </section>
 
-        <div class="cv-control">
-          <div class="cv-control-head">
-            <label class="cv-control-name" for="cv-surprise">Surprise</label>
-            <output class="cv-control-val" id="cv-surprise-val" for="cv-surprise">50</output>
-          </div>
-          <input class="cv-slider" type="range" id="cv-surprise" min="0" max="100" step="1" value="50"
-                 aria-valuetext="Surprise: 50 of 100">
-          <div class="cv-ends" aria-hidden="true"><span>proven</span><span>surprising</span></div>
-        </div>
+    <section class="cave-stage" id="stage-fire" data-stage="fire">
+      <button type="button" class="cave-stage-head" aria-expanded="false">
+        <span class="cave-stage-n">4</span><span class="cave-stage-name">Enter the cave</span>
+        <span class="cave-stage-summary"></span>
+      </button>
+      <div class="cave-stage-body"></div>
+    </section>
 
-        <!-- Hidden by cave.js when axes.json says exp_theory did not ship. -->
-        <div class="cv-control" id="cv-exptheory-row">
-          <div class="cv-control-head">
-            <label class="cv-control-name" for="cv-exptheory">Experiment ↔ Theory</label>
-            <output class="cv-control-val" id="cv-exptheory-val" for="cv-exptheory">no preference</output>
-          </div>
-          <input class="cv-slider" type="range" id="cv-exptheory" min="-100" max="100" step="1" value="0"
-                 aria-valuetext="Experiment to theory: no preference">
-          <div class="cv-ends" aria-hidden="true"><span>experiment</span><span>theory</span></div>
-        </div>
+    <section class="cave-stage" id="stage-priorities" data-stage="priorities">
+      <button type="button" class="cave-stage-head" aria-expanded="false">
+        <span class="cave-stage-n">5</span><span class="cave-stage-name">Priorities</span>
+        <span class="cave-stage-summary"></span>
+      </button>
+      <div class="cave-stage-body"></div>
+    </section>
 
-      </div>
+    <section class="cave-stage" id="stage-ranking" data-stage="ranking">
+      <button type="button" class="cave-stage-head" aria-expanded="false">
+        <span class="cave-stage-n">6</span><span class="cave-stage-name">Ranking</span>
+        <span class="cave-stage-summary"></span>
+      </button>
+      <div class="cave-stage-body"></div>
+    </section>
 
-      <div class="cv-chipbar">
-        <button type="button" class="cv-chip cv-chip--topics" id="cv-topics-btn"
-                aria-haspopup="dialog" aria-expanded="false" aria-controls="cv-sheet">Topics</button>
-        <button type="button" class="cv-chip" id="cv-ml4q" aria-pressed="false">ML for quantum</button>
-        <div class="cv-chips" id="cv-chips"></div>
-        <button type="button" class="cv-link" id="cv-clear">Clear filters</button>
-      </div>
+    <section class="cave-stage" id="stage-act" data-stage="act">
+      <button type="button" class="cave-stage-head" aria-expanded="false">
+        <span class="cave-stage-n">7</span><span class="cave-stage-name">Act</span>
+        <span class="cave-stage-summary"></span>
+      </button>
+      <div class="cave-stage-body"></div>
+    </section>
 
-      <!-- Desktop: a static panel in this column. Phone: the same element as a
-           modal bottom sheet, opened by the Topics chip. cave.js decides which,
-           because `showModal` is where the focus trap and Esc come from. -->
-      <dialog id="cv-sheet" class="cv-sheet" aria-labelledby="cv-sheet-title">
-        <div class="cv-sheet-head">
-          <h2 class="cv-h3" id="cv-sheet-title">Topics</h2>
-          <button type="button" class="cv-link" id="cv-reset-topics">Reset topics</button>
-        </div>
-        <p class="cv-hint">Equal reads everything · Prefer lifts a topic · Avoid quiets it · Off drops it.</p>
-        <div class="cv-tree" id="cv-tree"></div>
-        <div class="cv-sheet-actions">
-          <button type="button" class="cv-btn cv-btn--ghost" id="cv-sheet-clear">Clear</button>
-          <button type="button" class="cv-btn" id="cv-sheet-apply">Apply</button>
-        </div>
-      </dialog>
-
-    </div>
-
-    <!-- ── right column: the night, ranked ── -->
-    <div class="cv-main">
-      <p class="cv-status" id="cv-status" role="status" aria-live="polite">Loading the corpus…</p>
-      <section class="cv-results" id="cv-results" aria-label="Results"></section>
-
-      <details class="cv-advanced" id="cv-advanced">
-        <summary>Refine settings, corpus window, export</summary>
-        <div class="cv-advanced-body">
-          <label class="cv-field" for="cv-key">
-            <span class="cv-label">Key for Refine with AI</span>
-            <input type="password" id="cv-key" autocomplete="off" spellcheck="false" placeholder="sk-…">
-          </label>
-          <p class="cv-hint">Kept in this tab only — never saved, sent to nothing but the refiner.</p>
-
-          <p class="cv-window" id="cv-window">Corpus window —</p>
-          <label class="cv-field" for="cv-lookback">
-            <span class="cv-label">How far back to dig</span>
-            <select id="cv-lookback">
-              <option value="1">Tonight</option>
-              <option value="2">The last two nights</option>
-              <option value="3">The last three nights</option>
-            </select>
-          </label>
-
-          <button type="button" class="cv-btn cv-btn--ghost" id="cv-export">Export results (JSON)</button>
-        </div>
-      </details>
-    </div>
+    <section class="cave-stage" id="stage-story" data-stage="story">
+      <button type="button" class="cave-stage-head" aria-expanded="false">
+        <span class="cave-stage-n">8</span><span class="cave-stage-name">Story</span>
+        <span class="cave-stage-summary"></span>
+      </button>
+      <div class="cave-stage-body"></div>
+    </section>
 
   </div>
+
+  <p class="cave-notice" id="cave-notice" role="status" hidden></p>
+
 </div>
 
 <!-- ?v=<build time>, for the reason _includes/head.html gives: a browser holding
      the old script against the new markup shows a page styled by rules that no
-     longer match its HTML. -->
-<link rel="stylesheet" href="{{ '/assets/cave-tokens.css' | relative_url }}?v={{ site.time | date: '%s' }}">
+     longer match its HTML. style.css and filter.css come along because the
+     stages reuse Dig's components (the chips, the train, the wagon table). -->
+<link rel="stylesheet" href="{{ '/assets/style.css' | relative_url }}?v={{ site.time | date: '%s' }}">
+<link rel="stylesheet" href="{{ '/assets/filter.css' | relative_url }}?v={{ site.time | date: '%s' }}">
 <link rel="stylesheet" href="{{ '/assets/cave.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-<!-- Where the corpus lives, handed over by Jekyll rather than guessed in JS: the
-     page's permalink is /cave/, so a relative fetch works today and breaks the
-     day this site gains a baseurl. -->
+<!-- Where the corpus lives, and which repo the Discussions threads hang on.
+     Handed over by Jekyll rather than guessed in JS: the page's permalink is
+     /cave/, so a relative fetch works today and breaks the day this site gains
+     a baseurl. `site.discussions_repo` is unset everywhere today, so the
+     `default` filter is what fills it. -->
 <script>
   window.ARXAVE_CORPUS_BASE = "{{ '/assets/corpus/' | relative_url }}";
+  window.ARXAVE_DISCUSSIONS_REPO = "{{ site.discussions_repo | default: site.github_repo }}";
 </script>
 <script type="module" src="{{ '/assets/cave.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
-
