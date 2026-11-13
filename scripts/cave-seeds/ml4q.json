@@ -1,0 +1,602 @@
+[
+ {
+  "id": "2509.14163",
+  "label": "ml4q",
+  "why": "a learned controller (title matches /\\breinforcement learning\\b/i)"
+ },
+ {
+  "id": "2509.16244",
+  "label": "ml4q",
+  "why": "a language model is used (title matches /\\blarge language models?\\b|\\bLLMs?\\b|LLM[- ]/i)"
+ },
+ {
+  "id": "2509.05051",
+  "label": "ml4q",
+  "why": "a learned controller (title matches /\\breinforcement learning\\b/i)"
+ },
+ {
+  "id": "2509.08385",
+  "label": "ml4q",
+  "why": "a language model is used (title matches /\\blarge language models?\\b|\\bLLMs?\\b|LLM[- ]/i)"
+ },
+ {
+  "id": "2511.11609",
+  "label": "ml4q",
+  "why": "a neural model is used (title matches /\\bneural\\b/i)"
+ },
+ {
+  "id": "2511.08493",
+  "label": "ml4q",
+  "why": "a learned controller (title matches /\\breinforcement learning\\b/i)"
+ },
+ {
+  "id": "2511.15969",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2512.06858",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2509.01422",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2510.14099",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2509.14282",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2512.08318",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2512.18995",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2511.02602",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2512.15661",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2512.19819",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2509.01812",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2509.07084",
+  "label": "ml4q",
+  "why": "a neural model is used (title matches /\\bneural\\b/i)"
+ },
+ {
+  "id": "2509.12933",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2510.11773",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2512.01091",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2510.06563",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2511.22321",
+  "label": "ml4q",
+  "why": "a learned controller (title matches /\\breinforcement learning\\b/i)"
+ },
+ {
+  "id": "2512.20492",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2509.08011",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2509.10634",
+  "label": "ml4q",
+  "why": "a learned controller (title matches /\\breinforcement learning\\b/i)"
+ },
+ {
+  "id": "2509.19537",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2511.03320",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2511.04967",
+  "label": "ml4q",
+  "why": "a learned controller (title matches /\\breinforcement learning\\b/i)"
+ },
+ {
+  "id": "2511.06012",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2511.16724",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2511.21951",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2512.23991",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2509.04045",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2510.12507",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2512.02065",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2512.08023",
+  "label": "ml4q",
+  "why": "a learned controller (title matches /\\breinforcement learning\\b/i)"
+ },
+ {
+  "id": "2509.06871",
+  "label": "ml4q",
+  "why": "a transformer/attention model (title matches /\\btransformers?\\b|attention[- ]based/i)"
+ },
+ {
+  "id": "2509.16242",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2509.17723",
+  "label": "ml4q",
+  "why": "the title says machine learning (title matches /\\bmachine learning\\b/i)"
+ },
+ {
+  "id": "2510.19928",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.03758",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.18325",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.15309",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.03125",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.07468",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.11307",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.07139",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.22585",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.02202",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.11376",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.18123",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.18805",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.10651",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.10437",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.08467",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2511.12537",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.24982",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.14346",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.09164",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2511.13413",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.18064",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.04798",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.13280",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.04534",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.15693",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2511.04359",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2511.21186",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.11517",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.24857",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2511.23027",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.09402",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.19432",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.06536",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.16149",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2511.03935",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2511.14855",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.01327",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.09144",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.18262",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.02094",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.04700",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.20879",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.13053",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.01156",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.21901",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2511.14413",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.18111",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.16653",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.25074",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.09477",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.04047",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.21630",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.06756",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.11721",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.19028",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2511.17370",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.24589",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.11673",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.09588",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2511.05105",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2511.18863",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.12628",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.16281",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.11324",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2511.10018",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.12280",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.24274",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.09911",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2511.17924",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.11004",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2511.06280",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.18474",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.13417",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2511.01314",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2510.08274",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.00177",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.04919",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2512.23325",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ },
+ {
+  "id": "2509.03864",
+  "label": "other",
+  "why": "no ML keyword in the title — a quantum paper without machine learning"
+ }
+]

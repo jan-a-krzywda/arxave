@@ -1,0 +1,528 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Cave page — layout and the pieces cave-tokens.css does not carry.
+
+   Tokens only: every colour below is a `var(--cv-…)`, so the light theme is
+   one block in cave-tokens.css and nothing here has to know about it. The
+   primitives (.cv-btn .cv-chip .cv-card .cv-slider .cv-sheet) come from the
+   tokens file too; this file positions them, adds the tree, the chip bar, the
+   result cards and the two-column → one-column switch.
+
+   Desktop: left column (box, sliders, tree) and right column (results).
+   Phone (≤720px): one column, the tree is the same <dialog> shown as a modal
+   bottom sheet behind the Topics chip, so there is one tree in the DOM and
+   two ways to reach it.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.cv-page {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 1.25rem 4rem;
+}
+
+/* ── the header band ─────────────────────────────────────────────────
+   Pixel art is the page's only decoration: a 640×128 SVG, inlined so the
+   flame can flicker, on a rock-coloured strip. */
+.cv-band {
+  margin: 1rem 0 1.25rem;
+  overflow: hidden;
+  background: var(--cv-surface-2);
+  border: 1px solid var(--cv-line);
+  border-radius: var(--cv-radius);
+}
+
+.cv-band svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+/* ── the two columns ──────────────────────────────────────────────── */
+
+.cv-layout {
+  display: grid;
+  grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.cv-side {
+  min-width: 0;
+}
+
+.cv-main {
+  min-width: 0;
+}
+
+.cv-lede {
+  margin: 0 0 1rem;
+  color: var(--cv-muted);
+  font-size: var(--cv-fs-2);
+}
+
+/* ── fields shared by the box and Advanced ────────────────────────── */
+
+.cv-field {
+  display: block;
+  margin: 0 0 0.35rem;
+}
+
+.cv-text,
+.cv-page input[type="password"],
+.cv-page select {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.6rem 0.7rem;
+  font: inherit;
+  font-size: var(--cv-fs-2);
+  line-height: var(--cv-lh);
+  color: var(--cv-text);
+  background: var(--cv-surface);
+  border: 1px solid var(--cv-line);
+  border-radius: var(--cv-radius);
+}
+
+.cv-text {
+  min-height: 5.5rem;
+  resize: vertical;
+}
+
+.cv-text::placeholder {
+  color: var(--cv-muted);
+}
+
+.cv-text:focus-visible,
+.cv-page input:focus-visible,
+.cv-page select:focus-visible {
+  outline: none;
+  border-color: var(--cv-fire);
+  box-shadow: 0 0 0 0.25rem var(--cv-glow);
+}
+
+.cv-hint {
+  margin: 0.25rem 0 0.9rem;
+  color: var(--cv-muted);
+  font-size: var(--cv-fs-1);
+}
+
+/* ── the three sliders ────────────────────────────────────────────── */
+
+.cv-sliders {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0 0 1rem;
+}
+
+.cv-control-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.cv-control-name {
+  font-size: var(--cv-fs-2);
+  font-weight: 600;
+  color: var(--cv-text);
+}
+
+.cv-control-val {
+  font-size: var(--cv-fs-1);
+  font-variant-numeric: tabular-nums;
+  color: var(--cv-muted);
+}
+
+.cv-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: -0.15rem;
+  font-size: var(--cv-fs-1);
+  color: var(--cv-muted);
+}
+
+/* ── the chip bar ─────────────────────────────────────────────────── */
+
+.cv-chipbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 1rem;
+}
+
+.cv-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.cv-chip--topics {
+  display: none;      /* a phone's way into the tree; the desktop has the tree */
+}
+
+.cv-link {
+  padding: 0.2rem 0.1rem;
+  font: inherit;
+  font-size: var(--cv-fs-1);
+  font-weight: 600;
+  color: var(--cv-muted);
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.cv-link:hover {
+  color: var(--cv-text);
+}
+
+.cv-link:focus-visible {
+  outline: none;
+  color: var(--cv-text);
+  box-shadow: 0 0 0 0.25rem var(--cv-glow);
+}
+
+.cv-link[hidden] {
+  display: none;
+}
+
+/* ── the topic tree ───────────────────────────────────────────────────
+   A parent row is [twisty][label][count][select]; a leaf is [label][select]
+   indented under it. The grid keeps every dropdown in one column so a long
+   label wraps instead of shoving the select off the row. */
+
+.cv-tree {
+  margin: 0 0 0.75rem;
+}
+
+.cv-tgroup + .cv-tgroup {
+  border-top: 1px solid var(--cv-line);
+}
+
+.cv-trow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0;
+}
+
+.cv-trow--leaf {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-left: 1.75rem;
+}
+
+.cv-tlabel {
+  font-size: var(--cv-fs-2);
+  color: var(--cv-text);
+  overflow-wrap: anywhere;
+}
+
+.cv-trow--leaf .cv-tlabel {
+  color: var(--cv-muted);
+}
+
+.cv-twisty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  font: inherit;
+  font-size: var(--cv-fs-1);
+  color: var(--cv-muted);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cv-twisty:hover {
+  color: var(--cv-text);
+  border-color: var(--cv-line);
+}
+
+.cv-twisty:focus-visible {
+  outline: none;
+  color: var(--cv-text);
+  box-shadow: 0 0 0 0.25rem var(--cv-glow);
+}
+
+/* Tonight's count for a parent, once there is a ranked list. */
+.cv-tcount {
+  min-width: 1.5rem;
+  padding: 0 0.4rem;
+  font-size: var(--cv-fs-1);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--cv-muted);
+  background: var(--cv-surface-2);
+  border: 1px solid var(--cv-line);
+  border-radius: 999px;
+}
+
+.cv-tcount[hidden] {
+  display: none;
+}
+
+.cv-tree .cv-select {
+  width: auto;
+  min-width: 7.5rem;
+  padding: 0.25rem 0.4rem;
+  font-size: var(--cv-fs-1);
+}
+
+.cv-kids[hidden] {
+  display: none;
+}
+
+/* ── the sheet: static on desktop, modal on a phone ───────────────── */
+
+.cv-page .cv-sheet {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  color: var(--cv-text);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.cv-sheet-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.cv-sheet-head .cv-h3 {
+  margin: 0;
+}
+
+.cv-sheet-actions {
+  display: none;
+}
+
+/* ── status and results ───────────────────────────────────────────── */
+
+.cv-status {
+  margin: 0 0 0.75rem;
+  font-size: var(--cv-fs-1);
+  color: var(--cv-muted);
+}
+
+.cv-status.is-error {
+  color: var(--cv-fire);
+}
+
+.cv-results {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.cv-result-title {
+  margin: 0 0 0.3rem;
+  font-size: var(--cv-fs-3);
+  line-height: 1.35;
+  font-weight: 650;
+}
+
+.cv-result-title a {
+  color: var(--cv-text);
+  text-decoration: none;
+}
+
+.cv-result-title a:hover {
+  color: var(--cv-text);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.cv-result-why {
+  margin: 0 0 0.5rem;
+  font-size: var(--cv-fs-2);
+  color: var(--cv-muted);
+}
+
+.cv-result-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.5rem;
+}
+
+/* The chips on a card are labels, not controls. */
+.cv-result .cv-chip {
+  cursor: default;
+}
+
+.cv-chip--fit,
+.cv-chip--impact {
+  font-variant-numeric: tabular-nums;
+}
+
+.cv-result-topic {
+  font-size: var(--cv-fs-1);
+  color: var(--cv-muted);
+}
+
+.cv-result-like {
+  margin: 0 0 0.6rem;
+  font-size: var(--cv-fs-1);
+  color: var(--cv-muted);
+}
+
+/* sieve-ui's refineHtml emits .sv-… class names; they arrive here unstyled
+   because sieve.css is not on this page, so the few that matter are dressed. */
+.cv-refine-out .sv-refine-text,
+.cv-refine-out .sv-refine-err {
+  margin: 0.5rem 0 0;
+  font-size: var(--cv-fs-2);
+}
+
+.cv-refine-out .sv-refine-err {
+  color: var(--cv-fire);
+}
+
+.cv-refine-out .sv-why {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
+}
+
+.cv-refine-out .sv-chip {
+  display: inline-flex;
+  padding: 0.15rem 0.55rem;
+  font-size: var(--cv-fs-1);
+  color: var(--cv-muted);
+  background: var(--cv-surface-2);
+  border: 1px solid var(--cv-line);
+  border-radius: 999px;
+
+/* ── advanced: the only three things folded away ──────────────────── */
+
+.cv-advanced {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--cv-line);
+}
+
+.cv-advanced summary {
+  font-size: var(--cv-fs-2);
+  font-weight: 600;
+  color: var(--cv-muted);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cv-advanced summary:hover {
+  color: var(--cv-text);
+}
+
+.cv-advanced summary:focus-visible {
+  outline: none;
+  color: var(--cv-text);
+  box-shadow: 0 0 0 0.25rem var(--cv-glow);
+}
+
+.cv-advanced-body {
+  display: grid;
+  gap: 0.5rem;
+  max-width: 26rem;
+  padding-top: 1rem;
+}
+
+.cv-advanced .cv-btn {
+  justify-self: start;
+}
+
+.cv-window {
+  margin: 0;
+  font-size: var(--cv-fs-1);
+  color: var(--cv-muted);
+}
+
+/* ── empty states sit in the results column like a card ───────────── */
+
+.cv-results .cv-empty {
+  background: var(--cv-surface);
+  border: 1px solid var(--cv-line);
+  border-radius: var(--cv-radius);
+}
+
+/* `hidden` has to win over the class rules above it. */
+.cv-control[hidden],
+.cv-chip[hidden],
+.cv-link[hidden] {
+  display: none;
+}
+
+/* ── phone: one column, the tree in a bottom sheet ────────────────── */
+
+.cv-sheet::backdrop {
+  background: color-mix(in srgb, var(--cv-bg) 72%, transparent);
+}
+
+@media (max-width: 720px) {
+  .cv-page {
+    padding: 0 0.85rem 3rem;
+  }
+
+  .cv-band {
+    margin: 0.75rem 0 1rem;
+  }
+
+  .cv-layout {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* The same <dialog> the desktop shows inline, now a modal sheet. */
+  .cv-page .cv-sheet {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 40;
+    width: auto;
+    height: auto;
+    max-height: 82vh;
+    margin: 0;
+    padding: 1rem 1rem 1.25rem;
+    overflow-y: auto;
+    background: var(--cv-surface);
+    border-top: 1px solid var(--cv-line);
+    border-radius: var(--cv-radius) var(--cv-radius) 0 0;
+    box-shadow: 0 -1rem 2.5rem var(--cv-glow);
+    overscroll-behavior: contain;
+  }
+
+  .cv-chip--topics {
+    display: inline-flex;
+  }
+
+  .cv-sheet-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--cv-line);
+  }
+}
+
+}
+

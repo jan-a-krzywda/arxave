@@ -1,0 +1,602 @@
+[
+ {
+  "id": "2511.15576",
+  "label": "experiment",
+  "why": "the title announces a demonstration (title matches /\\b(?:experimental\\s+)?demonstrat\\w*/i)"
+ },
+ {
+  "id": "2509.07669",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2512.06661",
+  "label": "experiment",
+  "why": "the title announces a demonstration (title matches /\\b(?:experimental\\s+)?demonstrat\\w*/i)"
+ },
+ {
+  "id": "2509.24766",
+  "label": "experiment",
+  "why": "the title announces a demonstration (title matches /\\b(?:experimental\\s+)?demonstrat\\w*/i)"
+ },
+ {
+  "id": "2509.11477",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2511.01247",
+  "label": "experiment",
+  "why": "the title announces a demonstration (title matches /\\b(?:experimental\\s+)?demonstrat\\w*/i)"
+ },
+ {
+  "id": "2510.17974",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2512.14513",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2510.07127",
+  "label": "experiment",
+  "why": "the title announces a demonstration (title matches /\\b(?:experimental\\s+)?demonstrat\\w*/i)"
+ },
+ {
+  "id": "2510.24163",
+  "label": "experiment",
+  "why": "the title announces a demonstration (title matches /\\b(?:experimental\\s+)?demonstrat\\w*/i)"
+ },
+ {
+  "id": "2511.22407",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2509.13451",
+  "label": "experiment",
+  "why": "the title says experiment (title matches /\\bexperiment(?:al|ally)?\\b/i)"
+ },
+ {
+  "id": "2511.14552",
+  "label": "experiment",
+  "why": "the title says experiment (title matches /\\bexperiment(?:al|ally)?\\b/i)"
+ },
+ {
+  "id": "2511.20774",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2511.02440",
+  "label": "experiment",
+  "why": "the title announces a demonstration (title matches /\\b(?:experimental\\s+)?demonstrat\\w*/i)"
+ },
+ {
+  "id": "2512.17588",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2510.05792",
+  "label": "experiment",
+  "why": "the title says experiment (title matches /\\bexperiment(?:al|ally)?\\b/i)"
+ },
+ {
+  "id": "2509.22804",
+  "label": "experiment",
+  "why": "a measurement technique is named (title matches /\\b(?:spectroscopy|microscopy|imaging|magnetometry|sensing|ellipsometry|neutron scattering)\\b/i)"
+ },
+ {
+  "id": "2512.24431",
+  "label": "experiment",
+  "why": "a measurement technique is named (title matches /\\b(?:spectroscopy|microscopy|imaging|magnetometry|sensing|ellipsometry|neutron scattering)\\b/i)"
+ },
+ {
+  "id": "2509.11867",
+  "label": "experiment",
+  "why": "the title says experiment (title matches /\\bexperiment(?:al|ally)?\\b/i)"
+ },
+ {
+  "id": "2510.16915",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2512.14463",
+  "label": "experiment",
+  "why": "a measurement technique is named (title matches /\\b(?:spectroscopy|microscopy|imaging|magnetometry|sensing|ellipsometry|neutron scattering)\\b/i)"
+ },
+ {
+  "id": "2509.09431",
+  "label": "experiment",
+  "why": "something was observed (title matches /\\b(?:observation|observed|observe)\\b/i)"
+ },
+ {
+  "id": "2509.15092",
+  "label": "experiment",
+  "why": "a measurement technique is named (title matches /\\b(?:spectroscopy|microscopy|imaging|magnetometry|sensing|ellipsometry|neutron scattering)\\b/i)"
+ },
+ {
+  "id": "2511.16433",
+  "label": "experiment",
+  "why": "something was observed (title matches /\\b(?:observation|observed|observe)\\b/i)"
+ },
+ {
+  "id": "2510.07679",
+  "label": "experiment",
+  "why": "a measurement technique is named (title matches /\\b(?:spectroscopy|microscopy|imaging|magnetometry|sensing|ellipsometry|neutron scattering)\\b/i)"
+ },
+ {
+  "id": "2509.19483",
+  "label": "experiment",
+  "why": "a measurement technique is named (title matches /\\b(?:spectroscopy|microscopy|imaging|magnetometry|sensing|ellipsometry|neutron scattering)\\b/i)"
+ },
+ {
+  "id": "2509.12509",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2511.23365",
+  "label": "experiment",
+  "why": "a measurement technique is named (title matches /\\b(?:spectroscopy|microscopy|imaging|magnetometry|sensing|ellipsometry|neutron scattering)\\b/i)"
+ },
+ {
+  "id": "2512.21661",
+  "label": "experiment",
+  "why": "a measurement technique is named (title matches /\\b(?:spectroscopy|microscopy|imaging|magnetometry|sensing|ellipsometry|neutron scattering)\\b/i)"
+ },
+ {
+  "id": "2512.05934",
+  "label": "experiment",
+  "why": "a measurement technique is named (title matches /\\b(?:spectroscopy|microscopy|imaging|magnetometry|sensing|ellipsometry|neutron scattering)\\b/i)"
+ },
+ {
+  "id": "2510.07054",
+  "label": "experiment",
+  "why": "a measurement technique is named (title matches /\\b(?:spectroscopy|microscopy|imaging|magnetometry|sensing|ellipsometry|neutron scattering)\\b/i)"
+ },
+ {
+  "id": "2512.24894",
+  "label": "experiment",
+  "why": "a measurement technique is named (title matches /\\b(?:spectroscopy|microscopy|imaging|magnetometry|sensing|ellipsometry|neutron scattering)\\b/i)"
+ },
+ {
+  "id": "2509.22682",
+  "label": "experiment",
+  "why": "the title reports a measurement (title matches /\\bwe measur\\w*|\\bmeasur(?:ed|ement of|ements of)\\b/i)"
+ },
+ {
+  "id": "2512.08921",
+  "label": "experiment",
+  "why": "hardware or a fabrication step is named (title matches /\\b(?:device|devices|fabricat\\w*|nanowire|heterostructure|thin[- ]films?|waveguide|on[- ]chip|dilution refrigerator|cryogenic|circuit QED|optical cavity|microcavity|FPGA)\\b/i)"
+ },
+ {
+  "id": "2511.05465",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2512.13908",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2510.26845",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2510.26300",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2511.00224",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2509.13247",
+  "label": "experiment",
+  "why": "the title announces a demonstration (title matches /\\b(?:experimental\\s+)?demonstrat\\w*/i)"
+ },
+ {
+  "id": "2511.02125",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2509.18075",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2509.07255",
+  "label": "experiment",
+  "why": "the title announces a demonstration (title matches /\\b(?:experimental\\s+)?demonstrat\\w*/i)"
+ },
+ {
+  "id": "2511.03359",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2509.12949",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2512.17427",
+  "label": "experiment",
+  "why": "the title announces a demonstration (title matches /\\b(?:experimental\\s+)?demonstrat\\w*/i)"
+ },
+ {
+  "id": "2511.08931",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2512.07962",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2510.11706",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2509.20642",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2511.10633",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2509.20558",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2511.01220",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2511.17460",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2509.03078",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2509.13821",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2510.26101",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2511.02249",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2512.12648",
+  "label": "experiment",
+  "why": "a device is named (title matches /\\b(?:quantum (?:processor|computer|chip|simulator|hardware)|trapped-ion (?:quantum computer|processor)|superconducting (?:qubit|processor|circuit)s?)\\b/i)"
+ },
+ {
+  "id": "2511.03779",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2509.14879",
+  "label": "theory",
+  "why": "a theorem or proof is announced (title matches /\\b(?:theorem|lemma|proof|prove[sd]?)\\b/i)"
+ },
+ {
+  "id": "2512.18726",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2511.22992",
+  "label": "theory",
+  "why": "a theorem or proof is announced (title matches /\\b(?:theorem|lemma|proof|prove[sd]?)\\b/i)"
+ },
+ {
+  "id": "2509.19704",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2510.13986",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2510.11777",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2510.02275",
+  "label": "theory",
+  "why": "a bound or a no-go statement is announced (title matches /\\b(?:lower bounds?|upper bounds?|bounds? on|no-go|impossibility)\\b/i)"
+ },
+ {
+  "id": "2512.07715",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2510.05887",
+  "label": "theory",
+  "why": "an analytic model is named (title matches /\\b(?:effective field theor\\w*|renormalis\\w*|renormaliz\\w*|mean[- ]field|exactly solvable|integrable|perturbative|asymptotic|thermodynamic limit|large-[Nn])\\b/i)"
+ },
+ {
+  "id": "2510.15766",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2511.22168",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2511.17227",
+  "label": "theory",
+  "why": "a theorem or proof is announced (title matches /\\b(?:theorem|lemma|proof|prove[sd]?)\\b/i)"
+ },
+ {
+  "id": "2509.18205",
+  "label": "theory",
+  "why": "a bound or a no-go statement is announced (title matches /\\b(?:lower bounds?|upper bounds?|bounds? on|no-go|impossibility)\\b/i)"
+ },
+ {
+  "id": "2510.07164",
+  "label": "theory",
+  "why": "a bound or a no-go statement is announced (title matches /\\b(?:lower bounds?|upper bounds?|bounds? on|no-go|impossibility)\\b/i)"
+ },
+ {
+  "id": "2509.02044",
+  "label": "theory",
+  "why": "an analytic model is named (title matches /\\b(?:effective field theor\\w*|renormalis\\w*|renormaliz\\w*|mean[- ]field|exactly solvable|integrable|perturbative|asymptotic|thermodynamic limit|large-[Nn])\\b/i)"
+ },
+ {
+  "id": "2512.19072",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2511.09625",
+  "label": "theory",
+  "why": "an analytic model is named (title matches /\\b(?:effective field theor\\w*|renormalis\\w*|renormaliz\\w*|mean[- ]field|exactly solvable|integrable|perturbative|asymptotic|thermodynamic limit|large-[Nn])\\b/i)"
+ },
+ {
+  "id": "2511.08687",
+  "label": "theory",
+  "why": "dynamics/thermalisation theory (title matches /\\b(?:thermalis\\w*|thermaliz\\w*|equilibration|ergodicit\\w*|many[- ]body localis\\w*|quench\\w*)\\b/i)"
+ },
+ {
+  "id": "2512.12321",
+  "label": "theory",
+  "why": "a theorem or proof is announced (title matches /\\b(?:theorem|lemma|proof|prove[sd]?)\\b/i)"
+ },
+ {
+  "id": "2511.06623",
+  "label": "theory",
+  "why": "an analytic model is named (title matches /\\b(?:effective field theor\\w*|renormalis\\w*|renormaliz\\w*|mean[- ]field|exactly solvable|integrable|perturbative|asymptotic|thermodynamic limit|large-[Nn])\\b/i)"
+ },
+ {
+  "id": "2512.21313",
+  "label": "theory",
+  "why": "dynamics/thermalisation theory (title matches /\\b(?:thermalis\\w*|thermaliz\\w*|equilibration|ergodicit\\w*|many[- ]body localis\\w*|quench\\w*)\\b/i)"
+ },
+ {
+  "id": "2509.22773",
+  "label": "theory",
+  "why": "dynamics/thermalisation theory (title matches /\\b(?:thermalis\\w*|thermaliz\\w*|equilibration|ergodicit\\w*|many[- ]body localis\\w*|quench\\w*)\\b/i)"
+ },
+ {
+  "id": "2509.19035",
+  "label": "theory",
+  "why": "complexity is the subject (title matches /\\bcomplexity\\b/i)"
+ },
+ {
+  "id": "2511.20212",
+  "label": "theory",
+  "why": "complexity is the subject (title matches /\\bcomplexity\\b/i)"
+ },
+ {
+  "id": "2510.01657",
+  "label": "theory",
+  "why": "complexity is the subject (title matches /\\bcomplexity\\b/i)"
+ },
+ {
+  "id": "2510.07699",
+  "label": "theory",
+  "why": "a bound or a no-go statement is announced (title matches /\\b(?:lower bounds?|upper bounds?|bounds? on|no-go|impossibility)\\b/i)"
+ },
+ {
+  "id": "2510.06376",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2510.19714",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2510.22658",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2509.01586",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2510.04005",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2509.08038",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2512.13800",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2510.08672",
+  "label": "theory",
+  "why": "a theorem or proof is announced (title matches /\\b(?:theorem|lemma|proof|prove[sd]?)\\b/i)"
+ },
+ {
+  "id": "2509.23598",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2510.06340",
+  "label": "theory",
+  "why": "a theorem or proof is announced (title matches /\\b(?:theorem|lemma|proof|prove[sd]?)\\b/i)"
+ },
+ {
+  "id": "2511.12245",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2511.07348",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2511.19597",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2510.06342",
+  "label": "theory",
+  "why": "a theorem or proof is announced (title matches /\\b(?:theorem|lemma|proof|prove[sd]?)\\b/i)"
+ },
+ {
+  "id": "2510.11797",
+  "label": "theory",
+  "why": "a bound or a no-go statement is announced (title matches /\\b(?:lower bounds?|upper bounds?|bounds? on|no-go|impossibility)\\b/i)"
+ },
+ {
+  "id": "2509.13401",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2509.20665",
+  "label": "theory",
+  "why": "a bound or a no-go statement is announced (title matches /\\b(?:lower bounds?|upper bounds?|bounds? on|no-go|impossibility)\\b/i)"
+ },
+ {
+  "id": "2510.13666",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2510.13941",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2511.02683",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2509.15731",
+  "label": "theory",
+  "why": "a theorem or proof is announced (title matches /\\b(?:theorem|lemma|proof|prove[sd]?)\\b/i)"
+ },
+ {
+  "id": "2510.22545",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2511.00852",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2512.04726",
+  "label": "theory",
+  "why": "a theorem or proof is announced (title matches /\\b(?:theorem|lemma|proof|prove[sd]?)\\b/i)"
+ },
+ {
+  "id": "2510.19969",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2511.21685",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2512.14643",
+  "label": "theory",
+  "why": "a bound or a no-go statement is announced (title matches /\\b(?:lower bounds?|upper bounds?|bounds? on|no-go|impossibility)\\b/i)"
+ },
+ {
+  "id": "2512.17713",
+  "label": "theory",
+  "why": "a bound or a no-go statement is announced (title matches /\\b(?:lower bounds?|upper bounds?|bounds? on|no-go|impossibility)\\b/i)"
+ },
+ {
+  "id": "2512.21037",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2509.03496",
+  "label": "theory",
+  "why": "a bound or a no-go statement is announced (title matches /\\b(?:lower bounds?|upper bounds?|bounds? on|no-go|impossibility)\\b/i)"
+ },
+ {
+  "id": "2509.04596",
+  "label": "theory",
+  "why": "gravity / holography vocabulary (title matches /\\b(?:holograph\\w*|\\bAdS\\b|\\bCFT\\b|conformal field theor\\w*|black holes?|gravity|wormholes?|SYK)\\b/i)"
+ },
+ {
+  "id": "2509.07271",
+  "label": "theory",
+  "why": "a theorem or proof is announced (title matches /\\b(?:theorem|lemma|proof|prove[sd]?)\\b/i)"
+ },
+ {
+  "id": "2509.25327",
+  "label": "theory",
+  "why": "a theorem or proof is announced (title matches /\\b(?:theorem|lemma|proof|prove[sd]?)\\b/i)"
+ }
+]
