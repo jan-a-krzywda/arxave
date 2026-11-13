@@ -1,16 +1,17 @@
 /**
- * `node --test scripts/cave-page.test.mjs`.
+ * `cd scripts && node --test cave-page.test.mjs`.
  *
- * Cave v3's page has two halves that fail differently. The pure half — the
- * setting codec, the chip row, the parent counts — fails silently and only in
- * the browser, so it is tested here against hand-built fixtures. The markup
- * half fails loudly but late (a `getElementById` on an id renamed in cave.md),
- * so the last three tests read the two files and hold them together: every id
- * the page needs is in the page, and /sieve/ still redirects to /cave/.
+ * The v4 page is eight static sections plus a rail; a mistake in it fails late
+ * and quietly — a renamed `data-stage` leaves `cave.js` painting nothing, a
+ * `var(--token)` no stylesheet defines renders as nothing at all. So this file
+ * reads the two files that describe the shell (`docs/cave.md`,
+ * `docs/assets/cave.css`) and holds them to the interface contract, plus the
+ * palette sheet they are allowed to read.
  *
- * The fixture tree is the contract's shape in miniature: three dimensions, two
- * parents, three leaves, Computing preferred — enough to exercise "a parent sets
- * its children", "a child overrides" and "off is a setting, not a weight".
+ * WHAT IT CANNOT CHECK is what it looks like. That is the browser's job, at
+ * 360 px and at desktop; here the assertions are the ones a machine can make:
+ * one section per stage in order with the contract classes, the rail and the
+ * walls, no v3 token sheet anywhere, and every colour resolved.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -18,176 +19,125 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import {
-  chipsFromSetting, clearSetting, defaultState, parentCounts, parseSettings, removeChip,
-  serialiseSettings,
-} from '../docs/assets/cave.js';
-import { defaultSetting, loadTopics } from '../docs/assets/sieve-core.mjs';
+import { STAGES } from '../docs/assets/cave-flow.mjs';
+import { STAGE_NAMES } from '../docs/assets/cave.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (file) => readFileSync(path.join(ROOT, file), 'utf8');
 
-const TOPICS_JSON = {
-  version: 1,
-  dim: 3,
-  parents: [
-    { id: 'computing', label: 'Computing', default: 'prefer' },
-    { id: 'matter', label: 'Matter', default: 'equal' },
-  ],
-  leaves: [
-    { id: 'opt-qalgo', parent: 'computing', label: 'Optimisation & quantum algorithms', centroid: [1, 0, 0] },
-    { id: 'qml', parent: 'computing', label: 'Quantum machine learning', centroid: [0, 1, 0] },
-    { id: 'many-body', parent: 'matter', label: 'Many-body physics', centroid: [0, 0, 1] },
-  ],
-  tags: [{ id: 'ml4q', label: 'ML for quantum' }],
-};
-const TOPICS = loadTopics(TOPICS_JSON);
+const PAGE = read('docs/cave.md');
+const CSS = read('docs/assets/cave.css');
+const PALETTE = read('docs/_sass/cave.scss');
 
-/* ── chips ──────────────────────────────────────────────────────────────── */
+/* ── the sections ──────────────────────────────────────────────────────── */
 
-test('the default setting derives exactly one chip: Computing prefer', () => {
-  const chips = chipsFromSetting(TOPICS, defaultSetting(TOPICS));
-  assert.deepEqual(chips, [
-    { scope: 'parent', id: 'computing', label: 'Computing', choice: 'prefer' },
+/** Where each stage's section starts, so order can be compared. */
+const sectionAt = (id) => PAGE.indexOf('id="stage-' + id + '"');
+
+test('docs/cave.md has one section per stage, in STAGES order', () => {
+  for (const id of STAGES) {
+    assert.ok(sectionAt(id) !== -1, `cave.md has no #stage-${id}`);
+  }
+  const positions = STAGES.map(sectionAt);
+  assert.deepEqual(positions, positions.slice().sort((a, b) => a - b),
+    'the sections are out of STAGES order');
+});
+
+test('every section is the contract\'s markup, with its number and its name', () => {
+  for (let i = 0; i < STAGES.length; i += 1) {
+    const id = STAGES[i];
+    const start = sectionAt(id);
+    const end = PAGE.indexOf('</section>', start);
+    assert.ok(end > start, `#stage-${id} is never closed`);
+    const section = PAGE.slice(start, end);
+
+    assert.match(section, /^id="stage-[a-z]+" data-stage="[a-z]+"/,
+      `#stage-${id}: the section must carry id and data-stage`);
+    assert.match(section, /<button type="button" class="cave-stage-head" aria-expanded="(true|false)">/,
+      `#stage-${id}: no contract button`);
+    assert.ok(section.includes('<span class="cave-stage-n">' + (i + 1) + '</span>'),
+      `#stage-${id}: the number is not ${i + 1}`);
+    assert.ok(section.includes('<span class="cave-stage-name">' + STAGE_NAMES[id] + '</span>'),
+      `#stage-${id}: the name is not "${STAGE_NAMES[id]}"`);
+    assert.ok(section.includes('<span class="cave-stage-summary"></span>'),
+      `#stage-${id}: no empty summary span`);
+    assert.ok(section.includes('<div class="cave-stage-body"></div>'),
+      `#stage-${id}: no empty body for its module`);
+  }
+
+  /* `data-stage` is what cave.js looks the flow up by; a copy of the id in a
+     second attribute is only worth having if the two agree. */
+  for (const id of STAGES) {
+    assert.ok(PAGE.includes('data-stage="' + id + '"'), `data-stage="${id}" is missing`);
+  }
+});
+
+/* ── the shell ─────────────────────────────────────────────────────────── */
+
+test('the page carries the rail, the app wrapper and the two side walls', () => {
+  assert.match(PAGE, /<nav class="cave-rail" id="cave-rail" aria-label="[^"]+">/);
+  assert.match(PAGE, /<div id="cave-app">/);
+  assert.match(PAGE, /<div class="cave-wall cave-wall-left" aria-hidden="true"><\/div>/);
+  assert.match(PAGE, /<div class="cave-wall cave-wall-right" aria-hidden="true"><\/div>/);
+
+  /* The rail and both walls live inside the wrapper, or the desktop grid and
+     the z-index that lifts the page over the walls are both moot. */
+  const app = PAGE.indexOf('<div id="cave-app">');
+  for (const needle of ['cave-wall-left', 'cave-wall-right', 'id="cave-rail"']) {
+    assert.ok(PAGE.indexOf(needle) > app, `${needle} sits outside #cave-app`);
+  }
+});
+
+test('the page loads the three stylesheets and the module with cache-busting', () => {
+  for (const sheet of ['style.css', 'filter.css', 'cave.css']) {
+    assert.ok(
+      PAGE.includes("{{ '/assets/" + sheet + "' | relative_url }}?v={{ site.time | date: '%s' }}"),
+      `${sheet} is not linked with ?v=`,
+    );
+  }
+  assert.ok(PAGE.includes('<script type="module" src="{{ \'/assets/cave.js\' | relative_url }}'
+    + '?v={{ site.time | date: \'%s\' }}"></script>'));
+  assert.match(PAGE, /^permalink: \/$/m);  // the Cave is the site root since the v4 cutover
+});
+
+test('the discussions repo reaches the page from Jekyll, with a fallback', () => {
+  assert.ok(PAGE.includes(
+    'window.ARXAVE_DISCUSSIONS_REPO = "{{ site.discussions_repo | default: site.github_repo }}"'));
+  assert.ok(PAGE.includes(
+    'window.ARXAVE_CORPUS_BASE = "{{ \'/assets/corpus/\' | relative_url }}"'));
+});
+
+
+/* ── the palette ───────────────────────────────────────────────────────── */
+
+test('no v3 token sheet is linked, imported or referenced', () => {
+  for (const [name, text] of [['cave.md', PAGE], ['cave.css', CSS]]) {
+    assert.ok(!text.includes('cave-tokens'), `${name} still names cave-tokens.css`);
+    assert.ok(!text.includes('--cv-'), `${name} still uses a --cv- token`);
+  }
+});
+
+test('every var() in cave.css is defined in cave.css or the site palette', () => {
+  const defined = new Set([
+    ...[...PALETTE.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]),
+    ...[...CSS.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]),
   ]);
+  const used = new Set([...CSS.matchAll(/var\((--[\w-]+)/g)].map((m) => m[1]));
+
+  assert.ok(used.size > 10, 'cave.css should be reading the palette, not hard-coding hexes');
+  for (const name of used) assert.ok(defined.has(name), `var(${name}) is never defined`);
 });
 
-test('a parent change shows its chip, and a leaf override adds one of its own', () => {
-  const setting = { computing: 'prefer', matter: 'avoid', leaves: { qml: 'off' } };
-  const chips = chipsFromSetting(TOPICS, setting);
-  assert.deepEqual(chips.map((c) => `${c.scope}:${c.id}:${c.choice}`), [
-    'parent:computing:prefer',
-    'parent:matter:avoid',
-    'leaf:qml:off',
-  ]);
+test('cave.css keeps its layout promises and stays balanced', () => {
+  /* Braces balanced, so a typo cannot swallow the rules below it. */
+  assert.equal((CSS.match(/\{/g) ?? []).length, (CSS.match(/\}/g) ?? []).length);
+  assert.match(CSS, /@media \(min-width: 900px\)/, 'the rail needs its desktop layout');
+  assert.match(CSS, /@media \(max-width: 600px\)/, 'the page needs its 360 px layout');
+  /* The rail is sticky exactly where it is vertical. */
+  const desktop = CSS.slice(CSS.indexOf('@media (min-width: 900px)'));
+  assert.match(desktop, /\.cave-rail \{[^}]*position: sticky/);
+  /* Done, open and locked are the three looks the flow can produce. */
+  for (const state of ['is-done', 'is-open', 'is-locked']) {
+    assert.ok(CSS.includes('.' + state), `cave.css has no .${state} rule`);
+  }
 });
-
-test('a leaf that repeats its parent changes nothing, so it earns no chip', () => {
-  /* Computing is already prefer: saying qml is prefer too is not a difference. */
-  const chips = chipsFromSetting(TOPICS, { computing: 'prefer', matter: 'equal', leaves: { qml: 'prefer' } });
-  assert.deepEqual(chips.map((c) => c.id), ['computing']);
-
-  /* An off parent with an off child is the same story. */
-  const off = chipsFromSetting(TOPICS, { computing: 'off', matter: 'equal', leaves: { qml: 'off' } });
-  assert.deepEqual(off.map((c) => c.id), ['computing']);
-});
-
-test('clear filters leaves no chips; Reset restores defaultSetting', () => {
-  assert.deepEqual(chipsFromSetting(TOPICS, clearSetting(TOPICS)), []);
-
-  /* Reset is the default setting again, whether built fresh or parsed back out
-     of a URL that held something else. */
-  const changed = { ...defaultState(TOPICS), setting: { computing: 'off', matter: 'avoid', leaves: { qml: 'prefer' } } };
-  const reset = { ...changed, setting: defaultSetting(TOPICS) };
-  assert.deepEqual(parseSettings(TOPICS, serialiseSettings(TOPICS, reset)).setting, defaultSetting(TOPICS));
-  assert.deepEqual(defaultState(TOPICS).setting, defaultSetting(TOPICS));
-  assert.equal(defaultState(TOPICS).match, 50);
-  assert.equal(defaultState(TOPICS).surprise, 50);
-  assert.equal(defaultState(TOPICS).expTheory, 0);
-});
-
-test('dropping a chip undoes exactly that choice', () => {
-  const setting = { computing: 'prefer', matter: 'avoid', leaves: { qml: 'off' } };
-
-  const noLeaf = removeChip(TOPICS, setting, { scope: 'leaf', id: 'qml' });
-  assert.equal('qml' in noLeaf.leaves, false);
-  assert.equal(noLeaf.matter, 'avoid');            // the rest is untouched
-  assert.equal(setting.leaves.qml, 'off');         // and the argument was not mutated
-
-  const noParent = removeChip(TOPICS, setting, { scope: 'parent', id: 'matter' });
-  assert.equal(noParent.matter, 'equal');
-  assert.equal(noParent.computing, 'prefer');
-});
-
-/* ── serialisation ──────────────────────────────────────────────────────── */
-
-test('serialise → parse round-trips a whole state', () => {
-  const state = {
-    setting: { computing: 'prefer', matter: 'avoid', leaves: { qml: 'off', 'many-body': 'prefer' } },
-    match: 73,
-    surprise: 41,
-    expTheory: -60,
-    lookback: 3,
-    ml4q: true,
-  };
-  assert.deepEqual(parseSettings(TOPICS, serialiseSettings(TOPICS, state)), state);
-});
-
-test('the default state serialises short and parses back to itself', () => {
-  const state = defaultState(TOPICS);
-  const code = serialiseSettings(TOPICS, state);
-  assert.match(code, /topics=&/);                  // nothing differs from the default
-  assert.deepEqual(parseSettings(TOPICS, code), state);
-});
-
-test('junk, missing and out-of-range values fall back instead of throwing', () => {
-  const empty = parseSettings(TOPICS, '');
-  assert.deepEqual(empty.setting, defaultSetting(TOPICS));
-  assert.equal(empty.match, 50);
-  assert.equal(empty.lookback, 1);
-  assert.equal(empty.ml4q, false);
-
-  const junk = parseSettings(TOPICS, 'topics=nope:sideways,qml:loud&match=900&surprise=-4&exp=nope&lookback=99');
-  assert.deepEqual(junk.setting, defaultSetting(TOPICS));
-  assert.equal(junk.match, 100);
-  assert.equal(junk.surprise, 0);
-  assert.equal(junk.expTheory, 0);
-  assert.equal(junk.lookback, 3);
-
-  /* An unknown leaf id is dropped, a known one is kept. */
-  const mixed = parseSettings(TOPICS, 'topics=ghost:off,qml:avoid');
-  assert.deepEqual(mixed.setting.leaves, { qml: 'avoid' });
-  assert.equal('ghost' in mixed.setting.leaves, false);
-});
-
-/* ── parent counts ──────────────────────────────────────────────────────── */
-
-test('a parent counts a paper once, primary or secondary, and 0 is a count', () => {
-  const counts = parentCounts([
-    { topic: 0, topic2: -1 },   // opt-qalgo → computing
-    { topic: 0, topic2: 2 },    // computing + many-body → one for each
-    { topic: 2, topic2: 2 },    // many-body on both sides: still one
-    { topic: -1, topic2: -1 },  // no topic at all → nowhere
-  ], TOPICS);
-  assert.deepEqual(counts, { computing: 2, matter: 2 });
-
-  assert.deepEqual(parentCounts([], TOPICS), { computing: 0, matter: 0 });
-});
-
-/* ── the page and the redirect ──────────────────────────────────────────── */
-
-/* The contract's DOM hooks (cave-v3-interfaces.md, "Page"). If one of these is
-   renamed in cave.md, cave.js stops wiring and the page is a dead form. */
-const CONTRACT_IDS = [
-  'cv-app', 'cv-text', 'cv-match', 'cv-surprise', 'cv-exptheory', 'cv-tree',
-  'cv-chips', 'cv-results', 'cv-advanced', 'cv-topics-btn', 'cv-sheet',
-];
-
-test('docs/cave.md carries every contract id', () => {
-  const page = read('docs/cave.md');
-  const ids = new Set([...page.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]));
-  for (const id of CONTRACT_IDS) assert.ok(ids.has(id), `cave.md is missing #${id}`);
-  assert.match(page, /^permalink: \/cave\/$/m);
-});
-
-test('every id cave.js asks the document for exists in cave.md', () => {
-  const page = read('docs/cave.md');
-  const java = read('docs/assets/cave.js');
-  const ids = new Set([...page.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]));
-
-  const used = new Set([
-    ...[...java.matchAll(/\bbyId\(\s*'([^']+)'\s*\)/g)].map((m) => m[1]),
-    ...[...java.matchAll(/querySelector(?:All)?\(\s*'#([A-Za-z0-9_-]+)/g)].map((m) => m[1]),
-  ]);
-
-  assert.ok(used.size >= CONTRACT_IDS.length, `only ${used.size} ids found in cave.js`);
-  for (const id of used) assert.ok(ids.has(id), `cave.js wants #${id}, cave.md does not have it`);
-});
-
-test('/sieve/ redirects to /cave/', () => {
-  const stub = read('docs/sieve.md');
-  assert.match(stub, /^permalink: \/sieve\/$/m);
-  assert.match(stub, /http-equiv="refresh" content="0; url=\{\{ '\/cave\/' \| relative_url \}\}"/);
-  assert.match(stub, /href="\{\{ '\/cave\/' \| relative_url \}\}"/);
-});
-

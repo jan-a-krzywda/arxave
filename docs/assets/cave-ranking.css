@@ -1,0 +1,415 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Cave stage 6 — Ranking.
+
+   Dig's list row (filter.css' `.assay-list`) with two additions: the pick
+   box and the two meters. Colours come only from `_sass/cave.scss`; the
+   layout is one grid row that puts the meters under the title on a phone
+   and in their own column once there is room.
+
+   No motion beyond a 90° caret turn, and that one is off under
+   prefers-reduced-motion.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.cave-ranking {
+  min-width: 0;
+}
+
+/* ── The sticky summary bar ─────────────────────────────────────
+   One line above the list: how many are ranked, how many are picked, and
+   the one button that carries the picks to the next stage. */
+
+.rk-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.45rem 0.1rem;
+  background: var(--rock-deep);
+  border-bottom: 1px solid var(--rock-edge);
+}
+
+.rk-bar[hidden] {
+  display: none;
+}
+
+.rk-count {
+  min-width: 0;
+  color: var(--text-dim);
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rk-act {
+  flex: none;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  background: var(--gold);
+  color: var(--cave-air);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rk-act:disabled {
+  background: transparent;
+  border-color: var(--rock-edge);
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.rk-act:focus-visible,
+.rk-more:focus-visible,
+.rk-toggle:focus-visible,
+.rk-refine:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ── The muted line: nothing to rank yet, or nothing passed the gate ── */
+
+.rk-note {
+  margin: 0.5rem 0 0;
+  color: var(--text-faint);
+  font-size: 0.88rem;
+  font-style: italic;
+}
+
+/* ── The list ─────────────────────────────────────────────────── */
+
+.rk-list {
+  margin-top: 0.6rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.rk-list:empty {
+  display: none;
+}
+
+.rk-row {
+  display: grid;
+  grid-template-columns: auto 1.7rem minmax(0, 1fr) auto;
+  grid-template-areas:
+    "pick rank main toggle"
+    ".    .    meters meters";
+  align-items: start;
+  gap: 0.35rem 0.5rem;
+  padding: 0.55rem 0.6rem;
+  border-top: 1px solid var(--rock-edge);
+  cursor: pointer;
+}
+
+.rk-row:first-child {
+  border-top: none;
+}
+
+.rk-row:hover {
+  background: var(--rock);
+}
+
+.rk-pick {
+  grid-area: pick;
+  align-self: center;
+  margin: 0;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+
+.rk-rank {
+  grid-area: rank;
+  color: var(--text-faint);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.rk-main {
+  grid-area: main;
+  min-width: 0;
+}
+
+/* The row's title is a heading element for structure, but it must read at list
+   size: the theme's h3 is ~1.5rem, which made every row a headline. The element
+   is in the selector so a theme rule on `h3` cannot win. */
+h3.rk-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.rk-link,
+.rk-link:visited {
+  color: var(--lamp);
+  text-decoration: none;
+}
+
+.rk-link:hover,
+.rk-link:focus-visible {
+  text-decoration: underline;
+}
+
+.rk-authors {
+  margin: 0.2rem 0 0;
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.rk-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0.3rem 0 0;
+}
+
+.rk-chip {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0 0.45rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 999px;
+  background: var(--rock-deep);
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  line-height: 1.6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rk-chip-topic {
+  border-color: var(--rock-lit);
+  color: var(--lamp);
+}
+
+.rk-chip-wagon {
+  border-color: var(--gold-dim);
+  color: var(--gold);
+}
+
+.rk-toggle {
+  grid-area: toggle;
+  align-self: center;
+  padding: 0 0.2rem;
+  border: 0;
+  background: none;
+  color: var(--text-faint);
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.rk-row.is-open .rk-toggle {
+  transform: rotate(90deg);
+}
+
+/* ── The two meters, side by side ───────────────────────────────
+   Fit is the lamp (what you asked for); Promise is the ore (what the
+   paper promises). Each meter is its own small grid — label, bar, value — so
+   the three can never paint over one another the way three flex items with a
+   fixed percent width did. */
+
+.rk-meters {
+  grid-area: meters;
+  display: flex;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.rk-meter {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 2.6rem;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: 0.72rem;
+}
+
+.rk-meter-label {
+  min-width: 0;
+  color: var(--text-faint);
+}
+
+.rk-track {
+  min-width: 0;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--rock);
+  overflow: hidden;
+}
+
+.rk-track-fill {
+  display: block;
+  height: 100%;
+  background: var(--lamp);
+}
+
+.rk-meter-promise .rk-track-fill {
+  background: var(--gold);
+}
+
+.rk-meter-pct {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ── The detail: abstract, landmarks, refiner ─────────────────── */
+
+.rk-detail {
+  padding: 0.1rem 0.7rem 0.7rem;
+  border-top: 1px solid var(--rock-edge);
+  color: var(--text-dim);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.rk-detail[hidden] {
+  display: none;
+}
+
+.rk-abstract {
+  margin: 0.5rem 0 0.6rem;
+}
+
+.rk-like-label {
+  display: block;
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.rk-like-list {
+  margin: 0.2rem 0 0.6rem;
+  padding-left: 1.1rem;
+}
+
+.rk-like-pct {
+  color: var(--text-faint);
+}
+
+.rk-refine {
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--rock-lit);
+  border-radius: 6px;
+  background: var(--rock);
+  color: var(--lamp);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.rk-refine:disabled {
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.rk-hint {
+  margin: 0.4rem 0 0;
+  color: var(--text-faint);
+  font-size: 0.82rem;
+}
+
+/* `refineHtml`'s answer — the sieve result markup, styled here because the
+   cave page does not link sieve.css. */
+.rk-refine-out p {
+  margin: 0.4rem 0 0;
+}
+
+.rk-refine-out .sv-refine-err {
+  color: var(--ember);
+}
+
+.rk-refine-out .sv-chip {
+  display: inline-block;
+  margin-right: 0.3rem;
+  padding: 0 0.45rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 999px;
+  background: var(--rock-deep);
+  color: var(--text-dim);
+  font-size: 0.72rem;
+}
+
+.rk-refine-out .sv-refine-adds {
+  color: var(--text);
+}
+
+/* ── Show more ────────────────────────────────────────────────── */
+
+.rk-more-wrap {
+  margin-top: 0.6rem;
+}
+
+.rk-more-wrap[hidden] {
+  display: none;
+}
+
+.rk-more {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 6px;
+  background: var(--rock);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.rk-more:hover {
+  border-color: var(--rock-lit);
+}
+
+/* ── Wide enough for the meters in their own column ───────────── */
+
+@media (min-width: 720px) {
+  .rk-row {
+    grid-template-columns: auto 1.9rem minmax(0, 1fr) 15rem auto;
+    grid-template-areas: "pick rank main meters toggle";
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+/* ── Phones: the meters get their own full-width line ───────────
+   Two labelled bars plus percents do not fit beside a title at 360 px, so each
+   meter takes a whole line under it — still inside the meter's own grid. */
+
+@media (max-width: 600px) {
+  .rk-row {
+    grid-template-areas:
+      "pick   rank   main   toggle"
+      "meters meters meters meters";
+  }
+
+  .rk-meters {
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  /* A column flex item may not keep its own height from a `flex: 1 1 0`. */
+  .rk-meter {
+    flex: none;
+  }
+}
+
+/* ── Reduced motion ──────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .rk-toggle {
+    transition: none;
+  }
+}

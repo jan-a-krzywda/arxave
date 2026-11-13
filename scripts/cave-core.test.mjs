@@ -229,11 +229,12 @@ test('topic match 0 gates nothing, 50 gates, and 100 gates more than 50', () => 
     setting: ALL_EQUAL,
     sliders: { match, surprise: 50 },
     touchstones: [[1, 0, 0]],
-    candidates: [0.78, 0.82, 0.86, 0.95].map((c) => ({ id: `c${c}`, vec: unit(c) })),
+    candidates: [0.78, 0.80, 0.86, 0.95].map((c) => ({ id: `c${c}`, vec: unit(c) })),
   });
 
-  // gate = 3 * match / 100 -> 0, 1.5, 3. fitZ of the four candidates:
-  // 0.6745, 2.02, 3.37, 6.41.
+  // gate = 2 * match / 100 -> 0, 1.0, 2.0. fitZ of the four candidates:
+  // 0.67, 1.35, 3.37, 6.41 — one on each side of both gates, so neither
+  // boundary is decided by a float32 rounding.
   const none = run(0);
   const half = run(50);
   const full = run(100);
@@ -243,9 +244,9 @@ test('topic match 0 gates nothing, 50 gates, and 100 gates more than 50', () => 
   // at best — 1e-4 is the precision of the fixture, not of the arithmetic.
   assert.equal(none.length, 4);
   const byId = Object.fromEntries(none.map((r) => [r.id, r]));
-  for (const c of [0.78, 0.82, 0.86, 0.95]) close(byId[`c${c}`].fit, (c - 0.76) / (0.02 * M), 1e-4);
+  for (const c of [0.78, 0.80, 0.86, 0.95]) close(byId[`c${c}`].fit, (c - 0.76) / (0.02 * M), 1e-4);
 
-  assert.deepEqual(sortedIds(half), ['c0.82', 'c0.86', 'c0.95']);
+  assert.deepEqual(sortedIds(half), ['c0.8', 'c0.86', 'c0.95']);
   assert.deepEqual(sortedIds(full), ['c0.86', 'c0.95']);
   assert.ok(full.every((r) => half.some((h) => h.id === r.id)));
 });

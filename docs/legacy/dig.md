@@ -1,9 +1,8 @@
 ---
 layout: page
-title: Dig
-permalink: /
-gloss: new
-nav_icon: dig
+title: Dig (classic)
+permalink: /legacy/dig/
+sitemap: false
 ---
 
 <noscript>

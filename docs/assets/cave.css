@@ -1,528 +1,493 @@
 /* ═══════════════════════════════════════════════════════════════════
-   Cave page — layout and the pieces cave-tokens.css does not carry.
+   Cave v4 — the staged page shell.
 
-   Tokens only: every colour below is a `var(--cv-…)`, so the light theme is
-   one block in cave-tokens.css and nothing here has to know about it. The
-   primitives (.cv-btn .cv-chip .cv-card .cv-slider .cv-sheet) come from the
-   tokens file too; this file positions them, adds the tree, the chip bar, the
-   result cards and the two-column → one-column switch.
+   Colours come from docs/_sass/cave.scss and nowhere else: this file holds
+   layout and state, not palette. The stage cards borrow Dig's fieldset
+   chrome (rock-deep panel, rock-edge hairline, 8 px radius) so the two pages
+   read as the same room; the chips, the train, the wagon table and the wagon
+   graph are drawn by filter.css and are only placed here.
 
-   Desktop: left column (box, sliders, tree) and right column (results).
-   Phone (≤720px): one column, the tree is the same <dialog> shown as a modal
-   bottom sheet behind the Topics chip, so there is one tree in the DOM and
-   two ways to reach it.
+   The rail is two controls in one: a vertical sticky stepper from 900 px up,
+   thin segments across the top of the column below that (Mobbin's Stripe
+   setup / Fresha patterns). A done step is a gold dot, the open one a lamp
+   ring, the rest rock — the same three states the cards use.
+
+   Legible at 360 px: nothing here sets a width a phone cannot honour, the
+   rail's names are for screen readers only on the narrow layout, and the
+   summary line on a folded card clips rather than pushing the head's name
+   off the row.
    ═══════════════════════════════════════════════════════════════════ */
 
-.cv-page {
-  max-width: 72rem;
+#cave-app {
+  /* style.css lifts #app above the gutter walls; the same has to be true of
+     this page's root or the walls would paint over the cards. */
+  position: relative;
+  z-index: 1;
+  max-width: 74rem;
   margin: 0 auto;
-  padding: 0 1.25rem 4rem;
+  padding: 0.5rem 1rem 3rem;
 }
 
-/* ── the header band ─────────────────────────────────────────────────
-   Pixel art is the page's only decoration: a 640×128 SVG, inlined so the
-   flame can flicker, on a rock-coloured strip. */
-.cv-band {
-  margin: 1rem 0 1.25rem;
-  overflow: hidden;
-  background: var(--cv-surface-2);
-  border: 1px solid var(--cv-line);
-  border-radius: var(--cv-radius);
+/* ── Hero ─────────────────────────────────────────────────────── */
+.cave-hero {
+  margin: 0 0 1.1rem;
 }
 
-.cv-band svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  image-rendering: pixelated;
+.cave-lede {
+  font-size: 1.12rem;
+  line-height: 1.55;
+  color: var(--text);
+  margin: 0 0 0.5rem;
+  max-width: 46em;
 }
 
-/* ── the two columns ──────────────────────────────────────────────── */
-
-.cv-layout {
-  display: grid;
-  grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
-  gap: 1.5rem;
-  align-items: start;
+.cave-sub {
+  font-size: 0.92rem;
+  color: var(--text-dim);
+  margin: 0;
 }
 
-.cv-side {
-  min-width: 0;
+/* ── The rail ─────────────────────────────────────────────────── */
+.cave-rail {
+  margin: 0 0 1.2rem;
 }
 
-.cv-main {
-  min-width: 0;
-}
-
-.cv-lede {
-  margin: 0 0 1rem;
-  color: var(--cv-muted);
-  font-size: var(--cv-fs-2);
-}
-
-/* ── fields shared by the box and Advanced ────────────────────────── */
-
-.cv-field {
-  display: block;
-  margin: 0 0 0.35rem;
-}
-
-.cv-text,
-.cv-page input[type="password"],
-.cv-page select {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 0.6rem 0.7rem;
-  font: inherit;
-  font-size: var(--cv-fs-2);
-  line-height: var(--cv-lh);
-  color: var(--cv-text);
-  background: var(--cv-surface);
-  border: 1px solid var(--cv-line);
-  border-radius: var(--cv-radius);
-}
-
-.cv-text {
-  min-height: 5.5rem;
-  resize: vertical;
-}
-
-.cv-text::placeholder {
-  color: var(--cv-muted);
-}
-
-.cv-text:focus-visible,
-.cv-page input:focus-visible,
-.cv-page select:focus-visible {
-  outline: none;
-  border-color: var(--cv-fire);
-  box-shadow: 0 0 0 0.25rem var(--cv-glow);
-}
-
-.cv-hint {
-  margin: 0.25rem 0 0.9rem;
-  color: var(--cv-muted);
-  font-size: var(--cv-fs-1);
-}
-
-/* ── the three sliders ────────────────────────────────────────────── */
-
-.cv-sliders {
-  display: grid;
-  gap: 0.9rem;
-  margin: 0 0 1rem;
-}
-
-.cv-control-head {
+.cave-rail-list {
+  list-style: none;
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.cv-control-name {
-  font-size: var(--cv-fs-2);
-  font-weight: 600;
-  color: var(--cv-text);
-}
-
-.cv-control-val {
-  font-size: var(--cv-fs-1);
-  font-variant-numeric: tabular-nums;
-  color: var(--cv-muted);
-}
-
-.cv-ends {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-top: -0.15rem;
-  font-size: var(--cv-fs-1);
-  color: var(--cv-muted);
-}
-
-/* ── the chip bar ─────────────────────────────────────────────────── */
-
-.cv-chipbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
-  margin: 0 0 1rem;
-}
-
-.cv-chips {
-  display: flex;
-  flex-wrap: wrap;
   gap: 0.35rem;
-}
-
-.cv-chip--topics {
-  display: none;      /* a phone's way into the tree; the desktop has the tree */
-}
-
-.cv-link {
-  padding: 0.2rem 0.1rem;
-  font: inherit;
-  font-size: var(--cv-fs-1);
-  font-weight: 600;
-  color: var(--cv-muted);
-  background: none;
-  border: 0;
-  border-radius: 4px;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-  cursor: pointer;
-}
-
-.cv-link:hover {
-  color: var(--cv-text);
-}
-
-.cv-link:focus-visible {
-  outline: none;
-  color: var(--cv-text);
-  box-shadow: 0 0 0 0.25rem var(--cv-glow);
-}
-
-.cv-link[hidden] {
-  display: none;
-}
-
-/* ── the topic tree ───────────────────────────────────────────────────
-   A parent row is [twisty][label][count][select]; a leaf is [label][select]
-   indented under it. The grid keeps every dropdown in one column so a long
-   label wraps instead of shoving the select off the row. */
-
-.cv-tree {
-  margin: 0 0 0.75rem;
-}
-
-.cv-tgroup + .cv-tgroup {
-  border-top: 1px solid var(--cv-line);
-}
-
-.cv-trow {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0;
-}
-
-.cv-trow--leaf {
-  grid-template-columns: minmax(0, 1fr) auto;
-  padding-left: 1.75rem;
-}
-
-.cv-tlabel {
-  font-size: var(--cv-fs-2);
-  color: var(--cv-text);
-  overflow-wrap: anywhere;
-}
-
-.cv-trow--leaf .cv-tlabel {
-  color: var(--cv-muted);
-}
-
-.cv-twisty {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  padding: 0;
-  font: inherit;
-  font-size: var(--cv-fs-1);
-  color: var(--cv-muted);
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.cv-twisty:hover {
-  color: var(--cv-text);
-  border-color: var(--cv-line);
-}
-
-.cv-twisty:focus-visible {
-  outline: none;
-  color: var(--cv-text);
-  box-shadow: 0 0 0 0.25rem var(--cv-glow);
-}
-
-/* Tonight's count for a parent, once there is a ranked list. */
-.cv-tcount {
-  min-width: 1.5rem;
-  padding: 0 0.4rem;
-  font-size: var(--cv-fs-1);
-  font-variant-numeric: tabular-nums;
-  text-align: center;
-  color: var(--cv-muted);
-  background: var(--cv-surface-2);
-  border: 1px solid var(--cv-line);
-  border-radius: 999px;
-}
-
-.cv-tcount[hidden] {
-  display: none;
-}
-
-.cv-tree .cv-select {
-  width: auto;
-  min-width: 7.5rem;
-  padding: 0.25rem 0.4rem;
-  font-size: var(--cv-fs-1);
-}
-
-.cv-kids[hidden] {
-  display: none;
-}
-
-/* ── the sheet: static on desktop, modal on a phone ───────────────── */
-
-.cv-page .cv-sheet {
-  position: static;
-  inset: auto;
-  z-index: auto;
-  width: auto;
-  height: auto;
-  max-width: none;
-  max-height: none;
   margin: 0;
   padding: 0;
-  overflow: visible;
-  color: var(--cv-text);
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
 }
 
-.cv-sheet-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
+.cave-rail-step {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
-.cv-sheet-head .cv-h3 {
-  margin: 0;
-}
-
-.cv-sheet-actions {
-  display: none;
-}
-
-/* ── status and results ───────────────────────────────────────────── */
-
-.cv-status {
-  margin: 0 0 0.75rem;
-  font-size: var(--cv-fs-1);
-  color: var(--cv-muted);
-}
-
-.cv-status.is-error {
-  color: var(--cv-fire);
-}
-
-.cv-results {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.cv-result-title {
-  margin: 0 0 0.3rem;
-  font-size: var(--cv-fs-3);
-  line-height: 1.35;
-  font-weight: 650;
-}
-
-.cv-result-title a {
-  color: var(--cv-text);
+.cave-rail-link,
+.cave-rail-link:visited {
+  display: block;
+  padding: 0.35rem 0 0.1rem;
+  border-radius: 3px;
+  color: var(--text-dim);
   text-decoration: none;
 }
 
-.cv-result-title a:hover {
-  color: var(--cv-text);
-  text-decoration: underline;
-  text-underline-offset: 0.15em;
+.cave-rail-link:hover {
+  text-decoration: none;
 }
 
-.cv-result-why {
-  margin: 0 0 0.5rem;
-  font-size: var(--cv-fs-2);
-  color: var(--cv-muted);
+.cave-rail-link:focus-visible {
+  outline: 2px solid var(--lamp);
+  outline-offset: 1px;
 }
 
-.cv-result-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem;
-  margin: 0 0 0.5rem;
+/* One segment: rock when locked, a lamp ring when it is the stage to work on,
+   solid gold once it is done. */
+.cave-rail-dot {
+  display: block;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--rock-edge);
+  border: 1px solid transparent;
 }
 
-/* The chips on a card are labels, not controls. */
-.cv-result .cv-chip {
+.cave-rail-step.is-done .cave-rail-dot {
+  background: var(--gold);
+}
+
+.cave-rail-step.is-open .cave-rail-dot {
+  background: color-mix(in srgb, var(--lamp) 25%, transparent);
+  border-color: var(--lamp);
+}
+
+.cave-rail-step.is-locked .cave-rail-link {
   cursor: default;
 }
 
-.cv-chip--fit,
-.cv-chip--impact {
-  font-variant-numeric: tabular-nums;
+/* Names and summaries are read out, not drawn, on the narrow layout — eight
+   labelled segments will not fit 360 px. */
+.cave-rail-name,
+.cave-rail-summary {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
 }
 
-.cv-result-topic {
-  font-size: var(--cv-fs-1);
-  color: var(--cv-muted);
+/* ── Stage cards ──────────────────────────────────────────────── */
+.cave-stage {
+  background: var(--rock-deep);
+  border: 1px solid var(--rock-edge);
+  border-radius: 8px;
+  margin-bottom: 0.9rem;
+  min-width: 0;
 }
 
-.cv-result-like {
-  margin: 0 0 0.6rem;
-  font-size: var(--cv-fs-1);
-  color: var(--cv-muted);
-}
-
-/* sieve-ui's refineHtml emits .sv-… class names; they arrive here unstyled
-   because sieve.css is not on this page, so the few that matter are dressed. */
-.cv-refine-out .sv-refine-text,
-.cv-refine-out .sv-refine-err {
-  margin: 0.5rem 0 0;
-  font-size: var(--cv-fs-2);
-}
-
-.cv-refine-out .sv-refine-err {
-  color: var(--cv-fire);
-}
-
-.cv-refine-out .sv-why {
+.cave-stage-head {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin: 0.5rem 0 0;
-}
-
-.cv-refine-out .sv-chip {
-  display: inline-flex;
-  padding: 0.15rem 0.55rem;
-  font-size: var(--cv-fs-1);
-  color: var(--cv-muted);
-  background: var(--cv-surface-2);
-  border: 1px solid var(--cv-line);
-  border-radius: 999px;
-
-/* ── advanced: the only three things folded away ──────────────────── */
-
-.cv-advanced {
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--cv-line);
-}
-
-.cv-advanced summary {
-  font-size: var(--cv-fs-2);
-  font-weight: 600;
-  color: var(--cv-muted);
-  border-radius: 6px;
+  align-items: baseline;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
-.cv-advanced summary:hover {
-  color: var(--cv-text);
+.cave-stage-head:hover {
+  background: var(--rock);
 }
 
-.cv-advanced summary:focus-visible {
-  outline: none;
-  color: var(--cv-text);
-  box-shadow: 0 0 0 0.25rem var(--cv-glow);
+.cave-stage-head:focus-visible {
+  outline: 2px solid var(--lamp);
+  outline-offset: -2px;
 }
 
-.cv-advanced-body {
-  display: grid;
-  gap: 0.5rem;
-  max-width: 26rem;
-  padding-top: 1rem;
+.cave-stage-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--rock);
+  border: 1px solid var(--rock-lit);
+  color: var(--lamp);
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
-.cv-advanced .cv-btn {
-  justify-self: start;
+.cave-stage-name {
+  font-weight: 700;
+  font-size: 1.02rem;
+  flex: none;
 }
 
-.cv-window {
-  margin: 0;
-  font-size: var(--cv-fs-1);
-  color: var(--cv-muted);
+/* The one-line summary of a folded stage. Clipped, not wrapped: a wrapped
+   summary makes every folded card a different height, which is exactly the
+   noise folding is meant to remove. */
+.cave-stage-summary {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-faint);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
 }
 
-/* ── empty states sit in the results column like a card ───────────── */
-
-.cv-results .cv-empty {
-  background: var(--cv-surface);
-  border: 1px solid var(--cv-line);
-  border-radius: var(--cv-radius);
+.cave-stage-body {
+  padding: 0.15rem 1rem 1rem;
 }
 
-/* `hidden` has to win over the class rules above it. */
-.cv-control[hidden],
-.cv-chip[hidden],
-.cv-link[hidden] {
+.cave-stage:not(.is-expanded) .cave-stage-body {
   display: none;
 }
 
-/* ── phone: one column, the tree in a bottom sheet ────────────────── */
-
-.cv-sheet::backdrop {
-  background: color-mix(in srgb, var(--cv-bg) 72%, transparent);
+/* Done: the number is the gold the page is digging for. */
+.cave-stage.is-done .cave-stage-n {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--cave-air);
 }
 
-@media (max-width: 720px) {
-  .cv-page {
-    padding: 0 0.85rem 3rem;
+.cave-stage.is-done .cave-stage-name {
+  color: var(--text-dim);
+}
+
+/* Open: lit by the blue lamp, because the work here is still the dig's, not
+   the fire's (stages 1–3 carry no warmth). */
+.cave-stage.is-open {
+  border-color: var(--rock-lit);
+  box-shadow: inset 2px 0 0 var(--lamp);
+}
+
+/* Locked: still readable, plainly not yet the thing to do. */
+.cave-stage.is-locked {
+  opacity: 0.55;
+}
+
+.cave-stage.is-locked .cave-stage-head {
+  cursor: default;
+}
+
+.cave-stage-coming {
+  margin: 0;
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+/* ── Dig ──────────────────────────────────────────────────────── */
+.cave-field {
+  margin-bottom: 0.8rem;
+}
+
+.cave-field-label {
+  display: block;
+  font-size: 0.92rem;
+  color: var(--text-dim);
+  margin-bottom: 0.4rem;
+}
+
+.cave-dig .role-grid {
+  margin-bottom: 0.8rem;
+}
+
+.cave-dig-error {
+  color: var(--ember);
+}
+
+/* Dig and Continue are the one thing to press on their card, so they carry
+   the ore colour like the Dig page's haul button does. The two-class
+   selector is the specificity that beats filter.css's `.button-bar button`. */
+.button-bar .cave-primary {
+  background: var(--gold);
+  color: var(--cave-air);
+  border-color: var(--gold);
+  font-weight: 600;
+  box-shadow: 0 6px 22px -10px color-mix(in srgb, var(--gold) 55%, transparent);
+}
+
+.button-bar .cave-primary:hover:not(:disabled) {
+  background: var(--ore-6);
+}
+
+.button-bar .cave-primary:disabled {
+  background: var(--rock);
+  color: var(--text-faint);
+  border-color: var(--rock-edge);
+  box-shadow: none;
+}
+
+/* ── Train ────────────────────────────────────────────────────── */
+.cave-train-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-faint);
+}
+
+/* ── Map: the topic bar ───────────────────────────────────────────
+   One segment per topic parent, its width the count of tonight's papers in
+   it, so the shape of the night reads before the wagons do. Hover, tap or
+   keyboard focus opens the leaf counts underneath. */
+.cave-topic-bar {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 0.6rem;
+}
+
+.cave-topic-bar:empty {
+  display: none;
+}
+
+.cave-topic-seg {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 30px;
+  padding: 0 0.35rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 3px;
+  background: var(--lamp-3);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.72rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  overflow: hidden;
+  cursor: default;
+}
+
+.cave-topic-seg:nth-child(even) {
+  background: var(--lamp-2);
+}
+
+.cave-topic-seg:focus-visible {
+  outline: 2px solid var(--lamp);
+  outline-offset: -2px;
+}
+
+.cave-topic-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cave-topic-count {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+}
+
+.cave-topic-leaves {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: calc(100% + 4px);
+  z-index: 5;
+  min-width: 12rem;
+  max-width: 18rem;
+  padding: 0.45rem 0.55rem;
+  background: var(--rock-deep);
+  border: 1px solid var(--rock-lit);
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+  box-shadow: 0 10px 22px -12px color-mix(in srgb, var(--cave-air) 85%, transparent);
+}
+
+/* The last segment's card would hang off the right edge. */
+.cave-topic-seg:last-child .cave-topic-leaves {
+  left: auto;
+  right: 0;
+}
+
+.cave-topic-seg:hover .cave-topic-leaves,
+.cave-topic-seg:focus-visible .cave-topic-leaves,
+.cave-topic-seg:focus-within .cave-topic-leaves {
+  display: block;
+}
+
+.cave-map-empty {
+  margin: 0.6rem 0 0;
+}
+
+.cave-map-continue {
+  margin-top: 0.9rem;
+}
+
+/* ── Notice line ──────────────────────────────────────────────── */
+.cave-notice {
+  margin: 1rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.cave-notice[hidden] {
+  display: none;
+}
+
+/* ── Desktop: the rail is a sticky vertical stepper ───────────── */
+@media (min-width: 900px) {
+  #cave-app {
+    display: grid;
+    grid-template-columns: 13.5rem minmax(0, 1fr);
+    column-gap: 1.5rem;
+    align-items: start;
+    padding-top: 1rem;
   }
 
-  .cv-band {
-    margin: 0.75rem 0 1rem;
+  .cave-hero,
+  .cave-notice {
+    grid-column: 1 / -1;
   }
 
-  .cv-layout {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+  .cave-rail {
+    grid-column: 1;
+    grid-row: 2;
+    position: sticky;
+    top: 1rem;
+    margin: 0;
   }
 
-  /* The same <dialog> the desktop shows inline, now a modal sheet. */
-  .cv-page .cv-sheet {
-    position: fixed;
-    inset: auto 0 0 0;
-    z-index: 40;
+  .cave-stages {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+  }
+
+  .cave-rail-list {
+    display: block;
+  }
+
+  .cave-rail-link {
+    display: grid;
+    grid-template-columns: 1rem minmax(0, 1fr);
+    column-gap: 0.55rem;
+    align-items: start;
+    padding: 0.3rem 0;
+  }
+
+  .cave-rail-dot {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+    margin-top: 0.3rem;
+  }
+
+  .cave-rail-step.is-open .cave-rail-dot {
+    background: transparent;
+  }
+
+  .cave-rail-name,
+  .cave-rail-summary {
+    position: static;
     width: auto;
     height: auto;
-    max-height: 82vh;
-    margin: 0;
-    padding: 1rem 1rem 1.25rem;
-    overflow-y: auto;
-    background: var(--cv-surface);
-    border-top: 1px solid var(--cv-line);
-    border-radius: var(--cv-radius) var(--cv-radius) 0 0;
-    box-shadow: 0 -1rem 2.5rem var(--cv-glow);
-    overscroll-behavior: contain;
+    overflow: visible;
+    white-space: normal;
+    clip-path: none;
   }
 
-  .cv-chip--topics {
-    display: inline-flex;
+  .cave-rail-name {
+    font-size: 0.9rem;
+    color: var(--text-dim);
   }
 
-  .cv-sheet-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--cv-line);
+  .cave-rail-step.is-open .cave-rail-name {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .cave-rail-step.is-done .cave-rail-name {
+    color: var(--text-faint);
+  }
+
+  .cave-rail-summary {
+    grid-column: 2;
+    font-size: 0.76rem;
+    line-height: 1.35;
+    color: var(--text-faint);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 }
 
-}
+/* ── Narrow ───────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  #cave-app {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
 
+  .cave-stage-head {
+    padding: 0.7rem 0.75rem;
+    gap: 0.45rem;
+  }
+
+  .cave-stage-body {
+    padding: 0.1rem 0.75rem 0.85rem;
+  }
+
+  .cave-topic-seg {
+    font-size: 0.66rem;
+    padding: 0 0.2rem;
+  }
+}
