@@ -1,7 +1,7 @@
 /**
  * `cd scripts && node --test cave-page.test.mjs`.
  *
- * The v4 page is eight static sections plus a rail; a mistake in it fails late
+ * The v4 page is seven static sections plus a rail; a mistake in it fails late
  * and quietly — a renamed `data-stage` leaves `cave.js` painting nothing, a
  * `var(--token)` no stylesheet defines renders as nothing at all. So this file
  * reads the two files that describe the shell (`docs/cave.md`,
@@ -77,15 +77,32 @@ test('every section is the contract\'s markup, with its number and its name', ()
 test('the page carries the rail, the app wrapper and the two side walls', () => {
   assert.match(PAGE, /<nav class="cave-rail" id="cave-rail" aria-label="[^"]+">/);
   assert.match(PAGE, /<div id="cave-app">/);
-  assert.match(PAGE, /<div class="cave-wall cave-wall-left" aria-hidden="true"><\/div>/);
-  assert.match(PAGE, /<div class="cave-wall cave-wall-right" aria-hidden="true"><\/div>/);
+  assert.match(PAGE, /<div class="cave-wall cave-wall-left cave-wall-dig" aria-hidden="true"><\/div>/);
+  assert.match(PAGE, /<div class="cave-wall cave-wall-right cave-wall-dig" aria-hidden="true"><\/div>/);
 
-  /* The rail and both walls live inside the wrapper, or the desktop grid and
-     the z-index that lifts the page over the walls are both moot. */
+  /* The rail lives inside the wrapper, where the desktop grid places it. */
   const app = PAGE.indexOf('<div id="cave-app">');
-  for (const needle of ['cave-wall-left', 'cave-wall-right', 'id="cave-rail"']) {
-    assert.ok(PAGE.indexOf(needle) > app, `${needle} sits outside #cave-app`);
+  assert.ok(PAGE.indexOf('id="cave-rail"') > app, 'the rail sits outside #cave-app');
+
+  /* The walls do not: as siblings before the wrapper they position against
+     .page-content and land in the gutters. Inside it they position against the
+     content box and paint over the rail and the cards (seen at 1280, 1440). */
+  for (const needle of ['cave-wall-left', 'cave-wall-right']) {
+    const at = PAGE.indexOf(needle);
+    assert.ok(at !== -1 && at < app, `${needle} is not before #cave-app`);
   }
+});
+
+test('cave.css widens the walls and narrows the centre, for this page only', () => {
+  assert.match(CSS, /\.cave-wall-dig/, 'cave.css has no .cave-wall-dig rule');
+  /* 60rem centre, gutter walls up to 320px, shown from 1100px up. */
+  assert.match(CSS, /#cave-app \{[^}]*max-width: 60rem/, '#cave-app is not 60rem wide');
+  assert.match(CSS, /\.cave-wall\.cave-wall-dig \{[^}]*width: clamp\(0px, calc\(\(100vw - 60rem - 3rem\) \/ 2\), 320px\)/,
+    'the walls do not take the gutter outside the 60rem centre');
+  const walls = CSS.slice(CSS.indexOf('.cave-wall.cave-wall-dig'));
+  assert.match(walls, /@media \(min-width: 1100px\)/, 'the walls do not start at 1100px');
+  /* Scoped by the page's own class, so no other room changes with it. */
+  assert.ok(!/^\.cave-wall \{/m.test(CSS), 'cave.css restyles every room\'s walls');
 });
 
 test('the page loads the three stylesheets and the module with cache-busting', () => {
@@ -140,6 +157,21 @@ test('cave.css keeps its layout promises and stays balanced', () => {
   for (const state of ['is-done', 'is-open', 'is-locked']) {
     assert.ok(CSS.includes('.' + state), `cave.css has no .${state} rule`);
   }
+});
+
+/* The cage's floor is a multiple of the step's height and nothing else, so these
+   two constants are the whole alignment: change one alone and the lift parks
+   between floors. */
+test('the lift descends by whole floors and honours reduced motion', () => {
+  const desktop = CSS.slice(CSS.indexOf('@media (min-width: 900px)'));
+
+  assert.match(desktop, /--cave-lift-pitch:\s*[\d.]+rem/, 'no floor pitch');
+  assert.match(desktop, /\.cave-rail-step \{[^}]*min-height: var\(--cave-lift-pitch\)/,
+    'a floor is not the pitch tall');
+  assert.match(desktop, /transform: translateY\(calc\(var\(--lift-floor\) \* var\(--cave-lift-pitch\)\)\)/,
+    'the cage does not move by whole floors');
+  assert.match(desktop, /transition: transform 700ms ease-in-out/);
+  assert.match(CSS, /@media \(prefers-reduced-motion: reduce\) \{\s*\.cave-lift \{\s*transition: none;/);
 });
 
 /* ── the site theme import ─────────────────────────────────────────────── */

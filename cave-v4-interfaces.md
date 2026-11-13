@@ -46,7 +46,6 @@ Plus `<nav class="cave-rail" id="cave-rail">` (stepper; vertical sticky on ≥ 9
 |---|---|---|
 | dig, train | `cave-stage-dig.mjs` | K5 |
 | map | `cave-stage-map.mjs` | K5 |
-| fire | `cave-stage-fire.mjs` | K6 |
 | priorities | `cave-stage-priorities.mjs` | K7 |
 | ranking | `cave-stage-ranking.mjs` | K8 |
 | act | `cave-stage-act.mjs` | K13 |

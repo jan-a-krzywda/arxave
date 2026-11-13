@@ -12,17 +12,22 @@ nav_icon: dig
   </div>
 </noscript>
 
-<!-- The staged Cave: eight cards top to bottom, one rail, one side wall per
+<!-- The staged Cave: seven cards top to bottom, one rail, one side wall per
      gutter. The markup here is the part that does not move — the hero, the
      rail's container, one section per stage with its head and body, and the
      notice line. `assets/cave.js` draws the rail inside #cave-rail, mounts
      each stage's module into its body, and classes the sections done / open /
      locked. Stage modules own everything inside their own body. -->
 
-<div id="cave-app">
+<!-- The walls are #cave-app's siblings, as on the old Dig — not its children.
+     Positioned against .page-content they land in the page gutters, outside the
+     content box; inside the wrapper they were sized against it and painted over
+     the rail and the cards. `cave-wall-dig` is the hook that lets cave.css widen
+     them and narrow the centre for this page alone. -->
+<div class="cave-wall cave-wall-left cave-wall-dig" aria-hidden="true"></div>
+<div class="cave-wall cave-wall-right cave-wall-dig" aria-hidden="true"></div>
 
-  <div class="cave-wall cave-wall-left" aria-hidden="true"></div>
-  <div class="cave-wall cave-wall-right" aria-hidden="true"></div>
+<div id="cave-app">
 
   <header class="cave-hero">
     <p class="cave-lede">
@@ -30,7 +35,7 @@ nav_icon: dig
       the haul train fill, then read the night as wagons — and keep what is
       worth reading.
     </p>
-    <p class="cave-sub">Eight stages, top to bottom. Each opens once the one before it is done.</p>
+    <p class="cave-sub">Seven stages, top to bottom. Each opens once the one before it is done.</p>
   </header>
 
   <nav class="cave-rail" id="cave-rail" aria-label="Tonight's stages"></nav>
@@ -61,17 +66,9 @@ nav_icon: dig
       <div class="cave-stage-body"></div>
     </section>
 
-    <section class="cave-stage" id="stage-fire" data-stage="fire">
-      <button type="button" class="cave-stage-head" aria-expanded="false">
-        <span class="cave-stage-n">4</span><span class="cave-stage-name">Enter the cave</span>
-        <span class="cave-stage-summary"></span>
-      </button>
-      <div class="cave-stage-body"></div>
-    </section>
-
     <section class="cave-stage" id="stage-priorities" data-stage="priorities">
       <button type="button" class="cave-stage-head" aria-expanded="false">
-        <span class="cave-stage-n">5</span><span class="cave-stage-name">Priorities</span>
+        <span class="cave-stage-n">4</span><span class="cave-stage-name">Priorities</span>
         <span class="cave-stage-summary"></span>
       </button>
       <div class="cave-stage-body"></div>
@@ -79,7 +76,7 @@ nav_icon: dig
 
     <section class="cave-stage" id="stage-ranking" data-stage="ranking">
       <button type="button" class="cave-stage-head" aria-expanded="false">
-        <span class="cave-stage-n">6</span><span class="cave-stage-name">Ranking</span>
+        <span class="cave-stage-n">5</span><span class="cave-stage-name">Ranking</span>
         <span class="cave-stage-summary"></span>
       </button>
       <div class="cave-stage-body"></div>
@@ -87,7 +84,7 @@ nav_icon: dig
 
     <section class="cave-stage" id="stage-act" data-stage="act">
       <button type="button" class="cave-stage-head" aria-expanded="false">
-        <span class="cave-stage-n">7</span><span class="cave-stage-name">Act</span>
+        <span class="cave-stage-n">6</span><span class="cave-stage-name">Act</span>
         <span class="cave-stage-summary"></span>
       </button>
       <div class="cave-stage-body"></div>
@@ -95,7 +92,7 @@ nav_icon: dig
 
     <section class="cave-stage" id="stage-story" data-stage="story">
       <button type="button" class="cave-stage-head" aria-expanded="false">
-        <span class="cave-stage-n">8</span><span class="cave-stage-name">Story</span>
+        <span class="cave-stage-n">7</span><span class="cave-stage-name">Story</span>
         <span class="cave-stage-summary"></span>
       </button>
       <div class="cave-stage-body"></div>

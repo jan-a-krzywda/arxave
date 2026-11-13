@@ -356,7 +356,7 @@ async function until(check, ms = 1000) {
 /** A flow already past Act, so `story` is open and can be completed. */
 function unlockedFlow() {
   const flow = createFlow({ storage: null });
-  for (const id of ['dig', 'train', 'map', 'fire', 'priorities', 'ranking', 'act']) {
+  for (const id of ['dig', 'train', 'map', 'priorities', 'ranking', 'act']) {
     flow.complete(id, 'done');
   }
   return flow;

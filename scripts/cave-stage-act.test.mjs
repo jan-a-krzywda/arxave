@@ -233,7 +233,7 @@ function clickAct(listEl, act, id) {
 /** The page's ctx, with the flow already at the act stage. */
 function actCtx({ picks = new Set(), storage = null } = {}) {
   const flow = createFlow({ storage: null });
-  for (const id of ['dig', 'train', 'map', 'fire', 'priorities', 'ranking']) flow.complete(id, 'done');
+  for (const id of ['dig', 'train', 'map', 'priorities', 'ranking']) flow.complete(id, 'done');
   return {
     flow,
     bus: new EventTarget(),

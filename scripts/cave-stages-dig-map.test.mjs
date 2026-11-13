@@ -29,7 +29,7 @@ import { fileURLToPath } from 'node:url';
 import {
   DEFAULT_CATEGORIES, ARXIV_CATEGORIES, cleanTex, digSummary, meanVector, mountDig, mountTrain,
 } from '../docs/assets/cave-stage-dig.mjs';
-import { fallbackWagonName, mount, topicBar } from '../docs/assets/cave-stage-map.mjs';
+import { fallbackWagonName, mount, tooltipPosition, topicBar } from '../docs/assets/cave-stage-map.mjs';
 import { STAGE_NAMES, stageRailHtml } from '../docs/assets/cave.js';
 import { createFlow, STAGES } from '../docs/assets/cave-flow.mjs';
 import { loadTopics } from '../docs/assets/sieve-core.mjs';
@@ -149,6 +149,34 @@ test('a tie keeps the first label reached, and no topic means no label', () => {
   assert.equal(fallbackWagonName([0], night, null), '');
 });
 
+/* ── the graph tooltip's position ───────────────────────────────────────── */
+
+test('the graph tooltip sits just off the cursor, and clamps to the viewport', () => {
+  const view = { vw: 1000, vh: 800 };
+  const size = { w: 220, h: 60 };
+
+  /* The ordinary case: 12 px down-right, as Dig's floating tooltips do. */
+  assert.deepEqual(tooltipPosition({ clientX: 100, clientY: 120 }, size, view),
+    { left: 112, top: 132 });
+
+  /* Near the right and bottom edges it flips to the other side of the cursor
+     rather than hanging off the page, and still leaves an 8 px margin. */
+  const edge = tooltipPosition({ clientX: 990, clientY: 790 }, size, view);
+  assert.equal(edge.left, 990 - size.w - 12);
+  assert.equal(edge.top, 790 - size.h - 12);
+  assert.ok(edge.left + size.w <= view.vw && edge.top + size.h <= view.vh,
+    'the tooltip hangs off the viewport');
+
+  /* A tooltip wider than the window cannot fit anywhere; it still starts at
+     the margin instead of at a negative coordinate. */
+  assert.deepEqual(tooltipPosition({ clientX: 5, clientY: 5 }, { w: 2000, h: 60 }, view),
+    { left: 8, top: 17 });
+
+  /* No viewport known (a test, a detached page): the raw offset, no NaN. */
+  assert.deepEqual(tooltipPosition({ clientX: 40, clientY: 50 }, size, {}),
+    { left: 52, top: 62 });
+});
+
 /* ── the rail ───────────────────────────────────────────────────────────── */
 
 const STATES = (html) => [...html.matchAll(/class="cave-rail-step is-(\w+)"/g)].map((m) => m[1]);
@@ -190,6 +218,51 @@ test('the rail escapes what a summary carries and copes with a bare snapshot', (
   assert.deepEqual(STATES(stageRailHtml(null, STAGES)),
     ['open', ...STAGES.slice(1).map(() => 'locked')]);
   assert.deepEqual(STATES(stageRailHtml({}, STAGES)), STATES(stageRailHtml(null, STAGES)));
+});
+
+/* ── the lift ───────────────────────────────────────────────────────────── */
+
+const FLOOR = (html) => (html.match(/class="cave-lift" style="--lift-floor: (\d+)"/) || [])[1];
+
+test('the rail is a shaft with exactly one lift, parked at the open floor', () => {
+  const html = stageRailHtml(null, STAGES);
+
+  assert.equal((html.match(/class="cave-lift"/g) || []).length, 1, 'one cage, not one per floor');
+  assert.ok(html.includes('<div class="cave-lift-shaft">'), 'the floors sit in a shaft');
+  assert.ok(html.includes('class="cave-lift-cable"'), 'the cage hangs from a cable');
+  assert.ok(html.includes('src="/assets/cave-art/lift.svg"'), 'the cage drawing is not linked');
+  /* Decoration: it must not be a second tab stop or a second name for a floor. */
+  assert.match(html, /class="cave-lift" style="--lift-floor: \d+" aria-hidden="true"/);
+  assert.match(html, /class="cave-lift-cage"[^>]*alt=""/);
+
+  /* Nothing done → the top floor; three done → the fourth; all done → the last. */
+  assert.equal(FLOOR(html), '0');
+  assert.equal(FLOOR(stageRailHtml({ done: { dig: 'a', train: 'b', map: 'c' } }, STAGES)), '3');
+
+  const allDone = Object.fromEntries(STAGES.map((id) => [id, 'done']));
+  assert.equal(FLOOR(stageRailHtml({ done: allDone }, STAGES)), String(STAGES.length - 1));
+
+  /* The floors themselves are unchanged: still one step per stage, still linked. */
+  assert.equal((html.match(/class="cave-rail-link" href="#stage-/g) || []).length, STAGES.length);
+});
+
+test('the lift cage is a 16-cell rect drawing in the site palette', () => {
+  const src = readFileSync(fileURLToPath(new URL('../docs/assets/cave-art/lift.svg', import.meta.url)), 'utf8');
+  const theme = readFileSync(fileURLToPath(new URL('../docs/_sass/cave-theme.scss', import.meta.url)), 'utf8');
+
+  assert.match(src.slice(0, src.indexOf('>')), /width="48" height="48" viewBox="0 0 16 16"/);
+  assert.match(src, /shape-rendering="crispEdges"/);
+
+  /* Rect-only, like the campfire: no paths and no gradients to anti-alias. */
+  const tags = [...src.matchAll(/<([a-z]+)\b/g)].map((m) => m[1]);
+  assert.deepEqual([...new Set(tags)], ['svg', 'rect'], 'the cage is rects only');
+
+  const fills = [...new Set([...src.matchAll(/fill="([^"]+)"/g)].map((m) => m[1]))];
+  assert.ok(fills.includes('#f5b301') && fills.includes('#7aa2f7'), 'the lamp is gold and lamp blue');
+  for (const fill of fills) {
+    assert.match(fill, /^#[0-9a-f]{6}$/, `${fill} is not a hex colour`);
+    assert.ok(theme.includes(fill), `${fill} is not a colour in cave-theme.scss`);
+  }
 });
 
 /* ── the mounts ─────────────────────────────────────────────────────────── */

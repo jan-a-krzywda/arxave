@@ -333,6 +333,9 @@ export function prefsSummary(topics, prefs) {
 
 /* ── the stage ──────────────────────────────────────────────────────────── */
 
+/** The campfire the stage opens with: one small, lit drawing, nothing more. */
+export const ART_HREF = new URL('./cave-art/campfire.svg', import.meta.url).href;
+
 /** Load this stage's stylesheet once; the page links none of its own. */
 function ensureStyles() {
   const href = new URL('./cave-priorities.css', import.meta.url).href;
@@ -444,6 +447,8 @@ export function mount(body, ctx) {
 
   body.innerHTML =
     '<div class="cave-priorities">' +
+      '<img class="cave-priorities-fire" src="' + escapeHtml(ART_HREF) + '"' +
+        ' width="192" height="144" alt="" aria-hidden="true" decoding="async">' +
       '<div class="cave-field">' +
         '<label class="cave-field-label" for="cave-priorities-text">What do you care about?</label>' +
         '<textarea class="cave-priorities-text" id="cave-priorities-text" rows="3" placeholder="' +

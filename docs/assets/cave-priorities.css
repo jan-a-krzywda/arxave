@@ -27,6 +27,19 @@
   color: var(--text-faint);
 }
 
+/* ── the campfire, small ─────────────────────────────────────────────
+   The fire stage used to be a card of its own; it is now the picture this
+   card opens with. campfire.svg is a 64×48 pixel grid, so 8rem (128 px) is
+   exactly 2× and the pixels stay square. Decoration: no text, no pointer. */
+
+.cave-priorities-fire {
+  display: block;
+  width: 8rem;
+  height: auto;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
 /* ── the box ─────────────────────────────────────────────────────── */
 
 .cave-priorities-text {
@@ -437,6 +450,29 @@
   .cave-trow--leaf {
     padding-left: 0.7rem;
   }
+}
+
+/* ── the firelight on this stage and the ones after it ─────────────
+   Moved here with the campfire. `cave.js` puts `cave-lit` on #cave-app once
+   Priorities is reachable, and this is the wash and the gold focus rings that
+   gives. No hexes: the palette stays in cave-theme.scss. */
+
+#cave-app.cave-lit .cave-stage[data-stage="priorities"],
+#cave-app.cave-lit .cave-stage[data-stage="ranking"],
+#cave-app.cave-lit .cave-stage[data-stage="act"],
+#cave-app.cave-lit .cave-stage[data-stage="story"] {
+  background:
+    radial-gradient(120% 85% at 50% 0%,
+      color-mix(in srgb, var(--gold) 10%, transparent), transparent 72%),
+    var(--rock-deep);
+}
+
+#cave-app.cave-lit .cave-stage[data-stage="priorities"] :focus-visible,
+#cave-app.cave-lit .cave-stage[data-stage="ranking"] :focus-visible,
+#cave-app.cave-lit .cave-stage[data-stage="act"] :focus-visible,
+#cave-app.cave-lit .cave-stage[data-stage="story"] :focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
 }
 
 /* A weight moving is decoration, not information. */

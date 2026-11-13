@@ -1,5 +1,5 @@
 /**
- * cave-flow — one night in the cave, as eight stages and a bit of state.
+ * cave-flow — one night in the cave, as seven stages and a bit of state.
  *
  * The page is a single column of cards top to bottom; each card unlocks when
  * the one before it is done, folds to its one-line summary when done, and
@@ -25,7 +25,7 @@
  * naming only stages this machine knows is ignored.
  */
 
-export const STAGES = ['dig', 'train', 'map', 'fire', 'priorities', 'ranking', 'act', 'story'];
+export const STAGES = ['dig', 'train', 'map', 'priorities', 'ranking', 'act', 'story'];
 
 const oneLine = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
 
@@ -46,9 +46,14 @@ export function foldOnComplete(id) {
  *
  * `storage` is anything with `getItem`/`setItem` (localStorage, a fake in a
  * test); `key` names its entry; `stages` is the fixed order and exists so a
- * test — or a later three-stage page — does not have to know all eight.
+ * test — or a later three-stage page — does not have to know all seven.
+ *
+ * THE KEY MOVED WITH THE STAGE LIST. v4 stored a snapshot that may name
+ * `fire`; a restore rejects unknown ids wholesale, so an old entry would only
+ * ever start the night fresh — but a fresh key says that plainly instead of
+ * relying on the validator.
  */
-export function createFlow({ storage = null, key = 'arxave-cave-v4-flow', stages = STAGES } = {}) {
+export function createFlow({ storage = null, key = 'arxave-cave-v5-flow', stages = STAGES } = {}) {
   if (!Array.isArray(stages) || stages.length === 0) {
     throw new TypeError('cave-flow: stages must be a non-empty array');
   }

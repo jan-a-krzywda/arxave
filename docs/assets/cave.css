@@ -9,8 +9,11 @@
 
    The rail is two controls in one: a vertical sticky stepper from 900 px up,
    thin segments across the top of the column below that (Mobbin's Stripe
-   setup / Fresha patterns). A done step is a gold dot, the open one a lamp
-   ring, the rest rock — the same three states the cards use.
+   setup / Fresha patterns). From 900 px it is also a mine shaft read
+   downwards — a ledge per floor with the lift cage parked at the stage being
+   worked on (K22) — while on a phone the cage is hidden and the segments stay.
+   A done step is gold, the open one lamp, the rest rock: the same three states
+   the cards use.
 
    Legible at 360 px: nothing here sets a width a phone cannot honour, the
    rail's names are for screen readers only on the narrow layout, and the
@@ -19,13 +22,46 @@
    ═══════════════════════════════════════════════════════════════════ */
 
 #cave-app {
-  /* style.css lifts #app above the gutter walls; the same has to be true of
-     this page's root or the walls would paint over the cards. */
+  /* The walls are this box's siblings out in the gutters (see below), so the
+     lift is belt and braces: if a gutter ever miscalculated, the cards still
+     win the paint order. 60rem is the whole page — rail, cards, hero. */
   position: relative;
   z-index: 1;
-  max-width: 74rem;
+  max-width: 60rem;
   margin: 0 auto;
   padding: 0.5rem 1rem 3rem;
+}
+
+/* ── Side walls: wider, out in the real gutters ─────────────────
+   `cave-wall-dig` is this page's hook into style.css's .cave-wall: absolute
+   against .page-content, cropped from the inner edge by background-position,
+   pixelated, pointer-events none. Two classes beat that sheet's own
+   `.cave-wall` whatever order the two land in, and no other room carries the
+   class, so Stockpile, Haul and Details keep their gutters untouched.
+
+   Width is the gutter left outside a 60rem centre with 3rem of slack, capped
+   at 320px. It never overlaps #cave-app's box:
+
+     #cave-app is 960px of content (60rem at the default 16px root) + 2×16px
+     padding = 992px, centred in minima's .wrapper (style.css caps it at
+     1140px, inner width 1110px).
+     at 1100px: wall = (1100 - 960 - 48) / 2 = 46;  app left = 15 + (1070 - 992) / 2 = 54
+     at 1140px: wall = (1140 - 960 - 48) / 2 = 66;  app left = 15 + (1110 - 992) / 2 = 74
+       — 8px clear in both, and above 1140 the wrapper stops growing, so both
+       edges move 1px per 2px of viewport and the 8px holds until the wall
+       hits its 320px cap at 960 + 48 + 640 = 1648px.
+     at 1920px: wall = 320; app left = (1920 - 1140) / 2 + 74 = 464 — 144px clear.
+
+   Shown from 1100px up, not the site's 1340: a 46px strip of rock still reads
+   as a wall, and the centre has already narrowed to pay for it. */
+.cave-wall.cave-wall-dig {
+  width: clamp(0px, calc((100vw - 60rem - 3rem) / 2), 320px);
+}
+
+@media (min-width: 1100px) {
+  .cave-wall.cave-wall-dig {
+    display: block;
+  }
 }
 
 /* ── Hero ─────────────────────────────────────────────────────── */
@@ -50,6 +86,12 @@
 /* ── The rail ─────────────────────────────────────────────────── */
 .cave-rail {
   margin: 0 0 1.2rem;
+}
+
+/* The lift is a desktop idea: on a phone the rail is a row of segments and
+   there is no shaft to ride, so the cage stays out of the markup's way. */
+.cave-lift {
+  display: none;
 }
 
 .cave-rail-list {
@@ -403,6 +445,25 @@
     position: sticky;
     top: 1rem;
     margin: 0;
+    /* The lift's geometry, in one place: one floor is one step, the cage is the
+       48 px drawing, and the ledge is where inside a floor the cage parks. */
+    --cave-lift-pitch: 4.25rem;
+    --cave-lift-cage: 3rem;
+    --cave-lift-headroom: 3.4rem;  /* room for the cage above the top floor */
+    --cave-lift-ledge: 0.62rem;
+  }
+
+  /* The shaft: two rails and a sleeper at every floor, drawn as the shaft's own
+     background so it sits behind the floors and the cage both. */
+  .cave-lift-shaft {
+    position: relative;
+    padding-top: var(--cave-lift-headroom);
+    background:
+      linear-gradient(var(--rock-edge), var(--rock-edge)) 1.05rem 0 / 2px 100% no-repeat,
+      linear-gradient(var(--rock-edge), var(--rock-edge)) 1.93rem 0 / 2px 100% no-repeat,
+      repeating-linear-gradient(to bottom,
+        var(--rock) 0 2px, transparent 2px var(--cave-lift-pitch))
+        1.05rem var(--cave-lift-ledge) / 0.9rem 100% no-repeat;
   }
 
   .cave-stages {
@@ -415,23 +476,80 @@
     display: block;
   }
 
+  /* A fixed floor: the cage's translateY is a multiple of this, so floor n's
+     ledge and the cage's resting height can never drift apart. */
+  .cave-rail-step {
+    min-height: var(--cave-lift-pitch);
+  }
+
+  /* The last floor has no cage coming below it, so its pitch only buys shaft. */
+  .cave-rail-step:last-child {
+    min-height: auto;
+  }
+
   .cave-rail-link {
     display: grid;
-    grid-template-columns: 1rem minmax(0, 1fr);
-    column-gap: 0.55rem;
+    grid-template-columns: var(--cave-lift-cage) minmax(0, 1fr);
+    column-gap: 0.4rem;
     align-items: start;
     padding: 0.3rem 0;
   }
 
+  /* The dot becomes the floor's ledge: a short horizontal bar rather than a
+     bullet, so the column reads as the floors of a shaft. */
   .cave-rail-dot {
-    width: 0.7rem;
-    height: 0.7rem;
-    border-radius: 50%;
+    box-sizing: border-box;
+    width: 100%;
+    height: 3px;
+    border-radius: 0;
     margin-top: 0.3rem;
+    background: var(--rock-edge);
+  }
+
+  .cave-rail-step.is-done .cave-rail-dot {
+    background: var(--gold);
   }
 
   .cave-rail-step.is-open .cave-rail-dot {
-    background: transparent;
+    background: var(--lamp);
+    border-color: var(--lamp);
+  }
+
+  /* The cage. `--lift-floor` is the one thing the shell writes; the transition
+     is what makes a finished stage read as the lift going down a floor. */
+  .cave-lift {
+    --lift-floor: 0;
+    display: block;
+    position: absolute;
+    left: 0;
+    top: calc(var(--cave-lift-headroom) + var(--cave-lift-ledge));
+    width: var(--cave-lift-cage);
+    height: 0;
+    pointer-events: none;
+    transform: translateY(calc(var(--lift-floor) * var(--cave-lift-pitch)));
+    transition: transform 700ms ease-in-out;
+  }
+
+  .cave-lift-cage {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: var(--cave-lift-cage);
+    height: var(--cave-lift-cage);
+    image-rendering: pixelated;
+  }
+
+  /* The winding cable: shaft top down to the cage's roof, so it shortens as the
+     cage descends. */
+  .cave-lift-cable {
+    position: absolute;
+    left: 50%;
+    bottom: var(--cave-lift-cage);
+    width: 2px;
+    margin-left: -1px;
+    height: calc(var(--cave-lift-headroom) + var(--cave-lift-ledge)
+      + var(--lift-floor) * var(--cave-lift-pitch) - var(--cave-lift-cage));
+    background: var(--rock-lit);
   }
 
   .cave-rail-name,
@@ -467,6 +585,13 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+  }
+}
+
+/* The cage still moves between floors, it just arrives at once. */
+@media (prefers-reduced-motion: reduce) {
+  .cave-lift {
+    transition: none;
   }
 }
 

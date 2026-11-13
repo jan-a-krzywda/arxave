@@ -26,10 +26,10 @@ function fakeStorage(initial) {
   };
 }
 
-test('the eight stages are fixed and in order', () => {
+test('the seven stages are fixed and in order', () => {
   assert.deepEqual(
     [...STAGES],
-    ['dig', 'train', 'map', 'fire', 'priorities', 'ranking', 'act', 'story'],
+    ['dig', 'train', 'map', 'priorities', 'ranking', 'act', 'story'],
   );
 });
 
@@ -100,21 +100,21 @@ test('toggle flips one stage without touching the others', () => {
 
 test('invalidating from map keeps dig and train and reopens map', () => {
   const flow = createFlow();
-  for (const id of ['dig', 'train', 'map', 'fire']) flow.complete(id, `${id} · ok`);
+  for (const id of ['dig', 'train', 'map', 'priorities']) flow.complete(id, `${id} · ok`);
 
   flow.invalidateFrom('map');
 
   assert.equal(flow.status('dig'), 'done');
   assert.equal(flow.status('train'), 'done');
   assert.equal(flow.status('map'), 'open');
-  assert.equal(flow.status('fire'), 'locked');
+  assert.equal(flow.status('priorities'), 'locked');
   assert.equal(flow.summary('dig'), 'dig · ok');
   assert.equal(flow.summary('train'), 'train · ok');
   assert.equal(flow.summary('map'), null);
-  assert.equal(flow.summary('fire'), null);
+  assert.equal(flow.summary('priorities'), null);
   assert.equal(flow.current(), 'map');
   assert.equal(flow.expanded('map'), true);
-  assert.equal(flow.expanded('fire'), false);
+  assert.equal(flow.expanded('priorities'), false);
   assert.deepEqual(flow.snapshot(), {
     done: { dig: 'dig · ok', train: 'train · ok' },
     expanded: ['map'],
@@ -201,12 +201,25 @@ test('corrupt or unknown stored values are ignored: fresh start', () => {
     'empty string': '',
   };
   for (const [label, raw] of Object.entries(cases)) {
-    const flow = createFlow({ storage: fakeStorage({ 'arxave-cave-v4-flow': raw }) });
+    const flow = createFlow({ storage: fakeStorage({ 'arxave-cave-v5-flow': raw }) });
     assert.equal(flow.status('dig'), 'open', label);
     assert.equal(flow.status('train'), 'locked', label);
     assert.equal(flow.summary('dig'), null, label);
     assert.deepEqual(flow.snapshot(), { done: {}, expanded: ['dig'] }, label);
   }
+});
+
+test('an old v4 flow that names fire is ignored, not restored', () => {
+  /* The card between Map and Priorities is gone, so a snapshot that remembered
+     it names a stage this build does not know. It must not wedge the page: the
+     new key is the belt, the unknown-id check the braces. */
+  const storage = fakeStorage({
+    'arxave-cave-v4-flow':
+      '{"done":{"dig":"ok","train":"ok","map":"ok","fire":"by the fire"},"expanded":[]}',
+  });
+  const flow = createFlow({ storage });
+  assert.equal(flow.status('dig'), 'open');
+  assert.deepEqual(flow.snapshot(), { done: {}, expanded: ['dig'] });
 });
 
 test('a throwing storage never throws: not on load, not on save', () => {
