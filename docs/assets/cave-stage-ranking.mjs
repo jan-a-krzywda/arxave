@@ -11,9 +11,9 @@
  * that can empty the night, so the night is scored with Topic match at 0: gate
  * off, every paper of a live topic survives. Topic match is then a WEIGHT, not
  * a gate — `w = match / 100`, and the order key is
- * `(1 - w) * promisePct + w * fitPct`, both percentiles over tonight's list
- * ("the share at or below", so the top row reads 100 and a bar of 87 means 87
- * of tonight's papers are no more promising than this one). That key is the
+ * `(1 - w) * promisePct + w * fitPct`, both read against the background corpus
+ * rather than tonight (see `meters`), so a weak night's best paper does not
+ * read 100 just for being tonight's best. That key is the
  * row's one meter, `rel`, an integer 0..100. `orderNight` is the pure half.
  *
  * TOP FIVE, THEN FIVE MORE. The page shows PAGE = 5 rows and a "Show 5 more"
@@ -99,36 +99,34 @@ const clamp01 = (v) => (Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0);
 const asNumber = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 
 /**
- * The share of `values` at or below `value`, as a percent — the percentile a
- * bar of 90 reads as "few papers tonight are more than this".
- *
- * ponytail: an O(n²) scan over the night. A few hundred rows at most, so it
- * costs less than the re-render; if a night ever runs to thousands, sort once
- * and binary-search.
+ * The standard normal CDF (Abramowitz–Stegun 7.1.26, |error| < 1.5e-7) — turns
+ * a fit z-score into the share of the background corpus it sits above.
  */
-function shareAtOrBelow(values, value) {
-  const n = values.length;
-  if (!n) return 0;
-  let atOrBelow = 0;
-  for (let i = 0; i < n; i += 1) if (values[i] <= value) atOrBelow += 1;
-  return Math.round((100 * atOrBelow) / n);
+function phi(z) {
+  if (!Number.isFinite(z)) return z > 0 ? 1 : 0;
+  const x = Math.abs(z) / Math.SQRT2;
+  const t = 1 / (1 + 0.3275911 * x);
+  const erf = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t
+    + 0.254829592) * t * Math.exp(-x * x);
+  return z >= 0 ? (1 + erf) / 2 : (1 - erf) / 2;
 }
 
 /**
- * Both percentiles for a ranked list, in its order: `[{ fitPct, promisePct }]`.
+ * Both meters for a ranked list, in its order: `[{ fitPct, promisePct }]`,
+ * each 0..100 and measured against the BACKGROUND CORPUS, never against
+ * tonight. A weak night therefore reads weak: its best paper is not 100.
  *
- * Fit is the percentile of `fit` — the share of tonight's list whose fit is at
- * or below this paper's. Promise is the same rule over `score`, `caveScore`'s
- * own 0..1 blend of impact and novelty. Both are measured over tonight's list
- * and nothing else, which is what makes them comparable enough to blend.
+ * Promise is `caveScore`'s own 0..1 blend of impact (the citation percentile
+ * of the paper's corpus neighbours) and novelty (distance from the nearest
+ * proven corpus paper), as a percent. Fit is the corpus-normalised z-score
+ * `fit` through the normal CDF: 84 means closer to what you asked for than
+ * ~84% of the background is.
  */
 export function meters(ranked) {
   const list = Array.isArray(ranked) ? ranked : [];
-  const fits = list.map((item) => asNumber(item && item.fit));
-  const scores = list.map((item) => asNumber(item && item.score));
-  return list.map((item, i) => ({
-    fitPct: shareAtOrBelow(fits, fits[i]),
-    promisePct: shareAtOrBelow(scores, scores[i]),
+  return list.map((item) => ({
+    fitPct: Math.round(100 * phi(asNumber(item && item.fit))),
+    promisePct: Math.round(100 * clamp01(asNumber(item && item.score))),
   }));
 }
 
@@ -137,8 +135,9 @@ export function meters(ranked) {
  *
  * `match` is the Topic match slider (0..100) read as a weight: `w = match/100`,
  * key = `(1 - w) * promisePct + w * fitPct`. At 0 the order is pure promise; at
- * 100 it is pure fit; in between the reader's own dial sets the blend. The key
- * is rounded to the integer `rel` each row displays, and ties break on id
+ * 100 it is pure fit; in between the reader's own dial sets the blend. Both
+ * terms are background percentiles (see `meters`), so `rel` is too. The key is
+ * rounded to the integer `rel` each row displays, and ties break on id
  * ascending so two nights with the same numbers order the same way. The input
  * array is left alone.
  */
@@ -194,7 +193,7 @@ export function shortAuthors(authors) {
 /** The row's one meter: "Promise" with `rel` as a bar and a number. */
 function meterHtml(rel, total) {
   const pct = Math.round(Math.min(100, Math.max(0, asNumber(rel))));
-  const title = 'relative to tonight\'s ' + total + (total === 1 ? ' paper' : ' papers');
+  const title = 'vs. the background corpus (' + total + (total === 1 ? ' paper' : ' papers') + ' tonight)';
   return '<span class="rk-meter rk-meter-promise" title="' + escapeHtml(title) + '">' +
     '<span class="rk-meter-label">Promise</span>' +
     '<span class="rk-track" role="meter" aria-label="Promise"' +

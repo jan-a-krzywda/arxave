@@ -3,7 +3,7 @@
  *
  * Stage 5 is a list and a fetch, and neither is a thing a test should draw. What
  * it can hold is the arithmetic a reader would notice going wrong: the two
- * percentiles, the one order key `orderNight` builds from them, a row's one
+ * background-referenced meters, the one order key `orderNight` builds from them, a row's one
  * meter and its escaping, picks that follow their paper, and the two lines the
  * stage says about itself. No DOM: `rowHtml` returns strings and `mount` — the
  * part that does touch the page — is not called.
@@ -23,27 +23,27 @@ function item(id, fit, score, extra = {}) {
 
 /* ── the meter ──────────────────────────────────────────────────────────── */
 
-test('meters: both are percentiles over tonight — the share at or below', () => {
-  /* Fits -1, 0, 0, 2 over four rows. By hand: -1 is at or below one of four
-     (25%); each 0 is at or below three (75%); 2 is at or below all four (100%).
-     Scores 0.9 / 0.5 / 0.25 / 1 → 75 / 50 / 25 / 100. */
+test('meters: both read against the background corpus, not tonight', () => {
+  /* Promise is score × 100. Fit is the corpus z-score through the normal CDF:
+     z -1 → 16, 0 → 50, 1 → 84, 2 → 98. */
   const ranked = [
     item('a', -1, 0.9),
     item('b', 0, 0.5),
-    item('c', 0, 0.25),
+    item('c', 1, 0.25),
     item('d', 2, 1),
   ];
   assert.deepEqual(meters(ranked), [
-    { fitPct: 25, promisePct: 75 },
-    { fitPct: 75, promisePct: 50 },
-    { fitPct: 75, promisePct: 25 },
-    { fitPct: 100, promisePct: 100 },
+    { fitPct: 16, promisePct: 90 },
+    { fitPct: 50, promisePct: 50 },
+    { fitPct: 84, promisePct: 25 },
+    { fitPct: 98, promisePct: 100 },
   ]);
 });
 
-test('meters: one row tops both bars, and junk reads zero, not NaN', () => {
-  assert.deepEqual(meters([item('only', 3, 0.4)]), [{ fitPct: 100, promisePct: 100 }]);
-  assert.deepEqual(meters([item('odd', NaN, -0.2)]), [{ fitPct: 100, promisePct: 100 }]);
+test('meters: a weak night reads weak — its best paper is not 100', () => {
+  const weak = meters([item('x', -0.5, 0.3), item('y', -1, 0.2)]);
+  assert.ok(weak.every((m) => m.promisePct < 50 && m.fitPct < 50), JSON.stringify(weak));
+  assert.deepEqual(meters([item('odd', NaN, -0.2)]), [{ fitPct: 50, promisePct: 0 }], 'junk is not NaN');
   assert.deepEqual(meters([]), []);
   assert.deepEqual(meters(null), []);
 });
@@ -51,11 +51,11 @@ test('meters: one row tops both bars, and junk reads zero, not NaN', () => {
 /* ── the order ──────────────────────────────────────────────────────────── */
 
 /* Three rows whose promise and fit disagree, so a weight has something to do.
-   Promise percentiles: a 100, b 67, c 33. Fit percentiles: b 100, c 67, a 33. */
+   Promise: a 90, b 50, c 10. Fit (z 1 / 2 / 0): a 84, b 98, c 50. */
 const NIGHT = [
-  item('a', 0.1, 0.9),
-  item('b', 0.9, 0.5),
-  item('c', 0.5, 0.1),
+  item('a', 1, 0.9),
+  item('b', 2, 0.5),
+  item('c', 0, 0.1),
 ];
 
 const idsOf = (list) => list.map((row) => row.id);
@@ -63,27 +63,26 @@ const idsOf = (list) => list.map((row) => row.id);
 test('orderNight at match 0 is pure promise', () => {
   const out = orderNight(NIGHT, 0);
   assert.deepEqual(idsOf(out), ['a', 'b', 'c']);
-  assert.deepEqual(out.map((row) => row.rel), [100, 67, 33]);
+  assert.deepEqual(out.map((row) => row.rel), [90, 50, 10]);
 });
 
 test('orderNight at match 100 is pure fit', () => {
   const out = orderNight(NIGHT, 100);
-  assert.deepEqual(idsOf(out), ['b', 'c', 'a']);
-  assert.deepEqual(out.map((row) => row.rel), [100, 67, 33]);
+  assert.deepEqual(idsOf(out), ['b', 'a', 'c']);
+  assert.deepEqual(out.map((row) => row.rel), [98, 84, 50]);
 });
 
-test('orderNight at match 50 blends the two percentiles', () => {
-  /* a: 0.5·100 + 0.5·33 = 67 (66.5 rounds up); b: 0.5·67 + 0.5·100 = 84;
-     c: 0.5·33 + 0.5·67 = 50. */
+test('orderNight at match 50 blends the two', () => {
+  /* a: (90 + 84) / 2 = 87; b: (50 + 98) / 2 = 74; c: (10 + 50) / 2 = 30. */
   const out = orderNight(NIGHT, 50);
-  assert.deepEqual(idsOf(out), ['b', 'a', 'c']);
-  assert.deepEqual(out.map((row) => row.rel), [84, 67, 50]);
+  assert.deepEqual(idsOf(out), ['a', 'b', 'c']);
+  assert.deepEqual(out.map((row) => row.rel), [87, 74, 30]);
 });
 
 test('orderNight breaks a tie on the id, ascending', () => {
   const tied = [item('b', 1, 1), item('a', 1, 1), item('c', 0, 0)];
   assert.deepEqual(idsOf(orderNight(tied, 50)), ['a', 'b', 'c']);
-  assert.deepEqual(orderNight(tied, 50).map((row) => row.rel), [100, 100, 33]);
+  assert.deepEqual(orderNight(tied, 50).map((row) => row.rel), [92, 92, 25]);
 });
 
 test('orderNight leaves the input alone and every rel is an integer 0..100', () => {
@@ -134,12 +133,12 @@ test('rowHtml escapes every arXiv string', () => {
   assert.ok(html.includes('Proven &lt;thing&gt;'), 'the landmark is escaped');
 });
 
-test('rowHtml carries ONE meter: Promise, titled against tonight\'s size', () => {
+test('rowHtml carries ONE meter: Promise, titled against the background', () => {
   const html = rowHtml(ROW_ITEM, ROW_PARTS);
   assert.equal(html.match(/role="meter"/g).length, 1, 'one meter, not two');
   assert.ok(!html.includes('>Fit<'), 'the fit meter is gone');
   assert.ok(html.includes('>Promise<'));
-  assert.ok(html.includes('title="relative to tonight&#39;s 12 papers"'));
+  assert.ok(html.includes('title="vs. the background corpus (12 papers tonight)"'));
   assert.ok(html.includes('role="meter" aria-label="Promise" aria-valuemin="0"'
     + ' aria-valuemax="100" aria-valuenow="87"'));
   assert.ok(html.includes('width:87%'));
@@ -168,7 +167,7 @@ test('rowHtml marks a ticked row, and tolerates a bare item', () => {
   const html = rowHtml({ id: 'x', title: 'Bare' }, { rank: 1 });
   assert.ok(html.includes('Bare'));
   assert.ok(html.includes('aria-valuenow="0"'), 'a missing rel reads zero, not NaN');
-  assert.ok(html.includes("relative to tonight&#39;s 0 papers"));
+  assert.ok(html.includes('vs. the background corpus (0 papers tonight)'));
   assert.ok(!html.includes('Looks like'));
 });
 

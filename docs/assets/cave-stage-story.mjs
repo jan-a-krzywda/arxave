@@ -494,7 +494,7 @@ export function mount(body, ctx) {
   body.innerHTML =
     '<div class="cave-story">'
     + '<p class="st-line"><span class="st-count">0 picked papers.</span>'
-      + ' Tick Story on a few papers in the ranking first.</p>'
+      + '<span class="st-hint"> Tick Story on a few papers in the ranking first.</span></p>'
     + '<p class="st-over" hidden>Only the top ' + MAX_PAPERS + ' by rank go into the story.</p>'
     + '<p class="st-missing" hidden></p>'
     + '<div class="st-ask">'
@@ -570,6 +570,8 @@ export function mount(body, ctx) {
   function paintCount() {
     const n = pickedIds().length;
     countEl.textContent = n + ' picked paper' + (n === 1 ? '' : 's') + '.';
+    const hint = body.querySelector('.st-hint');
+    if (hint) hint.hidden = n > 0;
     overEl.hidden = n <= MAX_PAPERS;
     missingEl.textContent = ctx.night ? '' : NO_NIGHT;
     missingEl.hidden = !!ctx.night;
