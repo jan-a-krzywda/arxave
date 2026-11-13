@@ -15,7 +15,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -27,7 +27,7 @@ const read = (file) => readFileSync(path.join(ROOT, file), 'utf8');
 
 const PAGE = read('docs/cave.md');
 const CSS = read('docs/assets/cave.css');
-const PALETTE = read('docs/_sass/cave.scss');
+const PALETTE = read('docs/_sass/cave-theme.scss');
 
 /* ── the sections ──────────────────────────────────────────────────────── */
 
@@ -139,5 +139,20 @@ test('cave.css keeps its layout promises and stays balanced', () => {
   /* Done, open and locked are the three looks the flow can produce. */
   for (const state of ['is-done', 'is-open', 'is-locked']) {
     assert.ok(CSS.includes('.' + state), `cave.css has no .${state} rule`);
+  }
+});
+
+/* ── the site theme import ─────────────────────────────────────────────── */
+
+// Sass looks beside main.scss before _sass/, so an assets/<name>.css would
+// silently replace the theme partial of the same name on every page.
+test('main.scss imports no name that a file in docs/assets shadows', () => {
+  const imports = [...read('docs/assets/main.scss').matchAll(/^@import "([^"]+)";/gm)].map((m) => m[1]);
+  assert.ok(imports.includes('cave-theme'), 'main.scss no longer imports cave-theme');
+  for (const name of imports) {
+    for (const file of [name, '_' + name].flatMap((n) => ['.scss', '.sass', '.css'].map((x) => n + x))) {
+      assert.ok(!existsSync(path.join(ROOT, 'docs/assets', file)),
+        `docs/assets/${file} shadows the @import "${name}" in main.scss`);
+    }
   }
 });

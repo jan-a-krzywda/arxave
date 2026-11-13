@@ -2,7 +2,7 @@
    Cave stage 6 — Ranking.
 
    Dig's list row (filter.css' `.assay-list`) with two additions: the pick
-   box and the two meters. Colours come only from `_sass/cave.scss`; the
+   box and the two meters. Colours come only from `_sass/cave-theme.scss`; the
    layout is one grid row that puts the meters under the title on a phone
    and in their own column once there is room.
 

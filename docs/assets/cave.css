@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════
    Cave v4 — the staged page shell.
 
-   Colours come from docs/_sass/cave.scss and nowhere else: this file holds
+   Colours come from docs/_sass/cave-theme.scss and nowhere else: this file holds
    layout and state, not palette. The stage cards borrow Dig's fieldset
    chrome (rock-deep panel, rock-edge hairline, 8 px radius) so the two pages
    read as the same room; the chips, the train, the wagon table and the wagon

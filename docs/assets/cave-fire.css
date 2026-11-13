@@ -7,7 +7,7 @@
    and flickers in four steps, and every stage from Priorities down picks up a
    faint gold wash and gold focus rings.
 
-   Colours are the tokens in docs/_sass/cave.scss and nothing else — no hex
+   Colours are the tokens in docs/_sass/cave-theme.scss and nothing else — no hex
    here, so the palette in cave.scss stays the one place a colour lives. The
    wash is a gradient, which CSS cannot transition; the `::after` overlay it
    sits on can, so the firelight comes up instead of snapping on.
