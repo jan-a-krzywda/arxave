@@ -1,7 +1,7 @@
 ---
 layout: page
-title: Cave
-permalink: /cave/
+title: Dig
+permalink: /
 gloss: new
 nav_icon: dig
 ---

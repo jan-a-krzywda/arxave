@@ -97,7 +97,7 @@ test('the page loads the three stylesheets and the module with cache-busting', (
   }
   assert.ok(PAGE.includes('<script type="module" src="{{ \'/assets/cave.js\' | relative_url }}'
     + '?v={{ site.time | date: \'%s\' }}"></script>'));
-  assert.match(PAGE, /^permalink: \/cave\/$/m);
+  assert.match(PAGE, /^permalink: \/$/m);  // the Cave is the site root since the v4 cutover
 });
 
 test('the discussions repo reaches the page from Jekyll, with a fallback', () => {
