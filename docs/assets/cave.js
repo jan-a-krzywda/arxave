@@ -19,6 +19,12 @@
  * cave-stages-dig-map.test.mjs` holds it to the three states and the order. The
  * page itself is behind one `typeof document` guard, exactly as v3's cave.js
  * was, because `node --test` imports this file.
+ *
+ * THE RAIL IS A SHAFT. Going down the stages is going down a mine, so from
+ * 900 px up the stepper is a lift shaft: a ledge per floor, and one cage parked
+ * at the floor being worked on (`--lift-floor`, moved by cave.css). Nothing in
+ * the markup is stateful — the shell keeps the one `.cave-lift` element and
+ * rewrites its floor, which is what lets the cage slide instead of jump.
  */
 import { STAGES, createFlow } from './cave-flow.mjs';
 import { loadAxes, loadCorpus, loadTopics } from './sieve-core.mjs';
@@ -46,6 +52,9 @@ export const STAGE_MODULES = Object.freeze({
   story: { file: './cave-stage-story.mjs', mount: 'mount' },
 });
 
+/** The cage drawing: site-root, like `cave-art.mjs`, so any page path works. */
+const LIFT_ART = '/assets/cave-art/lift.svg';
+
 /**
  * The rail, as markup, from a flow snapshot (`{ done: { id: summary }, … }`)
  * and the stage order.
@@ -54,9 +63,29 @@ export const STAGE_MODULES = Object.freeze({
  * done, and locked otherwise — the same three answers `flow.status` gives, derived
  * again here so the stepper never has to hold a second copy of the machine.
  * A done step carries its summary line, which is what makes the rail a whole
- * night at a glance rather than seven dots.
+ * night at a glance rather than seven ledges.
+ *
+ * The list is wrapped in the shaft that cave.css draws the rails and sleepers
+ * on, and the one lift carries the floor the cage rests at. The cage's drawing
+ * is decoration: the floor's name and state are already in the link beside it.
  */
 export function stageRailHtml(snapshot, stages = STAGES) {
+  return '<div class="cave-lift-shaft">' +
+      '<ol class="cave-rail-list">' + stageRailStepsHtml(snapshot, stages) + '</ol>' +
+      '<div class="cave-lift" style="--lift-floor: ' + liftFloor(snapshot, stages) + '" aria-hidden="true">' +
+        '<span class="cave-lift-cable"></span>' +
+        '<img class="cave-lift-cage" src="' + LIFT_ART + '" width="48" height="48" alt="">' +
+      '</div>' +
+    '</div>';
+}
+
+/**
+ * The floors: one `<li>` per stage, in `stages` order.
+ *
+ * Split out because the shell repaints the list on every flow change while the
+ * lift beside it has to survive the repaint to keep its transition.
+ */
+function stageRailStepsHtml(snapshot, stages) {
   const done = snapshot && typeof snapshot.done === 'object' && snapshot.done ? snapshot.done : {};
   const steps = [];
   let seenOpen = false;
@@ -81,7 +110,17 @@ export function stageRailHtml(snapshot, stages = STAGES) {
       '</li>',
     );
   }
-  return '<ol class="cave-rail-list">' + steps.join('') + '</ol>';
+  return steps.join('');
+}
+
+/**
+ * The floor the cage parks at: the index of the open stage, or the bottom floor
+ * once the whole night is done (`0` for a rail with nothing done yet).
+ */
+function liftFloor(snapshot, stages) {
+  const done = snapshot && typeof snapshot.done === 'object' && snapshot.done ? snapshot.done : {};
+  const open = stages.findIndex((id) => !Object.prototype.hasOwnProperty.call(done, id));
+  return open === -1 ? Math.max(0, stages.length - 1) : open;
 }
 
 /** The one way this file asks the document for an element. */
@@ -154,8 +193,29 @@ function startPage() {
        wash itself lives in cave-priorities.css. */
     const app = byId('cave-app');
     if (app) app.classList.toggle('cave-lit', flow.status('priorities') !== 'locked');
+    paintRail(flow.snapshot());
+  }
+
+  /**
+   * The rail is redrawn on every flow change, but the lift is not.
+   *
+   * Replacing the rail's innerHTML would hand the page a brand-new `.cave-lift`
+   * already sitting at its new floor, and a fresh element has no previous
+   * transform to animate from — the cage would jump. So the list is rewritten
+   * and the one lift is kept, with only its `--lift-floor` updated: CSS does
+   * the rest of the descent, and the cable shortens with it.
+   */
+  function paintRail(snapshot) {
     const rail = byId('cave-rail');
-    if (rail) rail.innerHTML = stageRailHtml(flow.snapshot(), STAGES);
+    if (!rail) return;
+    const lift = rail.querySelector('.cave-lift');
+    if (!lift) {
+      rail.innerHTML = stageRailHtml(snapshot, STAGES);
+      return;
+    }
+    lift.style.setProperty('--lift-floor', String(liftFloor(snapshot, STAGES)));
+    const list = rail.querySelector('.cave-rail-list');
+    if (list) list.innerHTML = stageRailStepsHtml(snapshot, STAGES);
   }
 
   function wireFolds() {

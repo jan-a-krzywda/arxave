@@ -159,6 +159,21 @@ test('cave.css keeps its layout promises and stays balanced', () => {
   }
 });
 
+/* The cage's floor is a multiple of the step's height and nothing else, so these
+   two constants are the whole alignment: change one alone and the lift parks
+   between floors. */
+test('the lift descends by whole floors and honours reduced motion', () => {
+  const desktop = CSS.slice(CSS.indexOf('@media (min-width: 900px)'));
+
+  assert.match(desktop, /--cave-lift-pitch:\s*[\d.]+rem/, 'no floor pitch');
+  assert.match(desktop, /\.cave-rail-step \{[^}]*min-height: var\(--cave-lift-pitch\)/,
+    'a floor is not the pitch tall');
+  assert.match(desktop, /transform: translateY\(calc\(var\(--lift-floor\) \* var\(--cave-lift-pitch\)\)\)/,
+    'the cage does not move by whole floors');
+  assert.match(desktop, /transition: transform 700ms ease-in-out/);
+  assert.match(CSS, /@media \(prefers-reduced-motion: reduce\) \{\s*\.cave-lift \{\s*transition: none;/);
+});
+
 /* ── the site theme import ─────────────────────────────────────────────── */
 
 // Sass looks beside main.scss before _sass/, so an assets/<name>.css would

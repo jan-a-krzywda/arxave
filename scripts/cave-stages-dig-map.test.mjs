@@ -220,6 +220,51 @@ test('the rail escapes what a summary carries and copes with a bare snapshot', (
   assert.deepEqual(STATES(stageRailHtml({}, STAGES)), STATES(stageRailHtml(null, STAGES)));
 });
 
+/* ── the lift ───────────────────────────────────────────────────────────── */
+
+const FLOOR = (html) => (html.match(/class="cave-lift" style="--lift-floor: (\d+)"/) || [])[1];
+
+test('the rail is a shaft with exactly one lift, parked at the open floor', () => {
+  const html = stageRailHtml(null, STAGES);
+
+  assert.equal((html.match(/class="cave-lift"/g) || []).length, 1, 'one cage, not one per floor');
+  assert.ok(html.includes('<div class="cave-lift-shaft">'), 'the floors sit in a shaft');
+  assert.ok(html.includes('class="cave-lift-cable"'), 'the cage hangs from a cable');
+  assert.ok(html.includes('src="/assets/cave-art/lift.svg"'), 'the cage drawing is not linked');
+  /* Decoration: it must not be a second tab stop or a second name for a floor. */
+  assert.match(html, /class="cave-lift" style="--lift-floor: \d+" aria-hidden="true"/);
+  assert.match(html, /class="cave-lift-cage"[^>]*alt=""/);
+
+  /* Nothing done → the top floor; three done → the fourth; all done → the last. */
+  assert.equal(FLOOR(html), '0');
+  assert.equal(FLOOR(stageRailHtml({ done: { dig: 'a', train: 'b', map: 'c' } }, STAGES)), '3');
+
+  const allDone = Object.fromEntries(STAGES.map((id) => [id, 'done']));
+  assert.equal(FLOOR(stageRailHtml({ done: allDone }, STAGES)), String(STAGES.length - 1));
+
+  /* The floors themselves are unchanged: still one step per stage, still linked. */
+  assert.equal((html.match(/class="cave-rail-link" href="#stage-/g) || []).length, STAGES.length);
+});
+
+test('the lift cage is a 16-cell rect drawing in the site palette', () => {
+  const src = readFileSync(fileURLToPath(new URL('../docs/assets/cave-art/lift.svg', import.meta.url)), 'utf8');
+  const theme = readFileSync(fileURLToPath(new URL('../docs/_sass/cave-theme.scss', import.meta.url)), 'utf8');
+
+  assert.match(src.slice(0, src.indexOf('>')), /width="48" height="48" viewBox="0 0 16 16"/);
+  assert.match(src, /shape-rendering="crispEdges"/);
+
+  /* Rect-only, like the campfire: no paths and no gradients to anti-alias. */
+  const tags = [...src.matchAll(/<([a-z]+)\b/g)].map((m) => m[1]);
+  assert.deepEqual([...new Set(tags)], ['svg', 'rect'], 'the cage is rects only');
+
+  const fills = [...new Set([...src.matchAll(/fill="([^"]+)"/g)].map((m) => m[1]))];
+  assert.ok(fills.includes('#f5b301') && fills.includes('#7aa2f7'), 'the lamp is gold and lamp blue');
+  for (const fill of fills) {
+    assert.match(fill, /^#[0-9a-f]{6}$/, `${fill} is not a hex colour`);
+    assert.ok(theme.includes(fill), `${fill} is not a colour in cave-theme.scss`);
+  }
+});
+
 /* ── the mounts ─────────────────────────────────────────────────────────── */
 
 /* A browser, small enough to read. The mounts touch a narrow slice of it —

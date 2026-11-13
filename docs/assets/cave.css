@@ -9,8 +9,11 @@
 
    The rail is two controls in one: a vertical sticky stepper from 900 px up,
    thin segments across the top of the column below that (Mobbin's Stripe
-   setup / Fresha patterns). A done step is a gold dot, the open one a lamp
-   ring, the rest rock — the same three states the cards use.
+   setup / Fresha patterns). From 900 px it is also a mine shaft read
+   downwards — a ledge per floor with the lift cage parked at the stage being
+   worked on (K22) — while on a phone the cage is hidden and the segments stay.
+   A done step is gold, the open one lamp, the rest rock: the same three states
+   the cards use.
 
    Legible at 360 px: nothing here sets a width a phone cannot honour, the
    rail's names are for screen readers only on the narrow layout, and the
@@ -83,6 +86,12 @@
 /* ── The rail ─────────────────────────────────────────────────── */
 .cave-rail {
   margin: 0 0 1.2rem;
+}
+
+/* The lift is a desktop idea: on a phone the rail is a row of segments and
+   there is no shaft to ride, so the cage stays out of the markup's way. */
+.cave-lift {
+  display: none;
 }
 
 .cave-rail-list {
@@ -436,6 +445,25 @@
     position: sticky;
     top: 1rem;
     margin: 0;
+    /* The lift's geometry, in one place: one floor is one step, the cage is the
+       48 px drawing, and the ledge is where inside a floor the cage parks. */
+    --cave-lift-pitch: 4.25rem;
+    --cave-lift-cage: 3rem;
+    --cave-lift-headroom: 3.4rem;  /* room for the cage above the top floor */
+    --cave-lift-ledge: 0.62rem;
+  }
+
+  /* The shaft: two rails and a sleeper at every floor, drawn as the shaft's own
+     background so it sits behind the floors and the cage both. */
+  .cave-lift-shaft {
+    position: relative;
+    padding-top: var(--cave-lift-headroom);
+    background:
+      linear-gradient(var(--rock-edge), var(--rock-edge)) 1.05rem 0 / 2px 100% no-repeat,
+      linear-gradient(var(--rock-edge), var(--rock-edge)) 1.93rem 0 / 2px 100% no-repeat,
+      repeating-linear-gradient(to bottom,
+        var(--rock) 0 2px, transparent 2px var(--cave-lift-pitch))
+        1.05rem var(--cave-lift-ledge) / 0.9rem 100% no-repeat;
   }
 
   .cave-stages {
@@ -448,23 +476,80 @@
     display: block;
   }
 
+  /* A fixed floor: the cage's translateY is a multiple of this, so floor n's
+     ledge and the cage's resting height can never drift apart. */
+  .cave-rail-step {
+    min-height: var(--cave-lift-pitch);
+  }
+
+  /* The last floor has no cage coming below it, so its pitch only buys shaft. */
+  .cave-rail-step:last-child {
+    min-height: auto;
+  }
+
   .cave-rail-link {
     display: grid;
-    grid-template-columns: 1rem minmax(0, 1fr);
-    column-gap: 0.55rem;
+    grid-template-columns: var(--cave-lift-cage) minmax(0, 1fr);
+    column-gap: 0.4rem;
     align-items: start;
     padding: 0.3rem 0;
   }
 
+  /* The dot becomes the floor's ledge: a short horizontal bar rather than a
+     bullet, so the column reads as the floors of a shaft. */
   .cave-rail-dot {
-    width: 0.7rem;
-    height: 0.7rem;
-    border-radius: 50%;
+    box-sizing: border-box;
+    width: 100%;
+    height: 3px;
+    border-radius: 0;
     margin-top: 0.3rem;
+    background: var(--rock-edge);
+  }
+
+  .cave-rail-step.is-done .cave-rail-dot {
+    background: var(--gold);
   }
 
   .cave-rail-step.is-open .cave-rail-dot {
-    background: transparent;
+    background: var(--lamp);
+    border-color: var(--lamp);
+  }
+
+  /* The cage. `--lift-floor` is the one thing the shell writes; the transition
+     is what makes a finished stage read as the lift going down a floor. */
+  .cave-lift {
+    --lift-floor: 0;
+    display: block;
+    position: absolute;
+    left: 0;
+    top: calc(var(--cave-lift-headroom) + var(--cave-lift-ledge));
+    width: var(--cave-lift-cage);
+    height: 0;
+    pointer-events: none;
+    transform: translateY(calc(var(--lift-floor) * var(--cave-lift-pitch)));
+    transition: transform 700ms ease-in-out;
+  }
+
+  .cave-lift-cage {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: var(--cave-lift-cage);
+    height: var(--cave-lift-cage);
+    image-rendering: pixelated;
+  }
+
+  /* The winding cable: shaft top down to the cage's roof, so it shortens as the
+     cage descends. */
+  .cave-lift-cable {
+    position: absolute;
+    left: 50%;
+    bottom: var(--cave-lift-cage);
+    width: 2px;
+    margin-left: -1px;
+    height: calc(var(--cave-lift-headroom) + var(--cave-lift-ledge)
+      + var(--lift-floor) * var(--cave-lift-pitch) - var(--cave-lift-cage));
+    background: var(--rock-lit);
   }
 
   .cave-rail-name,
@@ -500,6 +585,13 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+  }
+}
+
+/* The cage still moves between floors, it just arrives at once. */
+@media (prefers-reduced-motion: reduce) {
+  .cave-lift {
+    transition: none;
   }
 }
 
