@@ -517,3 +517,322 @@ export function score({ corpus, weights, touchstones, candidates, opts }) {
   return rank(prepare({ corpus, weights, touchstones }), candidates, opts);
 }
 
+/* ── cave v3: topics, axes, the three sliders ───────────────────────────── */
+
+/**
+ * The four settings a topic dropdown offers, as the numbers the arithmetic
+ * wants: equal 1, prefer 1.5, avoid 0.5, off 0. The contract's table, and the
+ * only place those constants appear — the UI names a setting, never a number.
+ */
+const TOPIC_WEIGHT = { equal: 1, prefer: 1.5, avoid: 0.5, off: 0 };
+
+/**
+ * topics.json → the working topic tree. `parentOf` is an index into `parents`
+ * (Int32Array, so the weighting loop never touches a Map), and `leafIndex` is
+ * the id → leaf index map the corpus' `topic` / `topic2` arrays are expressed
+ * in: those are indices into `leaves`, not ids, because the corpus is 6000 rows
+ * of them.
+ *
+ * The centroids arrive as plain arrays in the json and leave as Float32Array,
+ * the same shape `loadCorpus` gives cluster centroids, because every centroid
+ * in this file is a dot-product operand.
+ *
+ * Consistency is checked here, not assumed downstream: a leaf whose parent id
+ * is not in `parents` would weight itself as "equal" forever, and a duplicate
+ * id would make `leafIndex` point at whichever leaf came last.
+ */
+export function loadTopics(json) {
+  const { parents, leaves } = json ?? {};
+  if (!Array.isArray(parents) || parents.length === 0) {
+    throw new Error('sieve-core: topics.json has no parents');
+  }
+  if (!Array.isArray(leaves) || leaves.length === 0) {
+    throw new Error('sieve-core: topics.json has no leaves');
+  }
+  const dim = leaves[0]?.centroid?.length ?? 0;
+  if (!dim) throw new Error('sieve-core: topics.json leaves have no centroid');
+
+  const parentIndex = new Map(parents.map((p, i) => [p.id, i]));
+  const leafIndex = new Map();
+  const parentOf = new Int32Array(leaves.length);
+  const out = leaves.map((leaf, i) => {
+    if (leafIndex.has(leaf.id)) throw new Error(`sieve-core: duplicate leaf id ${leaf.id}`);
+    leafIndex.set(leaf.id, i);
+    const parent = parentIndex.get(leaf.parent);
+    if (parent === undefined) {
+      throw new Error(`sieve-core: leaf ${leaf.id} has unknown parent ${leaf.parent}`);
+    }
+    parentOf[i] = parent;
+    const centroid = Float32Array.from(leaf.centroid);
+    if (centroid.length !== dim) {
+      throw new Error(`sieve-core: leaf ${leaf.id} centroid has ${centroid.length} dims, expected ${dim}`);
+    }
+    return { id: leaf.id, parent: leaf.parent, label: leaf.label, centroid };
+  });
+
+  return { parents, leaves: out, leafIndex, parentOf };
+}
+
+/**
+ * axes.json → the two directions the page can score with. `exp_theory` in the
+ * file is `expTheory` here, because the page's slider is camel-cased and one
+ * name for one thing is cheaper than remembering which is which.
+ *
+ * A MISSING AXIS IS `ship:false`, not a zero direction. No axis means nothing
+ * was fitted, so the slider must be ignored (and hidden) rather than quietly
+ * score every paper 0.5 through a vector of zeros. `heldout_acc` and the seed
+ * counts stay in the json; scoring does not need them.
+ */
+export function loadAxes(json) {
+  const axis = (a) => (a
+    ? { w: Float32Array.from(a.w ?? []), b: a.b ?? 0, ship: a.ship !== false }
+    : { w: new Float32Array(0), b: 0, ship: false });
+  return { expTheory: axis(json?.exp_theory), ml4q: axis(json?.ml4q) };
+}
+
+/**
+ * The setting → one weight per leaf: equal 1, prefer 1.5, avoid 0.5, off 0.
+ *
+ * A leaf entry overrides its parent's dropdown, and nothing else does: the
+ * parent is the "set all my children together" control the spec describes, so
+ * it is read first and overridden second, in that order. A parent not named in
+ * the setting is `equal` (the default), and an unknown setting string is equal
+ * too — a typo in a stored setting must not silently delete a topic.
+ *
+ * Leaf weights are keyed by leaf index, not id, because this array is the one
+ * `paperTopicWeight` and the fit's centroid weights read.
+ */
+export function topicWeights(topics, setting = {}) {
+  const { parents, leaves, parentOf } = topics;
+  const leafSetting = setting?.leaves ?? {};
+  const out = new Float32Array(leaves.length);
+  for (let i = 0; i < leaves.length; i++) {
+    const choice = leafSetting[leaves[i].id] ?? setting?.[parents[parentOf[i]].id] ?? 'equal';
+    out[i] = TOPIC_WEIGHT[choice] ?? 1;
+  }
+  return out;
+}
+
+/**
+ * The tree's own default: every parent at whatever topics.json says (equal,
+ * except the ones marked `prefer` — only Computing, per the spec), and no leaf
+ * overrides. `leaves` is present but empty so a caller can write
+ * `setting.leaves[id] = 'off'` without a guard.
+ */
+export function defaultSetting(topics) {
+  const setting = { leaves: {} };
+  for (const parent of topics.parents) setting[parent.id] = parent.default ?? 'equal';
+  return setting;
+}
+
+/**
+ * A paper's weight: its primary topic fully, its secondary at half —
+ * `(tw[topic] + 0.5 * tw[topic2]) / (1 + 0.5)`, with the denominator 1 when
+ * there is no secondary. The half is the spec's "secondary counts at half": not
+ * a coin flip between two topics, a smaller vote for the runner-up.
+ *
+ * `paper` is anything with `topic` / `topic2` arrays (the corpus, a filtered
+ * corpus view); `tw` is the topicWeights array. A paper with no topic at all
+ * weighs 0 — it is not in any topic the caller asked for.
+ */
+export function paperTopicWeight(paper, i, tw) {
+  const topic = paper.topic?.[i] ?? -1;
+  const topic2 = paper.topic2?.[i] ?? -1;
+  const primary = topic >= 0 ? (tw[topic] ?? 0) : 0;
+  const second = topic2 >= 0 ? 0.5 * (tw[topic2] ?? 0) : 0;
+  return (primary + second) / (topic2 >= 0 ? 1.5 : 1);
+}
+
+/**
+ * The nearest leaf centroid by cosine (`vec` is centred and unit, so cosines are
+ * dot products), plus the runner-up as the secondary when it is within 0.03 of
+ * the best.
+ *
+ * The runner-up matters because a paper can sit between two topics: at the
+ * boundary, "codes for a fault-tolerant machine" is half Error-correcting codes
+ * and half Fault-tolerant & roadmaps, and picking one and discarding the other
+ * would lose exactly the information the at-half rule is there to keep. Past
+ * 0.03 the second topic is a different field, and -1 says so.
+ *
+ * The window is absolute, not relative, on purpose: 0.03 cosine is the spec's
+ * number, and a relative window would make the same pair of papers qualify in
+ * one corner of the space and not another.
+ */
+export function assignTopics(vec, topics) {
+  const { leaves } = topics;
+  const dim = leaves[0].centroid.length;
+  if (!vec || vec.length !== dim) {
+    throw new Error(`sieve-core: assignTopics got ${vec ? vec.length : 'no'} dims, expected ${dim}`);
+  }
+  let topic = -1;
+  let topic2 = -1;
+  let best = -Infinity;
+  let second = -Infinity;
+  for (let i = 0; i < leaves.length; i++) {
+    const c = dotAt(vec, 0, leaves[i].centroid, dim);
+    if (c > best) {
+      topic2 = topic;
+      second = best;
+      topic = i;
+      best = c;
+    } else if (c > second) {
+      topic2 = i;
+      second = c;
+    }
+  }
+  return { topic, topic2: best - second <= 0.03 ? topic2 : -1 };
+}
+
+/**
+ * The sigmoid of one axis on one centred unit vector: `1 / (1 + exp(-(w·x+b)))`.
+ *
+ * A MISSING OR MIS-SHAPED AXIS IS 0.5, the no-preference middle. An axis of the
+ * wrong width would otherwise read `undefined` into a NaN and turn every score
+ * into NaN, which sorts to an arbitrary order and hides the problem; 0.5 is
+ * both the honest answer ("no opinion") and inert in the score nudge below.
+ */
+function axisProbability(axis, vec) {
+  if (!axis || !axis.w || axis.w.length !== vec.length) return 0.5;
+  let z = axis.b ?? 0;
+  for (let k = 0; k < vec.length; k++) z += axis.w[k] * vec[k];
+  return 1 / (1 + Math.exp(-z));
+}
+
+/**
+ * Cave v3's one call: the topic tree + the axes + the three sliders + tonight's
+ * candidates → the ranked list.
+ *
+ * WHAT IS REUSED, AND HOW. `prepare` measures the fit statistics over the
+ * corpus and `rank` does the gate, impact, novelty and percentiles; neither is
+ * reimplemented here. `prepare` reads a paper's weight as `weights[cluster[i]]`
+ * — that is its v2 contract — and reads the topic-affinity centroids out of
+ * `corpus.clusters` with their weights from the same array. Cave v3 has no
+ * clusters: a paper's weight is its own topic blend. So the filtered corpus
+ * hands every row its own cluster id (`cluster[r] = r`) and hangs the leaf
+ * centroids off ids `k + leafIndex`; one `weights` array then answers both
+ * questions — `weights[r] = paperTopicWeight(...)` for the median and impact,
+ * `weights[k + leaf] = tw[leaf]` for the affinity sum. `prepare` and `rank`
+ * stay untouched, and there is no second copy of the weighted median to drift.
+ *
+ * OFF IS EXCLUDED, NOT WEIGHTED DOWN, and the primary topic decides it: a
+ * secondary is half a vote and cannot keep a paper the person switched off.
+ * Excluded papers leave the corpus view entirely, so they can be neither a
+ * neighbour, nor a landmark, nor a proven paper for novelty, nor part of the
+ * median — which is what "I do not want these" means.
+ *
+ * The sliders map as the contract says: `gate = 3 * match/100` and
+ * `surprise = surprise/100`, straight into `rank`.
+ *
+ * EXPERIMENT ↔ THEORY is a nudge on the final score, not a filter: ±0.25 at
+ * full travel, scaled by how far the paper sits from the 0.5 middle, sign + on
+ * the theory side. `ship:false` (or no axis) means it was never fitted and is
+ * ignored outright, and 0 is a no-op to the floating point.
+ *
+ * Pure: what it filters it copies; it never mutates the corpus, the setting or
+ * the candidates.
+ */
+export function caveScore({
+  corpus, topics, axes = null, setting, sliders = {}, touchstones = [], candidates = [],
+}) {
+  const match = sliders.match ?? 50;
+  const surprise = sliders.surprise ?? 50;
+  const expTheory = sliders.expTheory ?? 0;
+  const { n, dim, vecs } = corpus;
+  const tw = topicWeights(topics, setting);
+  const live = (t) => t >= 0 && tw[t] > 0;
+
+  /* C1 ships `topic` / `topic2`; a v2 corpus has neither, and tonight's
+     candidates never do. Assigning here keeps the page working against either
+     file, at the price of one 14-dot pass when the arrays are missing. */
+  let topic = corpus.topic && corpus.topic.length === n ? corpus.topic : null;
+  let topic2 = corpus.topic2 && corpus.topic2.length === n ? corpus.topic2 : null;
+  if (!topic) {
+    topic = new Int32Array(n);
+    topic2 = new Int32Array(n).fill(-1);
+    for (let i = 0; i < n; i++) {
+      const assigned = assignTopics(vecs.subarray(i * dim, (i + 1) * dim), topics);
+      topic[i] = assigned.topic;
+      topic2[i] = assigned.topic2;
+    }
+  } else if (!topic2) {
+    topic2 = new Int32Array(n).fill(-1);
+  }
+
+  /* The corpus view prepare()/rank() read — see the note above about the two id
+     blocks in `weights`. */
+  const keep = [];
+  for (let i = 0; i < n; i++) if (live(topic[i])) keep.push(i);
+  const k = keep.length;
+  const leafCount = topics.leaves.length;
+  const view = {
+    n: k,
+    dim,
+    mean: corpus.mean,
+    vecs: new Float32Array(k * dim),
+    ids: [],
+    titles: [],
+    pct: new Float32Array(k),
+    cluster: new Int32Array(k),
+    clusters: topics.leaves.map((leaf, li) => ({
+      id: k + li, label: leaf.label, size: 0, centroid: leaf.centroid,
+    })),
+    topic: new Int32Array(k),
+    topic2: new Int32Array(k),
+  };
+  for (let r = 0; r < k; r++) {
+    const i = keep[r];
+    view.vecs.set(vecs.subarray(i * dim, (i + 1) * dim), r * dim);
+    view.ids.push(corpus.ids[i]);
+    view.titles.push(corpus.titles[i]);
+    view.pct[r] = corpus.pct[i];
+    view.cluster[r] = r;
+    view.topic[r] = topic[i];
+    view.topic2[r] = topic2[i];
+  }
+
+  const weights = new Float64Array(k + leafCount);
+  weights.set(tw, k);
+  for (let r = 0; r < k; r++) weights[r] = paperTopicWeight(view, r, tw);
+
+  const kept = [];
+  for (const candidate of candidates) {
+    if (!candidate.vec || candidate.vec.length !== dim) {
+      throw new Error(`sieve-core: candidate ${candidate.id} has ${candidate.vec ? candidate.vec.length : 'no'} dims, expected ${dim}`);
+    }
+    const stored = candidate.topic ?? -1;
+    const { topic: assigned, topic2: runnerUp } = stored < 0
+      ? assignTopics(candidate.vec, topics)
+      : { topic: stored, topic2: candidate.topic2 ?? -1 };
+    if (!live(assigned)) continue;
+    kept.push({ ...candidate, topic: assigned, topic2: runnerUp });
+  }
+
+  const prep = prepare({ corpus: view, weights, touchstones });
+  const ranked = rank(prep, kept, { gate: 3 * match / 100, surprise: surprise / 100 });
+
+  const exp = axes?.expTheory;
+  const ml4 = axes?.ml4q;
+  /* (|s|/100) * sign(s) is the slider's magnitude with its side folded in;
+     0.25 is the contract's full-travel weight, and (theory - 0.5) * 2 maps the
+     axis onto -1..1 so the middle is exactly no change. */
+  const nudge = exp && exp.ship && expTheory !== 0
+    ? (Math.abs(expTheory) / 100) * Math.sign(expTheory) * 0.25
+    : 0;
+
+  const out = ranked.map((r) => {
+    const theory = axisProbability(exp, r.vec);
+    const ml4q = axisProbability(ml4, r.vec);
+    const score = nudge ? r.score + nudge * (theory - 0.5) * 2 : r.score;
+    /* `cluster` is the synthetic row id the remap above needed; a cave result's
+       topic is its own `topic` / `topic2`, so it is dropped rather than handed
+       on as a number that means nothing. */
+    const { cluster, ...rest } = r;
+    return { ...rest, theory, ml4q, score };
+  });
+
+  /* Same tie-break as rank(): score descending, id ascending, so two runs over
+     one night cannot disagree. */
+  out.sort((a, b) => b.score - a.score || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  return out;
+}
+
