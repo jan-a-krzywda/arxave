@@ -1,5 +1,5 @@
 /**
- * cave — the v4 page shell: one rail, eight stage cards, and the modules each
+ * cave — the v4 page shell: one rail, seven stage cards, and the modules each
  * card mounts.
  *
  * WHAT THIS FILE OWNS. The flow (from `cave-flow.mjs`), the shared `ctx` the
@@ -29,7 +29,6 @@ export const STAGE_NAMES = Object.freeze({
   dig: 'Dig',
   train: 'Train',
   map: 'Map',
-  fire: 'Enter the cave',
   priorities: 'Priorities',
   ranking: 'Ranking',
   act: 'Act',
@@ -41,7 +40,6 @@ export const STAGE_MODULES = Object.freeze({
   dig: { file: './cave-stage-dig.mjs', mount: 'mountDig' },
   train: { file: './cave-stage-dig.mjs', mount: 'mountTrain' },
   map: { file: './cave-stage-map.mjs', mount: 'mount' },
-  fire: { file: './cave-stage-fire.mjs', mount: 'mount' },
   priorities: { file: './cave-stage-priorities.mjs', mount: 'mount' },
   ranking: { file: './cave-stage-ranking.mjs', mount: 'mount' },
   act: { file: './cave-stage-act.mjs', mount: 'mount' },
@@ -56,7 +54,7 @@ export const STAGE_MODULES = Object.freeze({
  * done, and locked otherwise — the same three answers `flow.status` gives, derived
  * again here so the stepper never has to hold a second copy of the machine.
  * A done step carries its summary line, which is what makes the rail a whole
- * night at a glance rather than eight dots.
+ * night at a glance rather than seven dots.
  */
 export function stageRailHtml(snapshot, stages = STAGES) {
   const done = snapshot && typeof snapshot.done === 'object' && snapshot.done ? snapshot.done : {};
@@ -151,6 +149,11 @@ function startPage() {
       const summary = section.querySelector('.cave-stage-summary');
       if (summary) summary.textContent = flow.summary(id) || '';
     }
+    /* The fire is lit from Priorities down: that card is the first one in the
+       glow, so its becoming reachable is the moment the page warms up. The
+       wash itself lives in cave-priorities.css. */
+    const app = byId('cave-app');
+    if (app) app.classList.toggle('cave-lit', flow.status('priorities') !== 'locked');
     const rail = byId('cave-rail');
     if (rail) rail.innerHTML = stageRailHtml(flow.snapshot(), STAGES);
   }

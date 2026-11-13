@@ -157,7 +157,7 @@ export function mount(body, ctx) {
       '<div class="wagon-table-wrap"></div>' +
       '<div class="wagon-readout"></div>' +
       '<div class="button-bar cave-map-continue">' +
-        '<button type="button" class="cave-continue-btn cave-primary" disabled>Continue to the fire</button>' +
+        '<button type="button" class="cave-continue-btn cave-primary" disabled>Sit by the fire</button>' +
       '</div>' +
     '</div>';
 

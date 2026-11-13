@@ -14,9 +14,11 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import {
-  CHOICES, clearSetting, chipsFromSetting, defaultPrefs, parsePrefs, prefsSummary,
+  ART_HREF, CHOICES, clearSetting, chipsFromSetting, defaultPrefs, parsePrefs, prefsSummary,
   removeChip, serialisePrefs, treeCounts, wagonsForLeaf, weightOf,
 } from '../docs/assets/cave-stage-priorities.mjs';
 import { defaultSetting, loadTopics } from '../docs/assets/sieve-core.mjs';
@@ -96,6 +98,13 @@ test('a tie for the most common leaf goes to the lower leaf index', () => {
   };
   assert.deepEqual(wagonsForLeaf(tie, TOPICS, 'opt-qalgo').map((w) => w.name), ['Wagon 1']);
   assert.deepEqual(wagonsForLeaf(tie, TOPICS, 'qml'), []);
+});
+
+/* ── the campfire it opens with ─────────────────────────────────────────── */
+
+test('the campfire art beside the stage is a file that ships', () => {
+  assert.ok(ART_HREF.endsWith('/assets/cave-art/campfire.svg'), ART_HREF);
+  assert.ok(existsSync(fileURLToPath(ART_HREF)), 'campfire.svg is not beside the stage module');
 });
 
 /* ── weights ────────────────────────────────────────────────────────────── */

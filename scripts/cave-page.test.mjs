@@ -1,7 +1,7 @@
 /**
  * `cd scripts && node --test cave-page.test.mjs`.
  *
- * The v4 page is eight static sections plus a rail; a mistake in it fails late
+ * The v4 page is seven static sections plus a rail; a mistake in it fails late
  * and quietly — a renamed `data-stage` leaves `cave.js` painting nothing, a
  * `var(--token)` no stylesheet defines renders as nothing at all. So this file
  * reads the two files that describe the shell (`docs/cave.md`,
