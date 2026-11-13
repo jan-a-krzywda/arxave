@@ -29,9 +29,10 @@
  *
  * CENTRING. Everything here — corpus rows, touchstones, candidates — arrives
  * already centred and L2-normalised, so every cosine in this file is a plain
- * dot product. `loadCorpus` and `centreUnit` are the only places that centring
- * happens, and they must be the only places: a raw vector compared against a
- * centred one is a cosine between two spaces that looks like a number.
+ * dot product. `loadCorpus`, `centreUnit` and `corpusSpace` are the only places
+ * that centring happens, and they must be the only places: a raw vector
+ * compared against a centred one is a cosine between two spaces that looks like
+ * a number.
  */
 
 /* ── vector helpers ─────────────────────────────────────────────────────── */
@@ -117,6 +118,39 @@ export function centreUnit(vec, mean) {
   return out;
 }
 
+/**
+ * A vector from the embed service, put through the same clip the corpus rows
+ * were before they were stored: every component clamped to
+ * `[-scale, scale]`, then centred and normalised against the corpus mean.
+ *
+ * WHY THE CLIP IS NOT COSMETIC. corpus.vec.bin is int8 at `scale` 0.25, so a
+ * component above 0.25 is stored as 0.25 — SPECTER2 has one (dim 422) that is
+ * over the limit in EVERY paper, so every stored row is flat there. `mean` was
+ * measured before the clip, so centring a clipped row leaves that one
+ * dimension as a residual direction shared by the whole corpus (nearest-other
+ * cosine 0.88). An unclipped candidate centred with the same mean does not
+ * share it and looks nothing like any of them, which is a zero-score night. The
+ * clip is the quantiser's own `min(|x|, scale)`, before rounding — rounding is
+ * not repeated here because a candidate is not being stored.
+ *
+ * A corpus in the old shape (no `scale`) has no clip to reproduce, and falls
+ * back to plain `centreUnit` so a page on an old corpus still scores.
+ */
+export function corpusSpace(vec, corpus) {
+  const scale = corpus?.scale;
+  if (!(scale > 0)) return centreUnit(vec, corpus.mean);
+  const dim = corpus.mean.length;
+  if (!vec || vec.length !== dim) {
+    throw new Error(`sieve-core: corpusSpace got ${vec ? vec.length : 'no'} dims against a mean of ${dim}`);
+  }
+  const clipped = new Float32Array(dim);
+  for (let k = 0; k < dim; k++) {
+    const v = vec[k];
+    clipped[k] = v > scale ? scale : v < -scale ? -scale : v;
+  }
+  return centreUnit(clipped, corpus.mean);
+}
+
 /* ── the corpus ─────────────────────────────────────────────────────────── */
 
 /**
@@ -166,8 +200,10 @@ export function loadCorpus(json, binArrayBuffer) {
     vecs.set(centreUnit(row, mean), off);
   }
 
+  /* `scale` rides along for `corpusSpace`, which has to reproduce the clip the
+     rows went through. */
   return {
-    n, dim, mean, vecs,
+    n, dim, scale, mean, vecs,
     ids: json.ids,
     titles: json.titles,
     pct: Float32Array.from(json.pct),

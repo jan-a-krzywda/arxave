@@ -19,9 +19,10 @@
  * THE BOX IS THE ONLY THING THAT CAN COST A CALL. Its words are embedded with
  * `embedTexts` (no shared cache — typed text is not a corpus paper) 600 ms
  * after the last keystroke, and only when the collapsed words changed. The
- * vectors are centred with the corpus mean and handed on as touchstones; they
- * are persisted beside the settings so a reload does not pay for the same
- * sentence twice. If the words are unchanged, nothing is fetched.
+ * vectors are put through the corpus' own clip and then centred (`corpusSpace`,
+ * so they live in the same space as the stored rows) and handed on as
+ * touchstones; they are persisted beside the settings so a reload does not pay
+ * for the same sentence twice. If the words are unchanged, nothing is fetched.
  *
  * A MISSING WORLD IS A SENTENCE, NOT A CRASH. Without the corpus or
  * `topics.json` there is nothing to weigh, and the stage says so in one muted
@@ -40,7 +41,7 @@
  * serialise/parse pair v3's tests already covered.
  */
 import { applyNudge } from './cave-nudge.mjs';
-import { centreUnit, defaultSetting } from './sieve-core.mjs';
+import { corpusSpace, defaultSetting } from './sieve-core.mjs';
 import {
   cacheKeyText, embedTexts, escapeHtml, readStore, writeStore,
 } from './sieve-ui.mjs';
@@ -583,7 +584,7 @@ export function mount(body, ctx) {
         onProgress: (done, total) => note(`Embedding what you care about… ${done}/${total}`),
       });
       if (gen !== textGen) return;      // the reader typed again while it was out
-      state.touchstones = [centreUnit(vec, ctx.corpus.mean)];
+      state.touchstones = [corpusSpace(vec, ctx.corpus)];
       touchKey = words;
       note('');
       publish();

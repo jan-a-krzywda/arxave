@@ -17,16 +17,16 @@
  * default.
  *
  * THE NIGHT IS BUILT HERE, ONCE. Stones in the contract's shape, vectors
- * centred against the corpus mean (or against tonight's own mean when there is
- * no corpus), topics assigned when `topics.json` loaded, then `night` on the
- * bus. Every later stage reads that one object and nothing else.
+ * centred into the corpus' clipped space (`corpusSpace`; tonight's own mean when
+ * there is no corpus), topics assigned when `topics.json` loaded, then `night`
+ * on the bus. Every later stage reads that one object and nothing else.
  *
  * NIGHTS ARE NOT PERSISTED. The flow remembers which stage you reached; the
  * papers themselves would be a few megabytes of localStorage for a night that
  * arXiv re-announces tomorrow. A reload after a dig therefore opens the map on
  * an empty night, and the map says to dig again.
  */
-import { assignTopics, centreUnit } from './sieve-core.mjs';
+import { assignTopics, centreUnit, corpusSpace } from './sieve-core.mjs';
 import {
   createRelay, embedCandidates, escapeHtml, fetchAnnouncement, paperEmbedText, readStore, writeStore,
 } from './sieve-ui.mjs';
@@ -387,14 +387,14 @@ export function mountDig(body, ctx) {
         },
       });
 
-      /* Centre against the corpus mean, the convention every cosine on this
-         site reads (see sieve-core's centreUnit). A build with no corpus still
-         gets a night: tonight's own mean is the honest fallback, and the map
-         works on those vectors all the same. */
-      const mean = ctx.corpus && ctx.corpus.mean && ctx.corpus.mean.length === vectors[0].length
-        ? ctx.corpus.mean
-        : meanVector(vectors);
-      const vecs = vectors.map((vec) => centreUnit(vec, mean));
+      /* Centre into the corpus' own clipped space (see corpusSpace: the stored
+         rows are int8 and every one is flat at the clip, so an unclipped
+         candidate would share no direction with them). A build with no corpus,
+         or a mean of the wrong width, still gets a night: tonight's own mean is
+         the honest fallback, and the map works on those vectors all the same. */
+      const hadCorpus = !!ctx.corpus && ctx.corpus.mean && ctx.corpus.mean.length === vectors[0].length;
+      const mean = hadCorpus ? ctx.corpus.mean : meanVector(vectors);
+      const vecs = vectors.map((vec) => (hadCorpus ? corpusSpace(vec, ctx.corpus) : centreUnit(vec, mean)));
 
       const stones = candidates.map((c) => ({
         id: c.id,
