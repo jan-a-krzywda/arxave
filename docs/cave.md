@@ -12,7 +12,7 @@ nav_icon: dig
   </div>
 </noscript>
 
-<!-- The staged Cave: seven cards top to bottom, one rail, one side wall per
+<!-- The staged Cave: six cards top to bottom, one rail, one side wall per
      gutter. The markup here is the part that does not move — the hero, the
      rail's container, one section per stage with its head and body, and the
      notice line. `assets/cave.js` draws the rail inside #cave-rail, mounts
@@ -35,7 +35,7 @@ nav_icon: dig
       the haul train fill, then read the night as wagons — and keep what is
       worth reading.
     </p>
-    <p class="cave-sub">Seven stages, top to bottom. Each opens once the one before it is done.</p>
+    <p class="cave-sub">Six stages, top to bottom. Each opens once the one before it is done.</p>
   </header>
 
   <nav class="cave-rail" id="cave-rail" aria-label="Tonight's stages"></nav>
@@ -82,17 +82,9 @@ nav_icon: dig
       <div class="cave-stage-body"></div>
     </section>
 
-    <section class="cave-stage" id="stage-act" data-stage="act">
-      <button type="button" class="cave-stage-head" aria-expanded="false">
-        <span class="cave-stage-n">6</span><span class="cave-stage-name">Act</span>
-        <span class="cave-stage-summary"></span>
-      </button>
-      <div class="cave-stage-body"></div>
-    </section>
-
     <section class="cave-stage" id="stage-story" data-stage="story">
       <button type="button" class="cave-stage-head" aria-expanded="false">
-        <span class="cave-stage-n">7</span><span class="cave-stage-name">Story</span>
+        <span class="cave-stage-n">6</span><span class="cave-stage-name">Story</span>
         <span class="cave-stage-summary"></span>
       </button>
       <div class="cave-stage-body"></div>

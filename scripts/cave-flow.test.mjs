@@ -26,10 +26,10 @@ function fakeStorage(initial) {
   };
 }
 
-test('the seven stages are fixed and in order', () => {
+test('the six stages are fixed and in order', () => {
   assert.deepEqual(
     [...STAGES],
-    ['dig', 'train', 'map', 'priorities', 'ranking', 'act', 'story'],
+    ['dig', 'train', 'map', 'priorities', 'ranking', 'story'],
   );
 });
 
@@ -201,7 +201,7 @@ test('corrupt or unknown stored values are ignored: fresh start', () => {
     'empty string': '',
   };
   for (const [label, raw] of Object.entries(cases)) {
-    const flow = createFlow({ storage: fakeStorage({ 'arxave-cave-v5-flow': raw }) });
+    const flow = createFlow({ storage: fakeStorage({ 'arxave-cave-v6-flow': raw }) });
     assert.equal(flow.status('dig'), 'open', label);
     assert.equal(flow.status('train'), 'locked', label);
     assert.equal(flow.summary('dig'), null, label);
@@ -209,13 +209,13 @@ test('corrupt or unknown stored values are ignored: fresh start', () => {
   }
 });
 
-test('an old v4 flow that names fire is ignored, not restored', () => {
-  /* The card between Map and Priorities is gone, so a snapshot that remembered
+test('an old v5 flow that names act is ignored, not restored', () => {
+  /* The card between Ranking and Story is gone, so a snapshot that remembered
      it names a stage this build does not know. It must not wedge the page: the
      new key is the belt, the unknown-id check the braces. */
   const storage = fakeStorage({
-    'arxave-cave-v4-flow':
-      '{"done":{"dig":"ok","train":"ok","map":"ok","fire":"by the fire"},"expanded":[]}',
+    'arxave-cave-v5-flow':
+      '{"done":{"dig":"ok","train":"ok","map":"ok","priorities":"ok","ranking":"ok","act":"1 picked · 0 diamonds"},"expanded":[]}',
   });
   const flow = createFlow({ storage });
   assert.equal(flow.status('dig'), 'open');
