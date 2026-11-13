@@ -25,7 +25,7 @@ Do not edit `docs/assets/filter.js`.
   "tags":    [ {"id":"ml4q","label":"ML for quantum"} ] }
 ```
 
-Leaf ids (fixed, 14): `opt-qalgo qml qec ft-roadmaps` (computing) · `tomo-metro sensing` (measurement) ·
+Leaf ids (fixed, 12): `opt-qalgo qml qec ft-roadmaps` (computing) · `tomo-metro sensing` (measurement) ·
 `many-body materials` (matter) · `cold-atoms cavity-qed` (light-atoms) · `foundations gravity` (foundations).
 Parent ids: `computing measurement matter light-atoms foundations`. Only `computing` has `default:"prefer"`.
 
