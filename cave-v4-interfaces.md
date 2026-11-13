@@ -48,7 +48,6 @@ Plus `<nav class="cave-rail" id="cave-rail">` (stepper; vertical sticky on ≥ 9
 | map | `cave-stage-map.mjs` | K5 |
 | priorities | `cave-stage-priorities.mjs` | K7 |
 | ranking | `cave-stage-ranking.mjs` | K8 |
-| act | `cave-stage-act.mjs` | K13 |
 | story | `cave-stage-story.mjs` | K15 |
 
 A missing module (not built yet) is skipped with a placeholder "Coming soon" body; `cave.js` imports them dynamically

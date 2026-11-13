@@ -1,5 +1,5 @@
 /**
- * cave — the v4 page shell: one rail, seven stage cards, and the modules each
+ * cave — the v4 page shell: one rail, six stage cards, and the modules each
  * card mounts.
  *
  * WHAT THIS FILE OWNS. The flow (from `cave-flow.mjs`), the shared `ctx` the
@@ -37,7 +37,6 @@ export const STAGE_NAMES = Object.freeze({
   map: 'Map',
   priorities: 'Priorities',
   ranking: 'Ranking',
-  act: 'Act',
   story: 'Story',
 });
 
@@ -48,7 +47,6 @@ export const STAGE_MODULES = Object.freeze({
   map: { file: './cave-stage-map.mjs', mount: 'mount' },
   priorities: { file: './cave-stage-priorities.mjs', mount: 'mount' },
   ranking: { file: './cave-stage-ranking.mjs', mount: 'mount' },
-  act: { file: './cave-stage-act.mjs', mount: 'mount' },
   story: { file: './cave-stage-story.mjs', mount: 'mount' },
 });
 
@@ -63,7 +61,7 @@ const LIFT_ART = '/assets/cave-art/lift.svg';
  * done, and locked otherwise — the same three answers `flow.status` gives, derived
  * again here so the stepper never has to hold a second copy of the machine.
  * A done step carries its summary line, which is what makes the rail a whole
- * night at a glance rather than seven ledges.
+ * night at a glance rather than six ledges.
  *
  * The list is wrapped in the shaft that cave.css draws the rails and sleepers
  * on, and the one lift carries the floor the cage rests at. The cage's drawing
@@ -146,6 +144,7 @@ function startPage() {
       : (window.ARXAVE_WAGON_NAME || (FUNCTIONS_BASE + '/wagon-name')),
     discussionsRepo: window.ARXAVE_DISCUSSIONS_REPO || '',
     discussionsCategory: window.ARXAVE_DISCUSSIONS_CATEGORY || '',
+    threadsUrl: window.ARXAVE_THREADS || (FUNCTIONS_BASE + '/threads'),
   };
 
   let storage = null;
