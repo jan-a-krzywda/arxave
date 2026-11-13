@@ -22,7 +22,7 @@ import {
   ART_HREF, FIRE_COPY, FLAME_CORE, STYLE_HREF, fireHtml, firelineText, litClassesFor, loadStyles, mount,
 } from '../docs/assets/cave-stage-fire.mjs';
 
-const SCSS = readFileSync(new URL('../docs/_sass/cave.scss', import.meta.url), 'utf8');
+const SCSS = readFileSync(new URL('../docs/_sass/cave-theme.scss', import.meta.url), 'utf8');
 const SVG = readFileSync(fileURLToPath(ART_HREF), 'utf8');
 const CSS = readFileSync(fileURLToPath(STYLE_HREF), 'utf8');
 

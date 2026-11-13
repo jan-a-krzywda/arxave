@@ -7,7 +7,7 @@
   warning about missing style information — a poor first impression for a link
   people click precisely because they do not yet know what it is.
 
-  COLOURS ARE COPIED, NOT IMPORTED, from _sass/cave.scss. A stylesheet applied
+  COLOURS ARE COPIED, NOT IMPORTED, from _sass/cave-theme.scss. A stylesheet applied
   by the XSLT engine gets no site chrome and cannot pull in another file, so the
   handful of tokens the page needs are inlined below. They are the same values:
   cave-air, rock, rock-edge, text, text-dim, and the ore ramp.

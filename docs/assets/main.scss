@@ -6,7 +6,7 @@
 ---
 
 // Minima's own variables, overridden before the import so the theme's own rules
-// are built dark rather than repainted afterwards. Values mirror _sass/cave.scss.
+// are built dark rather than repainted afterwards. Values mirror _sass/cave-theme.scss.
 $background-color: #15181d;
 $text-color: #d7dbe0;
 $brand-color: #7aa2f7;
@@ -20,4 +20,4 @@ $table-header-border: #333a44;
 $table-border-color: #333a44;
 
 @import "minima";
-@import "cave";
+@import "cave-theme";
