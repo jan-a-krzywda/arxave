@@ -137,9 +137,12 @@
   min-width: 0;
 }
 
-.rk-title {
+/* The row's title is a heading element for structure, but it must read at list
+   size: the theme's h3 is ~1.5rem, which made every row a headline. The element
+   is in the selector so a theme rule on `h3` cannot win. */
+h3.rk-title {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1.02rem;
   font-weight: 600;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -213,7 +216,9 @@
 
 /* ── The two meters, side by side ───────────────────────────────
    Fit is the lamp (what you asked for); Promise is the ore (what the
-   paper promises). Both are a thin bar plus a percent, labelled. */
+   paper promises). Each meter is its own small grid — label, bar, value — so
+   the three can never paint over one another the way three flex items with a
+   fixed percent width did. */
 
 .rk-meters {
   grid-area: meters;
@@ -223,7 +228,8 @@
 }
 
 .rk-meter {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 2.6rem;
   align-items: center;
   gap: 0.3rem;
   flex: 1 1 0;
@@ -232,13 +238,12 @@
 }
 
 .rk-meter-label {
-  flex: none;
+  min-width: 0;
   color: var(--text-faint);
 }
 
 .rk-track {
-  flex: 1 1 auto;
-  min-width: 1.5rem;
+  min-width: 0;
   height: 6px;
   border-radius: 3px;
   background: var(--rock);
@@ -256,8 +261,6 @@
 }
 
 .rk-meter-pct {
-  flex: none;
-  width: 2.5rem;
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -374,10 +377,32 @@
 
 @media (min-width: 720px) {
   .rk-row {
-    grid-template-columns: auto 1.9rem minmax(0, 1fr) 12rem auto;
+    grid-template-columns: auto 1.9rem minmax(0, 1fr) 15rem auto;
     grid-template-areas: "pick rank main meters toggle";
     align-items: center;
     gap: 0.5rem;
+  }
+}
+
+/* ── Phones: the meters get their own full-width line ───────────
+   Two labelled bars plus percents do not fit beside a title at 360 px, so each
+   meter takes a whole line under it — still inside the meter's own grid. */
+
+@media (max-width: 600px) {
+  .rk-row {
+    grid-template-areas:
+      "pick   rank   main   toggle"
+      "meters meters meters meters";
+  }
+
+  .rk-meters {
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  /* A column flex item may not keep its own height from a `flex: 1 1 0`. */
+  .rk-meter {
+    flex: none;
   }
 }
 

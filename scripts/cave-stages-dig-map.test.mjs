@@ -27,7 +27,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  DEFAULT_CATEGORIES, ARXIV_CATEGORIES, digSummary, meanVector, mountDig, mountTrain,
+  DEFAULT_CATEGORIES, ARXIV_CATEGORIES, cleanTex, digSummary, meanVector, mountDig, mountTrain,
 } from '../docs/assets/cave-stage-dig.mjs';
 import { fallbackWagonName, mount, topicBar } from '../docs/assets/cave-stage-map.mjs';
 import { STAGE_NAMES, stageRailHtml } from '../docs/assets/cave.js';
@@ -81,6 +81,20 @@ test('meanVector averages each dimension, and survives an empty night', () => {
   ]);
   assert.deepEqual([...mean], [0.5, 1, 0]);
   assert.equal(meanVector([]).length, 0);
+});
+
+test('cleanTex turns feed LaTeX into the letters the author typed', () => {
+  /* filter.js' two examples, plus the two spellings its accent table exists
+     for. String.raw so the backslashes reach the function. */
+  assert.equal(cleanTex(String.raw`Jesper M{\o}rk`), 'Jesper Mørk');
+  assert.equal(cleanTex(String.raw`Pawe{\l}`), 'Paweł');
+  assert.equal(cleanTex(String.raw`{\"o}`), 'ö');
+  assert.equal(cleanTex(String.raw`\'e`), 'é');
+  assert.equal(cleanTex(String.raw`L\"uders`), 'Lüders');
+  assert.equal(cleanTex(''), '');
+  assert.equal(cleanTex(undefined), '');
+  /* A name with nothing to clean comes back as it went in. */
+  assert.equal(cleanTex('Ada Lovelace'), 'Ada Lovelace');
 });
 
 /* ── the topic bar ──────────────────────────────────────────────────────── */

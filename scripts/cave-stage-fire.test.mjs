@@ -19,7 +19,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import {
-  ART_HREF, FIRE_COPY, FLAME_CORE, STYLE_HREF, fireHtml, firelineText, litClassesFor, loadStyles,
+  ART_HREF, FIRE_COPY, FLAME_CORE, STYLE_HREF, fireHtml, firelineText, litClassesFor, loadStyles, mount,
 } from '../docs/assets/cave-stage-fire.mjs';
 
 const SCSS = readFileSync(new URL('../docs/_sass/cave.scss', import.meta.url), 'utf8');
@@ -99,6 +99,69 @@ test('fireHtml says a muted line instead of failing on a missing night', () => {
     assert.ok(!html.includes('cave-fire-numbers'));
     assert.ok(html.includes(FIRE_COPY), 'the copy and the button survive a null night');
     assert.match(html, /Sit by the fire/);
+  }
+});
+
+/* ── the live numbers line ────────────────────────────────────────────── */
+
+/** A node with the four methods `mount` touches, and nothing else. */
+function stubEl() {
+  return {
+    innerHTML: '',
+    hidden: false,
+    disabled: false,
+    textContent: '',
+    classList: { add() {}, toggle() {}, contains: () => false },
+    addEventListener() {},
+    setAttribute() {},
+  };
+}
+
+/** A stage body that hands back one stub per selector the mount asks for. */
+function fakeFireBody() {
+  const parts = {
+    '.cave-fire-band': stubEl(),
+    '.cave-fire-btn': stubEl(),
+    '.cave-fire-art': stubEl(),
+    '.cave-fire-line': stubEl(),
+  };
+  return {
+    innerHTML: '',
+    parts,
+    querySelector: (sel) => parts[sel] || null,
+  };
+}
+
+test('the numbers line follows the night and the wagons on the bus', () => {
+  /* Mount happens with stage 1, long before a dig, so the line is muted; a
+     `night` on the bus is what has to bring the count, and a `wagons` re-cut is
+     what has to move the wagon half of it. This is a fake DOM on purpose: the
+     line is one innerHTML swap, and no jsdom is needed to see it happen. */
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = () => Promise.reject(new Error('no network in a fake DOM'));
+  try {
+    const body = fakeFireBody();
+    const bus = new EventTarget();
+    const ctx = { bus, night: null, flow: null };
+
+    assert.doesNotThrow(() => mount(body, ctx));
+    const line = body.parts['.cave-fire-line'];
+    /* The mount's own markup carries the muted line; the fake body keeps the
+       string, the stub line is what the bus repaints. */
+    assert.match(body.innerHTML, /class="cave-fire-muted"/, 'the unmounted night is muted');
+
+    const tonight = night(199, 0);
+    ctx.night = tonight;
+    bus.dispatchEvent(new CustomEvent('night', { detail: tonight }));
+    assert.match(line.innerHTML, /199 papers tonight/, line.innerHTML);
+
+    /* Map writes `components` back onto the same night, then says `wagons`. */
+    tonight.components = night(0, 17).components;
+    bus.dispatchEvent(new CustomEvent('wagons', { detail: { components: tonight.components, names: [] } }));
+    assert.match(line.innerHTML, /199 papers in 17 wagons/, line.innerHTML);
+  } finally {
+    if (realFetch === undefined) delete globalThis.fetch;
+    else globalThis.fetch = realFetch;
   }
 });
 

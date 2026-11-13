@@ -56,10 +56,16 @@
   opacity: 1;
 }
 
-/* ── The drawing ──────────────────────────────────────────────── */
+/* ── The drawing ────────────────────────────────────────────────
+   Twice the old size on desktop and four pixel-steps on a phone: the SVG is a
+   64×48 grid, so 28rem (448 px) is exactly 7× and 16rem (256 px) is 4×. A
+   fractional scale is what makes pixel art fuzzy, hence the two fixed widths
+   rather than one fluid one; `max-width` is only the escape hatch under 300 px. */
+
 .cave-fire-art {
-  width: min(14rem, 72%);
+  width: min(28rem, 100%);
   aspect-ratio: 4 / 3;
+  image-rendering: pixelated;
 }
 
 .cave-fire-art[hidden] {
@@ -70,6 +76,8 @@
   display: block;
   width: 100%;
   height: 100%;
+  image-rendering: pixelated;
+  shape-rendering: crispEdges;
 }
 
 /* Unlit is logs only, and grey: the rock tones drop their blue. */
@@ -181,7 +189,7 @@
   }
 
   .cave-fire-art {
-    width: min(11rem, 84%);
+    width: min(16rem, 100%);
   }
 
   .cave-fire-copy {

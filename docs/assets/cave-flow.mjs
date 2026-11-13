@@ -30,6 +30,18 @@ export const STAGES = ['dig', 'train', 'map', 'fire', 'priorities', 'ranking', '
 const oneLine = (value) => String(value ?? '').replace(/\s+/g, ' ').trim();
 
 /**
+ * Does a stage fold to its one-line summary once it is done?
+ *
+ * Every stage does but the story: the narrative the night produced is what the
+ * reader came for, so `complete('story')` leaves the card expanded instead of
+ * putting it away behind its own summary. Pure, so the shell and the test can
+ * ask the rule without a page.
+ */
+export function foldOnComplete(id) {
+  return id !== 'story';
+}
+
+/**
  * Create the machine for one page.
  *
  * `storage` is anything with `getItem`/`setItem` (localStorage, a fake in a
@@ -111,7 +123,8 @@ export function createFlow({ storage = null, key = 'arxave-cave-v4-flow', stages
       throw new Error(`cave-flow: "${id}" is locked until "${order[at(id) - 1]}" is done`);
     }
     done.set(id, oneLine(value));
-    open.delete(id);
+    if (foldOnComplete(id)) open.delete(id);
+    else open.add(id);
     const next = current();
     if (next) open.add(next);
     commit();

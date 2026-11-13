@@ -32,6 +32,93 @@ import {
 } from './sieve-ui.mjs';
 import { startHaulTrain } from './cave-train.mjs';
 
+/* ── LaTeX → text ─────────────────────────────────────────────────────────
+   Titles and author names come out of the announcement feed as the author
+   typed them, so a fair number still wear their TeX: `Jesper M{\o}rk`,
+   `Pawe{\l}`, `L\"uders`. These two functions are COPIES of `deLatex` and
+   `unTex` from `filter.js` — not an import, because filter.js is a browser
+   bundle rather than a module — so the cave shows the same `Mørk` and
+   `Paweł` the Dig page does. */
+
+const GREEK = {
+  alpha: 'α', beta: 'β', gamma: 'γ', delta: 'δ', epsilon: 'ε', varepsilon: 'ε',
+  zeta: 'ζ', eta: 'η', theta: 'θ', vartheta: 'θ', iota: 'ι', kappa: 'κ',
+  lambda: 'λ', mu: 'μ', nu: 'ν', xi: 'ξ', pi: 'π', varpi: 'π', rho: 'ρ',
+  varrho: 'ρ', sigma: 'σ', varsigma: 'ς', tau: 'τ', upsilon: 'υ', phi: 'φ',
+  varphi: 'φ', chi: 'χ', psi: 'ψ', omega: 'ω',
+  Gamma: 'Γ', Delta: 'Δ', Theta: 'Θ', Lambda: 'Λ', Xi: 'Ξ', Pi: 'Π',
+  Sigma: 'Σ', Upsilon: 'Υ', Phi: 'Φ', Psi: 'Ψ', Omega: 'Ω',
+};
+
+const SPECIALS = {
+  ss: 'ß', o: 'ø', O: 'Ø', l: 'ł', L: 'Ł', aa: 'å', AA: 'Å',
+  ae: 'æ', AE: 'Æ', oe: 'œ', OE: 'Œ', i: 'i', j: 'j',
+  deg: '°', degree: '°', textdegree: '°',
+};
+
+// The accent marks, as the combining codepoint each one adds to its letter.
+const COMBINING = {
+  '`': '̀', "'": '́', '^': '̂', '~': '̃', '"': '̈',
+  '=': '̄', '.': '̇', c: '̧', v: '̌', u: '̆',
+  r: '̊', H: '̋', k: '̨',
+};
+
+/* \"u, \"{u}, \"\i, \c{c}, \v{s} — and the braced whole, {\"u}. The
+   letter-named accents demand their braces, so that \version and \understand
+   are not read as one. Both brace positions are matched in full rather than
+   as optional halves: `\{?…\}?` would happily eat the closing brace of
+   `{-2\Delta}` and leave the group unbalanced. */
+const ACCENT_SRC = '\\\\([`\'"^~=.]|[cvruHk](?=\\{))\\s*(?:\\{\\\\?([A-Za-z])\\}|\\\\?([A-Za-z]))';
+const ACCENT_BARE = new RegExp(ACCENT_SRC, 'g');
+const ACCENT_BRACED = new RegExp('\\{' + ACCENT_SRC + '\\}', 'g');
+
+function _accent(m, acc, braced, bare) {
+  return ((braced || bare) + COMBINING[acc]).normalize('NFC');
+}
+
+/* The trailing space goes with the command: TeX eats the whitespace that
+   terminates a control word, so `$\Delta \approx 8$` reaches the API side as
+   `$Δ\approx 8$`. Keep that space and the two spellings still hash apart.
+   An unrecognised command is returned whole, space included. */
+function _command(m, cmd) {
+  if (Object.prototype.hasOwnProperty.call(GREEK, cmd)) return GREEK[cmd];
+  if (Object.prototype.hasOwnProperty.call(SPECIALS, cmd)) return SPECIALS[cmd];
+  return m;
+}
+
+function deLatex(text) {
+  let s = String(text || '');
+  s = s.replace(ACCENT_BRACED, _accent).replace(ACCENT_BARE, _accent);
+  s = s.replace(/\{\\([A-Za-z]+)\}/g, _command).replace(/\\([A-Za-z]+) ?/g, _command);
+  return s;
+}
+
+/**
+ * The leftover-braces sweep: accent commands `deLatex` has already turned into
+ * Unicode are untouched, and anything it did not recognise loses its backslash
+ * and braces rather than leaking them into a name.
+ */
+function unTex(name) {
+  return String(name)
+    /* \'{a}, \"o, \v s … the accent command plus its (maybe braced) letter. */
+    .replace(/\\[`'^"~=.uvHrcbdk]\s*\{?([A-Za-z])\}?/g, '$1')
+    .replace(/\\ss\b/g, 'ss')
+    .replace(/\\(aa|AA|o|O|l|L|ae|AE|oe|OE)\b/g, function (_, c) { return c; })
+    .replace(/[{}\\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * One paper's title or author name, cleaned for display: Unicode where LaTeX
+ * spelled an accent or a special letter, then the sweep above for whatever is
+ * left. Pure, so `scripts/cave-stages-dig-map.test.mjs` can hold it to the
+ * names the feed actually sends.
+ */
+export function cleanTex(text) {
+  return unTex(deLatex(text));
+}
+
 /** The categories Dig opens with, and the ones the warm-dig run pre-cuts. */
 export const DEFAULT_CATEGORIES = 'cond-mat.mes-hall, quant-ph';
 
@@ -398,9 +485,9 @@ export function mountDig(body, ctx) {
 
       const stones = candidates.map((c) => ({
         id: c.id,
-        title: c.title,
+        title: cleanTex(c.title),
         abstract: c.abstract,
-        authors: c.authors || [],
+        authors: (c.authors || []).map(cleanTex),
         cat: c.primary_category || '',
         link: c.abs_url || '',
       }));

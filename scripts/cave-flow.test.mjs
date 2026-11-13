@@ -14,7 +14,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { STAGES, createFlow } from '../docs/assets/cave-flow.mjs';
+import { STAGES, createFlow, foldOnComplete } from '../docs/assets/cave-flow.mjs';
 
 /** The two methods of localStorage this file uses, over a Map. */
 function fakeStorage(initial) {
@@ -239,4 +239,28 @@ test('a custom stage list is honoured', () => {
   assert.equal(flow.status('map'), 'open');
   assert.equal(flow.current(), 'map');
 });
+
+/* ── the fold rule ──────────────────────────────────────────────────────── */
+
+test('every stage folds on complete except the story', () => {
+  assert.equal(foldOnComplete('story'), false);
+  for (const id of STAGES.slice(0, -1)) assert.equal(foldOnComplete(id), true, id);
+
+  /* The whole night, in order: the story is the last card, so nothing after it
+     opens, and the narrative stays expanded where the reader left it. */
+  const flow = createFlow();
+  for (const id of STAGES) flow.complete(id, id + ' done');
+  assert.equal(flow.status('story'), 'done');
+  assert.equal(flow.expanded('story'), true, 'the story folded away what it just wrote');
+  assert.deepEqual(flow.snapshot().expanded, ['story']);
+
+  /* `complete` on a stage that has folded still folds it — only 'story' is
+     exempt from the default, not every already-done card. */
+  const other = createFlow();
+  other.complete('dig', 'dug');
+  other.toggle('dig');
+  other.complete('dig', 'dug again');
+  assert.equal(other.expanded('dig'), false);
+});
+
 

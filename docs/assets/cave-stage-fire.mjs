@@ -32,6 +32,9 @@ export const FLAME_CORE = '#ffe9a8';
 /** The line the stage says, whatever the night did. */
 export const FIRE_COPY = 'The night is hauled. Sit by the fire and say what matters to you.';
 
+/** What the stage says before there is a night to count. */
+export const FIRE_MUTED = 'The night has no numbers yet — dig, then sit by the fire.';
+
 /** This module's stylesheet, resolved beside it so a baseurl needs no wiring. */
 export const STYLE_HREF = new URL('./cave-fire.css', import.meta.url).href;
 
@@ -86,20 +89,31 @@ export function litClassesFor(flowStatus) {
 }
 
 /**
+ * The numbers line as markup — the count, or the muted line when there is no
+ * night. Lives beside `fireHtml` so the mount can re-render just this paragraph
+ * when the night or its wagons change under it, without touching the art,
+ * the copy or the button.
+ */
+export function numbersHtml(night) {
+  const text = firelineText(night);
+  return text
+    ? '<p class="cave-fire-numbers">' + escapeHtml(text) + '</p>'
+    : '<p class="cave-fire-muted">' + escapeHtml(FIRE_MUTED) + '</p>';
+}
+
+/**
  * The stage body as markup. `flowStatus` is `ctx.flow.status('fire')`; a night
  * without numbers still gets the copy and the button, with a muted line where
- * the count would be.
+ * the count would be. The line sits in its own `.cave-fire-line` host so the
+ * mount can swap it without re-rendering the band.
  */
 export function fireHtml(night, flowStatus) {
   const { band, app } = litClassesFor(flowStatus);
-  const numbers = firelineText(night);
   const lit = app !== '';
   return '<div class="' + band + '">'
     + '<div class="cave-fire-art" aria-hidden="true"></div>'
     + '<p class="cave-fire-copy">' + escapeHtml(FIRE_COPY) + '</p>'
-    + (numbers
-      ? '<p class="cave-fire-numbers">' + escapeHtml(numbers) + '</p>'
-      : '<p class="cave-fire-muted">The night has no numbers yet — dig, then sit by the fire.</p>')
+    + '<div class="cave-fire-line">' + numbersHtml(night) + '</div>'
     + '<button type="button" class="cave-fire-btn"' + (lit ? ' disabled' : '') + '>'
     + (lit ? 'The fire is lit' : 'Sit by the fire')
     + '</button>'
@@ -163,9 +177,26 @@ export function mount(bodyEl, ctx) {
   const band = bodyEl.querySelector('.cave-fire-band');
   const btn = bodyEl.querySelector('.cave-fire-btn');
   const art = bodyEl.querySelector('.cave-fire-art');
+  const line = bodyEl.querySelector('.cave-fire-line');
 
   paintApp(lit);
   inlineArt(art);
+
+  /* THE COUNT IS LIVE. `ctx.night` is written by Dig just before it dispatches
+     `night`, and Map rewrites `components` and `names` on that same object
+     before it dispatches `wagons` — so the stage reads the live night, and the
+     event detail is preferred when a caller hands one over. Without this the
+     line kept whatever the night was at mount, which is nothing: the fire card
+     is mounted with stage 1, long before a dig. */
+  if (state.bus && typeof state.bus.addEventListener === 'function') {
+    state.bus.addEventListener('night', (event) => {
+      const shown = (event && event.detail) || state.night;
+      if (line) line.innerHTML = numbersHtml(shown);
+    });
+    state.bus.addEventListener('wagons', () => {
+      if (line) line.innerHTML = numbersHtml(state.night);
+    });
+  }
 
   if (!btn) return;
 

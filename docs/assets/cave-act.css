@@ -55,9 +55,12 @@
   border-color: var(--gold-dim);
 }
 
-.ac-title {
+/* List size, not heading size: the theme's h3 is ~1.5rem, which turned each
+   card's paper title into a headline. The element is in the selector so a theme
+   rule on `h3` cannot win. */
+h3.ac-title {
   margin: 0;
-  font-size: 0.97rem;
+  font-size: 1.02rem;
   font-weight: 600;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -441,10 +444,26 @@
   }
 
   .ac-bulk {
-    width: calc(100vw - 1rem);
-    justify-content: flex-start;
-    border-radius: 12px;
-    padding: 0.45rem 0.5rem;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    padding: 0.45rem 0.6rem calc(0.45rem + env(safe-area-inset-bottom, 0px));
+    border: 0;
+    border-top: 1px solid var(--rock-edge);
+    border-radius: 12px 12px 0 0;
+    /* Solid, not a color-mix: over card text the pill's translucency read as a
+       transparent bar floating on the paper titles. */
+    background: var(--rock-deep);
+    box-shadow: 0 -6px 22px color-mix(in srgb, var(--cave-air) 72%, transparent);
+    transform: none;
+  }
+
+  /* The bar is a fixed child of <body>, so the page owes it room while it is
+     up (it carries `hidden` when it is not). */
+  body:has(.ac-bulk:not([hidden])) #cave-app {
+    padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
   }
 
   .ac-bulk-count {
