@@ -20,3 +20,15 @@ verify_jwt = false
 # (supabase/wagon-names.sql) rather than a JWT the static page could not supply.
 [functions.wagon-name]
 verify_jwt = false
+
+# refine, diamond and story are the LLM doors behind the Cave page. Same
+# session-less caller, so no JWT; their protection is the one shared daily
+# budget in Postgres (supabase/refine-usage.sql, refine_usage_spend).
+[functions.refine]
+verify_jwt = false
+
+[functions.diamond]
+verify_jwt = false
+
+[functions.story]
+verify_jwt = false
