@@ -1,0 +1,467 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Cave v4 — stage 7, Act.
+
+   One card per picked paper, the diamond panel inside it, and the floating
+   bulk bar that carries the picks to the story. This stage sits in the
+   firelight, so the accent is --gold (buttons, the pressed nudge, the spark);
+   the paper's own title link stays the rock's light text because it leaves the
+   page. Colours are the tokens in docs/_sass/cave.scss and nothing else.
+
+   At 360 px the action row wraps under the title, the diamond's bullets take
+   the full width, and the bulk bar stays a pill instead of a window-width
+   toolbar. The spark is the only animation and it is off under
+   prefers-reduced-motion.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.cave-act {
+  min-width: 0;
+}
+
+/* ── The muted line before anything is picked ─────────────────── */
+
+.ac-note {
+  margin: 0.4rem 0 0;
+  color: var(--text-faint);
+  font-size: 0.88rem;
+  font-style: italic;
+}
+
+.ac-note[hidden],
+.ac-bulk[hidden],
+.ac-bmenu[hidden] {
+  display: none;
+}
+
+/* ── The cards ────────────────────────────────────────────────── */
+
+.ac-cards {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.ac-card {
+  min-width: 0;
+  padding: 0.65rem 0.7rem 0.7rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--gold) 6%, transparent), transparent 55%),
+    var(--rock-deep);
+}
+
+.ac-card:focus-within {
+  border-color: var(--gold-dim);
+}
+
+.ac-title {
+  margin: 0;
+  font-size: 0.97rem;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.ac-title-link,
+.ac-title-link:visited {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.ac-title-link:hover {
+  color: var(--gold);
+  text-decoration: underline;
+}
+
+.ac-authors {
+  margin: 0.2rem 0 0;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+/* ── The action row ───────────────────────────────────────────── */
+
+.ac-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.ac-btn {
+  display: inline-block;
+  min-height: 2rem;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 6px;
+  background: var(--rock);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.ac-btn:hover {
+  border-color: var(--rock-lit);
+}
+
+.ac-btn:focus-visible,
+.ac-link:focus-visible,
+.ac-retext:focus-visible,
+.ac-bulk-btn:focus-visible,
+.ac-summary:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* The one action the reader came for. */
+.ac-extract {
+  border-color: var(--gold-dim);
+  background: var(--gold);
+  color: var(--cave-air);
+  font-weight: 700;
+}
+
+.ac-extract:hover {
+  background: var(--ore-6);
+  border-color: var(--gold);
+}
+
+/* The Zotero menu: <details>, so the open state needs no JS. */
+.ac-zmenu {
+  position: relative;
+  display: inline-block;
+}
+
+.ac-zmenu > summary,
+.ac-bmenu > summary {
+  list-style: none;
+}
+
+.ac-zmenu > summary::-webkit-details-marker,
+.ac-bmenu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.ac-menu {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  min-width: 13rem;
+  max-width: min(18rem, calc(100vw - 2rem));
+  padding: 0.25rem;
+  border: 1px solid var(--gold-dim);
+  border-radius: 8px;
+  background: var(--rock-deep);
+}
+
+.ac-menu button,
+.ac-menu a {
+  padding: 0.35rem 0.5rem;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--gold);
+  font: inherit;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ac-menu button:hover,
+.ac-menu a:hover {
+  background: var(--rock);
+  color: var(--text);
+}
+
+/* Discussions links live in the row, not behind a menu. */
+.ac-discuss {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.7rem;
+  align-items: center;
+}
+
+.ac-link,
+.ac-link:visited {
+  color: var(--gold);
+  font-size: 0.82rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.ac-discuss-note {
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  font-style: italic;
+}
+
+/* ── The diamond panel ────────────────────────────────────────── */
+
+.ac-panel {
+  margin-top: 0.6rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed var(--gold-dim);
+}
+
+.ac-panel.is-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-dim);
+  font-size: 0.84rem;
+}
+
+/* A gold pixel's worth of "working". */
+.ac-spark {
+  display: inline-block;
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--gold);
+  box-shadow:
+    0.62rem 0.5rem 0 -0.1rem var(--gold-dim),
+    -0.55rem 0.62rem 0 -0.1rem var(--ore-5);
+  animation: ac-spark 0.9s steps(2, end) infinite;
+}
+
+@keyframes ac-spark {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 1; }
+}
+
+.ac-diamond-summary {
+  margin: 0 0 0.5rem;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.ac-diamond-label {
+  display: block;
+  margin: 0.5rem 0 0.15rem;
+  color: var(--gold-dim);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ac-diamond-list {
+  margin: 0.1rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--text-dim);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.ac-diamond-list li + li {
+  margin-top: 0.2rem;
+}
+
+.ac-readif {
+  margin: 0.55rem 0 0;
+  color: var(--text-dim);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.ac-retext {
+  margin-top: 0.45rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 0.76rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ac-retext:hover {
+  color: var(--gold);
+}
+
+.ac-status {
+  margin: 0.5rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.ac-status-error {
+  color: var(--ember);
+}
+
+.ac-extract:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+/* More / Less: a pressed toggle, gold on the fired side. */
+.ac-nudge[aria-pressed="true"] {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 18%, var(--rock));
+  color: var(--gold);
+}
+
+.ac-unpick {
+  margin-left: auto;
+  color: var(--text-faint);
+}
+
+/* ── The end of the stage ─────────────────────────────────────── */
+
+.ac-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}
+
+.ac-continue {
+  min-height: 2.4rem;
+}
+
+.ac-continue:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ── The floating bulk bar ─────────────────────────────────────
+   Fixed to the bottom centre of the viewport, on document.body, so a folded
+   act card cannot hide it. */
+
+.ac-bulk {
+  position: fixed;
+  left: 50%;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem 0.4rem;
+  width: max-content;
+  max-width: calc(100vw - 1rem);
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--gold-dim);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--rock-deep) 94%, var(--cave-air));
+  box-shadow: 0 6px 22px color-mix(in srgb, var(--cave-air) 72%, transparent);
+  transform: translateX(-50%);
+}
+
+.ac-bulk-count {
+  padding: 0 0.3rem;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ac-bulk-btn {
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 999px;
+  background: var(--rock);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ac-bulk-btn:hover {
+  border-color: var(--gold-dim);
+  color: var(--gold);
+}
+
+.ac-bulk-btn:disabled {
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.ac-bulk-story {
+  border-color: var(--gold);
+  background: var(--gold);
+  color: var(--cave-air);
+  font-weight: 700;
+}
+
+.ac-bulk-story:hover {
+  background: var(--ore-6);
+  color: var(--cave-air);
+}
+
+.ac-bulk .ac-menu {
+  top: auto;
+  bottom: calc(100% + 0.35rem);
+  left: 50%;
+  transform: translateX(-50%);
+  max-height: min(60vh, 22rem);
+  overflow-y: auto;
+}
+
+.ac-bulk-status {
+  flex-basis: 100%;
+  color: var(--text-faint);
+  font-size: 0.74rem;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.ac-bulk-status:empty {
+  display: none;
+}
+
+/* ── Narrow: 360 px ───────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .ac-card {
+    padding: 0.6rem 0.6rem 0.65rem;
+  }
+
+  .ac-btn,
+  .ac-link {
+    font-size: 0.8rem;
+  }
+
+  .ac-unpick {
+    margin-left: 0;
+  }
+
+  .ac-bulk {
+    width: calc(100vw - 1rem);
+    justify-content: flex-start;
+    border-radius: 12px;
+    padding: 0.45rem 0.5rem;
+  }
+
+  .ac-bulk-count {
+    flex-basis: 100%;
+    text-align: center;
+  }
+
+  .ac-bulk-btn {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+}
+
+/* ── Reduced motion ───────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .ac-spark {
+    animation: none;
+  }
+}
