@@ -1,47 +1,88 @@
 {
-  "built": "2026-11-12",
+  "built": "2026-11-13",
   "months": [
     {
       "month": "2026-11",
       "days": [
         {
-          "date": "2026-11-12",
+          "date": "2026-11-13",
           "feeds": {
             "qs-a": {
               "items": 8,
-              "paydirt": 4
+              "paydirt": 3
             },
             "qs-b": {
-              "items": 4,
-              "paydirt": 1
+              "items": 7,
+              "paydirt": 0
             },
             "qs-c": {
               "items": 8,
               "paydirt": 4
             },
             "qs-d": {
-              "items": 5,
-              "paydirt": 3
+              "items": 8,
+              "paydirt": 4
             },
             "qs-e": {
-              "items": 5,
-              "paydirt": 4
-            },
-            "qs-f": {
-              "items": 7,
-              "paydirt": 4
-            },
-            "qs-g": {
-              "items": 3,
-              "paydirt": 1
-            },
-            "qs-h": {
               "items": 8,
               "paydirt": 2
             },
+            "qs-f": {
+              "items": 8,
+              "paydirt": 7
+            },
+            "qs-g": {
+              "items": 8,
+              "paydirt": 8
+            },
+            "qs-h": {
+              "items": 8,
+              "paydirt": 4
+            },
             "qs-i": {
               "items": 8,
-              "paydirt": 5
+              "paydirt": 2
+            }
+          }
+        },
+        {
+          "date": "2026-11-12",
+          "feeds": {
+            "qs-a": {
+              "items": 0,
+              "paydirt": 0
+            },
+            "qs-b": {
+              "items": 0,
+              "paydirt": 0
+            },
+            "qs-c": {
+              "items": 0,
+              "paydirt": 0
+            },
+            "qs-d": {
+              "items": 0,
+              "paydirt": 0
+            },
+            "qs-e": {
+              "items": 1,
+              "paydirt": 0
+            },
+            "qs-f": {
+              "items": 0,
+              "paydirt": 0
+            },
+            "qs-g": {
+              "items": 1,
+              "paydirt": 0
+            },
+            "qs-h": {
+              "items": 0,
+              "paydirt": 0
+            },
+            "qs-i": {
+              "items": 0,
+              "paydirt": 0
             }
           }
         },

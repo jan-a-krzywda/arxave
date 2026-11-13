@@ -1,5 +1,5 @@
 {
-  "built": "2026-11-12",
+  "built": "2026-11-13",
   "feeds": {
     "atoms-ions-photons": {
       "name": "Atoms, ions and photons",
@@ -16,56 +16,56 @@
     "qs-a": {
       "name": "Spin qubit devices and figures of merit",
       "items": 8,
-      "paydirt": 4,
-      "updated": "2026-11-12"
+      "paydirt": 3,
+      "updated": "2026-11-13"
     },
     "qs-b": {
       "name": "Gate and device benchmarking",
-      "items": 4,
-      "paydirt": 1,
-      "updated": "2026-11-12"
+      "items": 7,
+      "paydirt": 0,
+      "updated": "2026-11-13"
     },
     "qs-c": {
       "name": "Application benchmarks",
       "items": 8,
       "paydirt": 4,
-      "updated": "2026-11-12"
+      "updated": "2026-11-13"
     },
     "qs-d": {
       "name": "Calibration, tuning and drift",
-      "items": 5,
-      "paydirt": 3,
-      "updated": "2026-11-12"
+      "items": 8,
+      "paydirt": 4,
+      "updated": "2026-11-13"
     },
     "qs-e": {
       "name": "Control electronics and cryogenics",
-      "items": 5,
-      "paydirt": 4,
-      "updated": "2026-11-12"
+      "items": 8,
+      "paydirt": 2,
+      "updated": "2026-11-13"
     },
     "qs-f": {
       "name": "Software stack: compilers and pulse level",
-      "items": 7,
-      "paydirt": 4,
-      "updated": "2026-11-12"
+      "items": 8,
+      "paydirt": 7,
+      "updated": "2026-11-13"
     },
     "qs-g": {
       "name": "HPC-QC integration and resource management",
-      "items": 3,
-      "paydirt": 1,
-      "updated": "2026-11-12"
+      "items": 8,
+      "paydirt": 8,
+      "updated": "2026-11-13"
     },
     "qs-h": {
       "name": "Error correction route",
       "items": 8,
-      "paydirt": 2,
-      "updated": "2026-11-12"
+      "paydirt": 4,
+      "updated": "2026-11-13"
     },
     "qs-i": {
       "name": "NISQ algorithms",
       "items": 8,
-      "paydirt": 5,
-      "updated": "2026-11-12"
+      "paydirt": 2,
+      "updated": "2026-11-13"
     },
     "quantum-algorithms": {
       "name": "Quantum algorithms",
