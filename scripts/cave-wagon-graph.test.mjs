@@ -214,14 +214,14 @@ test('destroy() takes the listeners off and stops the frames', (t) => {
   assert.doesNotThrow(() => handle.destroy(), 'teardown is idempotent');
 });
 
-test('a pointer move over a stone reads out that stone', (t) => {
+test('a pointer move over a stone reads out that stone, at the cursor', (t) => {
   const anim = fakeAnimation(t);
   const canvas = fakeCanvas();
   const fx = haul();
   const reads = [];
   const handle = mountWagonGraph(canvas, {
     ...fx,
-    readout: (html, isPinned) => reads.push({ html, isPinned }),
+    readout: (html, isPinned, evt) => reads.push({ html, isPinned, evt }),
   });
   anim.frames(3);
 
@@ -232,10 +232,12 @@ test('a pointer move over a stone reads out that stone', (t) => {
      so the test hunts for a stone rather than assuming where one landed; the
      hit radius is a few pixels, so a fine grid is guaranteed to find one. */
   let hit = null;
+  let lastEvent = null;
   search:
   for (let y = 0; y <= BOX.height && !hit; y += 5) {
     for (let x = 0; x <= BOX.width; x += 5) {
-      move({ clientX: x, clientY: y });
+      lastEvent = { clientX: x, clientY: y };
+      move(lastEvent);
       hit = reads.find((r) => /class="tt-title"/.test(r.html) &&
         fx.stones.some((s) => r.html.includes(s.title))) || null;
       if (hit) break search;
@@ -244,14 +246,28 @@ test('a pointer move over a stone reads out that stone', (t) => {
 
   assert.ok(hit, 'hovering a stone produced a readout');
   assert.equal(hit.isPinned, false, 'a hover is not a pin');
+  assert.ok(hit.evt, 'the sink needs the event to float its tooltip');
+  assert.equal(hit.evt.clientX, lastEvent.clientX);
+  assert.equal(hit.evt.clientY, lastEvent.clientY);
   const stone = fx.stones.find((s) => hit.html.includes(s.title));
   assert.ok(hit.html.includes(stone.abs_url), 'the tooltip links the paper');
   assert.ok(hit.html.includes('Author'), 'and names the authors');
+
+  /* The same hover, moved a pixel: the reference's "reposition only" call —
+     null html with an event, so the sink follows the cursor without
+     rebuilding the tooltip. */
+  const before = reads.length;
+  move({ clientX: lastEvent.clientX + 1, clientY: lastEvent.clientY + 1 });
+  const reposition = reads.slice(before).find((r) => r.html === null);
+  assert.ok(reposition, 'a stationary hover did not hand the sink the new cursor point');
+  assert.equal(reposition.evt.clientX, lastEvent.clientX + 1);
 
   /* Pinning is the same gesture, with the button released over the stone. */
   const pin = clickUntilPinned(canvas, reads);
   assert.ok(pin, 'clicking a stone pinned it');
   assert.ok(pin.isPinned);
+  assert.ok(pin.evt && Number.isFinite(pin.evt.clientX) && Number.isFinite(pin.evt.clientY),
+    'a pinned tooltip parks on the node, so it carries coordinates too');
   assert.ok(
     fx.stones.some((s) => pin.html.includes(s.title)),
     'the pinned tooltip still names the stone',

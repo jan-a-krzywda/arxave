@@ -29,7 +29,7 @@ import { fileURLToPath } from 'node:url';
 import {
   DEFAULT_CATEGORIES, ARXIV_CATEGORIES, cleanTex, digSummary, meanVector, mountDig, mountTrain,
 } from '../docs/assets/cave-stage-dig.mjs';
-import { fallbackWagonName, mount, topicBar } from '../docs/assets/cave-stage-map.mjs';
+import { fallbackWagonName, mount, tooltipPosition, topicBar } from '../docs/assets/cave-stage-map.mjs';
 import { STAGE_NAMES, stageRailHtml } from '../docs/assets/cave.js';
 import { createFlow, STAGES } from '../docs/assets/cave-flow.mjs';
 import { loadTopics } from '../docs/assets/sieve-core.mjs';
@@ -147,6 +147,34 @@ test('a tie keeps the first label reached, and no topic means no label', () => {
   assert.equal(fallbackWagonName([], night, TOPICS), '');
   assert.equal(fallbackWagonName([0], null, TOPICS), '');
   assert.equal(fallbackWagonName([0], night, null), '');
+});
+
+/* ── the graph tooltip's position ───────────────────────────────────────── */
+
+test('the graph tooltip sits just off the cursor, and clamps to the viewport', () => {
+  const view = { vw: 1000, vh: 800 };
+  const size = { w: 220, h: 60 };
+
+  /* The ordinary case: 12 px down-right, as Dig's floating tooltips do. */
+  assert.deepEqual(tooltipPosition({ clientX: 100, clientY: 120 }, size, view),
+    { left: 112, top: 132 });
+
+  /* Near the right and bottom edges it flips to the other side of the cursor
+     rather than hanging off the page, and still leaves an 8 px margin. */
+  const edge = tooltipPosition({ clientX: 990, clientY: 790 }, size, view);
+  assert.equal(edge.left, 990 - size.w - 12);
+  assert.equal(edge.top, 790 - size.h - 12);
+  assert.ok(edge.left + size.w <= view.vw && edge.top + size.h <= view.vh,
+    'the tooltip hangs off the viewport');
+
+  /* A tooltip wider than the window cannot fit anywhere; it still starts at
+     the margin instead of at a negative coordinate. */
+  assert.deepEqual(tooltipPosition({ clientX: 5, clientY: 5 }, { w: 2000, h: 60 }, view),
+    { left: 8, top: 17 });
+
+  /* No viewport known (a test, a detached page): the raw offset, no NaN. */
+  assert.deepEqual(tooltipPosition({ clientX: 40, clientY: 50 }, size, {}),
+    { left: 52, top: 62 });
 });
 
 /* ── the rail ───────────────────────────────────────────────────────────── */

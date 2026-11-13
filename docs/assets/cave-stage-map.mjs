@@ -125,6 +125,32 @@ function wagonStones(night) {
 }
 
 
+/**
+ * Where a floating tooltip goes for a pointer event: 12 px down-right of the
+ * cursor, flipped to the other side when that would run off the right or
+ * bottom edge, then clamped inside the viewport — Dig's `positionTooltip`
+ * idea, measured, because a long title can be three lines tall. Pure, so the
+ * stage test can pin the arithmetic without a browser.
+ */
+export function tooltipPosition(at, size, view) {
+  const OFF = 12;
+  const PAD = 8;
+  const w = (size && size.w) || 0;
+  const h = (size && size.h) || 0;
+  const vw = (view && view.vw) || 0;
+  const vh = (view && view.vh) || 0;
+  const x0 = (at && at.clientX) || 0;
+  const y0 = (at && at.clientY) || 0;
+  let left = x0 + OFF;
+  let top = y0 + OFF;
+  if (vw && left + w + PAD > vw) left = x0 - w - OFF;
+  if (vh && top + h + PAD > vh) top = y0 - h - OFF;
+  if (vw) left = Math.max(PAD, Math.min(left, vw - w - PAD));
+  if (vh) top = Math.max(PAD, Math.min(top, vh - h - PAD));
+  return { left, top };
+}
+
+
 /* ── the stage ──────────────────────────────────────────────────────────── */
 
 export function mount(body, ctx) {
@@ -155,7 +181,7 @@ export function mount(body, ctx) {
         '<div class="wagon-graph-hint">' + escapeHtml(WAGON_GRAPH_HINT) + '</div>' +
       '</div>' +
       '<div class="wagon-table-wrap"></div>' +
-      '<div class="wagon-readout"></div>' +
+      '<div class="cell-tooltip wagon-tooltip cave-wagon-tooltip" role="tooltip" style="display:none"></div>' +
       '<div class="button-bar cave-map-continue">' +
         '<button type="button" class="cave-continue-btn cave-primary" disabled>Sit by the fire</button>' +
       '</div>' +
@@ -182,7 +208,7 @@ export function mount(body, ctx) {
   const graphWrap = body.querySelector('.wagon-graph-wrap');
   const graphCanvas = graphWrap.querySelector('canvas');
   const tableWrap = body.querySelector('.wagon-table-wrap');
-  const readoutEl = body.querySelector('.wagon-readout');
+  const readoutEl = body.querySelector('.cave-wagon-tooltip');
   const continueBtn = body.querySelector('.cave-continue-btn');
 
   if (!ctx.config.nameUrl) nameBtn.style.display = 'none';
@@ -243,9 +269,37 @@ export function mount(body, ctx) {
 
 
 
-  function readoutSink(html, pinned) {
-    readoutEl.innerHTML = html || '';
+  /* Dig's floating-tooltip sink, same contract: `html === null` only
+     repositions the open tooltip, `''` hides it, a pin takes the pointer so
+     its arXiv link is reachable (filter.css `.pinned`). Position is fixed, so
+     the graph's own scroll box cannot clip it. */
+  function readoutSink(html, pinned, evt) {
+    if (html === null) {
+      if (readoutEl.style.display === 'block' && evt) placeTooltip(evt);
+      return;
+    }
+    if (!html) {
+      readoutEl.style.display = 'none';
+      readoutEl.classList.remove('pinned');
+      return;
+    }
+    readoutEl.innerHTML = html;
     readoutEl.classList.toggle('pinned', !!pinned);
+    readoutEl.style.display = 'block';
+    if (evt) placeTooltip(evt);
+  }
+
+  function placeTooltip(evt) {
+    const view = {
+      vw: typeof window !== 'undefined' ? window.innerWidth : 0,
+      vh: typeof window !== 'undefined' ? window.innerHeight : 0,
+    };
+    /* Zero until the element is in the document, so a sane card size stands in
+       for the measurement rather than parking the tooltip under the cursor. */
+    const at = tooltipPosition(evt,
+      { w: readoutEl.offsetWidth || 260, h: readoutEl.offsetHeight || 64 }, view);
+    readoutEl.style.left = at.left + 'px';
+    readoutEl.style.top = at.top + 'px';
   }
 
   /* A fresh strip per render, so the tooltip wiring can never be doubled and

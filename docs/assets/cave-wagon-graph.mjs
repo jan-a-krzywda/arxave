@@ -12,11 +12,12 @@
  *   - listeners are addEventListener'd rather than assigned to `on*` properties,
  *     so `destroy()` can take them off again.
  *
- * WHY THE READOUT HAS NO EVENT ARGUMENT: the page's floating tooltip already
- * positions itself from its own pointer handler, so the graph never hands
- * coordinates over. The reference's "reposition only" call — readoutFn(null,
- * false, evt) — has no equivalent here and is not made, which lets a sink treat
- * every call as a real tooltip update.
+ * THE READOUT CARRIES THE POINTER EVENT, as in the reference:
+ * `readout(html, isPinned, evt)`. A sink floats its tooltip at
+ * `evt.clientX/clientY`. `readout(null, false, evt)` is the reference's
+ * "reposition only" call — the tooltip stays as it is and just follows; `html
+ * === ''` hides it. A pinned tooltip parks on its node instead of trailing the
+ * cursor (`emitPinnedAnchor`), so the pointer can travel to its link.
  *
  * NO NODE IMPORTS, no bundler: the page loads this as an ES module.
  */
@@ -110,8 +111,8 @@ function cancelFrame(id) {
  *
  * `cfg.S` the similarity matrix, `cfg.stones` the papers, `cfg.components` the
  * wagons (each `{ indices: [...] }`), `cfg.names` one label or null per wagon,
- * `cfg.readout(html, isPinned)` the tooltip sink, `cfg.opts` the reference's
- * `{ width, height, thresh }`.
+ * `cfg.readout(html, isPinned, evt)` the tooltip sink, `cfg.opts` the
+ * reference's `{ width, height, thresh }`.
  *
  * Returns a handle — `destroy()` (alias `stop()`) stops the animation and takes
  * every listener off the canvas, plus the reference's `reheat`, `unpin` and
@@ -608,24 +609,27 @@ export function mountWagonGraph(canvas, cfg) {
       (authors ? '<div class="tt-authors">' + escapeHtml(authors) + '</div>' : '');
   }
 
-  function emit(idx, isPinned) {
+  function emit(idx, isPinned, evt) {
     if (!readoutFn) return;
-    if (idx === null) { readoutFn('', false); return; }
-    readoutFn(tipHtml(idx), !!isPinned);
+    if (idx === null) { readoutFn('', false, null); return; }
+    readoutFn(tipHtml(idx), !!isPinned, evt);
   }
 
   /** Readout for a hovered wagon hub: its name and how many stones it holds. */
-  function emitWagon(ci4) {
+  function emitWagon(ci4, evt) {
     if (!readoutFn) return;
     var n = components[ci4].indices.length;
     readoutFn('<div class="tt-title">' + escapeHtml(wagonLabel(names, ci4)) + '</div>' +
-      '<div class="tt-authors">' + n + ' stone' + (n === 1 ? '' : 's') + '</div>', false);
+      '<div class="tt-authors">' + n + ' stone' + (n === 1 ? '' : 's') + '</div>', false, evt);
   }
 
   /** Park the tooltip on the pinned node, clickable, wherever it has drifted. */
   function emitPinnedAnchor() {
     if (!readoutFn || pinnedNode === null) return;
-    readoutFn(tipHtml(pinnedNode), true);
+    var rect = canvas.getBoundingClientRect();
+    var s = toScreen(nodes[pinnedNode]);
+    readoutFn(tipHtml(pinnedNode), true,
+      { clientX: rect.left + s.x, clientY: rect.top + s.y });
   }
 
   // ── Mouse ──
@@ -689,23 +693,24 @@ export function mountWagonGraph(canvas, cfg) {
     if (p.node !== hoverNode || p.anchor !== hoverAnchor) {
       hoverNode = p.node;
       hoverAnchor = p.anchor;
-      if (hoverAnchor !== null) emitWagon(hoverAnchor);
+      if (hoverAnchor !== null) emitWagon(hoverAnchor, e);
       // Off every node with something pinned: hand the tooltip back to the
       // pin, parked and clickable, so the pointer can walk over to its link.
       else if (hoverNode === null && pinnedNode !== null) emitPinnedAnchor();
       else if (hoverNode !== null && hoverNode === pinnedNode) emitPinnedAnchor();
-      else emit(hoverNode, false);
+      else emit(hoverNode, false, e);
       draw();
+    } else if (hoverAnchor !== null) {
+      if (readoutFn) readoutFn(null, false, e);   // reposition only
+    } else if (hoverNode !== null && hoverNode !== pinnedNode) {
+      if (readoutFn) readoutFn(null, false, e);   // reposition only
     }
-    /* The reference's trailing "reposition only" calls are not made here: this
-       module's readout carries no event, so the page positions its own tooltip
-       from its own pointer handler. */
   }
 
   function onMouseUp(e) {
     if (dragNode && !dragNode.moved) {
       var idx = dragNode.i;
-      if (pinnedNode === idx) { pinnedNode = null; emit(idx, false); }
+      if (pinnedNode === idx) { pinnedNode = null; emit(idx, false, e); }
       else { pinnedNode = idx; emitPinnedAnchor(); }
       draw();
     }
@@ -721,7 +726,7 @@ export function mountWagonGraph(canvas, cfg) {
     // A pinned tooltip has to survive the cursor leaving the canvas — that
     // is exactly the trip the pointer makes to reach its link.
     if (pinnedNode !== null) emitPinnedAnchor();
-    else emit(null, false);
+    else emit(null, false, null);
     draw();
   }
 
@@ -774,7 +779,7 @@ export function mountWagonGraph(canvas, cfg) {
     pinnedNode = null;
     hoverNode = null;
     hoverAnchor = null;
-    emit(null, false);
+    emit(null, false, null);
   }
 
   return {
@@ -801,7 +806,7 @@ export function mountWagonGraph(canvas, cfg) {
       }
       draw();
       var focus = pinnedNode !== null ? pinnedNode : hoverNode;
-      if (focus !== null) emit(focus, pinnedNode !== null);
+      if (focus !== null) emit(focus, pinnedNode !== null, null);
     }
   };
 }
