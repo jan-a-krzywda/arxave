@@ -19,10 +19,15 @@ nav_icon: dig
      each stage's module into its body, and classes the sections done / open /
      locked. Stage modules own everything inside their own body. -->
 
-<div id="cave-app">
+<!-- The walls are #cave-app's siblings, as on the old Dig — not its children.
+     Positioned against .page-content they land in the page gutters, outside the
+     content box; inside the wrapper they were sized against it and painted over
+     the rail and the cards. `cave-wall-dig` is the hook that lets cave.css widen
+     them and narrow the centre for this page alone. -->
+<div class="cave-wall cave-wall-left cave-wall-dig" aria-hidden="true"></div>
+<div class="cave-wall cave-wall-right cave-wall-dig" aria-hidden="true"></div>
 
-  <div class="cave-wall cave-wall-left" aria-hidden="true"></div>
-  <div class="cave-wall cave-wall-right" aria-hidden="true"></div>
+<div id="cave-app">
 
   <header class="cave-hero">
     <p class="cave-lede">

@@ -77,15 +77,32 @@ test('every section is the contract\'s markup, with its number and its name', ()
 test('the page carries the rail, the app wrapper and the two side walls', () => {
   assert.match(PAGE, /<nav class="cave-rail" id="cave-rail" aria-label="[^"]+">/);
   assert.match(PAGE, /<div id="cave-app">/);
-  assert.match(PAGE, /<div class="cave-wall cave-wall-left" aria-hidden="true"><\/div>/);
-  assert.match(PAGE, /<div class="cave-wall cave-wall-right" aria-hidden="true"><\/div>/);
+  assert.match(PAGE, /<div class="cave-wall cave-wall-left cave-wall-dig" aria-hidden="true"><\/div>/);
+  assert.match(PAGE, /<div class="cave-wall cave-wall-right cave-wall-dig" aria-hidden="true"><\/div>/);
 
-  /* The rail and both walls live inside the wrapper, or the desktop grid and
-     the z-index that lifts the page over the walls are both moot. */
+  /* The rail lives inside the wrapper, where the desktop grid places it. */
   const app = PAGE.indexOf('<div id="cave-app">');
-  for (const needle of ['cave-wall-left', 'cave-wall-right', 'id="cave-rail"']) {
-    assert.ok(PAGE.indexOf(needle) > app, `${needle} sits outside #cave-app`);
+  assert.ok(PAGE.indexOf('id="cave-rail"') > app, 'the rail sits outside #cave-app');
+
+  /* The walls do not: as siblings before the wrapper they position against
+     .page-content and land in the gutters. Inside it they position against the
+     content box and paint over the rail and the cards (seen at 1280, 1440). */
+  for (const needle of ['cave-wall-left', 'cave-wall-right']) {
+    const at = PAGE.indexOf(needle);
+    assert.ok(at !== -1 && at < app, `${needle} is not before #cave-app`);
   }
+});
+
+test('cave.css widens the walls and narrows the centre, for this page only', () => {
+  assert.match(CSS, /\.cave-wall-dig/, 'cave.css has no .cave-wall-dig rule');
+  /* 60rem centre, gutter walls up to 320px, shown from 1100px up. */
+  assert.match(CSS, /#cave-app \{[^}]*max-width: 60rem/, '#cave-app is not 60rem wide');
+  assert.match(CSS, /\.cave-wall\.cave-wall-dig \{[^}]*width: clamp\(0px, calc\(\(100vw - 60rem - 3rem\) \/ 2\), 320px\)/,
+    'the walls do not take the gutter outside the 60rem centre');
+  const walls = CSS.slice(CSS.indexOf('.cave-wall.cave-wall-dig'));
+  assert.match(walls, /@media \(min-width: 1100px\)/, 'the walls do not start at 1100px');
+  /* Scoped by the page's own class, so no other room changes with it. */
+  assert.ok(!/^\.cave-wall \{/m.test(CSS), 'cave.css restyles every room\'s walls');
 });
 
 test('the page loads the three stylesheets and the module with cache-busting', () => {

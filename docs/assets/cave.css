@@ -19,13 +19,46 @@
    ═══════════════════════════════════════════════════════════════════ */
 
 #cave-app {
-  /* style.css lifts #app above the gutter walls; the same has to be true of
-     this page's root or the walls would paint over the cards. */
+  /* The walls are this box's siblings out in the gutters (see below), so the
+     lift is belt and braces: if a gutter ever miscalculated, the cards still
+     win the paint order. 60rem is the whole page — rail, cards, hero. */
   position: relative;
   z-index: 1;
-  max-width: 74rem;
+  max-width: 60rem;
   margin: 0 auto;
   padding: 0.5rem 1rem 3rem;
+}
+
+/* ── Side walls: wider, out in the real gutters ─────────────────
+   `cave-wall-dig` is this page's hook into style.css's .cave-wall: absolute
+   against .page-content, cropped from the inner edge by background-position,
+   pixelated, pointer-events none. Two classes beat that sheet's own
+   `.cave-wall` whatever order the two land in, and no other room carries the
+   class, so Stockpile, Haul and Details keep their gutters untouched.
+
+   Width is the gutter left outside a 60rem centre with 3rem of slack, capped
+   at 320px. It never overlaps #cave-app's box:
+
+     #cave-app is 960px of content (60rem at the default 16px root) + 2×16px
+     padding = 992px, centred in minima's .wrapper (style.css caps it at
+     1140px, inner width 1110px).
+     at 1100px: wall = (1100 - 960 - 48) / 2 = 46;  app left = 15 + (1070 - 992) / 2 = 54
+     at 1140px: wall = (1140 - 960 - 48) / 2 = 66;  app left = 15 + (1110 - 992) / 2 = 74
+       — 8px clear in both, and above 1140 the wrapper stops growing, so both
+       edges move 1px per 2px of viewport and the 8px holds until the wall
+       hits its 320px cap at 960 + 48 + 640 = 1648px.
+     at 1920px: wall = 320; app left = (1920 - 1140) / 2 + 74 = 464 — 144px clear.
+
+   Shown from 1100px up, not the site's 1340: a 46px strip of rock still reads
+   as a wall, and the centre has already narrowed to pay for it. */
+.cave-wall.cave-wall-dig {
+  width: clamp(0px, calc((100vw - 60rem - 3rem) / 2), 320px);
+}
+
+@media (min-width: 1100px) {
+  .cave-wall.cave-wall-dig {
+    display: block;
+  }
 }
 
 /* ── Hero ─────────────────────────────────────────────────────── */
