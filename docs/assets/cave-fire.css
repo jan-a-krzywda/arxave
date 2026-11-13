@@ -1,0 +1,203 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Cave v4 — stage 4, the fire.
+
+   One band: a dark pocket in the rock, the pixel campfire in the middle, a
+   line of copy, tonight's numbers, and the button that lights it. Unlit, the
+   flame is hidden and the logs read grey; lit, the flame fades in over 600 ms
+   and flickers in four steps, and every stage from Priorities down picks up a
+   faint gold wash and gold focus rings.
+
+   Colours are the tokens in docs/_sass/cave.scss and nothing else — no hex
+   here, so the palette in cave.scss stays the one place a colour lives. The
+   wash is a gradient, which CSS cannot transition; the `::after` overlay it
+   sits on can, so the firelight comes up instead of snapping on.
+
+   Motion respects the reader: the flicker and the fade are both off under
+   prefers-reduced-motion, and the lit state then appears at once (the spec's
+   "instant if reduced motion").
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── The band ─────────────────────────────────────────────────── */
+.cave-fire-band {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0.15rem 0 0;
+  padding: 1rem 0.9rem 1.1rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 8px;
+  background: radial-gradient(120% 90% at 50% 100%, var(--rock-deep), var(--cave-air) 72%);
+  text-align: center;
+  overflow: hidden;
+  transition: border-color 600ms ease-out;
+}
+
+/* The wash the fire casts on its own pocket of the wall. */
+.cave-fire-band::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(75% 65% at 50% 66%,
+    color-mix(in srgb, var(--gold) 18%, transparent), transparent 76%);
+  opacity: 0;
+  transition: opacity 600ms ease-out;
+}
+
+.cave-fire-band.is-lit {
+  border-color: var(--gold-dim);
+}
+
+.cave-fire-band.is-lit::after {
+  opacity: 1;
+}
+
+/* ── The drawing ──────────────────────────────────────────────── */
+.cave-fire-art {
+  width: min(14rem, 72%);
+  aspect-ratio: 4 / 3;
+}
+
+.cave-fire-art[hidden] {
+  display: none;
+}
+
+.cave-fire-art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Unlit is logs only, and grey: the rock tones drop their blue. */
+.cave-fire-band:not(.is-lit) .cave-fire-art {
+  filter: grayscale(1) brightness(0.85);
+}
+
+/* The flame and its sparks fade in as one; the flicker is on the group
+   inside so a transition and an animation never fight over transform. */
+.cave-fire-art .cave-fire-fade {
+  opacity: 0;
+  transition: opacity 600ms ease-out;
+}
+
+.cave-fire-band.is-lit .cave-fire-fade {
+  opacity: 1;
+}
+
+.cave-fire-art .cave-flame {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+.cave-fire-band.is-lit .cave-flame {
+  animation: cave-fire-flicker 0.9s steps(4) infinite;
+}
+
+@keyframes cave-fire-flicker {
+  0%   { transform: scaleY(1) scaleX(1); }
+  25%  { transform: scaleY(0.93) scaleX(1.03); }
+  50%  { transform: scaleY(1.05) scaleX(0.97); }
+  75%  { transform: scaleY(0.97) scaleX(1.01); }
+  100% { transform: scaleY(1) scaleX(1); }
+}
+
+/* ── Copy, numbers, button ────────────────────────────────────── */
+.cave-fire-copy {
+  margin: 0;
+  max-width: 32ch;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.cave-fire-numbers {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.cave-fire-muted {
+  margin: 0;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-faint);
+}
+
+.cave-fire-btn {
+  min-height: 2.75rem;
+  margin-top: 0.15rem;
+  padding: 0.55rem 1.15rem;
+  border: 1px solid var(--gold-dim);
+  border-radius: 6px;
+  background: var(--gold);
+  color: var(--cave-air);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cave-fire-btn:hover {
+  background: var(--ore-6);
+}
+
+.cave-fire-btn:focus-visible {
+  outline: 2px solid var(--lamp);
+  outline-offset: 3px;
+}
+
+.cave-fire-btn:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+/* ── The firelight on the stages after the fire ───────────────── */
+#cave-app.cave-lit .cave-stage[data-stage="priorities"],
+#cave-app.cave-lit .cave-stage[data-stage="ranking"],
+#cave-app.cave-lit .cave-stage[data-stage="act"],
+#cave-app.cave-lit .cave-stage[data-stage="story"] {
+  background:
+    radial-gradient(120% 85% at 50% 0%,
+      color-mix(in srgb, var(--gold) 10%, transparent), transparent 72%),
+    var(--rock-deep);
+}
+
+#cave-app.cave-lit .cave-stage[data-stage="priorities"] :focus-visible,
+#cave-app.cave-lit .cave-stage[data-stage="ranking"] :focus-visible,
+#cave-app.cave-lit .cave-stage[data-stage="act"] :focus-visible,
+#cave-app.cave-lit .cave-stage[data-stage="story"] :focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ── Narrow: 360 px still gets a whole campfire ───────────────── */
+@media (max-width: 600px) {
+  .cave-fire-band {
+    padding: 0.85rem 0.7rem 0.95rem;
+  }
+
+  .cave-fire-art {
+    width: min(11rem, 84%);
+  }
+
+  .cave-fire-copy {
+    font-size: 0.94rem;
+  }
+}
+
+/* ── Reduced motion: lit at once, and still ───────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .cave-fire-band,
+  .cave-fire-band::after,
+  .cave-fire-art .cave-fire-fade {
+    transition: none;
+  }
+
+  .cave-fire-band.is-lit .cave-flame {
+    animation: none;
+  }
+}
