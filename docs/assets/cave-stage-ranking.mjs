@@ -36,10 +36,17 @@
  * re-embed, and the picked flags never move.
  *
  * THE PURE HALF IS EXPORTED — `meters`, `rowHtml`, `applyPicks`,
- * `rankingSummary` — because every number in this card is arithmetic a test can
- * hold without a browser (`scripts/cave-stage-ranking.test.mjs`). The page half
- * is behind `mount`, and the stylesheet is fetched from beside this module once,
- * the way every stage card carries its own CSS.
+ * `rankingSummary`, `closestAnyway` — because every number in this card is
+ * arithmetic a test can hold without a browser
+ * (`scripts/cave-stage-ranking.test.mjs`). The page half is behind `mount`, and
+ * the stylesheet is fetched from beside this module once, the way every stage
+ * card carries its own CSS.
+ *
+ * NOTHING PASSES IS NOT AN EMPTY STAGE. A reader who touched no slider can still
+ * meet a gate their night does not clear, so the card re-scores the same night
+ * with Topic match at 0 and shows the closest five by fit under a muted "Closest
+ * anyway" heading. Same rows, same meters; `ctx.ranked` stays empty, because the
+ * Act stage acts on what passed, not on what was near.
  */
 import { LESS_WEIGHT, applyLess, vecsFor } from './cave-nudge.mjs';
 import { caveScore, defaultSetting } from './sieve-core.mjs';
@@ -48,6 +55,9 @@ import { wagonLabel } from './cave-wagon-views.mjs';
 
 /** How many rows the first paint shows, and what "Show more" adds. */
 export const PAGE = 25;
+
+/** How many near-misses the empty stage shows instead of nothing. */
+export const CLOSEST = 5;
 
 /** The mute line each missing input gets. */
 export const NO_NIGHT = 'Dig first — tonight\'s papers are what get ranked.';
@@ -104,6 +114,31 @@ export function meters(ranked) {
       promisePct: Math.round(100 * clamp01(Number(item && item.score))),
     };
   });
+}
+
+/**
+ * The closest `n` papers when the gate lets nothing through.
+ *
+ * `scoreFn(match)` is one `caveScore` pass for a Topic match value — the card
+ * hands it the night already in memory, so this costs no refetch. Match 0 is
+ * gate 0, so every paper is scored and the closest by fit can be picked out;
+ * ordering is fit descending, id ascending, the same deterministic tie-break
+ * `caveScore` uses. The input array is left alone (a caller's cache stays a
+ * cache) and a missing scorer or a zero count is an empty list, never a throw:
+ * the fallback must not be able to break a stage that was merely empty.
+ */
+export function closestAnyway(scoreFn, n = CLOSEST) {
+  const take = Math.max(0, Math.round(Number(n) || 0));
+  if (!take || typeof scoreFn !== 'function') return [];
+  const ranked = scoreFn(0);
+  const list = Array.isArray(ranked) ? ranked.slice() : [];
+  const fitOf = (item) => {
+    const fit = Number(item && item.fit);
+    return Number.isFinite(fit) ? fit : -Infinity;
+  };
+  list.sort((a, b) => fitOf(b) - fitOf(a) ||
+    ((a && a.id) < (b && b.id) ? -1 : (a && a.id) > (b && b.id) ? 1 : 0));
+  return list.slice(0, take);
 }
 
 /**
@@ -284,6 +319,7 @@ export function mount(body, ctx) {
     night: null,        // the night this list was built from
     ranked: [],         // last caveScore output, with the picked flags
     stats: [],          // meters() of that output, in the same order
+    closest: [],        // the near-misses shown when the gate empties the list
     shown: PAGE,        // how many rows the reader has opened up to
     open: null,         // the one row whose detail is showing, by id
   };
@@ -316,6 +352,24 @@ export function mount(body, ctx) {
 
   function paintList() {
     const wagons = wagonByStone(ctx.night);
+    /* The gate emptied the list: the closest papers anyway, under a muted
+       heading, so a reader who touched no slider still meets five papers. Same
+       row markup and meters as the ranked list — only the heading differs. */
+    if (!state.ranked.length) {
+      const stats = meters(state.closest);
+      listEl.innerHTML = state.closest.length
+        ? '<p class="rk-note rk-closest">Closest anyway</p>' + state.closest.map((item, i) => rowHtml(item, {
+            rank: i + 1,
+            meters: stats[i],
+            topic: leafLabel(ctx.topics, item.topic),
+            wagon: wagons.get(item.id) || '',
+            picked: !!item.picked,
+            open: state.open === item.id,
+          })).join('')
+        : '';
+      moreWrap.hidden = true;
+      return;
+    }
     const shown = state.ranked.slice(0, state.shown);
     listEl.innerHTML = shown.map((item, i) => rowHtml(item, {
       rank: i + 1,
@@ -333,11 +387,9 @@ export function mount(body, ctx) {
     noteEl.textContent = note;
     noteEl.hidden = !note;
     paintBar();
-    if (!state.ranked.length) {
-      listEl.innerHTML = '';
-      moreWrap.hidden = true;
-      return;
-    }
+    /* paintList draws the nearest-five fallback when the ranked list is empty,
+       so the stage is never a blank card (and the note above it is never the
+       last word). */
     paintList();
   }
 
@@ -354,6 +406,7 @@ export function mount(body, ctx) {
     if (absent) {
       state.ranked = [];
       state.stats = [];
+      state.closest = [];
       ctx.ranked = [];
       paint();
       return;
@@ -381,20 +434,25 @@ export function mount(body, ctx) {
     const moreVecs = vecsFor(prefs.more, night);
     const lessVecs = vecsFor(prefs.less, night);
 
+    /* One scoring pass, for whatever sliders it is given — the fallback below
+       needs the same night with Topic match at 0 and nothing else changed. */
+    const scoreAt = (sliders) => caveScore({
+      corpus: ctx.corpus,
+      topics: ctx.topics,
+      axes: ctx.axes,
+      setting: prefs.setting || defaultSetting(ctx.topics),
+      sliders,
+      touchstones: [...(Array.isArray(prefs.touchstones) ? prefs.touchstones : []), ...moreVecs],
+      candidates,
+    });
+
     let ranked;
     try {
-      ranked = caveScore({
-        corpus: ctx.corpus,
-        topics: ctx.topics,
-        axes: ctx.axes,
-        setting: prefs.setting || defaultSetting(ctx.topics),
-        sliders: prefs.sliders || {},
-        touchstones: [...(Array.isArray(prefs.touchstones) ? prefs.touchstones : []), ...moreVecs],
-        candidates,
-      });
+      ranked = scoreAt(prefs.sliders || {});
     } catch (err) {
       state.ranked = [];
       state.stats = [];
+      state.closest = [];
       ctx.ranked = [];
       paintBar();
       noteEl.textContent = 'Could not rank tonight\'s papers: ' + ((err && err.message) || err);
@@ -413,6 +471,22 @@ export function mount(body, ctx) {
 
     state.ranked = applyPicks(ranked, ctx.picks);
     state.stats = meters(ranked);
+
+    /* The empty gate gets a second, cheaper answer: the same night with Match at
+       0, nearest five by fit. Only paid for on the night where nothing passed,
+       and it never feeds `ctx.ranked` — Act acts on what passed. */
+    state.closest = [];
+    if (!ranked.length) {
+      try {
+        state.closest = applyPicks(
+          closestAnyway((match) => scoreAt({ ...(prefs.sliders || {}), match })),
+          ctx.picks,
+        );
+      } catch (_) {
+        /* The main run already worked; a blank fallback beats a broken stage. */
+      }
+    }
+
     ctx.ranked = ranked;
     ctx.bus.dispatchEvent(new CustomEvent('ranked', { detail: ranked }));
     paint();
@@ -427,7 +501,9 @@ export function mount(body, ctx) {
    */
   async function refine(button) {
     const id = button.getAttribute('data-refine');
-    const item = state.ranked.find((r) => r.id === id);
+    /* A "Closest anyway" row opens the same detail, so its refiner looks in the
+       fallback list too. */
+    const item = state.ranked.find((r) => r.id === id) || state.closest.find((r) => r.id === id);
     if (!item || button.disabled) return;
     const out = button.parentElement.querySelector('.rk-refine-out');
     button.disabled = true;

@@ -5,14 +5,15 @@
  * it can hold is the arithmetic a reader would notice going wrong: the two
  * meters (checked here against a four-row fixture worked out by hand), a row's
  * escaping and its both-meter contract, picks that follow their paper through a
- * re-rank, and the bar's one line. No DOM: `rowHtml` returns strings and
- * `mount` — the part that does touch the page — is not called.
+ * re-rank, the five near-misses a gated-out night shows anyway, and the bar's
+ * one line. No DOM: `rowHtml` returns strings and `mount` — the part that does
+ * touch the page — is not called.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  PAGE, applyPicks, meters, rankingSummary, rowHtml, shortAuthors,
+  CLOSEST, PAGE, applyPicks, closestAnyway, meters, rankingSummary, rowHtml, shortAuthors,
 } from '../docs/assets/cave-stage-ranking.mjs';
 
 /** One ranked row, as `caveScore` hands it over (only the fields read here). */
@@ -151,6 +152,38 @@ test('applyPicks does not reorder, drop or mutate the list it is given', () => {
   assert.deepEqual(ranked.map((r) => r.id), ['b', 'a'], 'input order untouched');
   assert.equal(ranked[0].picked, undefined, 'input items untouched');
   assert.deepEqual(applyPicks(ranked, null).map((r) => r.picked), [false, false]);
+});
+
+/* ── closest anyway ─────────────────────────────────────────────────────── */
+
+test('closestAnyway asks for Topic match 0 and keeps the nearest by fit', () => {
+  /* Listed in score order, deliberately not fit order: `caveScore` sorts by
+     Promise, and the fallback is the closest papers, not the best-scoring. */
+  const scored = [
+    item('far', -3, 0.9),
+    item('near', 5, 0.1),
+    item('mid', 1.5, 0.5),
+    item('tieB', 1.5, 0.2),
+    item('tieA', 1.5, 0.7),
+  ];
+  const asked = [];
+  const scoreFn = (match) => { asked.push(match); return scored; };
+
+  // fit descending, id ascending on the three-way tie at 1.5.
+  assert.deepEqual(closestAnyway(scoreFn, 3).map((r) => r.id), ['near', 'mid', 'tieA']);
+  assert.deepEqual(asked, [0], 'exactly one pass, with the gate off');
+  assert.deepEqual(scored.map((r) => r.id), ['far', 'near', 'mid', 'tieB', 'tieA'], 'input array untouched');
+});
+
+test('closestAnyway defaults to five and an empty stage stays empty', () => {
+  const seven = Array.from({ length: 7 }, (_, i) => item('p' + i, i, 0));
+  assert.equal(CLOSEST, 5);
+  assert.deepEqual(closestAnyway(() => seven).map((r) => r.id), ['p6', 'p5', 'p4', 'p3', 'p2']);
+  assert.deepEqual(closestAnyway(() => null, 5), []);
+  assert.deepEqual(closestAnyway(undefined, 5), []);
+  assert.deepEqual(closestAnyway(() => seven, 0), []);
+  // A row with no usable fit is still a row; it just sorts last.
+  assert.deepEqual(closestAnyway(() => [{ id: 'nan', fit: NaN }, item('ok', 1, 0)], 2).map((r) => r.id), ['ok', 'nan']);
 });
 
 /* ── the bar ────────────────────────────────────────────────────────────── */

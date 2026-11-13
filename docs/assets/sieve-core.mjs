@@ -720,8 +720,11 @@ function axisProbability(axis, vec) {
  * neighbour, nor a landmark, nor a proven paper for novelty, nor part of the
  * median — which is what "I do not want these" means.
  *
- * The sliders map as the contract says: `gate = 3 * match/100` and
- * `surprise = surprise/100`, straight into `rank`.
+ * The sliders map as `gate = 2 * match/100` and `surprise = surprise/100`,
+ * straight into `rank`. The 2 is Sieve v2's own default: match 50 is gate 1.0,
+ * which keeps a readable share of a night. It was 3, and 1.5 at the untouched
+ * default left one browser run with nothing at all — a default that gates almost
+ * the whole night is not a default.
  *
  * EXPERIMENT ↔ THEORY is a nudge on the final score, not a filter: ±0.25 at
  * full travel, scaled by how far the paper sits from the 0.5 middle, sign + on
@@ -808,7 +811,7 @@ export function caveScore({
   }
 
   const prep = prepare({ corpus: view, weights, touchstones });
-  const ranked = rank(prep, kept, { gate: 3 * match / 100, surprise: surprise / 100 });
+  const ranked = rank(prep, kept, { gate: 2 * match / 100, surprise: surprise / 100 });
 
   const exp = axes?.expTheory;
   const ml4 = axes?.ml4q;
