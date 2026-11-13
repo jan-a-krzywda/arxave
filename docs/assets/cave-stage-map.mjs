@@ -324,6 +324,13 @@ export function mount(body, ctx) {
       btn.classList.toggle('is-active', btn.getAttribute('data-view') === 'table');
     }
     paint();
+    /* The table has just been rebuilt with this wagon's block in it, so the
+       jump can only happen after the paint. `key` is the strip's `data-wagon`
+       ('0', '1', … or 'lone'), which is exactly the id suffix the table uses;
+       a 'lone' pick has a block only when something rides the flatcar. */
+    const block = body.querySelector('#wagon-block-' + key);
+    if (block && block.scrollIntoView) block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 
   /**
    * Cut the dendrogram at the current threshold, repaint, then quietly look
@@ -461,6 +468,3 @@ export function mount(body, ctx) {
   if (ctx.night) setNight(ctx.night);
 }
 
-    const block = body.querySelector('#wagon-block-' + key);
-    if (block && block.scrollIntoView) block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
