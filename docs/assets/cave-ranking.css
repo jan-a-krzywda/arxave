@@ -410,7 +410,7 @@ h3.rk-title {
   font-variant-numeric: tabular-nums;
 }
 
-/* ── The foot: one button, one hint ───────────────────────────── */
+/* ── The foot: Story, RIS, BibTeX on the picks, one hint ──────── */
 
 .rk-foot {
   display: flex;
@@ -420,7 +420,14 @@ h3.rk-title {
   margin-top: 0.8rem;
 }
 
+.rk-picked {
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .rk-hint {
+  flex-basis: 100%;
   margin: 0;
   color: var(--text-faint);
   font-size: 0.82rem;

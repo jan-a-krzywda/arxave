@@ -497,56 +497,83 @@ export async function embedTexts({
   texts, embedUrl, fetchImpl = fetch, chunk = 64, model = MODEL, dim = DIM, onProgress,
 }) {
   const vectors = [];
-  for (let i = 0; i < texts.length; i += chunk) {
-    const slice = texts.slice(i, i + chunk);
+  /* A batch the function could not hold (546, the isolate's CPU or memory
+     limit) is sent again as two halves, down to MIN_SPLIT texts, instead of
+     failing the whole dig. Pending slices are worked front first, so the
+     vectors still come back in order. */
+  const queue = [];
+  for (let i = 0; i < texts.length; i += chunk) queue.push(texts.slice(i, i + chunk));
+  while (queue.length) {
+    const slice = queue.shift();
     /* The third argument is the batch now going out, so a progress display
        can move while the request is in flight instead of in 64-text jumps. */
     if (onProgress) onProgress(vectors.length, texts.length, slice.length);
-    let resp;
+    let ordered;
     try {
-      resp = await fetchImpl(embedUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: slice }),
-      });
+      ordered = await embedSlice(slice, { embedUrl, fetchImpl, model, dim });
     } catch (err) {
-      throw new Error('Could not reach the pick: ' + ((err && err.message) || err));
-    }
-
-    let data = null;
-    try { data = await resp.json(); } catch (_) { /* fall through to the status */ }
-
-    if (!resp.ok) {
-      if (resp.status === 503 && data && data.warming) {
-        throw new Error('The pick is warming up (about ' + (data.retryAfter || 20)
-          + 's). This happens on the first cut after a quiet spell — press again shortly.');
+      if (err && err.status === 546 && slice.length > MIN_SPLIT) {
+        const half = Math.ceil(slice.length / 2);
+        queue.unshift(slice.slice(0, half), slice.slice(half));
+        continue;
       }
-      throw new Error((data && data.error) || ('The pick answered HTTP ' + resp.status));
-    }
-    if (data && data.model && data.model !== model) {
-      throw new Error('The pick is running ' + data.model + ', but this page reads ' + model
-        + '. Same-shaped vectors from a different model would rank the wrong papers — refusing rather than guessing.');
-    }
-    if (data && data.dim && data.dim !== dim) {
-      throw new Error('The pick returned ' + data.dim + '-dim vectors, but this page reads ' + dim + '.');
-    }
-
-    const rows = (data && data.data) || [];
-    if (rows.length !== slice.length) {
-      throw new Error('The pick returned ' + rows.length + ' vectors for ' + slice.length + ' texts.');
-    }
-    const ordered = new Array(slice.length);
-    for (const row of rows) {
-      const at = typeof row.index === 'number' ? row.index : -1;
-      if (at < 0 || at >= slice.length || ordered[at]) {
-        throw new Error('The pick returned a vector with a bad index.');
-      }
-      ordered[at] = normalise(row.embedding);
+      throw err;
     }
     for (const v of ordered) vectors.push(v);
     if (onProgress) onProgress(vectors.length, texts.length);
   }
   return vectors;
+}
+
+const MIN_SPLIT = 8;
+
+/** One POST to the pick: the slice's unit vectors in order, or a throw whose
+ *  `status` is the HTTP status when the function answered at all. */
+async function embedSlice(slice, { embedUrl, fetchImpl, model, dim }) {
+  let resp;
+  try {
+    resp = await fetchImpl(embedUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input: slice }),
+    });
+  } catch (err) {
+    throw new Error('Could not reach the pick: ' + ((err && err.message) || err));
+  }
+
+  let data = null;
+  try { data = await resp.json(); } catch (_) { /* fall through to the status */ }
+
+  if (!resp.ok) {
+    if (resp.status === 503 && data && data.warming) {
+      throw new Error('The pick is warming up (about ' + (data.retryAfter || 20)
+        + 's). This happens on the first cut after a quiet spell — press again shortly.');
+    }
+    const err = new Error((data && data.error) || ('The pick answered HTTP ' + resp.status));
+    err.status = resp.status;
+    throw err;
+  }
+  if (data && data.model && data.model !== model) {
+    throw new Error('The pick is running ' + data.model + ', but this page reads ' + model
+      + '. Same-shaped vectors from a different model would rank the wrong papers — refusing rather than guessing.');
+  }
+  if (data && data.dim && data.dim !== dim) {
+    throw new Error('The pick returned ' + data.dim + '-dim vectors, but this page reads ' + dim + '.');
+  }
+
+  const rows = (data && data.data) || [];
+  if (rows.length !== slice.length) {
+    throw new Error('The pick returned ' + rows.length + ' vectors for ' + slice.length + ' texts.');
+  }
+  const ordered = new Array(slice.length);
+  for (const row of rows) {
+    const at = typeof row.index === 'number' ? row.index : -1;
+    if (at < 0 || at >= slice.length || ordered[at]) {
+      throw new Error('The pick returned a vector with a bad index.');
+    }
+    ordered[at] = normalise(row.embedding);
+  }
+  return ordered;
 }
 
 function bytesFromBase64(b64) {

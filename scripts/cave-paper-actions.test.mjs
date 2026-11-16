@@ -81,7 +81,7 @@ test('actionsHtml: the Story tick is bound to the id and the pick', () => {
 
   const on = actionsHtml(paper({ picked: true }), { repo: REPO, picked: true });
   assert.ok(on.includes('data-id="2401.12345v2" checked'));
-  assert.ok(on.includes('> In Story</label>'), 'the box is labelled In Story');
+  assert.ok(on.includes('> Pick</label>'), 'the box is labelled Pick');
 });
 
 test('actionsHtml escapes an id in every attribute', () => {

@@ -3,8 +3,8 @@
  *
  * L2 folds the old Act stage into Ranking, so the row carries its own exits:
  * SciRate for the paper's own feed, a GitHub Discussions thread (join one, or
- * be the first and start it), the LLM's diamond, and the Story tick that
- * carries a paper to the last stage. This module is the pure half of that —
+ * be the first and start it), the LLM's diamond, and the Pick tick that the
+ * ranking's foot (Story, RIS, BibTeX) acts on. This module is the pure half of that —
  * `actionsHtml` builds the bar, `threadsRequest` / `parseThreads` are the batch
  * lookup's body and answer, and the diamond cache helpers are the same contract
  * the Act stage kept (`arxave-cave-diamond:<bare id>`), copied here because
@@ -173,7 +173,7 @@ export function actionsHtml(item, state = {}) {
     (s.diamond ? '✦ Summary' : '✦ Summarize') + '</button>');
 
   parts.push('<label class="pa-btn pa-story"><input type="checkbox" class="pa-pick" data-id="' +
-    escapeHtml(id) + '"' + (s.picked ? ' checked' : '') + '> In Story</label>');
+    escapeHtml(id) + '"' + (s.picked ? ' checked' : '') + '> Pick</label>');
 
   const md = s.md && s.repo
     ? '<a class="pa-md" href="#" data-act="md" data-id="' + escapeHtml(id) + '">⤓ the post as .md</a>'

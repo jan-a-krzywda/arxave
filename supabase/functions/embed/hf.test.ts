@@ -168,3 +168,11 @@ Deno.test('clsRows + toVectors equals toVectors on the parsed grid', async () =>
   const text = JSON.stringify(grid);
   assertEquals(toVectors(await clsRows(streamOf(text, 4096)), 3), toVectors(JSON.parse(text), 3));
 });
+
+Deno.test('clsRows skips non-[CLS] rows across chunk edges and still counts rows', async () => {
+  const token = (k: number) => Array.from({ length: 6 }, (_, j) => k + j / 10);
+  const grid = [0, 1, 2].map((r) => [0, 1, 2, 3].map((t) => token(r * 10 + t)));
+  for (const size of [1, 3, 7, 50, 4096]) {
+    assertEquals(await clsRows(streamOf(JSON.stringify(grid), size)), [token(0), token(10), token(20)]);
+  }
+});

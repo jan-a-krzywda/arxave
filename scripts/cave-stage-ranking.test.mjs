@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import * as ranking from '../docs/assets/cave-stage-ranking.mjs';
 import {
   AI_MAX, PAGE, SOLO_MAX, TRACE_KEEP, absUrl, applyPicks, authorCount, gradesHtml, mergeTraces,
-  meters, orderNight, rowHtml, sameLabel, shortAuthors, shownLine, storySummary,
+  meters, orderNight, pickedLine, rowHtml, sameLabel, shortAuthors, shownLine, storySummary,
 } from '../docs/assets/cave-stage-ranking.mjs';
 
 /** Only the two meters the order key reads. */
@@ -171,7 +171,7 @@ test('rowHtml opens in place: the abstract, its landmarks, the action bar', () =
   assert.ok(open.includes('Looks like'));
   assert.ok(open.includes('https://github.com/o/r/discussions/4'), 'the thread link is there');
   assert.ok(open.includes('data-act="summarize"'));
-  assert.ok(open.includes('Story'));
+  assert.ok(open.includes('> Pick</label>'));
 
   const closed = rowHtml(ROW_ITEM, { ...ROW_PARTS, open: false });
   assert.ok(closed.includes('<div class="rk-detail" hidden>'));
@@ -322,4 +322,9 @@ test('rowHtml: the wagon chip is dropped when it only repeats the topic', () => 
   assert.ok(!twice.includes('rk-chip-wagon'));
   const both = rowHtml({ id: '1', title: 't' }, { topic: 'Quantum sensing', wagon: 'NV magnetometry' });
   assert.ok(both.includes('rk-chip-wagon'));
+});
+
+test('pickedLine counts the picks the foot acts on, and is empty at none', () => {
+  assert.equal(pickedLine(0), '');
+  assert.equal(pickedLine(3), '3 picked');
 });
