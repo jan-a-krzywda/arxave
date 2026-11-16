@@ -189,6 +189,97 @@ export function toVectors(raw: unknown, n: number, dim: number = DIM): number[][
 }
 
 /**
+ * HF's answer, read as a byte stream, keeping only what `toVectors` uses:
+ * token 0 of each row of a `[n][tokens][dim]` grid, or every value of a
+ * pooled `[n][dim]` (or a bare `[dim]`). The result is `[rows][dim]`, which
+ * `toVectors` then checks and normalizes as before.
+ *
+ * WHY NOT `resp.json()`. A batch of 8 abstracts comes back as up to 8 x 512 x
+ * 768 = 3.1M numbers — tens of megabytes of JSON text, and as much again once
+ * parsed into nested arrays — to keep 8 x 768 of them. Two of those alive at
+ * once (one parsed, the next arriving before the GC ran) is what took the
+ * isolate down with 546 WORKER_RESOURCE_LIMIT. Here the peak is one network
+ * chunk plus the [CLS] rows.
+ *
+ * THE SCANNER. Depth goes up at `[` and down at `]`; `at[d]` counts the commas
+ * seen at depth d since that array opened, so it is the index of the current
+ * element there. A number lives at the innermost depth, which names the shape:
+ * depth 3 is the grid (row `at[1]`, kept only when token `at[2]` is 0), depth 2
+ * is pooled (row `at[1]`), depth 1 a single vector. A number is bytes up to the
+ * next `,` `]` or space, parsed only when kept. Anything that is not an array
+ * at the top — an error object at status 200 — is read whole and parsed, so
+ * `toVectors` can say what it was.
+ */
+export async function clsRows(body: ReadableStream<Uint8Array> | null): Promise<unknown> {
+  if (!body) throw new Error('embedding upstream returned an empty body');
+  const reader = body.getReader();
+  const rows: number[][] = [];
+  const at = [0, 0, 0, 0];
+  let depth = 0;
+  let started = false;
+  let notArray: Uint8Array[] | null = null;
+  let token: number[] = [];   // the bytes of the number being read, when kept
+  let inNumber = false;
+  let keep = false;
+
+  const finishNumber = () => {
+    if (inNumber && keep) {
+      const row = depth === 1 ? 0 : at[1];
+      (rows[row] ??= []).push(Number(String.fromCharCode(...token)));
+    }
+    inNumber = false;
+    token = [];
+  };
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (notArray) {
+      notArray.push(value);
+      continue;
+    }
+    for (let i = 0; i < value.length; i++) {
+      const b = value[i];
+      if (!started) {
+        if (b === 32 || b === 10 || b === 13 || b === 9) continue;
+        started = true;
+        if (b !== 91) {
+          notArray = [value.subarray(i)];
+          break;
+        }
+      }
+      if (b === 91) {            // [
+        depth += 1;
+        if (depth < at.length) at[depth] = 0;
+      } else if (b === 93) {     // ]
+        finishNumber();
+        depth -= 1;
+      } else if (b === 44) {     // ,
+        finishNumber();
+        if (depth < at.length) at[depth] += 1;
+      } else if (b === 32 || b === 10 || b === 13 || b === 9) {
+        finishNumber();
+      } else {
+        if (!inNumber) {
+          inNumber = true;
+          keep = depth === 1 || depth === 2 || (depth === 3 && at[2] === 0);
+        }
+        if (keep) token.push(b);
+      }
+    }
+  }
+
+  if (notArray) {
+    const decoder = new TextDecoder();
+    const text = notArray.map((part, k) => decoder.decode(part, { stream: k < notArray!.length - 1 }))
+      .join('');
+    return JSON.parse(text);
+  }
+  /* A bare [dim] lands as one row, which is what toVectors makes of it too. */
+  return rows;
+}
+
+/**
  * How long HF says the model needs, from a 503 body. HF answers
  * `{"error": "Model … is currently loading", "estimated_time": 20.0}`.
  * Absent or nonsense means "some seconds": 20 is HF's own typical figure and a

@@ -33,38 +33,38 @@ test('actionsHtml: SciRate is keyed on the bare id, whatever the version', () =>
   assert.equal(scirateUrl('arxiv:2608.00001v7'), 'https://scirate.com/arxiv/2608.00001');
 });
 
-test('actionsHtml: a thread that exists is a Discussion link to it', () => {
+test('actionsHtml: a thread that exists is a Thread link to it', () => {
   const url = 'https://github.com/jan-a-krzywda/arxave/discussions/12';
   const html = actionsHtml(paper(), { repo: REPO, thread: { url } });
   assert.ok(html.includes('href="' + url + '"'), 'links to the thread itself');
-  assert.ok(html.includes('💬 Discussion'));
-  assert.ok(!html.includes('data-act="start-thread"'), 'no start button when one exists');
+  assert.ok(html.includes('💬 Thread'));
+  assert.ok(!html.includes('data-act="discuss"'), 'no start button when one exists');
 });
 
-test('actionsHtml: thread null means "you would be the first" — Start thread', () => {
-  const html = actionsHtml(paper(), { repo: REPO, thread: null });
-  assert.ok(html.includes('data-act="start-thread"'));
-  assert.ok(html.includes('✚ Start thread'));
-  assert.ok(!html.includes('discussions?discussions_q='), 'no search fallback while starting');
-  assert.ok(!html.includes('⤓ .md'), 'no download until the thread was started');
-
+test('actionsHtml: no known thread — Discuss, which looks again then starts it', () => {
+  for (const thread of [null, undefined]) {
+    const html = actionsHtml(paper(), { repo: REPO, thread });
+    assert.ok(html.includes('data-act="discuss"'));
+    assert.ok(html.includes('✚ Discuss'));
+    assert.ok(!html.includes('discussions?discussions_q='), 'no search page any more');
+    assert.ok(!html.includes('data-act="md"'), 'no download until a post was started');
+  }
   const offered = actionsHtml(paper(), { repo: REPO, thread: null, md: true });
   assert.ok(offered.includes('data-act="md"'), 'the .md link appears after');
-  assert.ok(offered.includes('⤓ .md'));
+  assert.ok(offered.includes('the post as .md'));
 });
 
-test('actionsHtml: thread undefined falls back to the Discussions search', () => {
-  const html = actionsHtml(paper(), { repo: REPO });
-  assert.ok(html.includes('https://github.com/jan-a-krzywda/arxave/discussions?discussions_q='));
-  assert.ok(html.includes('2401.12345'), 'the search is the bare id');
-  assert.ok(html.includes('💬 Discuss'));
-  assert.ok(!html.includes('data-act="start-thread"'));
+test('actionsHtml: four squares of one class, the Story box included', () => {
+  const html = actionsHtml(paper(), { repo: REPO, thread: null, md: true });
+  assert.equal((html.match(/class="pa-btn[ "]/g) || []).length, 4);
+  assert.ok(html.includes('<label class="pa-btn pa-story">'));
+  assert.ok(!/class="pa-md[^"]*pa-btn|class="pa-btn[^"]*pa-md/.test(html), 'the .md link is not a square');
 });
 
 test('actionsHtml: no repo, no discussion button at all', () => {
   const html = actionsHtml(paper(), { repo: '', thread: null });
   assert.ok(!html.includes('github.com'), 'nowhere to send the reader');
-  assert.ok(!html.includes('data-act="start-thread"'));
+  assert.ok(!html.includes('data-act="discuss"'));
   assert.ok(html.includes('>SciRate</a>'), 'the other exits stay');
   assert.ok(html.includes('data-act="summarize"'));
 });
@@ -81,7 +81,7 @@ test('actionsHtml: the Story tick is bound to the id and the pick', () => {
 
   const on = actionsHtml(paper({ picked: true }), { repo: REPO, picked: true });
   assert.ok(on.includes('data-id="2401.12345v2" checked'));
-  assert.ok(on.includes('> Story</label>'), 'the box is labelled Story');
+  assert.ok(on.includes('> In Story</label>'), 'the box is labelled In Story');
 });
 
 test('actionsHtml escapes an id in every attribute', () => {

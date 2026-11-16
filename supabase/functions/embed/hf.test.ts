@@ -8,7 +8,7 @@
  */
 import { assertEquals, assertThrows } from 'jsr:@std/assert@1';
 import {
-  DIM, MODEL, UPSTREAM_MAX_CHARS, isTooLong, normalize, toVectors, warmingSeconds,
+  DIM, MODEL, UPSTREAM_MAX_CHARS, clsRows, isTooLong, normalize, toVectors, warmingSeconds,
 } from './hf.ts';
 
 /** A dim-length vector whose first entry marks which row it is. */
@@ -123,4 +123,48 @@ Deno.test('the clip leaves room for text far denser than prose', () => {
   assertEquals(UPSTREAM_MAX_CHARS, 1_400);
   const worstCaseCharsPerToken = UPSTREAM_MAX_CHARS / 512;
   assertEquals(worstCaseCharsPerToken < 3.0, true);
+});
+
+/* ── clsRows: the streamed reader ──────────────────────────────────────── */
+
+/** A JSON text as a stream cut into small, uneven chunks — numbers split too. */
+function streamOf(text: string, size = 7): ReadableStream<Uint8Array> {
+  const bytes = new TextEncoder().encode(text);
+  let at = 0;
+  return new ReadableStream({
+    pull(controller) {
+      if (at >= bytes.length) return controller.close();
+      controller.enqueue(bytes.subarray(at, at + size));
+      at += size;
+    },
+  });
+}
+
+Deno.test('clsRows keeps token 0 of each row of the grid, and only that', async () => {
+  const grid = [
+    [[1.5, -2e-3, 3], [9, 9, 9], [8, 8, 8]],
+    [[-4, 5.25, 6E1], [7, 7, 7]],
+  ];
+  assertEquals(await clsRows(streamOf(JSON.stringify(grid))), [[1.5, -2e-3, 3], [-4, 5.25, 60]]);
+  /* spaced and newlined JSON reads the same */
+  assertEquals(await clsRows(streamOf(JSON.stringify(grid, null, 2), 3)),
+    [[1.5, -2e-3, 3], [-4, 5.25, 60]]);
+});
+
+Deno.test('clsRows reads a pooled [n][dim] and a bare [dim] whole', async () => {
+  assertEquals(await clsRows(streamOf('[[1,2,3],[4,5,6]]')), [[1, 2, 3], [4, 5, 6]]);
+  assertEquals(await clsRows(streamOf('[1,2,3]')), [[1, 2, 3]]);
+});
+
+Deno.test('clsRows hands an error object to toVectors, which says so', async () => {
+  const got = await clsRows(streamOf('{"error":"boom"}'));
+  assertEquals(got, { error: 'boom' });
+  assertThrows(() => toVectors(got, 1, 3), Error, 'expected an array');
+});
+
+Deno.test('clsRows + toVectors equals toVectors on the parsed grid', async () => {
+  const row = (seed: number) => Array.from({ length: DIM }, (_, k) => Math.sin(seed * 31 + k));
+  const grid = [0, 1, 2].map((r) => [row(r), row(r + 10), row(r + 20)]);
+  const text = JSON.stringify(grid);
+  assertEquals(toVectors(await clsRows(streamOf(text, 4096)), 3), toVectors(JSON.parse(text), 3));
 });

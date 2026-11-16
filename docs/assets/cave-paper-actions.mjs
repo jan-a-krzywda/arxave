@@ -10,15 +10,14 @@
  * the Act stage kept (`arxave-cave-diamond:<bare id>`), copied here because
  * that stage is gone.
  *
- * THREE THREAD STATES, NOT TWO. `state.thread` is what the page knows about
+ * TWO THREAD STATES ON THE BAR. `state.thread` is what the page knows about
  * this paper's thread on the maintainer's repo:
- *   { url }     — a thread exists; the bar links to it.
- *   null        — looked up, none exists; the reader would be the first, so the
- *                 bar offers "Start thread" (which mines the diamond first and
- *                 carries it into the thread body).
- *   undefined   — the lookup is unavailable or still pending; fall back to
- *                 Discussions' search, which finds the thread or offers a new
- *                 discussion. That is exactly what Act did.
+ *   { url }     — a thread exists; "💬 Thread" links to it.
+ *   otherwise   — none known (looked up and absent, or the lookup is not
+ *                 there): "✚ Discuss", whose click asks once more and then
+ *                 either joins the thread it finds or opens GitHub's
+ *                 new-discussion form with the post already written (the
+ *                 diamond mined first and carried in the body).
  * With no repo configured there is no thread button at all — there is nowhere
  * to send the reader.
  *
@@ -26,7 +25,7 @@
  * abstracts, urls and diamonds all arrive from outside this page, and this
  * module is where they become markup.
  */
-import { newThreadUrl, parseRepo, searchUrl } from './cave-thread.mjs';
+import { newThreadUrl, parseRepo } from './cave-thread.mjs';
 import { bareArxivId, escapeHtml } from './sieve-ui.mjs';
 
 /** The endpoint's abstract cap (`MAX_ABSTRACT` in supabase/functions/diamond). */
@@ -141,7 +140,9 @@ const link = (cls, href, label) =>
     '" target="_blank" rel="noopener">' + label + '</a>';
 
 /**
- * One paper's action bar, in reading order: SciRate, thread, Summarize, Story.
+ * One paper's action bar, in reading order: SciRate, thread, Summarize, In
+ * Story — four buttons of one size, then the `.md` link once a post was
+ * started.
  *
  * `state` is `{ repo, thread, picked, diamond, md, open }`:
  * `repo` is the Discussions repo (empty → no thread button), `thread` is one of
@@ -158,16 +159,12 @@ export function actionsHtml(item, state = {}) {
   if (s.repo && parseRepo(s.repo)) {
     const thread = s.thread;
     if (thread && typeof thread === 'object' && thread.url) {
-      parts.push(link('pa-discussion', thread.url, '💬 Discussion'));
-    } else if (thread === null) {
-      parts.push(button('start-thread', id, '✚ Start thread', 'pa-start'));
-      if (s.md) {
-        parts.push('<a class="pa-btn pa-md" href="#" data-act="md" data-id="' + escapeHtml(id) +
-          '">⤓ .md</a>');
-      }
+      parts.push(link('pa-discussion', thread.url, '💬 Thread'));
     } else {
-      const fallback = searchUrl(s.repo, item);
-      if (fallback) parts.push(link('pa-discuss', fallback, '💬 Discuss'));
+      /* No thread known — none exists, or the lookup could not say. The click
+         asks once more, then joins the thread it finds or opens GitHub's form
+         with the post already written. */
+      parts.push(button('discuss', id, '✚ Discuss', 'pa-discuss'));
     }
   }
 
@@ -175,10 +172,13 @@ export function actionsHtml(item, state = {}) {
     escapeHtml(id) + '" aria-expanded="' + (s.open ? 'true' : 'false') + '">' +
     (s.diamond ? '✦ Summary' : '✦ Summarize') + '</button>');
 
-  parts.push('<label class="pa-story"><input type="checkbox" class="pa-pick" data-id="' +
-    escapeHtml(id) + '"' + (s.picked ? ' checked' : '') + '> Story</label>');
+  parts.push('<label class="pa-btn pa-story"><input type="checkbox" class="pa-pick" data-id="' +
+    escapeHtml(id) + '"' + (s.picked ? ' checked' : '') + '> In Story</label>');
 
-  return '<span class="pa-actions">' + parts.join('') + '</span>';
+  const md = s.md && s.repo
+    ? '<a class="pa-md" href="#" data-act="md" data-id="' + escapeHtml(id) + '">⤓ the post as .md</a>'
+    : '';
+  return '<span class="pa-actions">' + parts.join('') + md + '</span>';
 }
 
 /* ── the thread lookup ──────────────────────────────────────────────────── */

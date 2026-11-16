@@ -452,24 +452,84 @@
   }
 }
 
-/* ── the firelight on this stage and the ones after it ─────────────
+/* ── the torch on this stage and the ones after it ──────────────
    Moved here with the campfire. `cave.js` puts `cave-lit` on #cave-app once
-   Priorities is reachable, and this is the wash and the gold focus rings that
-   gives. No hexes: the palette stays in cave-theme.scss. */
+   Priorities is reachable. The light is ONE POINT SOURCE — a pixel torch in
+   the card's top-right corner — falling off in three hard bands, the way a
+   sprite game lights a wall, instead of a soft wash over the whole card. The
+   bands sit behind the content (z-index -1 inside an isolated card), so text
+   contrast is the rock's own. No hexes: the palette stays in cave-theme.scss. */
 
 #cave-app.cave-lit .cave-stage[data-stage="priorities"],
 #cave-app.cave-lit .cave-stage[data-stage="ranking"],
-#cave-app.cave-lit .cave-stage[data-stage="act"],
 #cave-app.cave-lit .cave-stage[data-stage="story"] {
-  background:
-    radial-gradient(120% 85% at 50% 0%,
-      color-mix(in srgb, var(--gold) 10%, transparent), transparent 72%),
-    var(--rock-deep);
+  --torch-x: calc(100% - 1.35rem);
+  --torch-y: 1.05rem;
+  --torch-light: color-mix(in srgb, var(--gold) 9%, transparent);
+  position: relative;
+  isolation: isolate;
+}
+
+/* The head's summary stops short of the torch. */
+#cave-app.cave-lit .cave-stage[data-stage="priorities"] .cave-stage-head,
+#cave-app.cave-lit .cave-stage[data-stage="ranking"] .cave-stage-head,
+#cave-app.cave-lit .cave-stage[data-stage="story"] .cave-stage-head {
+  padding-right: 2.6rem;
+}
+
+/* The light: three rings with hard edges, brightest at the flame. */
+#cave-app.cave-lit .cave-stage[data-stage="priorities"]::after,
+#cave-app.cave-lit .cave-stage[data-stage="ranking"]::after,
+#cave-app.cave-lit .cave-stage[data-stage="story"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--torch-x) var(--torch-y),
+    var(--torch-light) 0 3.5rem,
+    color-mix(in srgb, var(--gold) 5%, transparent) 3.5rem 7rem,
+    color-mix(in srgb, var(--gold) 2.5%, transparent) 7rem 11rem,
+    transparent 11rem);
+  animation: cave-torch-light 1.8s steps(1, end) infinite;
+}
+
+/* The torch: a 3 px pixel sprite drawn with box-shadows — flame tip, flame,
+   ember, then the handle. One element, no image to fetch. */
+#cave-app.cave-lit .cave-stage[data-stage="priorities"]::before,
+#cave-app.cave-lit .cave-stage[data-stage="ranking"]::before,
+#cave-app.cave-lit .cave-stage[data-stage="story"]::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--torch-y) - 6px);
+  right: calc(1.35rem - 1.5px);
+  width: 3px;
+  height: 3px;
+  pointer-events: none;
+  background: transparent;
+  box-shadow:
+    0 0 color-mix(in srgb, var(--gold) 45%, white),
+    -3px 3px var(--gold), 0 3px color-mix(in srgb, var(--gold) 45%, white), 3px 3px var(--gold),
+    -3px 6px var(--ember), 0 6px var(--gold), 3px 6px var(--ember),
+    0 9px var(--ember),
+    0 12px var(--rock-lit), 0 15px var(--rock-lit), 0 18px var(--rock-lit), 0 21px var(--rock-lit);
+  animation: cave-torch-flame 0.9s steps(1, end) infinite;
+}
+
+@keyframes cave-torch-light {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.85; }
+}
+
+/* The flame's tip steps one pixel side to side. */
+@keyframes cave-torch-flame {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(-1px); }
 }
 
 #cave-app.cave-lit .cave-stage[data-stage="priorities"] :focus-visible,
 #cave-app.cave-lit .cave-stage[data-stage="ranking"] :focus-visible,
-#cave-app.cave-lit .cave-stage[data-stage="act"] :focus-visible,
 #cave-app.cave-lit .cave-stage[data-stage="story"] :focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
@@ -479,6 +539,11 @@
 @media (prefers-reduced-motion: reduce) {
   .cave-weight-fill {
     transition: none;
+  }
+
+  #cave-app.cave-lit .cave-stage::before,
+  #cave-app.cave-lit .cave-stage::after {
+    animation: none;
   }
 }
 

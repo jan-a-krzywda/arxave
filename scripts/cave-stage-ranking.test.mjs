@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 
 import * as ranking from '../docs/assets/cave-stage-ranking.mjs';
 import {
-  PAGE, applyPicks, meters, orderNight, rowHtml, shortAuthors, shownLine, storySummary,
+  PAGE, applyPicks, meters, orderNight, rowHtml, sameLabel, shortAuthors, shownLine, storySummary,
 } from '../docs/assets/cave-stage-ranking.mjs';
 
 /** One ranked row, as `caveScore` hands it over (only the fields read here). */
@@ -235,3 +235,21 @@ test('no exported string says "Nothing passes", and NO_GATE is gone', () => {
 
 
 
+
+test('sameLabel: a wagon that repeats the topic is the same label', () => {
+  assert.equal(sameLabel('Fault-tolerant computing & roadmaps', 'Fault-tolerant computing and roadmaps'), true);
+  assert.equal(sameLabel('FT computing roadmaps', 'Fault-tolerant computing & roadmaps'), true);
+  assert.equal(sameLabel('Cavity QED', 'Cavity QED and circuit QED'), true);
+  assert.equal(sameLabel('Quantum sensing', 'Quantum materials'), false);
+  assert.equal(sameLabel('Magic state distillation', 'Fault-tolerant computing & roadmaps'), false);
+  assert.equal(sameLabel('', 'x'), false);
+});
+
+test('rowHtml: the wagon chip is dropped when it only repeats the topic', () => {
+  const twice = rowHtml({ id: '1', title: 't' },
+    { topic: 'Fault-tolerant computing & roadmaps', wagon: 'FT computing and roadmaps' });
+  assert.ok(twice.includes('rk-chip-topic'));
+  assert.ok(!twice.includes('rk-chip-wagon'));
+  const both = rowHtml({ id: '1', title: 't' }, { topic: 'Quantum sensing', wagon: 'NV magnetometry' });
+  assert.ok(both.includes('rk-chip-wagon'));
+});

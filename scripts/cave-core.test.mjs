@@ -18,7 +18,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  assignTopics, caveScore, defaultSetting, loadAxes, loadTopics, paperTopicWeight, topicWeights,
+  PROMISE_REF, assignTopics, caveScore, defaultSetting, loadAxes, loadTopics, paperTopicWeight,
+  phi, promiseScore, topicWeights,
 } from '../docs/assets/sieve-core.mjs';
 
 /* 1.4826 x MAD, the constant that makes a MAD a sigma (see sieve-core). */
@@ -289,9 +290,13 @@ const PAIR_CANDS = [
   { id: 'B', vec: Float32Array.from([0, 1, 0]) },
 ];
 
-test('surprise 0 orders by impact, 100 by novelty', () => {
+test('Surprise moves the weight on novelty, read against the corpus reference', () => {
+  /* A is impact 1 / novelty 0, B is impact 0.2 / novelty 1. Against this ref
+     A is zImpact +2, zNovelty -1 and B is the mirror image, so
+     score = phi((zi + beta * zn) / sqrt(1 + beta^2)), beta = 1.5 s - 1.25. */
+  const ref = { impact: { mean: 0.6, sd: 0.2 }, novelty: { mean: 0.5, sd: 0.5 }, rho: 0 };
   const run = (surprise) => caveScore({
-    corpus: PAIR,
+    corpus: { ...PAIR, promiseRef: ref },
     topics: TOPICS,
     setting: ALL_EQUAL,
     sliders: { match: 0, surprise },
@@ -299,28 +304,32 @@ test('surprise 0 orders by impact, 100 by novelty', () => {
     candidates: PAIR_CANDS,
   });
 
-  // Two gated candidates: P is 0.75 for the higher of a pair, 0.25 for the
-  // lower. A is impact 1 / novelty 0, B is the mirror image.
-  const proven = run(0);
+  const proven = run(0);   // beta -1.25
   assert.deepEqual(idsOf(proven), ['A', 'B']);
   close(proven[0].impact, 1);
   close(proven[0].novelty, 0);
-  close(proven[0].score, 0.75);
-  close(proven[1].score, 0.25);
+  close(proven[0].score, phi(3.25 / Math.sqrt(1 + 1.5625)));
+  close(proven[1].score, phi(-3.25 / Math.sqrt(1 + 1.5625)));
 
-  const novel = run(100);
-  assert.deepEqual(idsOf(novel), ['B', 'A']);
-  close(novel[0].novelty, 1);
-  close(novel[0].score, 0.75);
-  close(novel[1].score, 0.25);
+  const novel = run(100);  // beta +0.25: novelty helps, but cannot undo 4 sd of impact
+  assert.deepEqual(idsOf(novel), ['A', 'B']);
+  close(novel[0].score, phi(1.75 / Math.sqrt(1 + 0.0625)));
+  assert.ok(novel[1].score > proven[1].score, 'the far-out paper gains with Surprise');
+  assert.ok(novel[0].score < proven[0].score, 'the proven-looking one loses a little');
 });
 
 /* ── caveScore: Experiment ↔ Theory ────────────────────────────────────── */
 
 test('the Experiment to Theory slider nudges the score, and ship:false ignores it', () => {
   const axes = loadAxes(AXES_JSON);
+  /* Both corpus papers at pct 0.6, so impact is 0.6 and novelty 1 for either
+     candidate, and the ref puts that exactly on the corpus mean: base 0.5. */
+  const even = {
+    ...corpus({ vecs: [[1, 0, 0], [0, 1, 0]], pct: [0.6, 0.6] }),
+    promiseRef: { impact: { mean: 0.6, sd: 0.1 }, novelty: { mean: 1, sd: 0.1 }, rho: 0 },
+  };
   const run = (sliders, a = axes) => caveScore({
-    corpus: PAIR,
+    corpus: even,
     topics: TOPICS,
     axes: a,
     setting: ALL_EQUAL,
@@ -333,7 +342,7 @@ test('the Experiment to Theory slider nudges the score, and ship:false ignores i
   });
 
   /* w = [ln 3, 0, 0]: theo is sigmoid(ln 3) = 3/4 theory, expt is 1/2. The two
-     base scores are equal (0.5 * 0.75 + 0.5 * 0.25 each), so the only thing
+     base scores are equal (0.5 each, see `even`), so the only thing
      that can order them is the slider — and at 0, the id tie-break does. */
   const zero = run({ expTheory: 0 });
   assert.deepEqual(idsOf(zero), ['expt', 'theo']);
@@ -420,3 +429,35 @@ test('two runs over the same night agree, and nothing is written back', () => {
 });
 
 
+
+/* ── promise against the background ─────────────────────────────────────── */
+
+test('promiseScore: the corpus mean reads 50, whatever the Surprise', () => {
+  const { impact, novelty } = PROMISE_REF;
+  for (const surprise of [0, 0.5, 1]) {
+    assert.ok(Math.abs(promiseScore(impact.mean, novelty.mean, surprise) - 0.5) < 1e-6);
+  }
+});
+
+test('promiseScore: impact one sd up at Surprise 50 is phi(1/sd of the blend)', () => {
+  const { impact, novelty, rho } = PROMISE_REF;
+  /* beta = 1.5 * 0.5 - 1.25 = -0.5; sd = sqrt(1 + 0.25 - rho) */
+  const want = phi(1 / Math.sqrt(1.25 - rho));
+  assert.ok(Math.abs(promiseScore(impact.mean + impact.sd, novelty.mean, 0.5) - want) < 1e-9);
+});
+
+test('promiseScore: at the default, a paper far from every proven one loses', () => {
+  const { impact, novelty } = PROMISE_REF;
+  const near = promiseScore(impact.mean, novelty.mean - novelty.sd, 0.5);
+  const far = promiseScore(impact.mean, novelty.mean + 2 * novelty.sd, 0.5);
+  assert.ok(near > 0.5 && far < 0.5, 'distance from the proven counts against a paper');
+  /* Surprise 100 turns it round: beta = +0.25 */
+  assert.ok(promiseScore(impact.mean, novelty.mean + 2 * novelty.sd, 1) > 0.5);
+});
+
+test('promiseScore: a corpus ref overrides the shipped one; a broken one does not', () => {
+  const ref = { impact: { mean: 0.5, sd: 0.1 }, novelty: { mean: 0.2, sd: 0.05 }, rho: 0 };
+  assert.ok(Math.abs(promiseScore(0.5, 0.2, 0.5, ref) - 0.5) < 1e-6);
+  const fallback = promiseScore(PROMISE_REF.impact.mean, PROMISE_REF.novelty.mean, 0.5, { junk: 1 });
+  assert.ok(Math.abs(fallback - 0.5) < 1e-6);
+});

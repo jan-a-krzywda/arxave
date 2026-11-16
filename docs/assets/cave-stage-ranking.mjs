@@ -40,7 +40,7 @@
  * a test can hold without a browser (`scripts/cave-stage-ranking.test.mjs`).
  */
 import { LESS_WEIGHT, applyLess, vecsFor } from './cave-nudge.mjs';
-import { caveScore, defaultSetting } from './sieve-core.mjs';
+import { caveScore, defaultSetting, phi } from './sieve-core.mjs';
 import { bareArxivId, escapeHtml, joinUrl } from './sieve-ui.mjs';
 import { wagonLabel } from './cave-wagon-views.mjs';
 import { downloadText } from './cave-export.mjs';
@@ -99,26 +99,15 @@ const clamp01 = (v) => (Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0);
 const asNumber = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 
 /**
- * The standard normal CDF (Abramowitz–Stegun 7.1.26, |error| < 1.5e-7) — turns
- * a fit z-score into the share of the background corpus it sits above.
- */
-function phi(z) {
-  if (!Number.isFinite(z)) return z > 0 ? 1 : 0;
-  const x = Math.abs(z) / Math.SQRT2;
-  const t = 1 / (1 + 0.3275911 * x);
-  const erf = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t
-    + 0.254829592) * t * Math.exp(-x * x);
-  return z >= 0 ? (1 + erf) / 2 : (1 - erf) / 2;
-}
-
-/**
  * Both meters for a ranked list, in its order: `[{ fitPct, promisePct }]`,
  * each 0..100 and measured against the BACKGROUND CORPUS, never against
  * tonight. A weak night therefore reads weak: its best paper is not 100.
  *
- * Promise is `caveScore`'s own 0..1 blend of impact (the citation percentile
- * of the paper's corpus neighbours) and novelty (distance from the nearest
- * proven corpus paper), as a percent. Fit is the corpus-normalised z-score
+ * Promise is `caveScore`'s own 0..1 score as a percent: `promiseScore`
+ * (sieve-core) reads impact (the citation percentile of the paper's corpus
+ * neighbours) and novelty (distance from the nearest proven corpus paper)
+ * against the corpus's own leave-one-out spread, so 80 means "above ~80% of
+ * the background". Fit is the corpus-normalised z-score
  * `fit` through the normal CDF: 84 means closer to what you asked for than
  * ~84% of the background is.
  */
@@ -190,6 +179,38 @@ export function shortAuthors(authors) {
   return list.length > 3 ? shown + ' et al.' : shown;
 }
 
+/**
+ * True when two chip labels say the same thing. A wagon's name is written by a
+ * model that often reuses the topic's own words ("Fault-tolerant computing &
+ * roadmaps" twice, or "FT computing roadmaps"), and a row that shows the same
+ * label twice says nothing the first one did not. Case, punctuation and "&" /
+ * "and" are ignored; a label whose words are mostly the other's counts as the
+ * same.
+ */
+export function sameLabel(a, b) {
+  const words = (v) => String(v || '').toLowerCase()
+    .replace(/&/g, ' ').split(/[^a-z0-9]+/)
+    .filter((w) => w && w !== 'and' && w !== 'of' && w !== 'the');
+  /* A word, or the initials of two neighbouring words ("fault tolerant" is
+     also "ft"), so an abbreviation meets its long form. */
+  const known = (list) => {
+    const out = new Set(list);
+    for (let i = 0; i + 1 < list.length; i += 1) out.add(list[i][0] + list[i + 1][0]);
+    return out;
+  };
+  const x = new Set(words(a));
+  const y = new Set(words(b));
+  if (!x.size || !y.size) return false;
+  const inX = known([...x]);
+  const inY = known([...y]);
+  let shared = 0;
+  for (const w of x) if (inY.has(w)) shared += 1;
+  let back = 0;
+  for (const w of y) if (inX.has(w)) back += 1;
+  shared = Math.max(shared, back);
+  return shared / Math.min(x.size, y.size) >= 0.6;
+}
+
 /** The row's one meter: "Promise" with `rel` as a bar and a number. */
 function meterHtml(rel, total) {
   const pct = Math.round(Math.min(100, Math.max(0, asNumber(rel))));
@@ -257,7 +278,7 @@ export function rowHtml(item, parts = {}) {
   const authors = shortAuthors(data.authors);
   const topic = parts.topic
     ? '<span class="rk-chip rk-chip-topic">' + escapeHtml(parts.topic) + '</span>' : '';
-  const wagon = parts.wagon
+  const wagon = parts.wagon && !sameLabel(parts.wagon, parts.topic)
     ? '<span class="rk-chip rk-chip-wagon">' + escapeHtml(parts.wagon) + '</span>' : '';
   const open = !!parts.open;
   const rank = Number(parts.rank) || 0;
@@ -343,7 +364,7 @@ export function mount(body, ctx) {
       '<div class="button-bar rk-foot">' +
         '<button type="button" class="cave-continue-btn cave-primary rk-continue" disabled>' +
           'Tell the story</button>' +
-        '<p class="rk-hint" hidden>Tick Story on the papers you want woven in.</p>' +
+        '<p class="rk-hint" hidden>Tick In Story on the papers you want woven in.</p>' +
       '</div>' +
     '</div>';
 
@@ -553,36 +574,78 @@ export function mount(body, ctx) {
     paintList();
   }
 
+  /** One id's thread, asked now: `{ url }`, null for none, undefined unknown. */
+  async function askThread(id) {
+    const bare = bareArxivId(id);
+    const base = String(config().threadsUrl ||
+      (config().functionsBase ? joinUrl(config().functionsBase, 'threads') : ''));
+    if (!bare || !base) return undefined;
+    try {
+      const resp = await fetch(base, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(threadsRequest(repo(), [bare])),
+      });
+      if (!resp.ok) return undefined;
+      const answer = parseThreads(await resp.json(), [bare]);
+      if (!Object.prototype.hasOwnProperty.call(answer, bare)) return undefined;
+      const value = answer[bare] === null ? null : { url: answer[bare] };
+      threadCache.set(bare, value);
+      return value;
+    } catch (_) {
+      return undefined;
+    }
+  }
+
   /**
-   * Start thread: the diamond first (it travels in the body), then GitHub's
-   * prefilled new-discussion form in a new tab, then the same Markdown as a
-   * `<id>.md` download. A failed diamond still opens the thread, without it.
+   * Discuss: join the paper's thread, or start it. The tab is opened on the
+   * click itself — a popup blocker refuses one opened after an await — and is
+   * pointed where it belongs once the answers are in: the thread that exists,
+   * or GitHub's new-discussion form with the post written (title, links,
+   * abstract, and the diamond, mined first). The same post is then offered as
+   * a `.md`. With the lookup down the form opens anyway: one reader starting a
+   * second thread beats every reader being sent to a search.
    */
-  async function startThread(paper) {
+  async function discuss(paper) {
     const id = String(paper.id);
     if (!repoOk()) return;
-
-    let diamond = diamondOf(id);
-    if (!diamond) {
-      const result = await loadDiamond(paper);
-      if (result.diamond) {
-        diamond = result.diamond;
-        state.errors.delete(id);
-      } else if (result.error) {
-        state.errors.set(id, result.error);
-      }
+    const win = typeof window !== 'undefined' && typeof window.open === 'function'
+      ? window.open('', '_blank')
+      : null;
+    if (win) {
+      try {
+        win.opener = null;
+        win.document.title = 'arXave — to the thread…';
+        win.document.body.textContent = 'Looking for this paper\'s thread…';
+      } catch (_) { /* a browser that will not let us write it still navigates */ }
     }
 
-    state.md.add(id);
-    const url = startThreadUrl(repo(), paper, {
-      category: String(config().discussionsCategory || 'general') || 'general',
-      diamond: diamond || null,
-    });
-    if (url && typeof window !== 'undefined' && typeof window.open === 'function') {
-      /* A popup blocker can refuse an open that follows an await; in that case
-         the row keeps the thread URL as its Discussion link, so the reader's
-         own click opens it. */
-      if (!window.open(url, '_blank', 'noopener')) threadCache.set(bareArxivId(id), { url });
+    const found = await askThread(id);
+    let url = found && found.url;
+    if (!url) {
+      let diamond = diamondOf(id);
+      if (!diamond) {
+        const result = await loadDiamond(paper);
+        if (result.diamond) {
+          diamond = result.diamond;
+          state.errors.delete(id);
+        } else if (result.error) {
+          state.errors.set(id, result.error);
+        }
+      }
+      state.md.add(id);
+      url = startThreadUrl(repo(), paper, {
+        category: String(config().discussionsCategory || 'general') || 'general',
+        diamond: diamond || null,
+      });
+    }
+    if (url) {
+      if (win) win.location.href = url;
+      /* Blocked: the row keeps the URL as its link, so the reader's own click
+         gets there. */
+      else threadCache.set(bareArxivId(id), { url });
+    } else if (win) {
+      win.close();
     }
     paintList();
   }
@@ -688,7 +751,7 @@ export function mount(body, ctx) {
       if (!paper) return;
       const what = action.getAttribute('data-act');
       if (what === 'summarize') summarize(paper);
-      else if (what === 'start-thread') startThread(paper);
+      else if (what === 'discuss') discuss(paper);
       else if (what === 'md') {
         event.preventDefault();
         downloadMd(paper);

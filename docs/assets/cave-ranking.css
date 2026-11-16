@@ -314,27 +314,37 @@ h3.rk-title {
    scrollbar. */
 
 .pa-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  /* Four equal columns that share the row's width, so the squares stay one
+     size and never wrap one of the four onto a line of its own. */
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.3rem;
+  max-width: 30rem;
   margin-top: 0.4rem;
   min-width: 0;
 }
 
 .pa-btn {
+  /* Every square in the bar is the same box — links, buttons and the Story
+     label alike — so the bar reads as one row of four, not four widths. */
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  min-height: 1.9rem;
-  padding: 0.2rem 0.55rem;
+  justify-content: center;
+  gap: 0.3rem;
+  width: 100%;
+  min-width: 0;
+  height: 2rem;
+  overflow: hidden;
+  margin: 0;
+  padding: 0 0.4rem;
   border: 1px solid var(--rock-edge);
   border-radius: 6px;
   background: var(--rock-deep);
   color: var(--text-dim);
   font: inherit;
   font-size: 0.78rem;
-  line-height: 1.2;
+  line-height: 1;
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
@@ -356,7 +366,10 @@ h3.rk-title {
 }
 
 .pa-md {
+  grid-column: 1 / -1;
+  justify-self: start;
   color: var(--gold);
+  font-size: 0.75rem;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -365,19 +378,14 @@ h3.rk-title {
   color: var(--gold);
 }
 
+/* The Story box is a .pa-btn too; only its own colour differs. */
 .pa-story {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  min-height: 1.9rem;
-  padding: 0.2rem 0.55rem;
-  border: 1px solid var(--rock-edge);
-  border-radius: 6px;
-  background: var(--rock-deep);
   color: var(--text-dim);
-  font-size: 0.78rem;
-  white-space: nowrap;
-  cursor: pointer;
+}
+
+.pa-story:has(input:checked) {
+  border-color: var(--gold-dim);
+  color: var(--gold);
 }
 
 .pa-story input {
@@ -482,10 +490,13 @@ h3.rk-title {
 @media (max-width: 600px) {
   /* The row is already one column of title, one of meter; only the targets
      change. A 36 px button at 360 px, in a bar that wraps rather than scrolls. */
-  .pa-btn,
-  .pa-story {
-    min-height: 36px;
-    padding: 0.35rem 0.6rem;
+  /* Two squares a line at 360 px, each a 36 px target, still one size. */
+  .pa-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pa-btn {
+    height: 36px;
   }
 }
 

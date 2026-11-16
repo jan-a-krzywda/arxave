@@ -301,6 +301,7 @@ function startPage() {
         ctx.corpus = loadCorpus(files.json, files.bin);
         if (Array.isArray(files.json.topic)) ctx.corpus.topic = Int32Array.from(files.json.topic);
         if (Array.isArray(files.json.topic2)) ctx.corpus.topic2 = Int32Array.from(files.json.topic2);
+        if (files.json.promise_ref) ctx.corpus.promiseRef = files.json.promise_ref;
       } catch (err) {
         ctx.corpus = null;
         notice('The corpus would not load: ' + ((err && err.message) || err));

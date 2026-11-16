@@ -270,6 +270,19 @@ export function percentRank(values, v) {
   return (less + 0.5 * ties) / m;
 }
 
+/**
+ * The standard normal CDF (Abramowitz–Stegun 7.1.26, |error| < 1.5e-7): a
+ * background z-score as the share of the corpus it sits above.
+ */
+export function phi(z) {
+  if (!Number.isFinite(z)) return z > 0 ? 1 : 0;
+  const x = Math.abs(z) / Math.SQRT2;
+  const t = 1 / (1 + 0.3275911 * x);
+  const erf = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t
+    + 0.254829592) * t * Math.exp(-x * x);
+  return z >= 0 ? (1 + erf) / 2 : (1 - erf) / 2;
+}
+
 /* ── fit ────────────────────────────────────────────────────────────────── */
 
 /**
@@ -735,6 +748,44 @@ function axisProbability(axis, vec) {
 }
 
 /**
+ * Where impact and novelty sit for the corpus itself, measured leave-one-out
+ * (every corpus paper scored against the other 4 999, k = 15, topQ = 0.75) by
+ * `scripts/cave-promise-ref.mjs`, which writes the same object into
+ * corpus.json as `promise_ref`. This copy is the 2026-11-09 corpus's, the
+ * fallback for a corpus.json that predates the field.
+ */
+export const PROMISE_REF = Object.freeze({
+  impact: Object.freeze({ mean: 0.6284, sd: 0.0985 }),
+  novelty: Object.freeze({ mean: 0.1501, sd: 0.0407 }),
+  rho: -0.434,
+});
+
+/**
+ * Promise against the BACKGROUND, not against tonight: `phi` of
+ * `(zImpact + beta * zNovelty) / sd`, where the z-scores are read off `ref`
+ * and `sd` is the combination's own spread, so 0.8 means "above ~80% of the
+ * corpus". `beta = 1.5 * surprise - 1.25`: -0.5 at the default Surprise 50.
+ *
+ * WHY NOVELTY COUNTS AGAINST A PAPER BY DEFAULT. Leave-one-out on the corpus,
+ * a paper's distance from its nearest proven paper anti-predicts its own
+ * citation percentile (Spearman -0.30, AUC 0.30 top vs bottom quartile);
+ * impact predicts it (Spearman +0.28, AUC 0.67). The old score — tonight's
+ * percentile of each, half and half — scored AUC 0.48, below chance, which is
+ * why stray papers far from everything reached the top. Impact with novelty
+ * at -0.5 scores 0.71. Surprise 100 (beta +0.25) still lets the reader ask
+ * for the far-out ones.
+ */
+export function promiseScore(impact, novelty, surprise = 0.5, ref = PROMISE_REF) {
+  const r = ref && ref.impact && ref.novelty ? ref : PROMISE_REF;
+  const beta = 1.5 * surprise - 1.25;
+  const zi = (impact - r.impact.mean) / Math.max(r.impact.sd, 1e-6);
+  const zn = (novelty - r.novelty.mean) / Math.max(r.novelty.sd, 1e-6);
+  const rho = Number.isFinite(r.rho) ? r.rho : 0;
+  const sd = Math.sqrt(Math.max(1 + beta * beta + 2 * beta * rho, 1e-6));
+  return phi((zi + beta * zn) / sd);
+}
+
+/**
  * Cave v3's one call: the topic tree + the axes + the three sliders + tonight's
  * candidates → the ranked list.
  *
@@ -756,8 +807,9 @@ function axisProbability(axis, vec) {
  * neighbour, nor a landmark, nor a proven paper for novelty, nor part of the
  * median — which is what "I do not want these" means.
  *
- * The sliders map as `gate = 2 * match/100` and `surprise = surprise/100`,
- * straight into `rank`. The 2 is Sieve v2's own default: match 50 is gate 1.0,
+ * The sliders map as `gate = 2 * match/100` into `rank`, and `surprise/100`
+ * into `promiseScore`, which replaces `rank`'s tonight-relative score with one
+ * read against the corpus. The 2 is Sieve v2's own default: match 50 is gate 1.0,
  * which keeps a readable share of a night. It was 3, and 1.5 at the untouched
  * default left one browser run with nothing at all — a default that gates almost
  * the whole night is not a default.
@@ -861,11 +913,12 @@ export function caveScore({
   const out = ranked.map((r) => {
     const theory = axisProbability(exp, r.vec);
     const ml4q = axisProbability(ml4, r.vec);
-    const score = nudge ? r.score + nudge * (theory - 0.5) * 2 : r.score;
     /* `cluster` is the synthetic row id the remap above needed; a cave result's
        topic is its own `topic` / `topic2`, so it is dropped rather than handed
        on as a number that means nothing. */
     const { cluster, ...rest } = r;
+    const base = promiseScore(r.impact, r.novelty, surprise / 100, corpus.promiseRef);
+    const score = nudge ? base + nudge * (theory - 0.5) * 2 : base;
     return { ...rest, theory, ml4q, score };
   });
 

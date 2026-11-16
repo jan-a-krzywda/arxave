@@ -18,7 +18,7 @@ import assert from 'node:assert/strict';
 
 import {
   CorpusMissing, bareArxivId, cacheKeyText, cacheLookup, cardHtml, createRelay, cutoffDate,
-  decodeEntities, demoCandidates, demoCorpus, embedCandidates, embedTexts, escapeHtml,
+  decodeEntities, demoCandidates, demoCorpus, embedCandidates, embedTexts, escapeHtml, forgetEmbedded,
   fetchAnnouncement, joinUrl, loadCorpusFrom, paperEmbedText, parseAnnouncementRSS,
   parseAtomEntries, readStore, refineHtml, refineResultFrom, relayUrl, writeStore,
 } from '../docs/assets/sieve-ui.mjs';
@@ -359,6 +359,7 @@ test('cacheLookup normalises a hit and treats every failure as a miss', async ()
 });
 
 test('embedCandidates embeds only the misses, in order', async () => {
+  forgetEmbedded();
   const base64 = Buffer.from(new Uint8Array(new Float32Array([1, 0, 0, 0]).buffer)).toString('base64');
   const embedded = [];
   const vectors = await embedCandidates({
@@ -377,6 +378,30 @@ test('embedCandidates embeds only the misses, in order', async () => {
   assert.deepEqual([...vectors[0]], [1, 0, 0, 0]);
   assert.deepEqual([...vectors[1]], [0, 1, 0, 0]);
   assert.equal(vectors.cached, 1);
+});
+
+test('a second dig of the same papers sends nothing to the embed function', async () => {
+  forgetEmbedded();
+  const calls = { cache: 0, embed: [] };
+  const fetchImpl = async (url, opts) => {
+    const body = JSON.parse(opts.body);
+    if (url === 'cache') { calls.cache += 1; return ok({ hits: {} }); }
+    calls.embed.push(...body.input);
+    return ok({ dim: 4, data: body.input.map((_, i) => ({ index: i, embedding: [0, 0, 1, 0] })) });
+  };
+  const args = { embedUrl: 'embed', cacheUrl: 'cache', dim: 4, fetchImpl };
+  await embedCandidates({ texts: ['p1', 'p2'], ...args });
+  assert.deepEqual(calls.embed, ['p1', 'p2']);
+
+  const again = await embedCandidates({ texts: ['p2', 'p1', 'p3'], ...args });
+  assert.deepEqual(calls.embed, ['p1', 'p2', 'p3'], 'only the new paper is embedded');
+  assert.equal(again.cached, 2);
+  assert.deepEqual([...again[1]], [0, 0, 1, 0]);
+
+  /* another model or width is another vector */
+  await embedCandidates({ texts: ['p1'], ...args, model: 'other/model' });
+  assert.deepEqual(calls.embed.slice(-1), ['p1']);
+  forgetEmbedded();
 });
 
 /* ── localStorage, cards and refusals ──────────────────────────────────── */
