@@ -320,6 +320,12 @@
   border-top: 1px solid var(--rock-edge);
 }
 
+/* `.st-tools` sets display:flex, which beats the user agent's [hidden]. An
+   export row with nothing ticked must not leave its divider behind. */
+.st-tools[hidden] {
+  display: none;
+}
+
 .st-tools button {
   min-height: 2.5rem;
   padding: 0.4rem 0.8rem;

@@ -14,7 +14,7 @@ Status: APPROVED 2026-11-13 (shared LLM cap, maintainer deploys functions, threa
 - **Flat topics.** The topic tree had no counts and no weights you could see. In v4 each parent and leaf shows how many
   papers it has tonight and its weight, and a click opens the detail below it.
 
-## The journey (one page, seven stages, top to bottom)
+## The journey (one page, six stages, top to bottom)
 
 Each stage is a card. It unlocks when the stage before it is done, and when done it folds to a one-line summary
 ("312 papers · 14 wagons") that reopens on click. Progress shows as a sticky rail: a vertical stepper on desktop (Stripe
@@ -28,8 +28,7 @@ so a reload resumes at the same stage.
 | 3 | **Map** | Tonight's papers as wagons: train strip, **Table / Graph** switch, threshold slider, *Name the wagons* (LLM). New: a bar of tonight's papers across the 12 topics, each wagon tagged with its main topic, so it reads even unnamed. | `filter.js` dendrogram, graph, strip, `wagon-name` function; `assignTopics` |
 | 4 | **Priorities** | Box (what you care about), three sliders (Topic match, Surprise, Experiment↔Theory), **topic tree with weights**: parent rows show count tonight + Equal/Prefer/Avoid/Off; a click opens leaves with their own counts and dropdowns; a leaf click shows its wagons. ML-for-quantum chip. Presets and core samples from Dig sit under *More*. Opens on the lit campfire, and the page carries its gold glow from here down. | `caveScore`, `topicWeights`, `topics.json`, `axes.json` (v3, kept) |
 | 5 | **Ranking** | List ranked live. Each row: title, authors, wagon / topic chip, **two meters: Fit and Promise** (Promise = impact↔novelty, blended by Surprise), "looks like" landmarks. Click opens the abstract in place. Checkbox to pick. | `caveScore` output; Dig's list row |
-| 6 | **Act** | Per paper, and in bulk from a floating bar ("3 picked · Zotero · Diamonds · Thread", the incident.io / Plane pattern): see actions below. | new |
-| 7 | **Story** | With papers picked: *Tell me tonight's story*. The LLM writes a short narrative of the night around your picks (what moved, how they connect, what to read first). Read-aloud button, copy as Markdown, download. | new `story` function |
+| 6 | **Story** | With papers picked: *Tell me tonight's story*. The LLM writes a short narrative of the night around your picks (what moved, how they connect, what to read first). Read-aloud button, copy as Markdown, download, and a `.bib` / `.ris` export of the picks. | new `story` function |
 
 ### Stage 7 actions
 

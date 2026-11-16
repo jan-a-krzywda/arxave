@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.story]
 verify_jwt = false
+
+[functions.threads]
+verify_jwt = false

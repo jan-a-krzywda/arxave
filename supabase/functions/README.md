@@ -1,7 +1,8 @@
 # Edge functions
 
-Five functions back the browser filter page (`docs/filter.md`). All are
-callable without a JWT — the page is static and has no Supabase session.
+The functions below back the browser pages — the filter page (`docs/filter.md`)
+and the Cave. All are callable without a JWT: the page is static and has no
+Supabase session.
 
 | Function | Why it exists |
 |----------|---------------|
@@ -10,6 +11,7 @@ callable without a JWT — the page is static and has no Supabase session.
 | `dig-cache` | The shared vector cache. Embedding a day of abstracts in the browser costs ~60 s; the vectors are ~200 kB. So the *second* person to haul a day downloads instead of re-embedding. Reads are public; writes need `x-dig-key`. |
 | `wagon-name` | Names the train's wagons from their titles. The clustering is local and free; this only says what each cluster is *about*. Cache reads are free and unmetered; a miss spends against a daily budget in Postgres. |
 | `refine` | The optional "Refine with AI" second opinion on one result card. Nothing else needs it — the page ranks with embeddings and arithmetic — so every press is one metered call, bounded per address and globally, and a BYO `x-llm-key` skips the meter and is never stored. |
+| `threads` | Which of a night's papers already have a GitHub Discussions thread on the campfire repo, as URLs — or `null` for "you are the first". The REST search does not cover Discussions and GraphQL needs a token, so this is the one place that token lives; an allow-list of repos (`THREADS_REPOS`) is what stops it being a free GitHub proxy. |
 
 ## dig-cache
 
@@ -148,14 +150,24 @@ supabase secrets set WAGON_NAME_SALT="$(openssl rand -hex 16)"
 # Optional — the defaults are 40 and 600. Raise or lower without redeploying.
 # supabase secrets set WAGON_NAME_CLIENT_DAILY=40 WAGON_NAME_GLOBAL_DAILY=600
 
+# threads needs a fine-grained GitHub token with read-only Discussions on the
+# repo the Cave's threads live in. Nothing wider: the function only ever runs
+# one search query. THREADS_REPOS is the allow-list of repos it will search —
+# the comment shows the default, which is where cave-thread.mjs sends readers.
+supabase secrets set GITHUB_TOKEN=<fine-grained token, read-only Discussions on arxave-campfire>
+# supabase secrets set THREADS_REPOS=jan-a-krzywda/arxave-campfire
+
 supabase functions deploy relay
 supabase functions deploy embed
 supabase functions deploy dig-cache
 supabase functions deploy wagon-name
+supabase functions deploy threads --no-verify-jwt
 ```
 
-`config.toml` already sets `verify_jwt = false` for all four; the CLI picks
-that up.
+`config.toml` already sets `verify_jwt = false` for the first four; the CLI picks
+that up. `threads` does not have its entry yet, so its deploy carries
+`--no-verify-jwt` — the static page has no session, and the allow-list plus the
+token's own read-only scope are its protection.
 
 `wagon-name` needs [`wagon-names.sql`](../wagon-names.sql) run first — it
 creates the cache table, the budget table, the `wagon_name_spend` meter and its
@@ -419,5 +431,60 @@ curl -s -X POST "$BASE/refine" -H 'Content-Type: application/json' -d '{}'
 
 # the meter is durable — 30 presses from one address, and the 31st should come
 # back 429 {"error":"budget"} rather than billing the provider.
+```
+
+## threads
+
+The Cave's ranking card (L1) puts a **Discussion** link beside a paper that
+already has a thread and **Start thread** beside one that does not, and the
+browser can answer neither question: GitHub's REST search does not cover
+Discussions, and GraphQL needs a token. So this is the third kind of relay in
+this directory — not a host allowlist (`relay`) nor a write key (`dig-cache`)
+but a **repo** allowlist in front of one token.
+
+```
+POST /threads  { "repo": "owner/name", "ids": ["2401.12345", …] }   (≤ 25)
+  → { "threads": { "2401.12345": "https://github.com/…/discussions/7" | null } }
+```
+
+**`null` is an answer, an absent key is a failure.** `null` means GitHub
+answered and nobody has opened that thread yet, so the card offers Start
+thread. A request where the token is missing, GitHub refuses, or the search
+times out comes back **200** with `"threads": {}` and an `error` string, and
+the card falls back to a plain Discussions search link. GitHub being down is
+never a 5xx on this page, and never a card that looks broken.
+
+**One GraphQL call, not one per paper.** The ids go into a single
+`search(type: DISCUSSION, query: "repo:… in:title <id1> OR <id2> …")` with
+`first: 50`; a node matches an id when the title carries `[<id>]`, which is the
+exact shape `threadTitle` in
+[`cave-thread.mjs`](../../docs/assets/cave-thread.mjs) writes. The brackets
+matter: a bare substring match would let `2401.1234` borrow `2401.12345`'s
+thread.
+
+**The allowlist is the security model.** `repo` must be `owner/name` *and* on
+`THREADS_REPOS` (comma-separated, default `jan-a-krzywda/arxave-campfire`), or
+the request is a 400 before the token is used — otherwise this would be a free
+GitHub GraphQL proxy on our credential. Ids are cleaned in the same breath: a
+`vN` suffix is stripped, a bad id is dropped rather than failing the batch, and
+more than 25 is a 400 (the caller batches; a silent truncation would paint the
+wrong card).
+
+**Two TTLs, both short, both in isolate memory.** A found URL is cached for ten
+minutes; a `null` for two, because someone may be starting that thread right
+now. A recycled isolate costs one search. Only the uncached ids are sent, so a
+page that re-renders does not spend a call on every card it already knows.
+
+```bash
+# threads: a thread that exists is a URL, one that does not is null
+curl -s -X POST "$BASE/threads" -H 'Content-Type: application/json' \
+  -d '{"repo":"jan-a-krzywda/arxave-campfire","ids":["2401.12345"]}' | jq
+
+# threads: a repo off the allowlist is a 400, never a search on our token
+curl -s -X POST "$BASE/threads" -H 'Content-Type: application/json' \
+  -d '{"repo":"someone/else","ids":["2401.12345"]}'
+
+# threads: a deployment with no GITHUB_TOKEN is still a 200 with an error,
+# which the page treats as "fall back to a search link", not a broken card
 ```
 

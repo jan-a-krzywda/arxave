@@ -19,7 +19,7 @@ import assert from 'node:assert/strict';
 
 import { createFlow } from '../docs/assets/cave-flow.mjs';
 import {
-  BUDGET_SPENT, MAX_PAPERS, mount, plainText, readFirstWhy, renderStoryMd,
+  BUDGET_SPENT, MAX_PAPERS, exportPicksHtml, mount, plainText, readFirstWhy, renderStoryMd,
   storyCacheKey, storyCardHtml, storyMarkdown, storyRequest, storyWagons,
 } from '../docs/assets/cave-stage-story.mjs';
 
@@ -243,6 +243,18 @@ test('the card carries the title, the read-first callout and the threads', () =>
   assert.ok(html.includes('class="st-download"'));
 });
 
+test('the export pair is drawn as soon as a paper is ticked, and not before', () => {
+  assert.equal(exportPicksHtml(0), '', 'an empty night has nothing to export');
+  assert.equal(exportPicksHtml(-3), '');
+
+  const html = exportPicksHtml(3);
+  assert.match(html, /class="st-label">Export picks</);
+  assert.match(html, /class="st-bib"[^>]*>Download \.bib</);
+  assert.match(html, /class="st-ris"[^>]*>Download \.ris</);
+  /* .bib first, the way the Act card listed them. */
+  assert.ok(html.indexOf('st-bib') < html.indexOf('st-ris'));
+});
+
 test('the story title and a thread title are escaped like any other text', () => {
   const html = storyCardHtml({
     title: '<b>Not a title</b>',
@@ -353,10 +365,10 @@ async function until(check, ms = 1000) {
   throw new Error('timed out waiting for the stage');
 }
 
-/** A flow already past Act, so `story` is open and can be completed. */
+/** A flow already past Ranking, so `story` is open and can be completed. */
 function unlockedFlow() {
   const flow = createFlow({ storage: null });
-  for (const id of ['dig', 'train', 'map', 'priorities', 'ranking', 'act']) {
+  for (const id of ['dig', 'train', 'map', 'priorities', 'ranking']) {
     flow.complete(id, 'done');
   }
   return flow;

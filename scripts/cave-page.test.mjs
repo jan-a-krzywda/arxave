@@ -1,7 +1,7 @@
 /**
  * `cd scripts && node --test cave-page.test.mjs`.
  *
- * The v4 page is seven static sections plus a rail; a mistake in it fails late
+ * The v4 page is six static sections plus a rail; a mistake in it fails late
  * and quietly — a renamed `data-stage` leaves `cave.js` painting nothing, a
  * `var(--token)` no stylesheet defines renders as nothing at all. So this file
  * reads the two files that describe the shell (`docs/cave.md`,
@@ -187,7 +187,7 @@ test('cave.md maps every assets/*.mjs to a ?v= URL before the first module', () 
 });
 
 test('stage stylesheets carry the version of the module that loads them', () => {
-  for (const f of ['act', 'priorities', 'ranking', 'story']) {
+  for (const f of ['priorities', 'ranking', 'story']) {
     assert.match(read(`docs/assets/cave-stage-${f}.mjs`),
       new RegExp(`new URL\\('\\./cave-${f}\\.css' \\+ new URL\\(import\\.meta\\.url\\)\\.search, import\\.meta\\.url\\)`));
   }
