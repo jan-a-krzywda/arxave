@@ -2865,15 +2865,15 @@
  "2611.17454": {
   "fields": {
    "kind": "theory",
-   "result": "Any transformation with classical control of computational order on $N$ independent quantum channels can be deterministically, exactly, and universally simulated by fixed-order quantum circuits using at most $N^2$ queries, implementable catalytically without consuming the extra $N^2-N$ queries.",
-   "question": "Can quantum processes with classically or quantumly controlled computational order be efficiently simulated by standard quantum circuits with fixed causal order?",
+   "result": "Any transformation with classical control of computational order on $N$ independent quantum channels can be deterministically, exactly, and universally simulated by fixed-order quantum circuits using at most $N^2$ queries, or catalytically without consuming $N^2-N$ extra queries.",
+   "question": "Can quantum circuits with classical or quantum control of causal order be simulated efficiently by standard fixed-order quantum circuits?",
    "prior": "",
-   "limits": "Universal simulation applies to classical control of order; quantum control of order simulation is restricted to unitary input channels.",
+   "limits": "Simulation for quantum control of order is restricted to unitary channels; classical control simulation applies to independent channels, extended bipartite channels, and quantum instruments.",
    "tools": [
     "quantum circuit framework",
+    "causal order simulation",
     "query complexity analysis",
-    "catalytic simulation",
-    "channel extension"
+    "catalytic channel simulation"
    ],
    "figure": "",
    "figure_url": "",
@@ -3216,6 +3216,77 @@
    "figure_url": "https://arxiv.org/html/2611.18378v1/MainText/su_compound_variance.png",
    "figure_caption": "Figure 4: Variance of $\\partial_{\\theta_{\\ell,1}}C$ for the $\\mathrm{SU}(n)$ compound ansatz, $n=4,\\dots,20$ . Setting. $G=\\mathrm{SU}(n)$ acts on ${\\mathcal{H}}=(\\mathbb{C}^{2})^{\\otimes n}\\cong\\bigoplus_{m=0}^{n}\\Lambda^{m}(\\mathbb{C}^{n})$ through the compound representation $\\Pi(V)=\\bigoplus_{m=0}^{n}C_{m}(V)$ , where the $m$ -th compound matrix $C_{m}(V)$ acts on the Hamming-weight- $m$ subspace; equivalently $\\pi_{*}(X)=\\sum_{a,b}X_{ab}\\,a_{a}^{\\dagger}a_{b}$ with Jordan–Wigner operators $a_{a}=Z_{1}\\cdots Z_{a-1}\\,|0\\rangle\\langle 1|_{a}$ . The ansatz ( 4 ) is $U(\\bm{\\theta})=\\prod_{l=1}^{L}\\prod_{j=1}^{n^{2}-1}\\exp\\!\\big(\\theta_{l,j}\\,\\pi_{*}(g_{j})\\big)$ with $\\theta_{l,j}\\sim\\mathrm{Unif}[-\\pi,\\pi]$ and the basis $\\{g_{j}\\}=\\{-i(E_{pq}+E_{qp}),\\,E_{pq}-E_{qp}\\}_{p Curves. Solid line: exact variance $\\mathrm{Var}(n)=\\frac{2n^{3}-3n-2}{n^{2}(n-1)(n+1)^{2}}\\approx 2/n^{2}$ of Equation 21 , derived in Supplementary Section S8.5 . Dashed line: its first term $\\frac{n}{(n-1)(n+1)^{2}}$ , the contribution of the component of ${\\mathcal{M}}$ inside the algebra, which is all that the Lie-algebraic formula accounts for. Squares: Case-3 lower bound Equation 12 . Circles: output of Algorithm 1 in its exact form, with the four-term shift rule for $H$ ( $\\gamma=2$ ), $\\delta=10^{-3}$ and $\\widetilde{\\varepsilon}=0.999/n^{2}$ , using $\\mathcal{N}=\\lceil 32\\ln(2/\\delta)/\\widetilde{\\varepsilon}^{2}\\rceil$ runs ( $6.2\\times 10^{4}$ at $n=4$ to $3.9\\times 10^{7}$ at $n=20$ ; the finite-difference form needs $4.6\\times 10^{8}$ to $1.8\\times 10^{14}$ runs for the same guarantee). Every run was simulated, with the value of the cost function at each shift computed in a time polynomial in $n$ as described in Supplementary Section S8.5 . Error bars: the certified accuracy $\\pm\\widetilde{\\varepsilon}=\\pm 0.999/n^{2}$ , guaranteed with probability at least $1-\\delta=0.999$ .",
    "figure_gloss": "Gradient variance versus number of qubits $n$ from $4$ to $20$. Solid line shows the exact analytical variance $(2n^3 - 3n - 2)/(n^2(n-1)(n+1)^2)$ decaying as $2/n^2$, compared against the analytical lower bound and circuit run estimates.",
+   "code": ""
+  },
+  "seen": "2026-11-16",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.16940": {
+  "fields": {
+   "kind": "new result",
+   "result": "A single qubit achieves success probability $\\mathcal{P}_{Q}^{\\max} = \\frac{1}{3}(1 + \\frac{\\sqrt{3}}{2}) \\approx 0.62$, strictly beating the classical c-bit bound $\\mathcal{P}_{C}^{\\max} \\approx 0.58$, in the Holevo–Frenkel–Weiner framework with parity-concealment constraints.",
+   "question": "Can a qubit outperform a classical bit in the Holevo–Frenkel–Weiner communication scenario with unbounded shared randomness and without entanglement or measurement incompatibility?",
+   "prior": "Frenkel and Weiner (2015) showed that with unbounded shared randomness and no Bob input, every qubit strategy can be simulated by a c-bit.",
+   "limits": "Requires parity concealment constraints to hold for every individual realization of shared randomness, not just on average.",
+   "tools": [
+    "prepare-and-measure communication game",
+    "parity concealment constraints",
+    "trine-spin POVM",
+    "POVM-based relative entropy of coherence"
+   ],
+   "figure": "S3.F2",
+   "figure_url": "https://arxiv.org/html/2611.16940v1/Q_plot3.png",
+   "figure_caption": "((a))",
+   "figure_gloss": "Comparison of quantum success probability and POVM-based relative entropy of coherence $C_{rel}(\\mathbb{I}/2, \\mathbb{M})$ as functions of Bob's measurement parameters $\\alpha_b$, showing both peak at the trine POVM where $\\alpha_b = 2/3$.",
+   "code": ""
+  },
+  "seen": "2026-11-16",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.18187": {
+  "fields": {
+   "kind": "new result",
+   "result": "Discovered type-II band alignment and magnetic proximity coupling in $\\mathrm{WS_2}/\\mathrm{CrSBr}$ heterostructures, yielding enhanced Zeeman valley splitting and spin-selective interlayer charge transfer dependent on relative spin-valley polarization and $\\mathrm{CrSBr}$ magnetization.",
+   "question": "How do magnetic order and anisotropic electronic dispersion in $\\mathrm{CrSBr}$ couple to valley excitons in monolayer $\\mathrm{WS_2}$?",
+   "prior": "",
+   "limits": "Dependent on twist angle and relative alignment between valley-spin polarization and magnetic substrate.",
+   "tools": [
+    "monolayer $\\mathrm{WS_2}/\\mathrm{CrSBr}$ van der Waals heterostructures",
+    "circularly polarized photoluminescence spectroscopy",
+    "magneto-optical measurements"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-11-16",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "abstract"
+ },
+ "2611.17435": {
+  "fields": {
+   "kind": "theory",
+   "result": "Optical rectification of a 100 fs laser pulse inside a KTP crystal generates a quasi-DC field yielding an electric Aharonov-Bohm phase $\\phi_{AB} = \\pi$ at laser intensity $I_{0} \\approx 4.3 \\times 10^{8}\\text{ W/cm}^{2}$. The residual field inside the slit apertures is an order of magnitude smaller and displaces only the diffraction envelope without shifting the fringes.",
+   "question": "Can the electric Aharonov-Bohm effect be observed for free electrons traversing paths with negligible local electric fields?",
+   "prior": "",
+   "limits": "Theoretical calculation in the paraxial approximation. Assumes electron position changes negligibly during the 100 fs pulse passage.",
+   "tools": [
+    "optical rectification",
+    "nonlinear optical crystal (KTP)",
+    "electron double-slit interferometer",
+    "ultrafast laser pulses"
+   ],
+   "figure": "S3.F5",
+   "figure_url": "https://arxiv.org/html/2611.17435v1/Fig5a.svg",
+   "figure_caption": "Figure 5: Interference patterns calculated within the paraxial approximation, $k_{y}=k_{e}y/D$ , with $\\tilde{\\psi}_{0}(k_{y})\\propto 2J_{1}(k_{y}R)/(k_{y}R)$ for a circular aperture. In both panels, $D=10$ cm, $T=100$ fs, $d=3~\\mu$ m $w_{0}=1~\\mu$ m $k_{e}=1.15\\times 10^{11}$ m -1 , corresponding to 500 eV electrons. (a) Effect of the residual field for different slab widths $L_{x}$ , excluding the AB phase. The curves, obtained from Eq. ( 16 ), correspond to $\\delta k=0$ (black), $L_{x}=20~\\mu$ m (blue), $10~\\mu$ m (yellow), and $5~\\mu$ m (green). The laser intensity is $I_{0}=3.5\\times 10^{8}$ W/cm 2 , corresponding to $\\phi_{\\rm AB}=\\pi$ . (b) Full interference pattern including both the dynamical momentum shift due to the residual field and the AB phase, with $L_{x}=20\\mu$ m. The dashed black curve corresponds to $I_{0}=0$ , while the solid red, and blue curves correspond, respectively, to $I_{0}=4.3\\times 10^{8}$ , and $8.6\\times 10^{8}$ W/cm 2 , yielding $\\phi_{\\rm AB}=\\pi$ , and $2\\pi$ .",
+   "figure_gloss": "Electron interference intensity versus screen position $y$. Top panel demonstrates that local residual fields only shift the overall envelope, while bottom panel shows that increasing laser intensity shifts the interference fringes via the electric Aharonov-Bohm phase.",
    "code": ""
   },
   "seen": "2026-11-16",

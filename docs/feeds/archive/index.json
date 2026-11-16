@@ -29,7 +29,7 @@
             },
             "qs-d": {
               "items": 8,
-              "paydirt": 6
+              "paydirt": 7
             },
             "qs-e": {
               "items": 8,
@@ -49,14 +49,14 @@
             },
             "qs-i": {
               "items": 8,
-              "paydirt": 7
+              "paydirt": 5
             },
             "quantum-algorithms": {
-              "items": 4,
-              "paydirt": 1
+              "items": 5,
+              "paydirt": 2
             },
             "quantum-simulation": {
-              "items": 8,
+              "items": 7,
               "paydirt": 3
             },
             "solid-state-qubits": {
