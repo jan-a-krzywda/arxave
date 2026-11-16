@@ -21,6 +21,7 @@ import {
   MAX_CARE,
   MAX_PAPERS,
   MAX_STORY,
+  prose,
   MAX_THREADS,
   MAX_TITLE,
   MAX_WAGONS,
@@ -249,6 +250,26 @@ Deno.test('the prompt carries the date, the ids, the wagons and the reader', () 
   assertEquals(prompt.includes('gate fidelity and noise in silicon spin qubits'), true);
 });
 
+Deno.test('authors travel to the prompt, first three, and bad ones are dropped', () => {
+  const req = readRequest(request({
+    papers: [
+      { id: ID1, title: 't', abstract: 'a', authors: ['Ann Lee', 'Bo Chen', 'Cy Dorn', 'Di Eve'] },
+      { id: ID2, title: 't', abstract: 'a', authors: 'not a list' },
+    ],
+  })) as StoryRequest;
+  assertEquals(req.papers[0].authors, ['Ann Lee', 'Bo Chen', 'Cy Dorn']);
+  assertEquals(req.papers[1].authors, undefined);
+  assertEquals(promptFor(req).includes('authors: Ann Lee, Bo Chen, Cy Dorn, …'), true);
+});
+
+Deno.test('the system prompt sets the plain style and the [id]-only naming', () => {
+  for (const rule of ['not a specialist', 'Avoid adjectives', 'short, simple sentences',
+    'only that way', 'End on a complete sentence']) {
+    assertEquals(SYSTEM.includes(rule), true, rule);
+  }
+  assertEquals(SYSTEM.includes('vivid'), false);
+});
+
 Deno.test('the prompt clips each abstract at 1200 characters', () => {
   const req = readRequest(request({
     papers: [{ id: ID1, title: 't', abstract: 'a'.repeat(2000) }],
@@ -306,6 +327,17 @@ Deno.test('parseStory clips the title, the story and a thread why', () => {
   assertEquals(got.title.length, MAX_TITLE);
   assertEquals(got.story.length, MAX_STORY);
   assertEquals(got.threads[0].why.length, MAX_WHY);
+});
+
+Deno.test('prose: an overrun ends on the last full sentence, never mid-word', () => {
+  const sentence = 'Read [2611.18504] first: it changes the rest. ';
+  const long = sentence.repeat(Math.ceil((MAX_STORY + 200) / sentence.length));
+  const got = prose(long, MAX_STORY);
+  assertEquals(got.length <= MAX_STORY, true);
+  assertEquals(got.endsWith('the rest.'), true);
+  /* the dot inside an arXiv id is not a sentence end */
+  assertEquals(prose('See [2611.18504] for the bound and more words', 30).endsWith('…'), true);
+  assertEquals(prose('Short.', 30), 'Short.');
 });
 
 Deno.test('parseStory drops threads past the fourth rather than failing', () => {

@@ -110,9 +110,7 @@
   padding: 0.9rem 0.85rem;
   border: 1px solid var(--rock-edge);
   border-radius: 8px;
-  background: radial-gradient(110% 130% at 20% 110%,
-    color-mix(in srgb, var(--gold) 14%, transparent), transparent 70%),
-    var(--rock-deep);
+  background: var(--rock-deep);
 }
 
 .st-ember {
@@ -144,10 +142,9 @@
   padding: 0.95rem 0.9rem 1rem;
   border: 1px solid var(--rock-edge);
   border-radius: 10px;
-  background:
-    radial-gradient(140% 90% at 50% 0%,
-      color-mix(in srgb, var(--gold) 8%, transparent), transparent 62%),
-    var(--rock-deep);
+  /* Flat rock: the stage's torch is the light; the card only edges it. */
+  border-top: 2px solid var(--gold-dim);
+  background: var(--rock-deep);
   min-width: 0;
 }
 

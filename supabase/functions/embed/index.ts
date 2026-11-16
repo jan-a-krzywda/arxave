@@ -29,6 +29,7 @@
  */
 
 import {
+  clsRows,
   DIM,
   MODEL,
   ModelWarmingError,
@@ -171,7 +172,8 @@ async function embedOnce(texts: string[], token: string, budget: number): Promis
     throw new Error(`embedding upstream HTTP ${resp.status}: ${text.slice(0, 300)}`);
   }
 
-  return toVectors(await resp.json(), texts.length, DIM);
+  /* Streamed: only the [CLS] rows are ever held (see clsRows). */
+  return toVectors(await clsRows(resp.body), texts.length, DIM);
 }
 
 Deno.serve(async (req) => {

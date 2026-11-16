@@ -19,7 +19,7 @@ import assert from 'node:assert/strict';
 
 import { createFlow } from '../docs/assets/cave-flow.mjs';
 import {
-  BUDGET_SPENT, MAX_PAPERS, exportPicksHtml, mount, plainText, readFirstWhy, renderStoryMd,
+  BUDGET_SPENT, MAX_PAPERS, authorTag, exportPicksHtml, mount, plainText, readFirstWhy, renderStoryMd,
   storyCacheKey, storyCardHtml, storyMarkdown, storyRequest, storyWagons,
 } from '../docs/assets/cave-stage-story.mjs';
 
@@ -174,7 +174,7 @@ test('renderStoryMd escapes markup and leaves a javascript: link inert', () => {
 
   const known = renderStoryMd('Start with [' + IDS[0] + '] tonight.', papers);
   assert.ok(known.includes('href="https://arxiv.org/abs/' + IDS[0] + '"'));
-  assert.ok(known.includes('title="A &lt;b&gt;paper&lt;/b&gt; on walls"'),
+  assert.ok(known.includes('title="A &lt;b&gt;paper&lt;/b&gt; on walls · ' + IDS[0] + '"'),
     'the tooltip is the short title, escaped');
 
   const unknown = renderStoryMd('[9999.99999]', papers);
@@ -513,3 +513,39 @@ test('no picks and no night are sentences, not a broken button', () => {
   }
 });
 
+
+/* ── papers named by their authors ──────────────────────────────────────── */
+
+test('authorTag: one, two, many, a particle, and a string list', () => {
+  assert.equal(authorTag(['Jan A. Krzywda']), 'Krzywda');
+  assert.equal(authorTag(['Jan A. Krzywda', 'Guido Burkard']), 'Krzywda & Burkard');
+  assert.equal(authorTag(['A. Lee', 'B. Chen', 'C. Dorn']), 'Lee et al.');
+  assert.equal(authorTag(['Johannes van der Waals', 'X Y']), 'van der Waals & Y');
+  assert.equal(authorTag('Ann Lee, Bo Chen and Cy Dorn'), 'Lee et al.');
+  assert.equal(authorTag([]), '');
+  assert.equal(authorTag(undefined), '');
+});
+
+test('the story names a known paper by its first author, the id in the tooltip', () => {
+  const papers = new Map([['2611.18504', { id: '2611.18504', title: 'A bound', authors: ['Ann Lee', 'B C', 'D E'] }]]);
+  const html = renderStoryMd('Read [2611.18504] first.', papers);
+  assert.ok(html.includes('>Lee et al.</a>'));
+  assert.ok(html.includes('title="A bound · 2611.18504"'));
+  assert.equal(plainText('Read [2611.18504] first.', papers), 'Read Lee et al. first.');
+  assert.equal(plainText('Read [2611.18504] first.'), 'Read 2611.18504 first.', 'no lookup, the id');
+});
+
+test('readFirstWhy keeps the whole sentence, named, not a 240-character clip', () => {
+  const papers = new Map([['2611.18504', { id: '2611.18504', title: 't', authors: ['Ann Lee'] }]]);
+  const long = 'Read [2611.18504] first: ' + 'it changes what the rest of the story means '.repeat(7).trim() + '.';
+  const why = readFirstWhy(long, '2611.18504', papers);
+  assert.ok(why.startsWith('Read Lee first:'));
+  assert.ok(why.endsWith('means.'), 'the sentence ends where the model ended it');
+});
+
+test('storyMarkdown links [id] as the author tag and lists picks with authors', () => {
+  const md = storyMarkdown({ title: 'T', story: 'See [2611.18504].' },
+    [{ id: '2611.18504', title: 'A bound', authors: ['Ann Lee', 'Bo Chen'] }]);
+  assert.ok(md.includes('See [Lee & Chen](https://arxiv.org/abs/2611.18504).'));
+  assert.ok(md.includes('- Lee & Chen, [A bound](https://arxiv.org/abs/2611.18504)'));
+});

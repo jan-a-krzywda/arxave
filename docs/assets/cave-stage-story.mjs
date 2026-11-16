@@ -62,6 +62,8 @@ export const MAX_WAGON = 120;
 export const MAX_TOPIC = 120;
 export const MAX_DIAMOND = 400;
 export const MAX_CARE = 500;
+export const MAX_AUTHORS = 3;        // the first three are all a tag reads
+export const MAX_AUTHOR = 120;
 
 /** Where a cached diamond and the last story live in `ctx.storage`. */
 export const DIAMOND_PREFIX = 'arxave-cave-diamond:';
@@ -106,6 +108,34 @@ export function absUrl(id) {
 function shortTitle(title, max = 60) {
   const full = oneLine(title, MAX_TITLE);
   return full.length > max ? full.slice(0, max - 1).trimEnd() + '…' : full;
+}
+
+/**
+ * How the story names a paper: its first author's surname — "Krzywda",
+ * "Krzywda & Burkard", "Krzywda et al." — the way a colleague says it, rather
+ * than an arXiv number nobody remembers. '' when the paper has no authors, and
+ * the caller falls back to the id. A lower-case particle stays with the
+ * surname ("van der Waals"). A string is arXiv's own "A, B and C".
+ */
+export function authorTag(authors) {
+  const list = (Array.isArray(authors) ? authors : String(authors || '').split(/,\s*|\s+and\s+/))
+    .map((name) => oneLine(name, 120))
+    .filter(Boolean);
+  if (!list.length) return '';
+  const surname = (name) => {
+    const parts = name.split(' ');
+    let at = parts.length - 1;
+    while (at > 0 && /^(van|von|der|den|de|del|della|di|da|du|la|le|ter|ten)$/.test(parts[at - 1])) at -= 1;
+    return parts.slice(at).join(' ');
+  };
+  if (list.length === 1) return surname(list[0]);
+  if (list.length === 2) return surname(list[0]) + ' & ' + surname(list[1]);
+  return surname(list[0]) + ' et al.';
+}
+
+/** A paper's tag, or its id when it has no authors. */
+function nameOf(paper, id) {
+  return (paper && authorTag(paper.authors)) || asId(id);
 }
 
 /** A Map or a plain object of id → paper, read as one function. */
@@ -235,6 +265,8 @@ export function storyRequest(ctx) {
         id: asId(id),
         title: oneLine(item.title, MAX_TITLE),
         abstract: oneLine(item.abstract, MAX_ABSTRACT),
+        authors: (Array.isArray(item.authors) ? item.authors : [])
+          .map((name) => oneLine(name, MAX_AUTHOR)).filter(Boolean).slice(0, MAX_AUTHORS),
         wagon: wagons.get(id) || null,
         topic: leafLabel(c.topics, item.topic),
       };
@@ -269,7 +301,8 @@ export function storyCacheKey(date, ids) {
 
 /**
  * Inline markup on already-escaped text: first `**bold**` / `*italic*`, then
- * `[<arXiv id>]` → a link to that paper.
+ * `[<arXiv id>]` → a link to that paper, named by its first author ("Krzywda
+ * et al."), with the title and the id in the tooltip.
  *
  * Emphasis runs first so a title attribute inserted by the second pass can
  * never be read as emphasis. The link pass only rewrites an id that is in
@@ -288,8 +321,8 @@ function inlineMd(escaped, lookup) {
       if (!paper) return match;
       const title = oneLine(paper.title, MAX_TITLE) || id;
       return '<a class="st-paper" href="' + escapeHtml(absUrl(id)) + '" title="'
-        + escapeHtml(shortTitle(title)) + '" target="_blank" rel="noopener">'
-        + escapeHtml(id) + '</a>';
+        + escapeHtml(shortTitle(title) + ' · ' + id) + '" target="_blank" rel="noopener">'
+        + escapeHtml(nameOf(paper, id)) + '</a>';
     },
   );
 }
@@ -343,11 +376,16 @@ export function renderStoryMd(md, papersById) {
 
 /**
  * The same text for a speaker, not a reader: markdown markers removed, `[id]`
- * brackets dropped (the id is read aloud as an id), blank runs collapsed.
+ * read as the paper's author tag when `papersById` knows it (the bare id
+ * otherwise), blank runs collapsed.
  */
-export function plainText(md) {
+export function plainText(md, papersById = null) {
+  const lookup = paperLookup(papersById);
   return String(md ?? '')
-    .replace(/\[([^\]\n]{1,64})\]/g, '$1')
+    .replace(/\[([^\]\n]{1,64})\]/g, (marker, id) => {
+      const paper = lookup(id);
+      return paper ? nameOf(paper, id) : id;
+    })
     .replace(/\*\*([^*\n]+)\*\*/g, '$1')
     .replace(/\*([^*\n]+)\*/g, '$1')
     .replace(/^[ \t]*-[ \t]+/gm, '')
@@ -362,7 +400,7 @@ export function plainText(md) {
  * `story.readFirst` is only an id; the reason is prose, and if the model never
  * gave one the callout is just the title.
  */
-export function readFirstWhy(md, id) {
+export function readFirstWhy(md, id, papersById = null) {
   const paperId = asId(id);
   if (!paperId) return '';
   const text = String(md ?? '');
@@ -373,7 +411,9 @@ export function readFirstWhy(md, id) {
   const guarded = text.replace(/\[[^\]\n]{1,64}\]/g, (marker) => marker.replace(/\./g, '\u0001'));
   for (const sentence of guarded.match(/[^.!?\n]+[.!?]*/g) || []) {
     const back = sentence.replace(/\u0001/g, '.');
-    if (back.includes('[' + paperId + ']')) return oneLine(plainText(back), 240);
+    /* The whole sentence: a clip mid-word ("…the rest of the st") reads as a
+       broken page, and the model was asked for short sentences anyway. */
+    if (back.includes('[' + paperId + ']')) return oneLine(plainText(back, papersById), 600);
   }
   return '';
 }
@@ -436,7 +476,7 @@ export function storyCardHtml(story, papersById, { date = '', count = 0 } = {}) 
     .filter(Boolean).join(' · ');
 
   const readFirstId = asId(s.readFirst);
-  const readFirstLine = readFirstWhy(s.story, readFirstId);
+  const readFirstLine = readFirstWhy(s.story, readFirstId, papersById);
 
   return '<header class="st-head">'
       + '<p class="st-eyebrow">Tonight\'s story</p>'
@@ -467,12 +507,18 @@ export function storyMarkdown(story, papers, { date = '' } = {}) {
   const s = story || {};
   const out = ['# ' + (oneLine(s.title, 160) || "Tonight's story"), ''];
   if (date) out.push('_The night of ' + oneLine(date, 10) + '_', '');
-  out.push(String(s.story ?? '').trim(), '');
   const list = (Array.isArray(papers) ? papers : []).filter((p) => p && p.id);
+  const lookup = paperLookup(new Map(list.map((p) => [String(p.id), p])));
+  out.push(String(s.story ?? '').trim().replace(/\[([0-9A-Za-z][0-9A-Za-z./-]{0,63})\](?!\()/g,
+    (marker, id) => {
+      const paper = lookup(id);
+      return paper ? '[' + linkText(nameOf(paper, id)) + '](' + absUrl(id) + ')' : marker;
+    }), '');
   if (list.length) {
     out.push('## Picked papers', '');
     for (const paper of list) {
-      out.push('- [' + linkText(paper.title || paper.id) + '](' + absUrl(paper.id) + ')');
+      const tag = authorTag(paper.authors);
+      out.push('- ' + (tag ? linkText(tag) + ', ' : '') + '[' + linkText(paper.title || paper.id) + '](' + absUrl(paper.id) + ')');
     }
     out.push('');
   }
@@ -494,7 +540,7 @@ export function mount(body, ctx) {
   body.innerHTML =
     '<div class="cave-story">'
     + '<p class="st-line"><span class="st-count">0 picked papers.</span>'
-      + '<span class="st-hint"> Tick Story on a few papers in the ranking first.</span></p>'
+      + '<span class="st-hint"> Tick In Story on a few papers in the ranking first.</span></p>'
     + '<p class="st-over" hidden>Only the top ' + MAX_PAPERS + ' by rank go into the story.</p>'
     + '<p class="st-missing" hidden></p>'
     + '<div class="st-ask">'
@@ -706,7 +752,7 @@ export function mount(body, ctx) {
   /* ── the tools ───────────────────────────────────────────────────────── */
 
   function somethingToSay(story) {
-    const parts = [oneLine(story.title, 160), plainText(story.story)];
+    const parts = [oneLine(story.title, 160), plainText(story.story, paperIndex(state.papers))];
     const paper = story.readFirst ? paperIndex(state.papers).get(asId(story.readFirst)) : null;
     if (paper && paper.title) parts.push('Read first: ' + oneLine(paper.title, MAX_TITLE) + '.');
     return parts.filter(Boolean).join(' ');

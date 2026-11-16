@@ -270,7 +270,12 @@ not chosen: the upstream answers with the **token grid** rather than pooled
 vectors, so one call holds `batch x tokens x 768` floats before pooling, and
 128 real abstracts kill the isolate with `546 WORKER_RESOURCE_LIMIT`. That is
 also why `UPSTREAM_BATCH` is 8 — it is the number that keeps a single upstream
-response inside the isolate's memory. The per-IP bucket is
+response inside the isolate's memory. The response is not parsed whole any
+more: `clsRows` (in `embed/hf.ts`) streams it and keeps only token 0 of each
+row, so a full 8 x 512 x 768 batch fits an 8 MB heap where `resp.json()`
+needed 48-64 MB. The caps stay as measured until a deploy proves the headroom.
+The page, for its part, remembers every vector it was sent for the session, so
+a second dig of the same night re-sends nothing. The per-IP bucket is
 in-memory, so an isolate recycle resets it — it is a speed bump, not a
 guarantee. If the page gets traffic, add a durable counter (a Postgres table)
 or put the project's own function rate limits in front.

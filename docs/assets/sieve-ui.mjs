@@ -607,21 +607,57 @@ export async function cacheLookup({
   return { shas, hits };
 }
 
+/* Vectors this page already paid for, by model, dim and text. The shared
+   dig-cache is written only by the nightly warmer, so a paper it did not have
+   was embedded again on every dig — a second dig of the same night re-sent
+   every abstract to the embed function, which is the expensive, memory-bound
+   call. Abstracts only (public text), never touchstones; capped, oldest out. */
+const SEEN_MAX = 1500;
+const seen = new Map();
+
+function remembered(key) {
+  const vec = seen.get(key);
+  if (vec) {
+    seen.delete(key);
+    seen.set(key, vec);
+  }
+  return vec || null;
+}
+
+function remember(key, vec) {
+  seen.delete(key);
+  seen.set(key, vec);
+  while (seen.size > SEEN_MAX) seen.delete(seen.keys().next().value);
+}
+
+/** Test seam: forget what this page embedded. */
+export function forgetEmbedded() {
+  seen.clear();
+}
+
 /**
- * `embedTexts` with the shared cache in front of it, for candidate abstracts
- * (which are already public) — the same split docs/assets/filter.js makes.
+ * `embedTexts` with two caches in front of it, for candidate abstracts (which
+ * are already public) — the same split docs/assets/filter.js makes: first what
+ * this page embedded earlier, then the shared dig-cache, then the endpoint.
  */
 export async function embedCandidates({
   texts, embedUrl, cacheUrl, fetchImpl = fetch, chunk = 64, model = MODEL, dim = DIM, onProgress,
 }) {
-  const look = await cacheLookup({ texts, cacheUrl, fetchImpl, model, dim });
+  const keyOf = (text) => model + '|' + dim + '|' + cacheKeyText(text);
   const vectors = new Array(texts.length);
-  const missing = [];
+  const unseen = [];
   for (let i = 0; i < texts.length; i++) {
-    const hit = look.shas.length ? look.hits[look.shas[i]] : null;
+    const hit = remembered(keyOf(texts[i]));
     if (hit) vectors[i] = hit;
-    else missing.push(i);
+    else unseen.push(i);
   }
+  const look = await cacheLookup({ texts: unseen.map((i) => texts[i]), cacheUrl, fetchImpl, model, dim });
+  const missing = [];
+  unseen.forEach((at, j) => {
+    const hit = look.shas.length ? look.hits[look.shas[j]] : null;
+    if (hit) vectors[at] = hit;
+    else missing.push(at);
+  });
   const cached = texts.length - missing.length;
   if (onProgress) onProgress(cached, texts.length);
   if (missing.length) {
@@ -632,6 +668,7 @@ export async function embedCandidates({
     });
     missing.forEach((at, i) => { vectors[at] = fresh[i]; });
   }
+  for (const at of unseen) if (vectors[at]) remember(keyOf(texts[at]), vectors[at]);
   vectors.cached = cached;
   return vectors;
 }

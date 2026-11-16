@@ -37,9 +37,12 @@ export const MAX_TOPIC = 120;
 export const MAX_DIAMOND = 400;      // the diamond's two-sentence summary
 export const MAX_CARE = 500;         // the reader's "what I care about" box
 export const MAX_TITLE = 80;         // story title, per the contract
-export const MAX_STORY = 2500;       // markdown, per the contract
+export const STORY_ASK = 1800;       // what the prompt asks for
+export const MAX_STORY = 4000;       // what is kept: an overrun ends on a sentence, never mid-word
 export const MAX_THREADS = 4;
 export const MAX_WHY = 200;
+export const MAX_AUTHORS = 3;        // a tag reads the first one; three is context
+export const MAX_AUTHOR = 120;
 
 /** A story is two calls against the shared meter; refine is one. */
 export const CALLS_PER_STORY = 2;
@@ -66,6 +69,8 @@ export interface StoryPaper {
   topic?: string;
   /** The paper's already-extracted diamond, when the reader has one. */
   diamond?: string;
+  /** Its first authors, for the model to know who; the page names papers. */
+  authors?: string[];
 }
 
 export interface StoryWagon {
@@ -156,6 +161,12 @@ export function readRequest(body: Record<string, unknown>): StoryRequest | strin
     if (wagon) paper.wagon = wagon;
     if (topic) paper.topic = topic;
     if (diamond) paper.diamond = diamond;
+    /* Authors are optional and never an error: a list of strings, the first
+       three kept; anything else is ignored. */
+    const authors = Array.isArray(p.authors)
+      ? p.authors.map((a) => oneLine(a, MAX_AUTHOR)).filter(Boolean).slice(0, MAX_AUTHORS)
+      : [];
+    if (authors.length) paper.authors = authors;
     ids.add(id);
     papers.push(paper);
   }
@@ -188,16 +199,24 @@ export function readRequest(body: Record<string, unknown>): StoryRequest | strin
 
 export const SYSTEM = [
   'You write the nightly story for one reader of an arXiv digest. You are given',
-  "tonight's picked papers for their field (each with an id, title and abstract,",
-  "sometimes its wagon and topic and diamond), the night's wagons, and what the",
-  'reader says they care about. Write a short, vivid but accurate story of the',
+  "tonight's picked papers for their field (each with an id, title, authors and",
+  "abstract, sometimes its wagon and topic and diamond), the night's wagons, and",
+  'what the reader says they care about. Write a short, accurate story of the',
   "night in the reader's field: what moved tonight, how the picked papers",
-  'connect, and what to read first and why. Refer to every paper by its id in',
-  'square brackets, like [2401.00001], never by number or title alone. Use only',
-  'what the abstracts say: do not invent results, numbers, or papers that are',
-  'not listed. Addressing the reader as "you" is fine, and the story is markdown.',
+  'connect, and what to read first and why.',
+  'STYLE. The reader is a scientist, but not a specialist in this topic: say',
+  'what a term means the first time it matters, and skip jargon that is not',
+  'needed. Use short, simple sentences, one idea each. Avoid adjectives and',
+  'adverbs; let the result carry the weight ("cuts the error rate tenfold", not',
+  '"a remarkable advance"). No hype, no metaphors, no rhetorical questions.',
+  'Refer to every paper by its id in square brackets, like [2401.00001], and',
+  'only that way: the page shows each [id] as its first author\'s name ("Smith',
+  'et al."), so never write author names, "the paper", or a title in its place.',
+  'Use only what the abstracts say: do not invent results, numbers, or papers',
+  'that are not listed. Addressing the reader as "you" is fine, and the story',
+  'is markdown. End on a complete sentence.',
   'Return ONLY a JSON object, no prose and no markdown fence:',
-  '{"title":string <=80 chars, "story":markdown <=2500 chars,',
+  `{"title":string <=80 chars, "story":markdown <=${STORY_ASK} chars,`,
   '"readFirst":"<id of one picked paper>", "threads":[{"ids":["<id>","<id>"],',
   '"why":string <=200 chars}]}',
   'threads holds 0 to 4 real connections; each ids array names two or more',
@@ -214,6 +233,7 @@ export function promptFor(req: StoryRequest): string {
       .filter(Boolean).join(' · ');
     return [
       `[${p.id}] ${p.title}`,
+      ...(p.authors?.length ? [`authors: ${p.authors.join(', ')}${p.authors.length >= MAX_AUTHORS ? ', …' : ''}`] : []),
       ...(meta ? [meta] : []),
       ...(p.diamond ? [`diamond: ${p.diamond}`] : []),
       `Abstract: ${p.abstract}`,
@@ -268,9 +288,25 @@ function oneLine(v: unknown, max: number): string {
   return typeof v === 'string' ? normalize(v, max) : '';
 }
 
-/** Markdown keeps its shape; only the ends are trimmed and the tail clipped. */
-function prose(v: unknown, max: number): string {
-  return typeof v === 'string' ? v.trim().slice(0, max) : '';
+/**
+ * Markdown keeps its shape; only the ends are trimmed. A story past `max` is
+ * cut back to its last full sentence inside the cap — a reader met "…what the
+ * rest of the st" when this was a plain slice — and only a story with no
+ * sentence end in the first half falls back to the last word, with "…".
+ */
+export function prose(v: unknown, max: number): string {
+  if (typeof v !== 'string') return '';
+  const text = v.trim();
+  if (text.length <= max) return text;
+  const head = text.slice(0, max);
+  /* A sentence ends at . ! or ? followed by space, a quote/bracket, or the
+     end — not inside an arXiv id like 2611.18504, whose dot has a digit after. */
+  let cut = -1;
+  for (const m of head.matchAll(/[.!?]["')\]*]*(?=\s|$)/g)) cut = (m.index ?? 0) + m[0].length;
+  if (cut >= max / 2) return head.slice(0, cut).trimEnd();
+  const words = head.slice(0, max - 1);
+  const space = words.lastIndexOf(' ');
+  return (space > 0 ? words.slice(0, space) : words).trimEnd() + '…';
 }
 
 /**
@@ -393,9 +429,9 @@ async function callProvider(deps: Deps, key: string, req: StoryRequest): Promise
     body: JSON.stringify({
       model: deps.model,
       messages: buildMessages(req),
-      /* A story may be vivid; refine's 0 is for a judgement that must not
-         wobble. 0.4 keeps prose alive without turning it into fiction. */
-      temperature: 0.4,
+      /* Refine's 0 is for a judgement that must not wobble; 0.3 keeps the
+         plain prose from reading machine-made without inviting fiction. */
+      temperature: 0.3,
       response_format: { type: 'json_object' },
     }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
