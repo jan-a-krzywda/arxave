@@ -5,9 +5,10 @@
     <title>The Dig — Gate and device benchmarking</title>
     <link>https://arxave.com/?preset=qs-b</link>
     <atom:link href="https://arxave.com/feeds/qs-b.xml" rel="self" type="application/rss+xml"/>
-    <description>Papers relevant to operating, benchmarking, integrating and using a semiconductor spin-qubit quantum computer of at least 16 qubits that is co-located with and integrated into an HPC system. Today&apos;s arXiv announcement, ranked against the Gate and device benchmarking preset.</description>
+    <description>Papers relevant to operating, benchmarking, integrating and using a semiconductor spin-qubit quantum computer of at least 16 qubits that is co-located with and integrated into an HPC system. Today&apos;s arXiv announcement, ranked against the Gate and device benchmarking preset. Today’s ranked reading list collects six relevance-3 skims that sit around the edges of neutral-atom and spin-qubit control, QEC, and HPC integration: 2611.17652 on an FPGA-based quantum data processing unit, 2611.17262 on scalable Pauli propagation, 2611.16971 on benchmarked-noise zero-noise extrapolation, 2611.18378 on structure and trainability in quantum circuits, 2611.16285 on multi-GPU orchestration for relay belief-propagation decoding, and 2611.16271 on hierarchical QEC decoding. Together they are useful for transferable methods and infrastructure context rather than direct spin-qubit operation, calibration, or benchmarking.</description>
+    <arxave:summary>Today’s ranked reading list collects six relevance-3 skims that sit around the edges of neutral-atom and spin-qubit control, QEC, and HPC integration: 2611.17652 on an FPGA-based quantum data processing unit, 2611.17262 on scalable Pauli propagation, 2611.16971 on benchmarked-noise zero-noise extrapolation, 2611.18378 on structure and trainability in quantum circuits, 2611.16285 on multi-GPU orchestration for relay belief-propagation decoding, and 2611.16271 on hierarchical QEC decoding. Together they are useful for transferable methods and infrastructure context rather than direct spin-qubit operation, calibration, or benchmarking.</arxave:summary>
     <language>en-us</language>
-    <lastBuildDate>Mon, 16 Nov 2026 04:23:28 GMT</lastBuildDate>
-    <pubDate>Mon, 16 Nov 2026 04:23:28 GMT</pubDate>
+    <lastBuildDate>Mon, 16 Nov 2026 06:28:56 GMT</lastBuildDate>
+    <pubDate>Mon, 16 Nov 2026 06:28:56 GMT</pubDate>
   </channel>
 </rss>
