@@ -27,19 +27,6 @@
   color: var(--text-faint);
 }
 
-/* ── the campfire, small ─────────────────────────────────────────────
-   The fire stage used to be a card of its own; it is now the picture this
-   card opens with. campfire.svg is a 64×48 pixel grid, so 8rem (128 px) is
-   exactly 2× and the pixels stay square. Decoration: no text, no pointer. */
-
-.cave-priorities-fire {
-  display: block;
-  width: 8rem;
-  height: auto;
-  image-rendering: pixelated;
-  pointer-events: none;
-}
-
 /* ── the box ─────────────────────────────────────────────────────── */
 
 .cave-priorities-text {
@@ -189,7 +176,7 @@
   color: var(--text-faint);
 }
 
-/* ── the ML chip ─────────────────────────────────────────────────── */
+/* ── ML for quantum: a Computing row's "Only" toggle ──────────── */
 
 .cave-priorities-tags {
   display: flex;
@@ -198,13 +185,18 @@
 }
 
 .cave-ml4q {
-  padding: 0.22rem 0.7rem;
+  flex: none;
+  padding: 0.12rem 0.6rem;
   background: var(--rock);
   border: 1px solid var(--rock-edge);
   border-radius: 999px;
   color: var(--text-dim);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   cursor: pointer;
+}
+
+.cave-trow--ml4q .cave-trow-toggle {
+  cursor: default;
 }
 
 .cave-ml4q:hover {

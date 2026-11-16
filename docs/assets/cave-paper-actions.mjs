@@ -1,10 +1,11 @@
 /**
- * cave-paper-actions — the four things a ranking row offers, as markup.
+ * cave-paper-actions — the three things a ranking row offers, as markup.
  *
  * L2 folds the old Act stage into Ranking, so the row carries its own exits:
  * SciRate for the paper's own feed, a GitHub Discussions thread (join one, or
- * be the first and start it), the LLM's diamond, and the Pick tick that the
- * ranking's foot (Story, RIS, BibTeX) acts on. This module is the pure half of that —
+ * be the first and start it), and the LLM's diamond. The Pick tick the
+ * ranking's foot (Story, RIS, BibTeX) acts on is not on this bar: it sits under
+ * the rank, in the list's first column. This module is the pure half of that —
  * `actionsHtml` builds the bar, `threadsRequest` / `parseThreads` are the batch
  * lookup's body and answer, and the diamond cache helpers are the same contract
  * the Act stage kept (`arxave-cave-diamond:<bare id>`), copied here because
@@ -140,13 +141,12 @@ const link = (cls, href, label) =>
     '" target="_blank" rel="noopener">' + label + '</a>';
 
 /**
- * One paper's action bar, in reading order: SciRate, thread, Summarize, In
- * Story — four buttons of one size, then the `.md` link once a post was
- * started.
+ * One paper's action bar, in reading order: SciRate, thread, Summarize — three
+ * buttons of one size, then the `.md` link once a post was started.
  *
- * `state` is `{ repo, thread, picked, diamond, md, open }`:
+ * `state` is `{ repo, thread, diamond, md, open }`:
  * `repo` is the Discussions repo (empty → no thread button), `thread` is one of
- * the three states above, `picked` ticks the Story box, `diamond` says a
+ * the three states above, `diamond` says a
  * summary is already known (so the button reads "Summary"), `md` says the
  * `.md` download was offered after starting a thread, `open` reports whether
  * the row's detail is showing.
@@ -171,9 +171,6 @@ export function actionsHtml(item, state = {}) {
   parts.push('<button type="button" class="pa-btn pa-summarize" data-act="summarize" data-id="' +
     escapeHtml(id) + '" aria-expanded="' + (s.open ? 'true' : 'false') + '">' +
     (s.diamond ? '✦ Summary' : '✦ Summarize') + '</button>');
-
-  parts.push('<label class="pa-btn pa-story"><input type="checkbox" class="pa-pick" data-id="' +
-    escapeHtml(id) + '"' + (s.picked ? ' checked' : '') + '> Pick</label>');
 
   const md = s.md && s.repo
     ? '<a class="pa-md" href="#" data-act="md" data-id="' + escapeHtml(id) + '">⤓ the post as .md</a>'

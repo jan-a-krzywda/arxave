@@ -24,12 +24,14 @@
 }
 
 /* ── The sliders: small, above the list they reorder ─────────────
-   Two columns where there is room, one on a phone. Each row is label and
+   Three columns where there is room, two on a small screen, one on a phone —
+   set, not auto-fit, so the AI-trace cell lands under Theory ↔ Experiment
+   rather than wherever a fourth column would put it. Each row is label and
    value on one line, the slider, then its two ends in faint type. */
 
 .rk-tune {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.45rem 1rem;
   padding: 0.55rem 0.7rem;
   border: 1px solid var(--rock-edge);
@@ -79,11 +81,24 @@
 }
 
 .rk-tune-tools {
-  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem;
+  align-content: center;
+  gap: 0.3rem 0.4rem;
+  min-width: 0;
+}
+
+@media (min-width: 480px) {
+  .rk-tune {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 720px) {
+  .rk-tune {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .rk-tool {
@@ -119,7 +134,6 @@
 /* ── The list ─────────────────────────────────────────────────── */
 
 .rk-list {
-  margin-top: 0.6rem;
   border: 1px solid var(--rock-edge);
   border-radius: 8px;
   overflow: hidden;
@@ -131,7 +145,7 @@
 
 .rk-row {
   display: grid;
-  grid-template-columns: 1.7rem minmax(0, 1fr) auto;
+  grid-template-columns: 2.2rem minmax(0, 1fr) auto;
   grid-template-areas:
     "rank main   toggle"
     "rank meters meters";
@@ -155,12 +169,40 @@
   box-shadow: inset 3px 0 0 var(--gold);
 }
 
-.rk-rank {
+.rk-rankcol {
   grid-area: rank;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.rk-rank {
   color: var(--text-faint);
   font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
-  text-align: right;
+}
+
+/* The list's header: names the first column, so the tick under each rank
+   reads as "Pick" without a label on every row. Same columns as a row. */
+.rk-head {
+  display: grid;
+  grid-template-columns: 2.2rem minmax(0, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  padding: 0 0.6rem 0.2rem;
+  color: var(--text-faint);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rk-head-pick {
+  text-align: center;
+}
+
+.rk-head:has(+ .rk-list:empty) {
+  display: none;
 }
 
 .rk-main {
@@ -448,24 +490,24 @@ h3.rk-title {
 }
 
 /* ── The action bar ────────────────────────────────────────────
-   Four things to do with a paper. It wraps instead of scrolling: at 360 px
+   Three things to do with a paper. It wraps instead of scrolling: at 360 px
    each button is still a 36 px target and the row never grows a horizontal
    scrollbar. */
 
 .pa-actions {
-  /* Four equal columns that share the row's width, so the squares stay one
-     size and never wrap one of the four onto a line of its own. */
+  /* Three equal columns that share the row's width, so the squares stay one
+     size and never wrap one of the three onto a line of its own. */
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.3rem;
-  max-width: 30rem;
+  max-width: 24rem;
   margin-top: 0.4rem;
   min-width: 0;
 }
 
 .pa-btn {
-  /* Every square in the bar is the same box — links, buttons and the Story
-     label alike — so the bar reads as one row of four, not four widths. */
+  /* Every square in the bar is the same box — links and buttons alike — so
+     the bar reads as one row of three, not three widths. */
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
@@ -500,7 +542,6 @@ h3.rk-title {
 
 .pa-discussion,
 .pa-discuss {
-  border-color: var(--gold-dim);
   color: var(--gold);
 }
 
@@ -517,17 +558,10 @@ h3.rk-title {
   color: var(--gold);
 }
 
-/* The Story box is a .pa-btn too; only its own colour differs. */
-.pa-story {
-  color: var(--text-dim);
-}
-
-.pa-story:has(input:checked) {
-  border-color: var(--gold-dim);
-  color: var(--gold);
-}
-
-.pa-story input {
+/* The Pick tick: under the rank, in the list's first column. */
+.pa-pick {
+  width: 1rem;
+  height: 1rem;
   margin: 0;
   accent-color: var(--gold);
   cursor: pointer;
@@ -617,7 +651,7 @@ h3.rk-title {
 
 @media (min-width: 720px) {
   .rk-row {
-    grid-template-columns: 1.9rem minmax(0, 1fr) 15rem auto;
+    grid-template-columns: 2.2rem minmax(0, 1fr) 15rem auto;
     grid-template-areas: "rank main meters toggle";
     align-items: center;
     gap: 0.5rem;
@@ -629,10 +663,7 @@ h3.rk-title {
 @media (max-width: 600px) {
   /* The row is already one column of title, one of meter; only the targets
      change. A 36 px button at 360 px, in a bar that wraps rather than scrolls. */
-  /* Two squares a line at 360 px, each a 36 px target, still one size. */
-  .pa-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  /* Three squares still fit at 360 px, each a 36 px target. */
 
   .pa-btn {
     height: 36px;

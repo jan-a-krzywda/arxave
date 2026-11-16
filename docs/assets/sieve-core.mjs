@@ -740,7 +740,7 @@ export function assignTopics(vec, topics) {
  * into NaN, which sorts to an arbitrary order and hides the problem; 0.5 is
  * both the honest answer ("no opinion") and inert in the score nudge below.
  */
-function axisProbability(axis, vec) {
+export function axisProbability(axis, vec) {
   if (!axis || !axis.w || axis.w.length !== vec.length) return 0.5;
   let z = axis.b ?? 0;
   for (let k = 0; k < vec.length; k++) z += axis.w[k] * vec[k];

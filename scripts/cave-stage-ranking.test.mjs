@@ -13,8 +13,9 @@ import assert from 'node:assert/strict';
 
 import * as ranking from '../docs/assets/cave-stage-ranking.mjs';
 import {
-  AI_MAX, PAGE, SOLO_MAX, TRACE_KEEP, absUrl, applyPicks, authorCount, gradesHtml, mergeTraces,
-  meters, orderNight, pickedLine, rowHtml, sameLabel, shortAuthors, shownLine, storySummary,
+  AI_MAX, PAGE, SOLO_MAX, TRACE_KEEP, TUNE, absUrl, applyPicks, authorCount, experimentText, gradesHtml,
+  mergeTraces, meters, orderNight, pickedLine, rowHtml, sameLabel, shortAuthors, shownLine, shownValue,
+  storySummary, tuneRowHtml,
 } from '../docs/assets/cave-stage-ranking.mjs';
 
 /** Only the two meters the order key reads. */
@@ -171,7 +172,8 @@ test('rowHtml opens in place: the abstract, its landmarks, the action bar', () =
   assert.ok(open.includes('Looks like'));
   assert.ok(open.includes('https://github.com/o/r/discussions/4'), 'the thread link is there');
   assert.ok(open.includes('data-act="summarize"'));
-  assert.ok(open.includes('> Pick</label>'));
+  assert.ok(open.includes('class="rk-rankcol"><span class="rk-rank">'), 'the tick sits under the rank');
+  assert.ok(open.includes('aria-label="Pick for the story"'));
 
   const closed = rowHtml(ROW_ITEM, { ...ROW_PARTS, open: false });
   assert.ok(closed.includes('<div class="rk-detail" hidden>'));
@@ -196,16 +198,20 @@ test('the title links to the paper on arXiv', () => {
   assert.equal(absUrl('2401.00001'), 'https://arxiv.org/abs/2401.00001');
 });
 
-test('gradesHtml: the parts, the lean named by side, AI only once traced, 1 author', () => {
+test('gradesHtml: Match, Surprise, Impact, Exp. only, AI once traced, 1 author', () => {
   const graded = {
     id: 'a',
     authors: ['Solo Person'],
-    grades: { promisePct: 70, fitPct: 40, surprisePct: 55, theoryPct: 20 },
+    grades: { promisePct: 70, fitPct: 40, surprisePct: 55, impactPct: 66, theoryPct: 20 },
   };
   const html = gradesHtml(graded, { p: 72, why: 'stock <phrases>' });
-  for (const bit of ['>Promise<', '>70<', '>Match<', '>40<', '>Surprise<', '>55<', '>Exp.<', '>80<', '>AI<', '>72%<', '1 author']) {
+  for (const bit of ['>Match<', '>40<', '>Surprise<', '>55<', '>Impact<', '>66<', '>Exp.<', '>80<', '>AI<', '>72%<', '1 author']) {
     assert.ok(html.includes(bit), bit);
   }
+  assert.ok(!html.includes('>Promise<'), 'Promise is Impact and Surprise mixed: no grade of its own');
+  const theory = gradesHtml({ id: 't', grades: { theoryPct: 90 } }, null);
+  assert.ok(theory.includes('>Exp.<') && theory.includes('>10<') && !theory.includes('>Theory<'),
+    'a theory paper reads a low Exp., never a Theory grade');
   assert.ok(html.includes('stock &lt;phrases&gt;'), 'the reason is escaped');
   assert.ok(html.includes('is-warn'));
   const plain = gradesHtml({ ...graded, authors: ['A', 'B'] }, null);
@@ -327,4 +333,34 @@ test('rowHtml: the wagon chip is dropped when it only repeats the topic', () => 
 test('pickedLine counts the picks the foot acts on, and is empty at none', () => {
   assert.equal(pickedLine(0), '');
   assert.equal(pickedLine(3), '3 picked');
+});
+
+test('meters: Impact is read against the corpus spread, like Surprise', () => {
+  const ref = { impact: { mean: 0.6, sd: 0.1 }, novelty: { mean: 0.15, sd: 0.04 } };
+  const [mid, high] = meters([{ impact: 0.6 }, { impact: 0.7 }], ref);
+  assert.equal(mid.impactPct, 50);
+  assert.equal(high.impactPct, 84);
+});
+
+test('the sliders: explore ↔ match, and Theory ↔ Experiment drawn theory-left', () => {
+  const match = TUNE.find((spec) => spec.id === 'match');
+  assert.deepEqual(match.ends, ['explore', 'match']);
+  const lean = TUNE.find((spec) => spec.id === 'expTheory');
+  assert.equal(lean.label, 'Theory ↔ Experiment');
+  assert.deepEqual(lean.ends, ['theory', 'experiment']);
+  /* The codec keeps experiment negative; the panel draws it on the right. */
+  assert.equal(shownValue(lean, -40), 40);
+  assert.equal(shownValue(lean, 30), -30);
+  assert.ok(Object.is(shownValue(lean, 0), 0), 'no -0');
+  assert.equal(shownValue(match, 70), 70);
+  const html = tuneRowHtml(lean, -40);
+  assert.ok(html.includes('value="40"') && html.includes('min="-100" max="100"'));
+  assert.ok(html.includes('>40</output>'));
+});
+
+test('experimentText is just the number', () => {
+  assert.equal(experimentText(40), '40');
+  assert.equal(experimentText(-25), '-25');
+  assert.equal(experimentText(0), '0');
+  assert.equal(experimentText(-0), '0');
 });
