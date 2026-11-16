@@ -8,18 +8,22 @@
  * pass of arithmetic — no network, no re-embed, no second dig.
  *
  * THE SLIDERS LIVE HERE, beside the list they reorder: Topic match, Surprise,
- * Experiment ↔ Theory, and two penalties — Single author and AI trace — plus
- * the ML-for-quantum toggle. The priorities stage still keeps their values
- * (codec, storage, the one `prefs` event); this card draws them and sends each
- * change back as a `tune` event, so a drag re-ranks the list live.
+ * Theory ↔ Experiment, and two penalties — Single author and AI trace. The
+ * priorities stage still keeps their values (codec, storage, the one `prefs`
+ * event); this card draws them and sends each change back as a `tune` event,
+ * so a drag re-ranks the list live. ML for quantum is a row of that stage's
+ * topic tree now, under Computing; this card only applies it.
  *
  * GRADES, NOT ONE NUMBER. Each row's bar is the order key; beside it sit the
- * parts a reader may want to judge separately: Promise, Match, Surprise, the
- * Experiment/Theory lean, AI trace once estimated, and a "1 author" mark.
+ * parts a reader may want to judge separately: Match, Surprise, Impact, how
+ * experimental the paper reads, AI trace once estimated, and a "1 author"
+ * mark. Promise itself is not a grade — it is Impact and Surprise mixed, so
+ * showing it beside them would say the same thing twice.
  *
- * AI TRACE IS A BUTTON. It asks an LLM (the `aitrace` function) how likely
- * each abstract on screen was written by an LLM — a guess, labelled as one,
- * cached per paper in storage so a paper is asked about once.
+ * AI TRACE IS A BUTTON, in the slider panel's free cell. It asks an LLM (the
+ * `aitrace` function) how likely each abstract on screen was written by an
+ * LLM — a guess, labelled as one, cached per paper in storage so a paper is
+ * asked about once.
  *
  * NO GATE, ONE ORDER. A reader who came here wants the ranking, not a filter
  * that can empty the night, so the night is scored with Topic match at 0: gate
@@ -35,8 +39,9 @@
  * There is no bulk bar and no near-miss fallback: a short list is a short night.
  *
  * EACH ROW ACTS. SciRate, the paper's GitHub Discussions thread (join it, or
- * start it with the diamond inside), Summarize (the LLM diamond, cached per
- * paper), and the Pick tick. The bar is
+ * start it with the diamond inside), and Summarize (the LLM diamond, cached per
+ * paper). The Pick tick sits under the rank, in the list's first column, which
+ * a header names "Pick". The bar is
  * `actionsHtml` from `cave-paper-actions.mjs`; the thread states and the lookup
  * that fills them live there too. Thread answers are fetched once per page for
  * every row on screen, in ONE POST, and remembered in a module Map, so "Show 5
@@ -130,7 +135,8 @@ const clamp01 = (v) => (Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0);
 const asNumber = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 
 /**
- * Both meters for a ranked list, in its order: `[{ fitPct, promisePct }]`,
+ * Both meters for a ranked list, in its order: `[{ fitPct, promisePct }]`
+ * (plus the grades' `surprisePct`, `impactPct` and `theoryPct`),
  * each 0..100 and measured against the BACKGROUND CORPUS, never against
  * tonight. A weak night therefore reads weak: its best paper is not 100.
  *
@@ -145,6 +151,7 @@ const asNumber = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 export function meters(ranked, ref = PROMISE_REF) {
   const list = Array.isArray(ranked) ? ranked : [];
   const novelty = (ref && ref.novelty) || PROMISE_REF.novelty;
+  const impact = (ref && ref.impact) || PROMISE_REF.impact;
   return list.map((item) => {
     const theory = Number(item && item.theory);
     return {
@@ -154,6 +161,10 @@ export function meters(ranked, ref = PROMISE_REF) {
          spread, so 50 is a typical distance from proven work. */
       surprisePct: Math.round(100 * phi(
         (asNumber(item && item.novelty) - novelty.mean) / (novelty.sd || 1))),
+      /* Impact the same way: the citation percentile of the paper's corpus
+         neighbours, against the corpus's own spread of it. */
+      impactPct: Math.round(100 * phi(
+        (asNumber(item && item.impact) - impact.mean) / (impact.sd || 1))),
       theoryPct: Number.isFinite(theory) ? Math.round(100 * clamp01(theory)) : null,
     };
   });
@@ -281,7 +292,8 @@ export function sameLabel(a, b) {
 /** The row's one meter: "Score", the order key, as a bar and a number. */
 function meterHtml(rel, total) {
   const pct = Math.round(Math.min(100, Math.max(0, asNumber(rel))));
-  const title = 'The order key: Promise and Match blended by the Topic match slider, less the penalties (' +
+  const title = 'The order key: Promise (Impact and Surprise) and Match blended by the Topic match slider,' +
+    ' less the penalties (' +
     total + (total === 1 ? ' paper' : ' papers') + ' tonight)';
   return '<span class="rk-meter rk-meter-promise" title="' + escapeHtml(title) + '">' +
     '<span class="rk-meter-label">Score</span>' +
@@ -294,9 +306,10 @@ function meterHtml(rel, total) {
 }
 
 /**
- * The small grades beside the bar: Promise, Match, Surprise, the
- * Experiment/Theory lean, AI trace (once estimated) and "1 author". Each is a
- * 0..100 against the background corpus, except the lean, which names its side.
+ * The small grades beside the bar: Match, Surprise, Impact, Exp., AI trace
+ * (once estimated) and "1 author". Each is a 0..100 — the first three against
+ * the background corpus, Exp. the axis's own certainty that the paper is
+ * experiment (100 minus its theory reading).
  */
 export function gradesHtml(item, trace) {
   const g = (item && item.grades) || {};
@@ -305,17 +318,15 @@ export function gradesHtml(item, trace) {
       '<span class="rk-grade-k">' + escapeHtml(label) + '</span>' +
       '<span class="rk-grade-v">' + escapeHtml(String(value)) + '</span></span>';
   const out = [];
-  if (Number.isFinite(g.promisePct)) {
-    out.push(cell('Promise', g.promisePct, 'Citation outlook vs. the background corpus'));
-  }
   if (Number.isFinite(g.fitPct)) out.push(cell('Match', g.fitPct, 'Closeness to your topics and words'));
   if (Number.isFinite(g.surprisePct)) {
     out.push(cell('Surprise', g.surprisePct, 'Distance from well-cited work, vs. the corpus'));
   }
+  if (Number.isFinite(g.impactPct)) {
+    out.push(cell('Impact', g.impactPct, 'How cited the paper\'s nearest corpus neighbours are, vs. the corpus'));
+  }
   if (Number.isFinite(g.theoryPct)) {
-    const theory = g.theoryPct >= 50;
-    out.push(cell(theory ? 'Theory' : 'Exp.', theory ? g.theoryPct : 100 - g.theoryPct,
-      'How sure the axis is that this is ' + (theory ? 'theory' : 'experiment')));
+    out.push(cell('Exp.', 100 - g.theoryPct, 'How sure the axis is that this is experiment (0 is theory)'));
   }
   if (trace && Number.isFinite(Number(trace.p))) {
     const p = Math.round(Number(trace.p));
@@ -371,6 +382,7 @@ function detailHtml(item, parts) {
  * night's size, for the meter's title), `open`, `repo`, `thread` (the three
  * states `actionsHtml` reads), `diamond`, `pending`, `error`, `md`, `trace`.
  * The title is a link to the arXiv abstract page; the row's ▸ opens the detail.
+ * The Pick tick sits under the rank, so the first column reads down the list.
  * Titles, authors, links and landmarks all arrive from arXiv, so every one of
  * them is escaped — `rowHtml` is the one place that happens.
  */
@@ -389,7 +401,6 @@ export function rowHtml(item, parts = {}) {
   const actions = actionsHtml(data, {
     repo: parts.repo || '',
     thread: parts.thread,
-    picked: !!data.picked,
     diamond: !!parts.diamond,
     md: !!parts.md,
     open,
@@ -400,7 +411,11 @@ export function rowHtml(item, parts = {}) {
 
   return '<div class="rk-row' + (open ? ' is-open' : '') + (data.picked ? ' is-picked' : '') +
       '" data-id="' + escapeHtml(id) + '">' +
-      '<span class="rk-rank">' + rank + '</span>' +
+      '<span class="rk-rankcol">' +
+        '<span class="rk-rank">' + rank + '</span>' +
+        '<input type="checkbox" class="pa-pick" data-id="' + escapeHtml(id) + '"' +
+          (data.picked ? ' checked' : '') + ' aria-label="Pick for the story">' +
+      '</span>' +
       '<div class="rk-main">' +
         '<h3 class="rk-title">' +
           '<a class="rk-title-link" href="' + escapeHtml(absUrl(id)) + '" target="_blank" rel="noopener">' +
@@ -425,11 +440,19 @@ export function absUrl(id) {
   return 'https://arxiv.org/abs/' + encodeURIComponent(bareArxivId(id) || String(id || ''));
 }
 
-/** "40 toward theory", "no lean" — the Experiment ↔ Theory slider's words. */
+/** The Theory ↔ Experiment slider's number, as drawn: just the value. */
 export function experimentText(value) {
-  const v = Math.round(Number(value) || 0);
-  if (v === 0) return 'no lean';
-  return Math.abs(v) + ' toward ' + (v < 0 ? 'experiment' : 'theory');
+  return String(Math.round(Number(value) || 0) || 0);
+}
+
+/**
+ * A slider's stored value as the panel draws it, and back. Theory ↔ Experiment
+ * is drawn theory-left, but the codec keeps experiment negative, so its spec
+ * says `invert` and the panel flips the sign both ways. `|| 0` keeps -0 out.
+ */
+export function shownValue(spec, value) {
+  const v = Number(value);
+  return (spec && spec.invert ? -v : v) || 0;
 }
 
 /**
@@ -438,23 +461,27 @@ export function experimentText(value) {
  * codec clamps against.
  */
 export const TUNE = Object.freeze([
-  { id: 'match', label: 'Topic match', ends: ['promise', 'match'], text: (v) => String(v) },
+  { id: 'match', label: 'Topic match', ends: ['explore', 'match'], text: (v) => String(v) },
   { id: 'surprise', label: 'Surprise', ends: ['proven', 'surprising'], text: (v) => String(v) },
-  { id: 'expTheory', label: 'Experiment ↔ Theory', ends: ['experiment', 'theory'], text: experimentText, axis: 'expTheory' },
+  { id: 'expTheory', label: 'Theory ↔ Experiment', ends: ['theory', 'experiment'], text: experimentText, axis: 'expTheory', invert: true },
   { id: 'solo', label: 'Single author', ends: ['keep', 'sink'], text: (v) => (v ? '−' + Math.round(v * SOLO_MAX / 100) : 'off') },
   { id: 'ai', label: 'AI trace', ends: ['keep', 'sink'], text: (v) => (v ? '−' + Math.round(v * AI_MAX / 100) + ' max' : 'off') },
 ]);
 
-/** One small slider of the tuning panel, as markup. */
+/** One small slider of the tuning panel, as markup; `value` is the stored one. */
 export function tuneRowHtml(spec, value, hidden = false) {
   const range = SLIDERS[spec.id];
   const domId = 'rk-tune-' + spec.id;
+  const shown = shownValue(spec, value);
+  /* An inverted range is symmetric (-100..100), so its ends swap cleanly. */
+  const min = spec.invert ? -range.max : range.min;
+  const max = spec.invert ? -range.min : range.max;
   return '<div class="rk-tune-row"' + (hidden ? ' hidden' : '') + '>' +
     '<label class="rk-tune-label" for="' + domId + '">' + escapeHtml(spec.label) + '</label>' +
     '<output class="rk-tune-val" for="' + domId + '" data-val="' + spec.id + '">' +
-      escapeHtml(spec.text(value)) + '</output>' +
+      escapeHtml(spec.text(shown)) + '</output>' +
     '<input class="rk-tune-slider" type="range" id="' + domId + '" data-tune="' + spec.id + '"' +
-      ' min="' + range.min + '" max="' + range.max + '" step="1" value="' + value + '">' +
+      ' min="' + min + '" max="' + max + '" step="1" value="' + shown + '">' +
     '<span class="rk-tune-ends" aria-hidden="true"><span>' + escapeHtml(spec.ends[0]) +
       '</span><span>' + escapeHtml(spec.ends[1]) + '</span></span>' +
   '</div>';
@@ -520,7 +547,6 @@ export function mount(body, ctx) {
   ensureStyles();
 
   const shipExp = !!(ctx.axes && ctx.axes.expTheory && ctx.axes.expTheory.ship);
-  const shipMl = !!(ctx.axes && ctx.axes.ml4q && ctx.axes.ml4q.ship);
   const tuneNow = () => ({ ...(ctx.prefs && ctx.prefs.sliders) });
   const sliderOf = (id) => {
     const v = Number(tuneNow()[id]);
@@ -531,14 +557,18 @@ export function mount(body, ctx) {
     '<div class="cave-ranking">' +
       '<div class="rk-tune" role="group" aria-label="Ranking sliders">' +
         TUNE.map((spec) => tuneRowHtml(spec, sliderOf(spec.id), spec.axis === 'expTheory' && !shipExp)).join('') +
+        /* The panel's free cell: the last slot of the grid, under Theory ↔
+           Experiment on a three-column panel. */
         '<div class="rk-tune-tools">' +
-          '<button type="button" class="rk-tool rk-ml4q" aria-pressed="false"' +
-            (shipMl ? '' : ' hidden') + '>ML for quantum</button>' +
           '<button type="button" class="rk-tool rk-trace">Estimate AI trace</button>' +
           '<span class="rk-trace-note" role="status"></span>' +
         '</div>' +
       '</div>' +
       '<p class="rk-note" hidden></p>' +
+      '<div class="rk-head" aria-hidden="true">' +
+        '<span class="rk-head-pick">Pick</span>' +
+        '<span class="rk-head-paper">Paper</span>' +
+      '</div>' +
       '<div class="rk-list"></div>' +
       '<div class="rk-more-wrap" hidden>' +
         '<button type="button" class="rk-more">Show ' + PAGE + ' more</button>' +
@@ -565,7 +595,6 @@ export function mount(body, ctx) {
   const bibBtn = body.querySelector('.rk-bib');
   const pickedEl = body.querySelector('.rk-picked');
   const tuneEl = body.querySelector('.rk-tune');
-  const ml4qBtn = body.querySelector('.rk-ml4q');
   const traceBtn = body.querySelector('.rk-trace');
   const traceNote = body.querySelector('.rk-trace-note');
 
@@ -884,14 +913,13 @@ export function mount(body, ctx) {
     for (const input of tuneEl.querySelectorAll('[data-tune]')) {
       const id = input.dataset.tune;
       const value = sliderOf(id);
+      const spec = TUNE.find((row) => row.id === id);
       if (typeof document === 'undefined' || document.activeElement !== input) {
-        input.value = String(value);
+        input.value = String(shownValue(spec, value));
       }
       const out = tuneEl.querySelector('[data-val="' + id + '"]');
-      const spec = TUNE.find((row) => row.id === id);
       if (out && spec) out.textContent = spec.text(Number(input.value));
     }
-    ml4qBtn.setAttribute('aria-pressed', String(!!(ctx.prefs && ctx.prefs.ml4q)));
     const unknown = rowsOnScreen().filter((item) => !state.traces[bareArxivId(item.id)]).length;
     traceBtn.disabled = state.tracing || !unknown || !state.ranked.length;
   }
@@ -954,8 +982,8 @@ export function mount(body, ctx) {
    * `caveScore` wants candidates as `{ …stone, vec, topic, topic2 }`; the night
    * already carries all three arrays, so this is a zip, not a re-embed. Topic
    * match goes in at 0 — the gate off, every paper of a live topic in the list —
-   * and comes back as `orderNight`'s weight. The ML-for-quantum chip hides
-   * papers after scoring, exactly as v3 did.
+   * and comes back as `orderNight`'s weight. ML for quantum (a row of the
+   * priorities tree, under Computing) hides papers after scoring, as v3 did.
    */
   function refresh() {
     const absent = missing();
@@ -1064,7 +1092,8 @@ export function mount(body, ctx) {
   /* The pick set is the page's, not this module's: mutate it and say so. The
      list is not re-rendered — the box the reader just clicked is already in the
      right state, and a re-render would take the focus with it; the row's gold
-     edge and the continue button are updated in place. */
+     edge and the continue button are updated in place. The box sits under the
+     rank, in the list's Pick column. */
   listEl.addEventListener('change', (event) => {
     const box = event.target;
     if (!box || !box.classList || !box.classList.contains('pa-pick')) return;
@@ -1097,11 +1126,7 @@ export function mount(body, ctx) {
     const spec = TUNE.find((row) => row.id === id);
     const out = tuneEl.querySelector('[data-val="' + id + '"]');
     if (out && spec) out.textContent = spec.text(Number(input.value));
-    sendTune({ sliders: { [id]: Number(input.value) } });
-  });
-
-  ml4qBtn.addEventListener('click', () => {
-    sendTune({ ml4q: !(ctx.prefs && ctx.prefs.ml4q) });
+    sendTune({ sliders: { [id]: shownValue(spec, input.value) } });
   });
 
   traceBtn.addEventListener('click', () => { estimateTraces(); });

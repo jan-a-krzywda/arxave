@@ -14,11 +14,8 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-
 import {
-  ART_HREF, CHOICES, sliderValue, clearSetting, chipsFromSetting, defaultPrefs, parsePrefs, prefsSummary,
+  CHOICES, ML4Q_PARENT, ml4qCount, sliderValue, clearSetting, chipsFromSetting, defaultPrefs, parsePrefs, prefsSummary,
   removeChip, serialisePrefs, treeCounts, wagonsForLeaf, weightOf,
 } from '../docs/assets/cave-stage-priorities.mjs';
 import { defaultSetting, loadTopics } from '../docs/assets/sieve-core.mjs';
@@ -100,11 +97,16 @@ test('a tie for the most common leaf goes to the lower leaf index', () => {
   assert.deepEqual(wagonsForLeaf(tie, TOPICS, 'qml'), []);
 });
 
-/* ── the campfire it opens with ─────────────────────────────────────────── */
+/* ── ML for quantum, a row of Computing ──────────────────────────────────── */
 
-test('the campfire art beside the stage is a file that ships', () => {
-  assert.ok(ART_HREF.endsWith('/assets/cave-art/campfire.svg'), ART_HREF);
-  assert.ok(existsSync(fileURLToPath(ART_HREF)), 'campfire.svg is not beside the stage module');
+test('ml4qCount: tonight\'s papers the axis reads at 0.5 or above', () => {
+  assert.equal(ML4Q_PARENT, 'computing');
+  const axis = { w: [1, 0], b: 0 };
+  const night = { vecs: [[2, 0], [-2, 0], [0, 1], [0.5, 0]] };   // 0.88, 0.12, 0.5, 0.62
+  assert.equal(ml4qCount(night, axis), 3);
+  assert.equal(ml4qCount(null, axis), 0, 'no night is 0');
+  assert.equal(ml4qCount(night, null), 0, 'no axis is 0');
+  assert.equal(ml4qCount({ vecs: [[1, 1, 1]] }, axis), 1, 'a mis-shaped axis reads 0.5, as in scoring');
 });
 
 /* ── weights ────────────────────────────────────────────────────────────── */

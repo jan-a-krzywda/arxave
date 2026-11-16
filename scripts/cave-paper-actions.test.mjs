@@ -54,10 +54,9 @@ test('actionsHtml: no known thread — Discuss, which looks again then starts it
   assert.ok(offered.includes('the post as .md'));
 });
 
-test('actionsHtml: four squares of one class, the Story box included', () => {
+test('actionsHtml: three squares of one class', () => {
   const html = actionsHtml(paper(), { repo: REPO, thread: null, md: true });
-  assert.equal((html.match(/class="pa-btn[ "]/g) || []).length, 4);
-  assert.ok(html.includes('<label class="pa-btn pa-story">'));
+  assert.equal((html.match(/class="pa-btn[ "]/g) || []).length, 3);
   assert.ok(!/class="pa-md[^"]*pa-btn|class="pa-btn[^"]*pa-md/.test(html), 'the .md link is not a square');
 });
 
@@ -74,14 +73,9 @@ test('actionsHtml: Summarize reads Summary once a diamond is known', () => {
   assert.ok(actionsHtml(paper(), { diamond: true }).includes('✦ Summary'));
 });
 
-test('actionsHtml: the Story tick is bound to the id and the pick', () => {
-  const off = actionsHtml(paper(), { repo: REPO });
-  assert.ok(off.includes('class="pa-pick" data-id="2401.12345v2"'));
-  assert.ok(!off.includes('checked'));
-
-  const on = actionsHtml(paper({ picked: true }), { repo: REPO, picked: true });
-  assert.ok(on.includes('data-id="2401.12345v2" checked'));
-  assert.ok(on.includes('> Pick</label>'), 'the box is labelled Pick');
+test('actionsHtml: the Pick tick is not on the bar — it sits under the rank', () => {
+  const html = actionsHtml(paper({ picked: true }), { repo: REPO, picked: true });
+  assert.ok(!html.includes('pa-pick') && !html.includes('Pick'));
 });
 
 test('actionsHtml escapes an id in every attribute', () => {

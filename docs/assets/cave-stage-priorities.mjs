@@ -40,12 +40,17 @@
  * topic chips. The lists persist with the rest of the prefs, so a dislike
  * survives a reload the way a topic weight does.
  *
+ * ML FOR QUANTUM IS A ROW OF COMPUTING. It is not a leaf of topics.json — it
+ * is the `ml4q` axis, a probe that cuts across leaves — so its row carries an
+ * "Only" toggle instead of a weight dropdown, and its count is tonight's
+ * papers the axis calls ML-for-quantum, not a share of Computing's number.
+ *
  * Pure helpers sit above `mount` so `node --test` can hold the arithmetic and
  * the codec: counts, leaf → wagons, weights, the one-line summary, and the
  * serialise/parse pair v3's tests already covered.
  */
 import { applyNudge } from './cave-nudge.mjs';
-import { corpusSpace, defaultSetting } from './sieve-core.mjs';
+import { axisProbability, corpusSpace, defaultSetting } from './sieve-core.mjs';
 import {
   cacheKeyText, embedTexts, escapeHtml, readStore, writeStore,
 } from './sieve-ui.mjs';
@@ -292,6 +297,21 @@ export function treeCounts(night, topics) {
   return { parents, leaves };
 }
 
+/** The parent whose rows include ML for quantum. */
+export const ML4Q_PARENT = 'computing';
+
+/**
+ * Tonight's papers the ML-for-quantum axis reads at 0.5 or above — the same
+ * cut the ranking applies — or 0 with no night, no vectors or no axis.
+ */
+export function ml4qCount(night, axis) {
+  const vecs = night && Array.isArray(night.vecs) ? night.vecs : null;
+  if (!vecs || !axis || !axis.w) return 0;
+  let n = 0;
+  for (const vec of vecs) if (vec && axisProbability(axis, vec) >= 0.5) n += 1;
+  return n;
+}
+
 /** The most common leaf in one wagon; ties go to the lowest leaf index. */
 function mainLeaf(night, indices) {
   const tally = new Map();
@@ -356,9 +376,6 @@ export function prefsSummary(topics, prefs) {
 }
 
 /* ── the stage ──────────────────────────────────────────────────────────── */
-
-/** The campfire the stage opens with: one small, lit drawing, nothing more. */
-export const ART_HREF = new URL('./cave-art/campfire.svg', import.meta.url).href;
 
 /** Load this stage's stylesheet once; the page links none of its own. */
 function ensureStyles() {
@@ -451,8 +468,6 @@ export function mount(body, ctx) {
 
   body.innerHTML =
     '<div class="cave-priorities">' +
-      '<img class="cave-priorities-fire" src="' + escapeHtml(ART_HREF) + '"' +
-        ' width="192" height="144" alt="" aria-hidden="true" decoding="async">' +
       '<div class="cave-field">' +
         '<label class="cave-field-label" for="cave-priorities-text">What do you care about?</label>' +
         '<textarea class="cave-priorities-text" id="cave-priorities-text" rows="3" placeholder="' +
@@ -614,6 +629,7 @@ export function mount(body, ctx) {
       '</div>' +
       '<div class="cave-kids" data-kids="' + escapeHtml(parent.id) + '"' + (open ? '' : ' hidden') + '>' +
         leaves.map((leaf) => leafHtml(leaf)).join('') +
+        (parent.id === ML4Q_PARENT && shipMl ? ml4qRowHtml() : '') +
       '</div>' +
     '</div>';
   }
@@ -634,6 +650,29 @@ export function mount(body, ctx) {
       '<div class="cave-wagons" data-wagons="' + escapeHtml(leaf.id) + '"' + (open ? '' : ' hidden') + '>' +
         (open ? wagonsHtml(leaf.id) : '') +
       '</div>';
+  }
+
+  /** ML for quantum, under Computing: a count and an "Only" toggle. */
+  function ml4qRowHtml() {
+    return '<div class="cave-trow cave-trow--leaf cave-trow--ml4q">' +
+        '<span class="cave-trow-toggle">' +
+          '<span class="cave-twisty" aria-hidden="true"></span>' +
+          '<span class="cave-trow-label">ML for quantum</span>' +
+          '<span class="cave-trow-count">' + countHtml(ml4qCount(state.night, ctx.axes.ml4q)) + '</span>' +
+        '</span>' +
+        '<button type="button" class="cave-ml4q" aria-pressed="' + state.ml4q + '"' +
+          ' title="Rank only the papers the ML-for-quantum axis picks out">Only</button>' +
+      '</div>';
+  }
+
+  function setMl4q(on) {
+    if (!shipMl || on === state.ml4q) return;
+    state.ml4q = on;
+    for (const button of treeEl.querySelectorAll('.cave-ml4q')) {
+      button.setAttribute('aria-pressed', String(on));
+    }
+    renderChips();
+    publish();
   }
 
   function renderTree() {
@@ -712,14 +751,19 @@ export function mount(body, ctx) {
     ).join('') +
       /* The nudge chips sit in the same row, so "more like" is one glance away
          from "Computing · Prefer" — they are all priorities the reader set. */
-      nudgeChips(currentPrefs(), titleFor).map(nudgeChipHtml).join('');
+      nudgeChips(currentPrefs(), titleFor).map(nudgeChipHtml).join('') +
+      /* The tree may be folded, so a list cut to ML for quantum says why. */
+      (state.ml4q
+        ? '<button type="button" class="cave-tchip" data-ml4q-off aria-label="Remove filter: ML for quantum only">' +
+          'ML for quantum · Only<span aria-hidden="true">×</span></button>'
+        : '');
   }
 
   /* ── the sliders, drawn by the ranking ─────────────────────────────── */
 
   /**
-   * The ranking stage draws the sliders and the ML-for-quantum toggle beside
-   * the list they reorder, and sends each change here as a `tune` event; this
+   * The ranking stage draws the sliders beside the list they reorder, and
+   * sends each change here as a `tune` event; this
    * stage still keeps them, so the codec, the storage and the one `prefs`
    * event stay in one place. A drag fires in bursts, so it settles first.
    */
@@ -812,6 +856,11 @@ export function mount(body, ctx) {
     /* The dropdown is part of the row but is not the row. */
     if (event.target.closest('select')) return;
 
+    if (event.target.closest('.cave-ml4q')) {
+      setMl4q(!state.ml4q);
+      return;
+    }
+
     const toggle = event.target.closest('[data-expand]');
     if (toggle) {
       const [scope, id] = toggle.dataset.expand.split(':');
@@ -835,6 +884,10 @@ export function mount(body, ctx) {
   });
 
   chipsEl.addEventListener('click', (event) => {
+    if (event.target.closest('[data-ml4q-off]')) {
+      setMl4q(false);
+      return;
+    }
     const nudgeDrop = event.target.closest('[data-unnudge]');
     if (nudgeDrop) {
       setNudge(nudgeDrop.dataset.unnudge, 0);
