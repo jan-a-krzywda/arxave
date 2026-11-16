@@ -248,6 +248,19 @@ export async function clsRows(body: ReadableStream<Uint8Array> | null): Promise<
           break;
         }
       }
+      /* Inside a token row that is not [CLS]: nothing in it is kept and it
+         holds no brackets, so jump to its `]` with a native search instead of
+         walking 768 numbers byte by byte. That is 511 of every 512 rows, and
+         the byte walk over them is what ran the isolate out of CPU (546) once
+         the memory was fixed. */
+      if (depth === 3 && at[2] !== 0) {
+        inNumber = false;
+        const close = value.indexOf(93, i);
+        if (close < 0) break;
+        i = close;
+        depth -= 1;
+        continue;
+      }
       if (b === 91) {            // [
         depth += 1;
         if (depth < at.length) at[depth] = 0;

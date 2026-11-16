@@ -36,7 +36,7 @@
  *
  * EACH ROW ACTS. SciRate, the paper's GitHub Discussions thread (join it, or
  * start it with the diamond inside), Summarize (the LLM diamond, cached per
- * paper), and the Story tick that carries picks to the last stage. The bar is
+ * paper), and the Pick tick. The bar is
  * `actionsHtml` from `cave-paper-actions.mjs`; the thread states and the lookup
  * that fills them live there too. Thread answers are fetched once per page for
  * every row on screen, in ONE POST, and remembered in a module Map, so "Show 5
@@ -47,7 +47,8 @@
  * because the abstract is already on the stone.
  *
  * PICKS LIVE ON `ctx.picks` (a Set of ids) and are dispatched as an array, so a
- * re-rank cannot drop one.
+ * re-rank cannot drop one. The foot acts on them: Story carries them to the
+ * last stage, RIS and BibTeX download them for Zotero — no story needed.
  *
  * THE PURE HALF IS EXPORTED — `meters`, `orderNight`, `applyPicks`, `rowHtml`,
  * `shownLine`, `storySummary` — because every number in this card is arithmetic
@@ -58,7 +59,7 @@ import { PROMISE_REF, caveScore, defaultSetting, phi } from './sieve-core.mjs';
 import { SLIDERS } from './cave-stage-priorities.mjs';
 import { bareArxivId, escapeHtml, joinUrl } from './sieve-ui.mjs';
 import { wagonLabel } from './cave-wagon-views.mjs';
-import { downloadText } from './cave-export.mjs';
+import { downloadText, toBibtex, toRis } from './cave-export.mjs';
 import { parseRepo, threadBody } from './cave-thread.mjs';
 import {
   BUDGET_NOTE, actionsHtml, diamondHtml, diamondRequest, parseThreads, readCachedDiamond,
@@ -221,6 +222,12 @@ export function shownLine(shown, total) {
   const n = Math.max(0, Math.round(Number(total) || 0));
   const k = Math.min(n, Math.max(0, Math.round(Number(shown) || 0)));
   return k + ' of ' + n + ' tonight';
+}
+
+/** The count beside the foot's buttons: what they act on. */
+export function pickedLine(k) {
+  const n = Math.max(0, Math.round(Number(k) || 0));
+  return n ? n + ' picked' : '';
 }
 
 /** The ranking stage's completion line: what goes to the story. */
@@ -539,8 +546,11 @@ export function mount(body, ctx) {
       '</div>' +
       '<div class="button-bar rk-foot">' +
         '<button type="button" class="cave-continue-btn cave-primary rk-continue" disabled>' +
-          'Tell the story</button>' +
-        '<p class="rk-hint" hidden>Tick In Story on the papers you want woven in.</p>' +
+          'Story</button>' +
+        '<button type="button" class="rk-tool rk-ris" disabled>RIS</button>' +
+        '<button type="button" class="rk-tool rk-bib" disabled>BibTeX</button>' +
+        '<span class="rk-picked"></span>' +
+        '<p class="rk-hint" hidden>Tick Pick on papers, then tell their story or export them.</p>' +
       '</div>' +
     '</div>';
 
@@ -551,6 +561,9 @@ export function mount(body, ctx) {
   const shownEl = body.querySelector('.rk-shown');
   const continueBtn = body.querySelector('.rk-continue');
   const hintEl = body.querySelector('.rk-hint');
+  const risBtn = body.querySelector('.rk-ris');
+  const bibBtn = body.querySelector('.rk-bib');
+  const pickedEl = body.querySelector('.rk-picked');
   const tuneEl = body.querySelector('.rk-tune');
   const ml4qBtn = body.querySelector('.rk-ml4q');
   const traceBtn = body.querySelector('.rk-trace');
@@ -638,7 +651,26 @@ export function mount(body, ctx) {
   function paintFoot() {
     const k = pickedIds().length;
     continueBtn.disabled = k === 0;
+    risBtn.disabled = k === 0;
+    bibBtn.disabled = k === 0;
+    pickedEl.textContent = pickedLine(k);
     hintEl.hidden = k > 0;
+  }
+
+  /** The picked rows, in rank order — every pick, not only the rows on screen. */
+  function pickedPapers() {
+    const ids = new Set(pickedIds());
+    return state.ranked.filter((item) => ids.has(item.id));
+  }
+
+  function downloadPicks(kind) {
+    const papers = pickedPapers();
+    if (!papers.length) return;
+    if (kind === 'ris') {
+      downloadText('arxave-picks.ris', toRis(papers), 'application/x-research-info-systems');
+    } else {
+      downloadText('arxave-picks.bib', toBibtex(papers), 'application/x-bibtex');
+    }
   }
 
   function paint() {
@@ -1073,6 +1105,8 @@ export function mount(body, ctx) {
   });
 
   traceBtn.addEventListener('click', () => { estimateTraces(); });
+  risBtn.addEventListener('click', () => downloadPicks('ris'));
+  bibBtn.addEventListener('click', () => downloadPicks('bib'));
 
   continueBtn.addEventListener('click', () => {
     const k = pickedIds().length;

@@ -331,6 +331,35 @@ test('embedTexts refuses a reply it cannot trust', async () => {
   await assert.rejects(() => embedTexts(offline), /Could not reach the pick/);
 });
 
+test('embedTexts splits a batch the pick could not hold (546), and keeps the order', async () => {
+  const texts = Array.from({ length: 20 }, (_, i) => 't' + i);
+  const sizes = [];
+  const vectors = await embedTexts({
+    texts,
+    embedUrl: 'e',
+    dim: 2,
+    chunk: 20,
+    fetchImpl: async (url, opts) => {
+      const input = JSON.parse(opts.body).input;
+      sizes.push(input.length);
+      if (input.length > 10) {
+        return { ok: false, status: 546, json: async () => { throw new Error('not json'); } };
+      }
+      return ok({
+        dim: 2,
+        data: input.map((t, index) => ({ index, embedding: [Number(t.slice(1)) + 1, 0] })),
+      });
+    },
+  });
+  assert.deepEqual(sizes, [20, 10, 10]);
+  assert.equal(vectors.length, 20);
+  assert.ok(vectors.every((v) => v[0] === 1), 'every row normalised and present');
+
+  const small = { texts: texts.slice(0, 8), embedUrl: 'e', dim: 2,
+    fetchImpl: async () => ({ ok: false, status: 546, json: async () => ({}) }) };
+  await assert.rejects(() => embedTexts(small), /HTTP 546/, 'a batch at the floor still fails plainly');
+});
+
 test('cacheLookup normalises a hit and treats every failure as a miss', async () => {
   const vector = new Float32Array([3, 0, 0, 4]);   // |v| = 5
   const base64 = Buffer.from(new Uint8Array(vector.buffer)).toString('base64');

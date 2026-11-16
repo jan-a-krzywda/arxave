@@ -14,10 +14,9 @@
  * `arxave-cave-diamond:<arXiv id>` as the endpoint's JSON. Nothing here fetches
  * a paper; the one call is the story itself.
  *
- * THE PICKS LEAVE AS FILES, STORY OR NO STORY. The `.bib` / `.ris` pair under
- * the card is the Zotero exit that used to live in Act: it is drawn from the
- * ticked ranking rows (`exportPicksHtml`) and downloads every pick, so a reader
- * who came only for the bibliography never has to ask the model for prose.
+ * THE PICKS LEAVE AS FILES FROM THE RANKING, not from here: its foot has RIS
+ * and BibTeX beside Story, so a reader who came only for the bibliography
+ * never has to open this stage.
  *
  * TWELVE IS THE CEILING, AND THE READER IS TOLD. `story` accepts at most
  * `MAX_PAPERS` (twelve) and a story over twelve abstracts is two calls against
@@ -44,11 +43,11 @@
  * reload, never a story.
  *
  * THE PURE HALF IS EXPORTED: `storyRequest`, `renderStoryMd`, `plainText`,
- * `storyCacheKey`, `readFirstWhy`, `storyCardHtml`, `exportPicksHtml`,
+ * `storyCacheKey`, `readFirstWhy`, `storyCardHtml`,
  * `storyMarkdown` — the parts a browser cannot be asked to hold at 360 px
  * (`scripts/cave-stage-story.test.mjs`).
  */
-import { downloadText, toBibtex, toRis } from './cave-export.mjs';
+import { downloadText } from './cave-export.mjs';
 import { escapeHtml, joinUrl, readStore, writeStore } from './sieve-ui.mjs';
 
 /* The caps `supabase/functions/story/story.ts` validates against, mirrored so
@@ -452,18 +451,6 @@ function threadsHtml(threads, lookup) {
 }
 
 /**
- * The export pair under the card, or '' when nothing is ticked. Pure markup so
- * the two buttons and their order can be held by a test without a page.
- */
-export function exportPicksHtml(n) {
-  const picks = Math.max(0, Math.round(Number(n) || 0));
-  if (!picks) return '';
-  return '<p class="st-label">Export picks</p>'
-    + '<button type="button" class="st-bib">Download .bib</button>'
-    + '<button type="button" class="st-ris">Download .ris</button>';
-}
-
-/**
  * The result panel: eyebrow, title, the story itself, the read-first callout,
  * the threads, and the three tools. No date or count is invented — `date` and
  * `count` come from the request that produced the story.
@@ -540,7 +527,7 @@ export function mount(body, ctx) {
   body.innerHTML =
     '<div class="cave-story">'
     + '<p class="st-line"><span class="st-count">0 picked papers.</span>'
-      + '<span class="st-hint"> Tick In Story on a few papers in the ranking first.</span></p>'
+      + '<span class="st-hint"> Tick Pick on a few papers in the ranking first.</span></p>'
     + '<p class="st-over" hidden>Only the top ' + MAX_PAPERS + ' by rank go into the story.</p>'
     + '<p class="st-missing" hidden></p>'
     + '<div class="st-ask">'
@@ -552,14 +539,12 @@ export function mount(body, ctx) {
       + '<p class="st-wait-line">' + escapeHtml(WAITING) + '</p>'
     + '</div>'
     + '<article class="st-card" aria-live="polite" hidden></article>'
-    + '<div class="st-export st-tools" hidden></div>'
     + '</div>';
 
   const countEl = body.querySelector('.st-count');
   const overEl = body.querySelector('.st-over');
   const missingEl = body.querySelector('.st-missing');
   const tellBtn = body.querySelector('.st-tell');
-  const exportEl = body.querySelector('.st-export');
   const errorEl = body.querySelector('.st-error');
   const waitEl = body.querySelector('.st-wait');
   const cardEl = body.querySelector('.st-card');
@@ -621,8 +606,6 @@ export function mount(body, ctx) {
     overEl.hidden = n <= MAX_PAPERS;
     missingEl.textContent = ctx.night ? '' : NO_NIGHT;
     missingEl.hidden = !!ctx.night;
-    exportEl.innerHTML = exportPicksHtml(n);
-    exportEl.hidden = n === 0;
     tellBtn.disabled = state.busy || n === 0 || !(ctx.night && ctx.night.date);
   }
 
@@ -809,38 +792,9 @@ export function mount(body, ctx) {
       'text/markdown;charset=utf-8');
   }
 
-  /* ── the exits ───────────────────────────────────────────────────────── */
-
-  /** The ticked ranking rows, in rank order — the order the story uses. */
-  function pickedPapers() {
-    const picks = ctx.picks;
-    const has = picks && typeof picks.has === 'function' ? (id) => picks.has(String(id)) : () => false;
-    return (Array.isArray(ctx.ranked) ? ctx.ranked : [])
-      .filter((paper) => paper && paper.id != null && has(paper.id));
-  }
-
-  function downloadPicks(kind) {
-    const papers = pickedPapers();
-    if (!papers.length) return;
-    if (kind === 'ris') {
-      downloadText('arxave-picks.ris', toRis(papers), 'application/x-research-info-systems');
-    } else {
-      downloadText('arxave-picks.bib', toBibtex(papers), 'application/x-bibtex');
-    }
-  }
-
   /* ── wiring ──────────────────────────────────────────────────────────── */
 
   tellBtn.addEventListener('click', tell);
-
-  /* The export pair is rewritten on every pick change but the element itself
-     stays, so one listener here outlives all of it. */
-  exportEl.addEventListener('click', (event) => {
-    const target = event.target;
-    if (!target || typeof target.closest !== 'function') return;
-    if (target.closest('.st-bib')) downloadPicks('bib');
-    else if (target.closest('.st-ris')) downloadPicks('ris');
-  });
 
   /* Delegated: the card is re-rendered on every story and every restore, and
      one listener on the article outlives all of it. */
