@@ -499,6 +499,9 @@ export async function embedTexts({
   const vectors = [];
   for (let i = 0; i < texts.length; i += chunk) {
     const slice = texts.slice(i, i + chunk);
+    /* The third argument is the batch now going out, so a progress display
+       can move while the request is in flight instead of in 64-text jumps. */
+    if (onProgress) onProgress(vectors.length, texts.length, slice.length);
     let resp;
     try {
       resp = await fetchImpl(embedUrl, {
@@ -664,7 +667,7 @@ export async function embedCandidates({
     const fresh = await embedTexts({
       texts: missing.map((i) => texts[i]),
       embedUrl, fetchImpl, chunk, model, dim,
-      onProgress: onProgress && ((done, total) => onProgress(cached + done, total)),
+      onProgress: onProgress && ((done, total, inFlight) => onProgress(cached + done, cached + total, inFlight)),
     });
     missing.forEach((at, i) => { vectors[at] = fresh[i]; });
   }

@@ -290,8 +290,8 @@ export function mountTrain(body, ctx) {
       train = startHaulTrain(canvas);
     },
     /** Relay the haul's progress; the label follows if given one. */
-    set(done, total, text) {
-      if (train) train.set(done, total);
+    set(done, total, text, inFlight) {
+      if (train) train.set(done, total, inFlight);
       if (label && text) label.textContent = text;
     },
     say(text) {
@@ -469,8 +469,8 @@ export function mountDig(body, ctx) {
         texts: candidates.map((c) => paperEmbedText(c.title, c.abstract)),
         embedUrl: ctx.config.embedUrl,
         cacheUrl: ctx.config.cacheUrl,
-        onProgress: (done, total) => {
-          if (haul) haul.set(done, total, `Stones hauled: ${done} / ${total}`);
+        onProgress: (done, total, inFlight) => {
+          if (haul) haul.set(done, total, `Stones hauled: ${done} / ${total}`, inFlight);
         },
       });
 
