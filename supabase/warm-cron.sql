@@ -121,6 +121,13 @@ revoke all on function public.dispatch_warm_dig() from public, anon, authenticat
 --   04:00:21 rebuild, and the run takes ~1 min, so the cache is warm by about
 --   06:12 CEST.
 --
+--   05:10 UTC (06:10 CET) — the winter morning run. arXiv rebuilds at
+--   midnight ET, which is 04:00 UTC only while New York is on EDT; from
+--   November to March it is 05:00 UTC, and the 04:10 run meets yesterday's
+--   feed and exits 3. Measured 2026-11-09..13: every 04:10 run failed that
+--   way, so the cache was not warm until the 06:13 catch-up finished, ~06:30
+--   UTC. In summer this run finds everything cached and costs a minute.
+--
 --   06:13 UTC (08:13 CEST) — the catch-up, for mornings arXiv rebuilds late.
 --   The warmer only embeds what is not already cached, so on a normal day this
 --   costs a minute and writes nothing. It refuses a stale feed (exit 3) rather
@@ -138,7 +145,7 @@ select cron.unschedule('warm-dig-catchup')
 
 select cron.schedule(
   'warm-dig-morning',
-  '10 4 * * 1-5',
+  '10 4,5 * * 1-5',
   $job$ select public.dispatch_warm_dig(); $job$
 );
 

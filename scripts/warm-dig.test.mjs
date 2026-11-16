@@ -18,8 +18,9 @@ import { fileURLToPath } from 'node:url';
 import {
   bareArxivId, cacheKeyText, coreEmbedText, coreRefs, cutoffDate, deLatex, DIM, doiKey,
   embedChunk, feedBuildDate, fetchEarlier, MODEL, parseAtom, parseFeed,
-  presetUnits, reconstructAbstract, resolveEndpoint, withinCutoff,
+  presetUnits, reconstructAbstract, resolveEndpoint, withinCutoff, withPageText,
 } from './warm-dig.mjs';
+import { paperEmbedText, parseAnnouncementRSS, parseAtomEntries } from '../docs/assets/sieve-ui.mjs';
 
 const DEFAULT = 'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1/dig-cache';
 
@@ -571,4 +572,27 @@ test('an empty announcement feed does not skip the lookback window', () => {
   assert.ok(guard > 0, 'the lookback window must run when tonight brought nothing');
   assert.ok(giveUp > guard,
     'giving up must come after the lookback window, not before it');
+});
+
+/* The Cave page hashes `title + ' ' + abstract` as its own parser reads it, not
+   the de-LaTeXed abstract the feeds use. Warming only the latter left every dig
+   cold (0 of 75 quant-ph page keys cached, 2026-11-16). */
+test('the warmer carries the exact key the Cave page asks for', () => {
+  const xml = feed([
+    '<item><title>Spin  qubits in L\\"uders space</title><link>https://arxiv.org/abs/2611.00001</link>' +
+      '<arxiv:announce_type>new</arxiv:announce_type>' +
+      '<description>arXiv:2611.00001v1 Announce Type: new\nAbstract: A $\\Omega$ gate &amp; more.</description></item>',
+  ]);
+  const [stone] = withPageText(parseFeed(xml), parseAnnouncementRSS(xml, 'quant-ph'));
+  const [page] = parseAnnouncementRSS(xml, 'quant-ph');
+  assert.equal(stone.pageText, paperEmbedText(page.title, page.abstract));
+  assert.notEqual(stone.pageText, stone.abstract);
+});
+
+test('the earlier days carry the page key too', () => {
+  const xml = '<feed><entry><id>http://arxiv.org/abs/2611.00002v2</id>' +
+    '<title>A title</title><summary>An abstract.</summary>' +
+    '<published>2026-11-13T10:00:00Z</published></entry></feed>';
+  const [stone] = withPageText(parseAtom(xml), parseAtomEntries(xml));
+  assert.equal(stone.pageText, 'A title An abstract.');
 });

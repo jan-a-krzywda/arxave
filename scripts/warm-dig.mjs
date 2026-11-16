@@ -46,6 +46,7 @@ import { pathToFileURL } from 'node:url';
 import { XMLParser } from 'fast-xml-parser';
 
 import { chooseEmbedder } from './embed-local.mjs';
+import { paperEmbedText, parseAnnouncementRSS, parseAtomEntries } from '../docs/assets/sieve-ui.mjs';
 
 /* Must match docs/assets/filter.js and supabase/functions/embed/hf.ts exactly —
    these two strings are the cache key, and a mismatch is not an error but a
@@ -448,7 +449,27 @@ export async function fetchAbstracts(category) {
   });
   if (!resp.ok) throw new Error(`${category}: HTTP ${resp.status}`);
   const xml = await resp.text();
-  return { stones: parseFeed(xml), builtOn: feedBuildDate(xml) };
+  return {
+    stones: withPageText(parseFeed(xml), parseAnnouncementRSS(xml, category)),
+    builtOn: feedBuildDate(xml),
+  };
+}
+
+/**
+ * Attach the Cave page's cache key text to each stone, as `pageText`.
+ *
+ * TWO KEYS PER PAPER, BECAUSE THERE ARE TWO READERS. The preset feeds, rank.mjs
+ * and filter.js hash the de-LaTeXed abstract alone (`abstract` above). The Cave
+ * page hashes `title + ' ' + abstract` exactly as its own regex parser reads the
+ * feed (sieve-ui's `paperEmbedText`), to match the corpus it ranks against.
+ * Measured 2026-11-16 on quant-ph: 0 of 75 page keys were cached, so every dig
+ * embedded the whole night from scratch. The page's parser is imported rather
+ * than copied, so the two can never drift: the same XML, the same function.
+ */
+export function withPageText(stones, pagePapers) {
+  const byId = new Map();
+  for (const p of pagePapers) byId.set(p.id, paperEmbedText(p.title, p.abstract));
+  return stones.map((s) => (byId.has(s.arxivId) ? { ...s, pageText: byId.get(s.arxivId) } : s));
 }
 
 /* ── The earlier days ────────────────────────────────────────────────────
@@ -552,7 +573,8 @@ export async function fetchEarlier(categories, lookback, maxResults, now = new D
         signal: AbortSignal.timeout(60_000),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      for (const s of withinCutoff(parseAtom(await resp.text()), cutoff)) {
+      const xml = await resp.text();
+      for (const s of withinCutoff(withPageText(parseAtom(xml), parseAtomEntries(xml)), cutoff)) {
         if (seen.has(s.arxivId)) continue;   // a cross-list is one abstract
         seen.add(s.arxivId);
         out.push(s);
@@ -791,7 +813,14 @@ async function main() {
      they share the model load, which is the expensive part, and they are a
      handful of texts against several hundred. Their vectors never change, so
      after the first warm every later run finds them cached and skips them. */
-  const units = stones.map((s) => ({ text: s.abstract, source: 'arxiv:' + s.arxivId }));
+  /* Both keys per paper — see withPageText. The sha dedupe below drops the
+     second when the two strings happen to be the same. */
+  const units = stones.flatMap((s) => {
+    const source = 'arxiv:' + s.arxivId;
+    const out = [{ text: s.abstract, source }];
+    if (s.pageText) out.push({ text: s.pageText, source });
+    return out;
+  });
   const presetDir = arg('presets');
   if (presetDir) {
     const loaded = await loadPresets(presetDir);
