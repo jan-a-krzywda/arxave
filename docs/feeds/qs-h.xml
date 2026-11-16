@@ -5,10 +5,9 @@
     <title>The Dig — Error correction route</title>
     <link>https://arxave.com/?preset=qs-h</link>
     <atom:link href="https://arxave.com/feeds/qs-h.xml" rel="self" type="application/rss+xml"/>
-    <description>Papers relevant to operating, benchmarking, integrating and using a semiconductor spin-qubit quantum computer of at least 16 qubits that is co-located with and integrated into an HPC system. Today&apos;s arXiv announcement, ranked against the Error correction route preset. Today’s ranked reading list covers three adjacent software-stack concerns rather than spin-qubit hardware itself: 2611.15080 offers a structure-aware equivalence-checking oracle for validating unitary circuit transformations, 2611.16285 reports multi-GPU orchestration for relay belief-propagation QEC decoding on an HPC system, and 2611.16971 presents a low-cost, hardware-agnostic zero-noise extrapolation wrapper for NISQ error mitigation.</description>
-    <arxave:summary>Today’s ranked reading list covers three adjacent software-stack concerns rather than spin-qubit hardware itself: 2611.15080 offers a structure-aware equivalence-checking oracle for validating unitary circuit transformations, 2611.16285 reports multi-GPU orchestration for relay belief-propagation QEC decoding on an HPC system, and 2611.16971 presents a low-cost, hardware-agnostic zero-noise extrapolation wrapper for NISQ error mitigation.</arxave:summary>
+    <description>Papers relevant to operating, benchmarking, integrating and using a semiconductor spin-qubit quantum computer of at least 16 qubits that is co-located with and integrated into an HPC system. Today&apos;s arXiv announcement, ranked against the Error correction route preset.</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 13 Nov 2026 06:32:57 GMT</lastBuildDate>
-    <pubDate>Fri, 13 Nov 2026 06:32:57 GMT</pubDate>
+    <lastBuildDate>Mon, 16 Nov 2026 04:23:28 GMT</lastBuildDate>
+    <pubDate>Mon, 16 Nov 2026 04:23:28 GMT</pubDate>
   </channel>
 </rss>
