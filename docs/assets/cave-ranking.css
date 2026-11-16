@@ -23,6 +23,99 @@
   font-style: italic;
 }
 
+/* ── The sliders: small, above the list they reorder ─────────────
+   Two columns where there is room, one on a phone. Each row is label and
+   value on one line, the slider, then its two ends in faint type. */
+
+.rk-tune {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.45rem 1rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 8px;
+  background: var(--rock-deep);
+}
+
+.rk-tune-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "label val"
+    "slider slider"
+    "ends ends";
+  min-width: 0;
+  font-size: 0.74rem;
+}
+
+.rk-tune-row[hidden] {
+  display: none;
+}
+
+.rk-tune-label {
+  grid-area: label;
+  color: var(--text-dim);
+}
+
+.rk-tune-val {
+  grid-area: val;
+  color: var(--lamp);
+  font-variant-numeric: tabular-nums;
+}
+
+.rk-tune-slider {
+  grid-area: slider;
+  width: 100%;
+  margin: 0.1rem 0 0;
+  accent-color: var(--lamp);
+}
+
+.rk-tune-ends {
+  grid-area: ends;
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-faint);
+  font-size: 0.66rem;
+}
+
+.rk-tune-tools {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.rk-tool {
+  padding: 0.2rem 0.65rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 999px;
+  background: var(--rock);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.rk-tool[hidden] {
+  display: none;
+}
+
+.rk-tool[aria-pressed="true"] {
+  border-color: var(--gold-dim);
+  color: var(--gold);
+}
+
+.rk-tool:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.rk-trace-note {
+  color: var(--text-faint);
+  font-size: 0.74rem;
+}
+
 /* ── The list ─────────────────────────────────────────────────── */
 
 .rk-list {
@@ -86,21 +179,14 @@ h3.rk-title {
   overflow-wrap: anywhere;
 }
 
-/* The title is the row's opener — a button so a keyboard can reach it. */
-.rk-title-btn {
-  display: block;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: none;
+/* The title goes to the paper on arXiv; the ▸ and the row open the detail. */
+.rk-title-link {
   color: var(--lamp);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
+  text-decoration: none;
 }
 
-.rk-title-btn:hover,
-.rk-title-btn:focus-visible {
+.rk-title-link:hover,
+.rk-title-link:focus-visible {
   text-decoration: underline;
 }
 
@@ -167,7 +253,51 @@ h3.rk-title {
 .rk-meters {
   grid-area: meters;
   display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
   min-width: 0;
+}
+
+/* ── The grades: the parts of the score, each its own small cell ── */
+
+.rk-grades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+.rk-grade {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0 0.35rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  background: var(--rock-deep);
+  font-size: 0.68rem;
+  line-height: 1.55;
+  white-space: nowrap;
+}
+
+.rk-grade-k {
+  color: var(--text-faint);
+}
+
+.rk-grade-k:empty {
+  display: none;
+}
+
+.rk-grade-v {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.rk-grade.is-warn {
+  border-color: var(--gold-dim);
+}
+
+.rk-grade.is-warn .rk-grade-v,
+.rk-grade.is-solo .rk-grade-v {
+  color: var(--gold);
 }
 
 .rk-meter {
@@ -302,7 +432,9 @@ h3.rk-title {
 
 .rk-more:focus-visible,
 .rk-toggle:focus-visible,
-.rk-title-btn:focus-visible,
+.rk-title-link:focus-visible,
+.rk-tune-slider:focus-visible,
+.rk-tool:focus-visible,
 .pa-btn:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;

@@ -493,3 +493,21 @@ curl -s -X POST "$BASE/threads" -H 'Content-Type: application/json' \
 # which the page treats as "fall back to a search link", not a broken card
 ```
 
+
+## aitrace
+
+The Cave ranking's "Estimate AI trace" button. An LLM's guess at how likely
+each abstract on screen was written by an LLM — a hint, labelled as a guess on
+the page, never a verdict.
+
+    POST /aitrace  { papers: [{ id, title, abstract }] }      (1..10)
+      → { scores: { "<id>": { p: 0..100, why: "…" } } }
+
+Same key, provider and shared daily budget as story (`LLM_API_KEY`,
+`REFINE_BASE_URL`, `refine_usage_spend`); one press is one call. Optional
+`AITRACE_MODEL` overrides `REFINE_MODEL`. The page caches answers per paper in
+localStorage, so a paper is asked about once.
+
+    supabase functions deploy aitrace --no-verify-jwt
+
+`deno test supabase/functions/aitrace/` runs with no network.

@@ -2,9 +2,13 @@
  * cave-stage-priorities — stage 5: what you care about, how much, and which
  * topics tonight is allowed to be about.
  *
- * THIS IS v3'S LEFT COLUMN, GIVEN THE NIGHT'S NUMBERS. The box, the three
- * sliders, the four-way topic dropdowns, the chips and the settings codec are
- * v3's (`docs/assets/cave.js` on `origin/main`), copied rather than imported
+ * THE BOX AND THE TREE, NOTHING ELSE ON SCREEN. The sliders moved to the
+ * ranking, beside the list they reorder; they come back here as `tune` events,
+ * because this stage still KEEPS them — the codec, the storage and the one
+ * `prefs` event are here, so there is one owner of what the reader set.
+ *
+ * THIS IS v3'S LEFT COLUMN, GIVEN THE NIGHT'S NUMBERS. The box, the four-way
+ * topic dropdowns, the chips and the settings codec are v3's (`docs/assets/cave.js` on `origin/main`), copied rather than imported
  * because this stage owns its markup the same way every other v4 stage does.
  * What is new is the tree: a parent row shows how many of tonight's papers are
  * filed under it, a leaf overrides its parent, and clicking a leaf opens the
@@ -55,11 +59,17 @@ export const CHOICE_LABEL = Object.freeze({
   equal: 'Equal', prefer: 'Prefer', avoid: 'Avoid', off: 'Off',
 });
 
-/** The sliders' ranges and defaults, shared by the page and the codec. */
+/**
+ * The sliders' ranges and defaults, shared by the ranking stage (which draws
+ * them, beside the list they move) and the codec here (which keeps them).
+ * `solo` and `ai` are penalties and start at 0: a reader turns them on.
+ */
 export const SLIDERS = Object.freeze({
   match: Object.freeze({ min: 0, max: 100, value: 50 }),
   surprise: Object.freeze({ min: 0, max: 100, value: 50 }),
   expTheory: Object.freeze({ min: -100, max: 100, value: 0 }),
+  solo: Object.freeze({ min: 0, max: 100, value: 0 }),
+  ai: Object.freeze({ min: 0, max: 100, value: 0 }),
 });
 
 /** The spec's four weights: equal 1, prefer 1.5, avoid 0.5, off 0. */
@@ -79,6 +89,12 @@ function number(raw, fallback, lo, hi) {
   return Number.isFinite(n) ? clamp(n, lo, hi) : fallback;
 }
 
+/** A slider's value, clamped to its range; undefined for a name not in SLIDERS. */
+export function sliderValue(name, raw) {
+  const range = Object.prototype.hasOwnProperty.call(SLIDERS, name) ? SLIDERS[name] : null;
+  return range ? number(raw, range.value, range.min, range.max) : undefined;
+}
+
 /** A setting string we did not write is `equal` (see sieve-core's topicWeights). */
 const choiceOf = (raw) => (CHOICES.includes(raw) ? raw : 'equal');
 
@@ -96,6 +112,8 @@ export function defaultPrefs(topics) {
       match: SLIDERS.match.value,
       surprise: SLIDERS.surprise.value,
       expTheory: SLIDERS.expTheory.value,
+      solo: SLIDERS.solo.value,
+      ai: SLIDERS.ai.value,
     },
     touchstones: [],
     text: '',
@@ -132,6 +150,12 @@ export function serialisePrefs(topics, prefs) {
   q.set('match', String(number(prefs?.sliders?.match, SLIDERS.match.value, SLIDERS.match.min, SLIDERS.match.max)));
   q.set('surprise', String(number(prefs?.sliders?.surprise, SLIDERS.surprise.value, SLIDERS.surprise.min, SLIDERS.surprise.max)));
   q.set('exp', String(number(prefs?.sliders?.expTheory, SLIDERS.expTheory.value, SLIDERS.expTheory.min, SLIDERS.expTheory.max)));
+  /* The penalties only when set, so the default string stays the short one an
+     older build wrote. */
+  for (const name of ['solo', 'ai']) {
+    const value = sliderValue(name, prefs?.sliders?.[name]);
+    if (value !== SLIDERS[name].value) q.set(name, String(value));
+  }
   if (prefs?.ml4q) q.set('ml4q', '1');
   return q.toString();
 }
@@ -157,6 +181,8 @@ export function parsePrefs(topics, raw) {
   prefs.sliders.match = number(q.get('match'), SLIDERS.match.value, SLIDERS.match.min, SLIDERS.match.max);
   prefs.sliders.surprise = number(q.get('surprise'), SLIDERS.surprise.value, SLIDERS.surprise.min, SLIDERS.surprise.max);
   prefs.sliders.expTheory = number(q.get('exp'), SLIDERS.expTheory.value, SLIDERS.expTheory.min, SLIDERS.expTheory.max);
+  prefs.sliders.solo = sliderValue('solo', q.get('solo'));
+  prefs.sliders.ai = sliderValue('ai', q.get('ai'));
   prefs.ml4q = q.get('ml4q') === '1';
   return prefs;
 }
@@ -317,17 +343,15 @@ export function wagonsForLeaf(night, topics, leafId) {
 const PAST_TENSE = Object.freeze({ prefer: 'preferred', avoid: 'avoided', off: 'off', equal: 'equal' });
 
 /**
- * The one line stage 5 folds to: the applied topic choices, then Surprise.
- * "Computing preferred · surprise 50" at the shipped defaults.
+ * The one line the stage folds to: the applied topic choices, then whether the
+ * box has words. "Computing preferred" at the shipped defaults. The sliders
+ * live on the ranking, beside the list they move, so they are not named here.
  */
 export function prefsSummary(topics, prefs) {
   const chips = chipsFromSetting(topics, prefs?.setting ?? settingFor(topics));
   const bits = chips.map((chip) => `${chip.label} ${PAST_TENSE[chip.choice] ?? chip.choice}`);
   if (!bits.length) bits.push('topics equal');
-  const surprise = Number.isFinite(prefs?.sliders?.surprise)
-    ? prefs.sliders.surprise
-    : SLIDERS.surprise.value;
-  bits.push(`surprise ${surprise}`);
+  if (String(prefs?.text ?? '').trim()) bits.push('your words');
   return bits.join(' · ');
 }
 
@@ -344,12 +368,6 @@ function ensureStyles() {
   link.rel = 'stylesheet';
   link.href = href;
   document.head.appendChild(link);
-}
-
-/** A whole number slider label, e.g. "no preference" or "40 toward theory". */
-function experimentText(value) {
-  if (value === 0) return 'no preference';
-  return Math.abs(value) + ' toward ' + (value < 0 ? 'experiment' : 'theory');
 }
 
 const plural = (n) => (n === 1 ? 'paper' : 'papers');
@@ -386,7 +404,6 @@ export function mount(body, ctx) {
       .map((row) => Float32Array.from(row))
     : [];
 
-  const shipExp = !!(ctx.axes && ctx.axes.expTheory && ctx.axes.expTheory.ship);
   const shipMl = !!(ctx.axes && ctx.axes.ml4q && ctx.axes.ml4q.ship);
 
   const state = {
@@ -432,19 +449,6 @@ export function mount(body, ctx) {
   };
 
 
-  const sliderRowHtml = (id, label, min, max, value, ends, extra = '') =>
-    '<div class="cave-priorities-ctl"' + extra + '>' +
-      '<div class="cave-priorities-ctl-head">' +
-        '<label for="cave-priorities-' + id + '">' + escapeHtml(label) + '</label>' +
-        '<output class="cave-priorities-val" id="cave-priorities-' + id + '-val" for="cave-priorities-' + id + '">' +
-          value + '</output>' +
-      '</div>' +
-      '<input class="cave-priorities-slider" type="range" id="cave-priorities-' + id + '" min="' + min +
-        '" max="' + max + '" step="1" value="' + value + '">' +
-      '<div class="cave-priorities-ends" aria-hidden="true"><span>' + escapeHtml(ends[0]) +
-        '</span><span>' + escapeHtml(ends[1]) + '</span></div>' +
-    '</div>';
-
   body.innerHTML =
     '<div class="cave-priorities">' +
       '<img class="cave-priorities-fire" src="' + escapeHtml(ART_HREF) + '"' +
@@ -453,23 +457,10 @@ export function mount(body, ctx) {
         '<label class="cave-field-label" for="cave-priorities-text">What do you care about?</label>' +
         '<textarea class="cave-priorities-text" id="cave-priorities-text" rows="3" placeholder="' +
           escapeHtml(textPlaceholder) + '"></textarea>' +
-        '<p class="cave-priorities-hint">Empty is fine — the topics and the sliders still rank the night.</p>' +
+        '<p class="cave-priorities-hint">Empty is fine — the topics still rank the night. The sliders sit on the ranking.</p>' +
         '<p class="cave-priorities-note" role="status"></p>' +
       '</div>' +
       '<div class="cave-priorities-chips" role="group" aria-label="Applied topic weights and paper nudges"></div>' +
-      '<div class="cave-priorities-sliders" role="group" aria-label="Ranking sliders">' +
-        sliderRowHtml('match', 'Topic match', SLIDERS.match.min, SLIDERS.match.max,
-          state.sliders.match, ['any topic', 'only close matches']) +
-        sliderRowHtml('surprise', 'Surprise', SLIDERS.surprise.min, SLIDERS.surprise.max,
-          state.sliders.surprise, ['proven', 'surprising']) +
-        sliderRowHtml('exptheory', 'Experiment ↔ Theory', SLIDERS.expTheory.min, SLIDERS.expTheory.max,
-          experimentText(state.sliders.expTheory), ['Experiment', 'Theory'],
-          shipExp ? '' : ' hidden') +
-      '</div>' +
-      '<div class="cave-priorities-tags">' +
-        '<button type="button" class="cave-ml4q" aria-pressed="false"' +
-          (shipMl ? '' : ' hidden') + '>ML for quantum</button>' +
-      '</div>' +
       '<div class="cave-priorities-tree-wrap">' +
         '<div class="cave-priorities-tree-head">' +
           '<h3 class="cave-priorities-tree-title">Topics tonight</h3>' +
@@ -486,14 +477,6 @@ export function mount(body, ctx) {
   const textEl = body.querySelector('.cave-priorities-text');
   const noteEl = body.querySelector('.cave-priorities-note');
   const chipsEl = body.querySelector('.cave-priorities-chips');
-  const matchEl = body.querySelector('#cave-priorities-match');
-  const surpriseEl = body.querySelector('#cave-priorities-surprise');
-  const expEl = body.querySelector('#cave-priorities-exptheory');
-  const expRowEl = expEl.closest('.cave-priorities-ctl');
-  const matchValEl = body.querySelector('#cave-priorities-match-val');
-  const surpriseValEl = body.querySelector('#cave-priorities-surprise-val');
-  const expValEl = body.querySelector('#cave-priorities-exptheory-val');
-  const ml4qEl = body.querySelector('.cave-ml4q');
   const treeEl = body.querySelector('.cave-priorities-tree');
   const emptyEl = body.querySelector('.cave-tree-empty');
   const continueBtn = body.querySelector('.cave-continue-btn');
@@ -732,28 +715,30 @@ export function mount(body, ctx) {
       nudgeChips(currentPrefs(), titleFor).map(nudgeChipHtml).join('');
   }
 
-  /* ── the sliders ────────────────────────────────────────────────────── */
+  /* ── the sliders, drawn by the ranking ─────────────────────────────── */
 
-  function renderSliders() {
-    matchEl.value = String(state.sliders.match);
-    surpriseEl.value = String(state.sliders.surprise);
-    expEl.value = String(state.sliders.expTheory);
-
-    matchEl.setAttribute('aria-valuetext', `Topic match: ${state.sliders.match} of 100`);
-    surpriseEl.setAttribute('aria-valuetext', `Surprise: ${state.sliders.surprise} of 100`);
-    expEl.setAttribute('aria-valuetext',
-      `Experiment to theory: ${experimentText(state.sliders.expTheory)}`);
-
-    matchValEl.textContent = String(state.sliders.match);
-    surpriseValEl.textContent = String(state.sliders.surprise);
-    expValEl.textContent = experimentText(state.sliders.expTheory);
-
-    /* A control that does nothing is a lie: an axis that did not ship is
-       hidden, not disabled (the contract's ship flags, as in v3). */
-    expRowEl.hidden = !shipExp;
-    ml4qEl.hidden = !shipMl;
-    ml4qEl.setAttribute('aria-pressed', String(state.ml4q));
-    if (!shipMl) state.ml4q = false;
+  /**
+   * The ranking stage draws the sliders and the ML-for-quantum toggle beside
+   * the list they reorder, and sends each change here as a `tune` event; this
+   * stage still keeps them, so the codec, the storage and the one `prefs`
+   * event stay in one place. A drag fires in bursts, so it settles first.
+   */
+  function tune(detail) {
+    const sliders = detail && detail.sliders;
+    let moved = false;
+    if (sliders && typeof sliders === 'object') {
+      for (const [name, raw] of Object.entries(sliders)) {
+        const value = sliderValue(name, raw);
+        if (value === undefined || value === state.sliders[name]) continue;
+        state.sliders[name] = value;
+        moved = true;
+      }
+    }
+    if (detail && typeof detail.ml4q === 'boolean' && shipMl && detail.ml4q !== state.ml4q) {
+      state.ml4q = detail.ml4q;
+      moved = true;
+    }
+    if (moved) publishSoon();
   }
 
   /* ── setting changes ────────────────────────────────────────────────── */
@@ -795,7 +780,6 @@ export function mount(body, ctx) {
 
   renderTree();
   renderChips();
-  renderSliders();
 
   textEl.addEventListener('input', () => {
     state.text = textEl.value.trim();
@@ -804,30 +788,6 @@ export function mount(body, ctx) {
     emit();                    // prefs follow the text; touchstones catch up after the pause
     clearTimeout(textTimer);
     textTimer = setTimeout(embedWords, 600);
-  });
-
-  matchEl.addEventListener('input', () => {
-    state.sliders.match = number(matchEl.value, SLIDERS.match.value, SLIDERS.match.min, SLIDERS.match.max);
-    renderSliders();
-    publishSoon();
-  });
-
-  surpriseEl.addEventListener('input', () => {
-    state.sliders.surprise = number(surpriseEl.value, SLIDERS.surprise.value, SLIDERS.surprise.min, SLIDERS.surprise.max);
-    renderSliders();
-    publishSoon();
-  });
-
-  expEl.addEventListener('input', () => {
-    state.sliders.expTheory = number(expEl.value, SLIDERS.expTheory.value, SLIDERS.expTheory.min, SLIDERS.expTheory.max);
-    renderSliders();
-    publishSoon();
-  });
-
-  ml4qEl.addEventListener('click', () => {
-    state.ml4q = !state.ml4q;
-    ml4qEl.setAttribute('aria-pressed', String(state.ml4q));
-    publish();
   });
 
   treeEl.addEventListener('change', (event) => {
@@ -899,6 +859,7 @@ export function mount(body, ctx) {
   });
 
   ctx.bus.addEventListener('night', (event) => setNight(event.detail));
+  ctx.bus.addEventListener('tune', (event) => tune(event.detail));
 
   /* The Act stage's "more like / less like" is a priority, so it takes the same
      path as a slider: store it, redraw the chips, announce the new prefs. */

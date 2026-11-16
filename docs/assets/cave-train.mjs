@@ -46,8 +46,11 @@ export function trainStoneGold(i) {
 
 /**
  * Mount the train on `canvas`. Returns a handle:
- *   .set(done, total)  — done abstracts of total; relays the train when
- *                        the total changes, then fills toward done/total
+ *   .set(done, total, inFlight)
+ *                      — done abstracts of total, inFlight more in the
+ *                        request now out; relays the train when the total
+ *                        changes, then fills toward done/total and creeps
+ *                        into the in-flight batch on the last batch's pace
  *   .stop()            — cancel the animation frame; call when the wrap hides
  * Returns null where there is no canvas to draw on (the test DOM shim).
  */
@@ -70,6 +73,15 @@ export function startHaulTrain(canvas) {
   var t = 0, prev = 0, raf = 0, alive = true;
   var puffs = [];
   var nextPuff = 0;
+  /* The haul reports a batch at a time (64 abstracts in one request), so a
+     night under one batch would sit at 0 and then jump full. While a batch is
+     out the train creeps toward its end on the time the last one took, and
+     stops short of it: the stones it has not been paid for yet land when the
+     answer does. */
+  var doneN = 0, totalN = 0;  // what the haul last reported
+  var pending = 0;            // texts in the request now in flight
+  var creepAt = 0;            // when that request left
+  var perText = 0.04;         // seconds per text, re-measured every batch
 
   function now() { return (win.performance || Date).now() / 1000; }
 
@@ -179,6 +191,13 @@ export function startHaulTrain(canvas) {
        the haul runs, and a backgrounded tab gets a frame a second — and a
        per-frame step left the train stuck at a third of a load it had
        already earned. */
+    if (pending > 0 && totalN > 0) {
+      var span = Math.max(0.2, perText * pending);
+      var part = 0.9 * (1 - Math.exp(-(n - creepAt) / (span / 2)));
+      var aim = Math.min(capacity, Math.floor(((doneN + pending * part) / totalN) * capacity));
+      if (aim > target) target = aim;
+    }
+
     if (shownF < target) {
       shownF = still ? target : target - (target - shownF) * Math.exp(-7 * elapsed);
       if (target - shownF < 0.5) shownF = target;
@@ -229,14 +248,25 @@ export function startHaulTrain(canvas) {
     raf = win.requestAnimationFrame(frame);
   }
 
-  function set(done, total) {
+  function set(done, total, inFlight) {
     total = total || 0;
+    var at = now();
+    var backward = (done || 0) < doneN || total !== totalN;
+    if (pending > 0 && done > doneN) {
+      perText = Math.max(0.005, (at - creepAt) / Math.max(1, done - doneN));
+    }
+    doneN = done || 0;
+    totalN = total;
+    pending = Math.max(0, Math.min(total - doneN, inFlight || 0));
+    creepAt = at;
     if (total !== laidOutFor) {
       laidOutFor = total;
       relayout(total);              // relayout clamps the length to the column
       if (shown > capacity) shownF = shown = capacity;
     }
-    target = total > 0 ? Math.min(capacity, Math.round((done / total) * capacity)) : 0;
+    var earned = total > 0 ? Math.min(capacity, Math.round((done / total) * capacity)) : 0;
+    /* A creep never takes back a stone: only a new haul (a smaller done) does. */
+    target = backward ? earned : Math.max(earned, target);
     if (!raf) { prev = 0; raf = win.requestAnimationFrame(frame); }
   }
 

@@ -18,7 +18,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import {
-  ART_HREF, CHOICES, clearSetting, chipsFromSetting, defaultPrefs, parsePrefs, prefsSummary,
+  ART_HREF, CHOICES, sliderValue, clearSetting, chipsFromSetting, defaultPrefs, parsePrefs, prefsSummary,
   removeChip, serialisePrefs, treeCounts, wagonsForLeaf, weightOf,
 } from '../docs/assets/cave-stage-priorities.mjs';
 import { defaultSetting, loadTopics } from '../docs/assets/sieve-core.mjs';
@@ -155,7 +155,7 @@ test('clear leaves no chips; removing a chip undoes exactly that choice', () => 
 test('serialise → parse round-trips a whole prefs object', () => {
   const prefs = {
     setting: { computing: 'prefer', matter: 'avoid', leaves: { qml: 'off', 'many-body': 'prefer' } },
-    sliders: { match: 73, surprise: 41, expTheory: -60 },
+    sliders: { match: 73, surprise: 41, expTheory: -60, solo: 35, ai: 80 },
     touchstones: [],
     text: '',
     ml4q: true,
@@ -173,12 +173,12 @@ test('the default prefs serialise short and parse back to themselves', () => {
 test('junk, missing and out-of-range values fall back instead of throwing', () => {
   const empty = parsePrefs(TOPICS, '');
   assert.deepEqual(empty.setting, defaultSetting(TOPICS));
-  assert.deepEqual(empty.sliders, { match: 50, surprise: 50, expTheory: 0 });
+  assert.deepEqual(empty.sliders, { match: 50, surprise: 50, expTheory: 0, solo: 0, ai: 0 });
   assert.equal(empty.ml4q, false);
 
-  const junk = parsePrefs(TOPICS, 'topics=nope:sideways,qml:loud&match=900&surprise=-4&exp=nope');
+  const junk = parsePrefs(TOPICS, 'topics=nope:sideways,qml:loud&match=900&surprise=-4&exp=nope&solo=500&ai=x');
   assert.deepEqual(junk.setting, defaultSetting(TOPICS));
-  assert.deepEqual(junk.sliders, { match: 100, surprise: 0, expTheory: 0 });
+  assert.deepEqual(junk.sliders, { match: 100, surprise: 0, expTheory: 0, solo: 100, ai: 0 });
 
   /* An unknown leaf id is dropped, a known one is kept. */
   const mixed = parsePrefs(TOPICS, 'topics=ghost:off,qml:avoid');
@@ -193,17 +193,25 @@ test('a reset setting is defaultSetting again, through the codec', () => {
 
 /* ── the summary ────────────────────────────────────────────────────────── */
 
-test('prefsSummary names the applied topics and Surprise', () => {
-  assert.equal(prefsSummary(TOPICS, defaultPrefs(TOPICS)), 'Computing preferred · surprise 50');
+test('prefsSummary names the applied topics and whether there are words', () => {
+  assert.equal(prefsSummary(TOPICS, defaultPrefs(TOPICS)), 'Computing preferred');
 
   const changed = {
     ...defaultPrefs(TOPICS),
     setting: { computing: 'prefer', matter: 'avoid', leaves: {} },
-    sliders: { match: 50, surprise: 41, expTheory: 0 },
+    text: 'spin qubits',
   };
-  assert.equal(prefsSummary(TOPICS, changed), 'Computing preferred · Matter avoided · surprise 41');
+  assert.equal(prefsSummary(TOPICS, changed), 'Computing preferred · Matter avoided · your words');
 
   const cleared = { ...defaultPrefs(TOPICS), setting: clearSetting(TOPICS) };
-  assert.equal(prefsSummary(TOPICS, cleared), 'topics equal · surprise 50');
+  assert.equal(prefsSummary(TOPICS, cleared), 'topics equal');
+});
+
+test('sliderValue clamps a known slider and refuses an unknown one', () => {
+  assert.equal(sliderValue('solo', 140), 100);
+  assert.equal(sliderValue('ai', ''), 0);
+  assert.equal(sliderValue('expTheory', -300), -100);
+  assert.equal(sliderValue('nope', 5), undefined);
+  assert.equal(sliderValue('toString', 5), undefined);
 });
 

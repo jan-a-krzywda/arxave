@@ -13,8 +13,12 @@ import assert from 'node:assert/strict';
 
 import * as ranking from '../docs/assets/cave-stage-ranking.mjs';
 import {
-  PAGE, applyPicks, meters, orderNight, rowHtml, sameLabel, shortAuthors, shownLine, storySummary,
+  AI_MAX, PAGE, SOLO_MAX, TRACE_KEEP, absUrl, applyPicks, authorCount, gradesHtml, mergeTraces,
+  meters, orderNight, rowHtml, sameLabel, shortAuthors, shownLine, storySummary,
 } from '../docs/assets/cave-stage-ranking.mjs';
+
+/** Only the two meters the order key reads. */
+const two = (list) => list.map(({ fitPct, promisePct }) => ({ fitPct, promisePct }));
 
 /** One ranked row, as `caveScore` hands it over (only the fields read here). */
 function item(id, fit, score, extra = {}) {
@@ -32,7 +36,7 @@ test('meters: both read against the background corpus, not tonight', () => {
     item('c', 1, 0.25),
     item('d', 2, 1),
   ];
-  assert.deepEqual(meters(ranked), [
+  assert.deepEqual(two(meters(ranked)), [
     { fitPct: 16, promisePct: 90 },
     { fitPct: 50, promisePct: 50 },
     { fitPct: 84, promisePct: 25 },
@@ -43,9 +47,23 @@ test('meters: both read against the background corpus, not tonight', () => {
 test('meters: a weak night reads weak — its best paper is not 100', () => {
   const weak = meters([item('x', -0.5, 0.3), item('y', -1, 0.2)]);
   assert.ok(weak.every((m) => m.promisePct < 50 && m.fitPct < 50), JSON.stringify(weak));
-  assert.deepEqual(meters([item('odd', NaN, -0.2)]), [{ fitPct: 50, promisePct: 0 }], 'junk is not NaN');
+  assert.deepEqual(two(meters([item('odd', NaN, -0.2)])), [{ fitPct: 50, promisePct: 0 }], 'junk is not NaN');
   assert.deepEqual(meters([]), []);
   assert.deepEqual(meters(null), []);
+});
+
+test('meters: Surprise is novelty against the corpus spread; the lean only when known', () => {
+  const ref = { novelty: { mean: 0.15, sd: 0.05 } };
+  const [mid, far, bare] = meters([
+    item('m', 0, 0.5, { novelty: 0.15, theory: 0.8 }),
+    item('f', 0, 0.5, { novelty: 0.25, theory: 0.1 }),
+    item('b', 0, 0.5),
+  ], ref);
+  assert.equal(mid.surprisePct, 50);
+  assert.equal(far.surprisePct, 98);              // two sd out
+  assert.equal(mid.theoryPct, 80);
+  assert.equal(far.theoryPct, 10);
+  assert.equal(bare.theoryPct, null);
 });
 
 /* ── the order ──────────────────────────────────────────────────────────── */
@@ -133,13 +151,13 @@ test('rowHtml escapes every arXiv string', () => {
   assert.ok(html.includes('Proven &lt;thing&gt;'), 'the landmark is escaped');
 });
 
-test('rowHtml carries ONE meter: Promise, titled against the background', () => {
+test('rowHtml carries ONE meter: the Score, with its parts as grades', () => {
   const html = rowHtml(ROW_ITEM, ROW_PARTS);
   assert.equal(html.match(/role="meter"/g).length, 1, 'one meter, not two');
   assert.ok(!html.includes('>Fit<'), 'the fit meter is gone');
-  assert.ok(html.includes('>Promise<'));
-  assert.ok(html.includes('title="vs. the background corpus (12 papers tonight)"'));
-  assert.ok(html.includes('role="meter" aria-label="Promise" aria-valuemin="0"'
+  assert.ok(html.includes('>Score<'));
+  assert.ok(html.includes('(12 papers tonight)'));
+  assert.ok(html.includes('role="meter" aria-label="Score" aria-valuemin="0"'
     + ' aria-valuemax="100" aria-valuenow="87"'));
   assert.ok(html.includes('width:87%'));
   assert.ok(html.includes('>87<'), 'the number is beside the bar');
@@ -167,8 +185,60 @@ test('rowHtml marks a ticked row, and tolerates a bare item', () => {
   const html = rowHtml({ id: 'x', title: 'Bare' }, { rank: 1 });
   assert.ok(html.includes('Bare'));
   assert.ok(html.includes('aria-valuenow="0"'), 'a missing rel reads zero, not NaN');
-  assert.ok(html.includes('vs. the background corpus (0 papers tonight)'));
+  assert.ok(html.includes('(0 papers tonight)'));
   assert.ok(!html.includes('Looks like'));
+});
+
+test('the title links to the paper on arXiv', () => {
+  const html = rowHtml({ id: '2401.00001v2', title: 'T' }, { rank: 1 });
+  assert.ok(html.includes('<a class="rk-title-link" href="https://arxiv.org/abs/2401.00001"'));
+  assert.ok(html.includes('target="_blank" rel="noopener"'));
+  assert.equal(absUrl('2401.00001'), 'https://arxiv.org/abs/2401.00001');
+});
+
+test('gradesHtml: the parts, the lean named by side, AI only once traced, 1 author', () => {
+  const graded = {
+    id: 'a',
+    authors: ['Solo Person'],
+    grades: { promisePct: 70, fitPct: 40, surprisePct: 55, theoryPct: 20 },
+  };
+  const html = gradesHtml(graded, { p: 72, why: 'stock <phrases>' });
+  for (const bit of ['>Promise<', '>70<', '>Match<', '>40<', '>Surprise<', '>55<', '>Exp.<', '>80<', '>AI<', '>72%<', '1 author']) {
+    assert.ok(html.includes(bit), bit);
+  }
+  assert.ok(html.includes('stock &lt;phrases&gt;'), 'the reason is escaped');
+  assert.ok(html.includes('is-warn'));
+  const plain = gradesHtml({ ...graded, authors: ['A', 'B'] }, null);
+  assert.ok(!plain.includes('>AI<') && !plain.includes('1 author'));
+  assert.equal(authorCount({ authors: [] }), 0, 'no list is not solo');
+});
+
+test('orderNight: the penalties sink a solo paper and a traced one, scaled by their sliders', () => {
+  const night = [
+    item('solo', 0, 0.8, { authors: ['One'] }),
+    item('team', 0, 0.7, { authors: ['A', 'B'] }),
+    item('bot', 0, 0.75, { authors: ['A', 'B'] }),
+  ];
+  const base = orderNight(night, { match: 0 });
+  assert.deepEqual(base.map((r) => r.id), ['solo', 'bot', 'team']);
+  assert.ok(base[0].grades, 'each row carries its grades');
+
+  const sunk = orderNight(night, { match: 0, solo: 100, ai: 100, traces: { bot: { p: 50 } } });
+  const rel = Object.fromEntries(sunk.map((r) => [r.id, r.rel]));
+  assert.equal(rel.solo, 80 - SOLO_MAX);
+  assert.equal(rel.bot, 75 - AI_MAX / 2);
+  assert.equal(rel.team, 70);
+  assert.equal(sunk[0].id, 'team');
+
+  /* A bare number is still the match weight. */
+  assert.deepEqual(orderNight(night, 0).map((r) => r.rel), base.map((r) => r.rel));
+});
+
+test('mergeTraces keeps the newest TRACE_KEEP, a re-ask moves to the end', () => {
+  const merged = mergeTraces({ a: { p: 1 }, b: { p: 2 } }, { a: { p: 9 }, c: { p: 3 } }, 2);
+  assert.deepEqual(Object.keys(merged), ['a', 'c']);
+  assert.equal(merged.a.p, 9);
+  assert.ok(TRACE_KEEP >= 100);
 });
 
 test('shortAuthors keeps three names, then says et al.', () => {
