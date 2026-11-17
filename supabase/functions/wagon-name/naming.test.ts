@@ -12,6 +12,7 @@ import {
   LADDER,
   ladderFrom,
   MAX_MEMBERS,
+  MAX_TOTAL_MEMBERS,
   MAX_TITLES,
   type Member,
   normalizeTitle,
@@ -225,6 +226,13 @@ Deno.test('readWagons accepts a well-formed body', () => {
   assertEquals((got as Member[][])[0].length, 2);
 });
 
+Deno.test('readWagons accepts a wagon bigger than the old 60 cap', () => {
+  const members = Array.from({ length: 188 }, (_, i) => ({ id: `id${i}`, title: `Title ${i}` }));
+  const got = readWagons({ wagons: [{ members }] });
+  assertEquals(Array.isArray(got), true);
+  assertEquals((got as unknown[][])[0].length, 188);
+});
+
 Deno.test('readWagons rejects everything malformed with a message', () => {
   for (
     const body of [
@@ -235,7 +243,11 @@ Deno.test('readWagons rejects everything malformed with a message', () => {
       { wagons: [{ members: [{ id: '', title: 't' }] }] },
       { wagons: [{ members: [{ id: 'x', title: '   ' }] }] },
       { wagons: Array.from({ length: 25 }, () => ({ members: [A] })) },
-      { wagons: [{ members: Array.from({ length: 61 }, () => A) }] },
+      { wagons: [{ members: Array.from({ length: MAX_MEMBERS + 1 }, () => A) }] },
+      // Each wagon within its own cap, the request over the total one.
+      { wagons: Array.from({ length: 3 }, () => ({
+        members: Array.from({ length: Math.ceil(MAX_TOTAL_MEMBERS / 3) + 1 }, () => A),
+      })) },
     ]
   ) {
     assertEquals(typeof readWagons(body as Record<string, unknown>), 'string');

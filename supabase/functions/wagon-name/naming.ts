@@ -81,7 +81,15 @@ export interface WagonName {
 
 // ── Caps. This endpoint is public and it spends money; these are load-bearing.
 export const MAX_WAGONS = 24;      // a haul that clusters into more than this is noise
-export const MAX_MEMBERS = 60;     // titles per wagon; beyond this adds no signal
+/* Per wagon, and a request-size guard rather than a naming one: only MAX_TITLES
+   reach the prompt, but every member is hashed into the cache key, so the
+   client sends them all. It was 60 until a 188-stone wagon got the whole
+   train's request refused; a wagon is now bounded by the haul itself. */
+export const MAX_MEMBERS = 1000;
+/* Across the request. Keeps the worst case the same order as the old
+   24 x 60 = 1440 — a wagon may be big, but members are disjoint, so a haul
+   is the real ceiling and this is the backstop. */
+export const MAX_TOTAL_MEMBERS = 2000;
 export const MAX_TITLE = 400;      // characters; arXiv titles run ~80
 export const MAX_ID = 64;
 
@@ -288,6 +296,7 @@ export function readWagons(body: Record<string, unknown>): Member[][] | string {
     return `Too many wagons: ${raw.length} > ${MAX_WAGONS}.`;
   }
   const out: Member[][] = [];
+  let total = 0;
   for (const w of raw) {
     const members = (w as { members?: unknown })?.members;
     if (!Array.isArray(members) || members.length === 0) {
@@ -295,6 +304,10 @@ export function readWagons(body: Record<string, unknown>): Member[][] | string {
     }
     if (members.length > MAX_MEMBERS) {
       return `A wagon has ${members.length} members, over the ${MAX_MEMBERS} cap.`;
+    }
+    total += members.length;
+    if (total > MAX_TOTAL_MEMBERS) {
+      return `Too many members across wagons: over the ${MAX_TOTAL_MEMBERS} cap.`;
     }
     const parsed: Member[] = [];
     for (const m of members) {
