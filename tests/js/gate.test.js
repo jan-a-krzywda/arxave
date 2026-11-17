@@ -69,7 +69,7 @@ function claims(env) { return JSON.parse(env.store['arxave-dig-claims'] || '{}')
 
 /* Deterministic, so a failure is reproducible. Grades in [0.55, 0.75] with a
    few planted outliers is the shape a real night has — a tight blob and a
-   handful above it (docs/feed-catalogue-plan.md, Part 2). */
+   handful above it. */
 function lcg(seed) {
   let s = seed >>> 0;
   return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };

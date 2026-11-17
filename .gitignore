@@ -34,3 +34,8 @@ docs/legacy/enrichment-spec.md
 
 # local working spec, not tracked
 spec-local.md
+
+# Planning specs and card contracts stay local
+/*-spec.md
+/*-interfaces.md
+/*-release.md

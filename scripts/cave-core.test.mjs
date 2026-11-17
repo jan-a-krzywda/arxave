@@ -3,8 +3,7 @@
  *
  * Cave v3's core: the topic tree's weights, the secondary-at-half paper weight,
  * and the three-slider score. Every expectation below is hand-computed from
- * "sieve-core additions" in cave-v3-interfaces.md (and the topic rules in
- * cave-v3-spec.md), never from this file's own output.
+ * the Cave v3 topic and scoring rules, never from this file's own output.
  *
  * Three fixtures keep the arithmetic readable by eye:
  *

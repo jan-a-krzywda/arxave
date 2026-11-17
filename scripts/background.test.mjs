@@ -1,7 +1,7 @@
 /**
  * `node --test scripts/background.test.mjs`.
  *
- * Every expectation below is hand-computed from INTERFACES.md and the formula
+ * Every expectation below is hand-computed from the background contract and the formula
  * the page and the feed already use, never from this file's own output. Nothing
  * touches the network: `fetchEarlier`, `embed` and `coreFetch` are all stubbed.
  *

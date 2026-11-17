@@ -90,7 +90,7 @@ function parseSvg(src, label) {
 
 const KINDS = ['idle', 'none', 'digging'];
 
-/* The four ember colours of cave-v3-interfaces.md, in paint order. A fifth
+/* The four ember colours, in paint order. A fifth
    colour would silently break the "4-colour palette" rule, so the set is
    compared exactly rather than as a subset. */
 const PALETTE = ['#14100d', '#3a2f26', '#e2571e', '#ff9a3c'];

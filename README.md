@@ -45,351 +45,184 @@ Two goal, only two:
 
 ---
 
-## What you can do
 
-Four room. Same paper, same grade, four way in.
+## How the Cave picks papers
 
-| Room | What it is | Go when |
-|------|-----------|---------|
-| [**Dig**](https://arxave.com/) — *new* | Filter itself, live in your tab. Say what you work on, pull tonight arXiv, watch ranking move while you tune. | You want to *set* a seam, or wash one night by hand. |
-| [**Stockpile**](https://arxave.com/stockpile/) — *history* | Every night ever hauled, by month and day. Filter by seam, filter by grade. | You half-remember paper. Or want see what seam been yielding. |
-| [**Haul**](https://arxave.com/haul/) — *today* | Tonight pay dirt, split by seam, as feed you point reader at. | You want paper arrive without you visiting anything. |
-| [**Details**](https://arxave.com/details/) — *how it work* | What machine do, and what it refuse to do. | Before you trust ranking. |
+No language model ranks anything. Every grade is a cosine, a percentile or a
+z-score, and each one is below with the code that computes it and the paper it
+comes from. The live version, with a stage explorer and a grade calculator, is
+[Details](https://arxave.com/details/).
 
-### Three thing you actually do with it
+- [The six stages](#the-six-stages)
+- [The grades](#the-grades)
+- [The fields](#the-fields)
+- [The geometry](#the-geometry)
+- [What leaves your tab](#what-leaves-your-tab)
+- [Not built yet](#not-built-yet)
+- [Sources](#sources)
 
-**1. Wash tonight pile against your own work.** Open
-[Dig](https://arxave.com/). Take preset closest to your
-tunnel, or type your own touchstone — one thought per row, plain sentence, not
-keyword. Drop few paper you already care about in **core samples** (DOI, arXiv
-ID, or upload `.bib`). Hit dig. Ranking is live: move weight, ranking move under
-your hand. No reload, no re-fetch, no key.
+## The six stages
 
-**2. Stop visiting.** Go [Haul](https://arxave.com/haul/),
-take feed for your seam, paste in reader. Every morning the night pay dirt land
-on desk. Count beside each seam is tonight haul, split by band, so you see how
-thin a thin morning look *before* you subscribe.
+<p align="center">
+  <img src="docs/diagrams/readme/cave-flow.svg" width="560" alt="Dig, Train, Map, Priorities, Ranking, Story. Dig and Train fetch and embed; Map, Priorities and Ranking are arithmetic in the tab; Story and a few buttons call an LLM.">
+</p>
 
-**3. Find rock you half-remember.** Go
-[Stockpile](https://arxave.com/stockpile/). Every night ever
-run, every seam, kept *and* thrown back. Open a row and whole card come back —
-same figure, same finding, same caveat it shipped with in March.
+Blue: arithmetic in your tab. Green: embedding. Gold: an LLM call, never in
+the ranking. ([TikZ](docs/diagrams/cave-flow.tex))
 
-### What paper look like when arXave hold it up
+| # | Stage | In → out | Rule | Code |
+|---|---|---|---|---|
+| 1 | **Dig** | categories, 1–7 publishing days → up to 1 000 abstracts | Publishing days, not calendar days: arXiv is silent on weekends. The first category picks the field. | [`cave-stage-dig.mjs`](docs/assets/cave-stage-dig.mjs) |
+| 2 | **Train** | abstracts → 768-d SPECTER2 vectors, clipped ±0.25, centred on the field mean | Cached by text hash, so a warm night is a download, not a computation. | [`cave-train.mjs`](docs/assets/cave-train.mjs) |
+| 3 | **Map** | vectors → wagons, plus one leaf topic (and a close runner-up) per paper | Average linkage; cut auto-picked in 0.40–0.75, slider 0.20–0.70; no wagon over 20% of the night. | [`cave-stage-map.mjs`](docs/assets/cave-stage-map.mjs) |
+| 4 | **Priorities** | topic tree, your text → weights 1.5 / 1 / 0.5 / off; your words as vectors | Off removes a topic from the corpus too: no neighbours, no landmarks, no median. | [`cave-stage-priorities.mjs`](docs/assets/cave-stage-priorities.mjs) |
+| 5 | **Ranking** | night + priorities → Match · Impact · Surprise · Exp. per paper, 5 at a time | No gate: Topic match is a weight on the order, not a filter that can empty the night. | [`cave-stage-ranking.mjs`](docs/assets/cave-stage-ranking.mjs) |
+| 6 | **Story** | ≤ 12 picks → one narrative, cached per night + picks | The model's text is escaped first; only paper ids it was sent become links. | [`cave-stage-story.mjs`](docs/assets/cave-stage-story.mjs) |
 
-Card come **folded**. First you see byline and one-line finding. That is it. Six
-drawer sit under, you open only if finding earn it:
+## The grades
 
-| Drawer | Inside |
-|--------|--------|
-| **Figure** | Paper own key figure, plus gloss saying what to look at. |
-| **Asks** | Question paper set itself. |
-| **Before** | How thing stood before this paper. |
-| **But** | Caveat. What it not show, what author concede. |
-| **Tools** | Method, hardware, codebase it lean on. |
-| **Abstract** | Original abstract, untouched. |
+<p align="center">
+  <img src="docs/diagrams/readme/cave-grades.svg" width="380" alt="Tonight's paper among corpus papers: Match is its cosine to a topic centroid or your words, Impact reads its 15 nearest corpus papers, Surprise is one minus its cosine to the nearest well-cited paper.">
+</p>
 
-Fold is the point. Month of open card is not page anyone scroll.
+One paper, three questions, one pass over the corpus.
+([TikZ](docs/diagrams/cave-grades.tex))
 
-And every card carry **band**, not raw score:
+| Grade | Raw value | Graded as | Code |
+|---|---|---|---|
+| **Match** | max cos to your words, else weighted mean cos to topic centroids | Φ(z), z vs corpus weighted median / MAD | `fitRaw`, `prepare` |
+| **Impact** | citation percentile of the 15 nearest corpus papers, weighted cos⁺·(p+0.05) | Φ((x − μ)/σ), field's `promise_ref` | `rank` |
+| **Surprise** | 1 − cos to nearest corpus paper with pct ≥ 0.75 | Φ((x − μ)/σ), field's `promise_ref` | `rank` |
+| **Exp.** | logistic probe on the vector (96 train / 24 test, 92% held out) | 100 − P(theory) | `axisProbability` |
+| **AI trace** | LLM's guess that the abstract is machine-written | its %, labelled a guess | `aitrace` fn |
 
-| Band | Mean |
-|------|------|
-| **Pay dirt** | Assay was confident. Read these. |
-| **Worth a look** | Over ship line, under pay-dirt line. Shipped honest, labelled honest. |
-| **Long shot** | Under ship line, or night with no spread to measure. In feed because floor guarantee minimum haul — not because assay back it. |
-
-Band sit on z-score against *that night own spread*, because grade from thin
-Tuesday and fat Thursday not comparable. **"No pay dirt today" is information**,
-not emptiness: mean dig ran and found nothing exceptional. Different message from
-feed that look broken, so it get said out loud.
-
-Status: browser Dig live, nightly preset feed shipping, stockpile archive
-browsable, Details page up. See [`arxave-spec.md`](arxave-spec.md) for full design
-and M2–M4 plan, and [`arxave-release.md`](arxave-release.md) for what shipped in
-this release.
-
----
-
-## The whole pipeline
-
-![arXiv to embedding, corpus match, LLM grade, pick, human selection, archive, digest, and reports for agents (MCP) and humans (GitHub)](docs/diagrams/pipeline.png)
-
-Source: [`docs/diagrams/pipeline.tex`](docs/diagrams/pipeline.tex) ([PDF](docs/diagrams/pipeline.pdf)).
-
----
-
-## Two ways to dig
-
-| Way | Where it run | Need what |
-|-----|--------------|-----------|
-| **Browser sieve** | your tab, no install | nothing |
-| **CLI mine** | your machine | Python 3.11, one LLM key (or local LM Studio) |
-
-### Way 1 — browser sieve (fastest look)
-
-Go [here](https://arxave.com/). Type touchstone. Hit dig.
-
-Page pull today arXiv, embed abstract and your touchstone with **the pick** —
-`allenai/specter2_base`, trained on citation graph, so paper that cite each other
-land near each other. Rank by match. Move slider, ranking move live.
-
-Pick run server-side, in Supabase `embed` function, so browser download nothing.
-Text you want scored get sent there, embed, thrown away. Published text
-(abstract, and touchstone this repo ship as preset) also go in shared cache so
-nobody pay twice; **touchstone you type never go in that cache** — cache read
-public, and hash of short phrase is one dictionary from phrase.
-
-arXiv fetch also leave, through small Supabase `relay` — browser cannot fetch
-arXiv direct, no CORS header.
-
-A **claim** is one dig setup: touchstone, core, weight, gate. It save itself in
-your tab, and it export as JSON — so seam is the most tradeable thing here. Take
-someone claim, bend it, keep it.
-
-For CLI config, edit `config/arxave.yaml` and `.env` by hand — see below. (There
-was a browser form that wrote them for you. It fell behind the CLI and got
-pulled; better no form than a form that lie.)
-
-### Way 2 — CLI mine (full shaft)
-
-What it is and how it differ: [The other shaft](#the-other-shaft--cli).
-
-```bash
-uv venv --python 3.11
-uv pip install -e ".[dev]"
-
-cp .env.example .env          # put ANTHROPIC_API_KEY inside
-$EDITOR config/arxave.yaml     # put YOUR topics inside
-```
-
-Two thing must happen before first good run:
-
-1. **Set topics — this is your seam.** `config/arxave.yaml` ship with fake
-   example topics. Filter stage gate every rock on this list, so it is the
-   biggest lever on what come out of the shaft. Dig narrow. "quantum computing"
-   is not a seam, it is the whole mountain — everything come through, all of it
-   pyrite.
-2. **Snapshot corpus** (optional, turn on connection lines):
-   ```bash
-   arxave sync-corpus
-   ```
-
-Then run:
-
-```bash
-arxave run                         # whole pipeline -> briefs/<today>.md
-arxave run --stage scout --dry-run # see what get fetched, write nothing
-arxave run --stage summarize       # run one stage while you tune prompt
-arxave render                      # re-render today brief, zero LLM call
-arxave serve                       # local web UI at http://127.0.0.1:8765
-```
-
-Every stage idempotent and resumable via `status` column. Interrupt run — it
-resume clean. Re-run stage — it enrich row, not duplicate row.
-
----
-
-## How it work inside — the site
-
-**No LLM in the ranking.** Grade is weighted mean of cosine. That is all.
+The order on the Ranking card:
 
 ```
-haul  ->  cut  ->  centre  ->  blend  ->  gate  ->  read  ->  ship
-arXiv     embed   subtract   weighted   robust    Gemini   feed +
-pile      each    the cone   mean of    z, band   read     archive
-          abstract axis      cosines    it        in full
+β       = 1.5·s − 1.25                 s = Surprise slider, 0…1
+sd      = √(1 + β² + 2βρ)              ρ = corr(impact, novelty) in the corpus
+Promise = Φ((z_impact + β·z_novelty) / sd)
+Row bar = (1 − w)·Promise + w·Match − penalty     w = Topic match slider
 ```
 
-- **haul** — night pile out of arXiv, through relay (browser cannot fetch arXiv,
-  no CORS header). Publishing day, not calendar day — arXiv not announce weekend,
-  so calendar lookback return nothing every Monday.
-- **cut** — every abstract through **the pick**: `allenai/specter2_base`, 768-dim,
-  trained on citation graph. Your touchstone go through same model. Vector cached
-  and shared, keyed by model + dim + hash of text. Nightly job warm cache first,
-  so haul is download, not compute.
-- **centre** — **the step that make cosine mean anything.** SPECTER2 vector sit in
-  narrow cone: measured over 1241 vector, mean of unit vector has norm **0.913**.
-  Nine tenth of every vector point same way as every other, carry nothing about
-  paper. Subtract fixed centroid, renormalise. Pairwise cosine spread go 0.137 ->
-  **0.685**. Not re-ranking — ordering barely move. What change is whether
-  anything downstream can *read* ordering.
-- **blend** — `grade = Σ wᵣ·cos(paper, rowᵣ) / Σ wᵣ`. Weighted mean over your
-  touchstone and core sample. Whole ranking function.
-- **gate** — grade not comparable between night, so cut on robust z:
-  `z = (grade − median) / (1.4826·MAD)`. Median and MAD, not mean and sigma, so
-  one runaway paper cannot move the bar it get measured against. Ship line under
-  pay-dirt line, and band say which — feed that lower unlabelled bar teach people
-  stop opening it; labelled one not.
-- **read** — only place LLM appear, and it appear **after** ranking. Gemini read
-  the handful that clear gate, in full (arXiv HTML, not abstract), write six card
-  field. Cannot promote anything. Never see paper the cosine already drop.
-- **ship** — feed per seam, row per paper in archive.
+The penalty is up to 30 points for a single-author paper, scaled by its slider.
+Code: [`sieve-core.mjs`](docs/assets/sieve-core.mjs) (`promiseScore`, `phi`),
+[`cave-stage-ranking.mjs`](docs/assets/cave-stage-ranking.mjs).
 
-Dig also **group** the night: N×N cosine matrix, average-linkage dendrogram, cut
-at 0.46. Average not single linkage — single chain, one bridging paper join two
-topic. Switch took one 89-stone night from 4 wagon holding 26 stone to 11 wagon
-holding 63.
+<details>
+<summary>Why novelty counts <em>against</em> a paper at Surprise 50</summary>
 
-**Pyrite defence.** Nothing about paper except its text reach the grade. Not
-venue, not author list, not institution, not how many people posting about it,
-not how confident abstract sound. No citation count, no popularity term anywhere
-in browser assay. Fool gold cost double — your evening, plus real nugget you not
-pick up because hand full — and every one of those excluded signal is how pyrite
-get picked up.
+Leave-one-out over the quantum corpus (each paper scored against the other 4 999):
 
-Honest cost: night with nothing for your seam come out dark, feed come out short.
-That is truth about the night.
+| Signal vs own citation percentile | Spearman | AUC (top vs bottom quartile) |
+|---|---|---|
+| Impact | +0.28 | 0.67 |
+| Novelty | −0.30 | 0.30 |
+| old score (tonight's percentiles, ½ + ½) | — | 0.48 |
+| Impact with novelty at β = −0.5 | — | **0.71** |
 
-Full arithmetic, every measured constant, every date:
-**[Details](https://arxave.com/details/)**.
+On average, papers far from everything else are the ones nobody cites.
+Surprise 100 (β = +0.25) still lets you ask for them.
 
----
+</details>
 
-## The other shaft — CLI
+## The fields
 
-Different machine. LLM read and judge *every* paper, cost real money per night,
-buy written brief instead of ranking you tune live. Run by hand.
+Dig's **first** category picks the field: `cs.AI` first gives AI, `quant-ph`
+first gives Quantum. A list holding both says so at load and offers the switch.
 
-```
-scout  ->  summarize  ->  filter  ->  refs  ->  connect  ->  rank  ->  brief
-haul       chip open      first       read      match to     weigh    hold up
-the pile   each rock      sieve       the vein  your bag     stone    the gold
-```
+| | Quantum | AI |
+|---|---|---|
+| Categories | `quant-ph`, `cond-mat.mes-hall` | `cs.AI`, `cs.LG` |
+| Corpus | 5 000 papers, Sep–Dec 2025 | 5 000 papers, Sep–Dec 2025 (top 2 500 cited + 2 500 random) |
+| Topic tree | 12 leaves · 5 parents | 14 leaves · 6 parents |
+| Seeds | 300 (25 per leaf) | 350 (25 per leaf, by title rules) |
+| Leave-one-out seed recall | 0.927 | 0.926 |
+| Impact μ / σ | 0.628 / 0.099 | 0.749 / 0.132 |
+| Novelty μ / σ | 0.150 / 0.041 | 0.125 / 0.039 |
+| ρ(impact, novelty) | −0.434 | −0.544 |
+| Axes | Theory ↔ Experiment, ML for quantum | none yet |
 
-- **scout** — haul the night pile out of arXiv.
-- **summarize** — small LLM chip each rock open, see what inside.
-- **filter** — first sieve. Rock that miss your seam get thrown back (but still
-  written down).
-- **refs** — read the vein: pull each paper bibliography straight from its arXiv
-  e-print source (`.bbl`), because fresh preprint not indexed anywhere else yet.
-- **connect** — intersect that vein with your corpus snapshot. Where they cross
-  is the brief "Connection" line.
-- **rank** — weigh every surviving stone on the signals present.
-- **brief** — big LLM hold up top N and argue why each look like gold.
+A field is a whole pack (corpus, vectors, tree, axes), because a grade only
+means something against its own background. Files:
+[`docs/assets/corpus/`](docs/assets/corpus/),
+[`cave-fields.mjs`](docs/assets/cave-fields.mjs).
 
-**Two LLM role.** `light` do per-paper work (summarize, filter), run once per
-scouted paper, so it eat most of cost. `heavy` write the brief, run only for top
-N. Configure each one separate — provider, model, base URL, key env var. Can
-point at different provider.
+## The geometry
 
-Scout window count publishing day here too, same reason as the site.
+<p align="center">
+  <img src="docs/diagrams/readme/cave-centre.svg" width="420" alt="Raw SPECTER2 vectors sit in a narrow cone; subtracting the corpus mean and renormalising spreads them around the sphere.">
+</p>
 
-**Pyrite defence, CLI version.** Ranking never score a stone on shine alone. Three signal
-only (`rank.py`): LLM judgment against *your* seam, citation centrality inside
-*your* bag, and crowd attention — and crowd attention is saturating, so a paper
-everyone shout about cannot outrank one that actually touch your work. Venue,
-author fame, press release: not signals at all. Shiny rock that touch neither
-seam nor bag sink.
+Subtract the corpus mean μ, renormalise.
+([TikZ](docs/diagrams/cave-centre.tex))
 
-Signal missing? Ranking renormalise over signal actually present. Paper never
-score "nobody care" because a source was down.
+| Pairwise cos (1 241 vectors, 2026-08-19) | p5 | p50 | p95 | spread |
+|---|---|---|---|---|
+| raw | 0.766 | 0.832 | 0.903 | 0.137 |
+| centred | −0.300 | −0.030 | 0.385 | **0.685** |
 
-**No runtime dep on the spin-qubit library repo.** OpenAlex client is arxave own
-code (`openalex.py`). Corpus is **snapshot**, copied in by `sync-corpus`, read
-from `.local/corpus/`. Library stay library. Cost is drift:
-`.local/corpus/meta.json` record source and sync time, and run warn once
-snapshot pass `corpus.stale_after_days`.
+SPECTER2 vectors share one direction (‖mean‖ = 0.913) [3, 4]. Centring does not
+re-rank anything; it makes the ranking *readable*. Each field centres on its own
+corpus mean, after the same int8 clip the corpus was stored with
+(`corpusSpace`).
 
----
+<details>
+<summary>Topics, wagons and the clip, in one table</summary>
 
-## Reading the vein: why bibliography come from arXiv, not OpenAlex
+| Piece | Rule | Number |
+|---|---|---|
+| Topic of a paper | nearest leaf centroid; runner-up kept if within | 0.03 cos |
+| Leaf centroid | mean of its seed papers | 25 seeds |
+| Topic weights | Prefer / Equal / Avoid / Off | 1.5 / 1 / 0.5 / excluded |
+| Wagons | average linkage on the cos matrix [7] | cut 0.20–0.70, auto-picked |
+| Largest wagon | capped so no blob swallows the night | ≤ 20% (floor 12) |
+| Corpus clip | every component clamped before centring | ±0.25 (int8) |
+| Match z | weighted median and 1.4826·MAD [6] | robust to one outlier |
 
-First try was OpenAlex: resolve each paper arXiv DOI, take its reference list.
-**Dead end for fresh preprint.** Two reason, both measured against live API
-2026-07-20:
+</details>
 
-1. **Index lag.** 61 papers scouted that morning. Sample of 12 resolved in
-   OpenAlex **0 times**. Same-day preprint simply not there.
-2. **Preprint record carry no reference list.** Even when arXiv DOI resolve,
-   record is stub — reference live on the record for the *published* version,
-   different DOI. Measured: arXiv:2112.08863 ("Semiconductor Spin Qubits")
-   resolve to `W4320341678` with **0** references, while Rev. Mod. Phys. record
-   for same paper, `W4380590907`, have **664**.
+## What leaves your tab
 
-Fix: paper **ship own bibliography inside its LaTeX source**. `refs` stage pull
-the e-print tarball, parse `.bbl`/`.bib`, match against corpus. Zero index lag —
-work on day-one preprint, which is exactly the paper arXave care about. OpenAlex
-now only fallback, for paper the `.bbl` route not connect.
+| Call | Sends | Model | When |
+|---|---|---|---|
+| `relay` | category, date range | — | Dig |
+| `embed` | abstracts; your Priorities box | SPECTER2 [1, 2] | Train; typing (600 ms debounce) |
+| `wagon-name` | titles only | Gemini flash-lite | Map, on the button |
+| `diamond` | one paper | DeepSeek V4.1 Flash (default) | Ranking → Summarize |
+| `aitrace` | abstracts on screen | DeepSeek V4.1 Flash (default) | Ranking → AI trace button |
+| `story` | ≤ 12 picks | DeepSeek V4.1 Flash (default) | Story |
 
-Brief still written so it read correct when no connection exist: model must say
-which of your topics the paper touch, and is forbidden to claim paper
-disconnected from your library. Missing reference list is artifact of index, not
-fact about paper.
+Abstracts are cached by text hash so nobody pays twice. **What you type is
+never cached.** Everything else (weights, picks, stories) lives in your
+browser's storage. The functions are in
+[`supabase/functions/`](supabase/functions/).
 
----
+## Not built yet
 
-## Your bag of stone
+| | Status |
+|---|---|
+| Haul, Stockpile | greyed out in the bar while the Cave is rebuilt |
+| Discuss threads | button greyed; GitHub Discussions wiring parked |
+| AI-field axes | no Theory ↔ Experiment probe for AI yet |
+| Bring your own LLM key | not on the page |
+| Command-line pipeline | older, separate design in [`src/arxave/`](src/arxave/) |
 
-`papers.db` is the bag. Every rock the pipeline touch go in it — kept one *and*
-thrown-back one, with the score that decided which. So:
+## Sources
 
-- Change your seam later, re-wash old pile. No re-fetch, no re-pay.
-- Stone you threw back is still on record. "Did I see this in March?" — bag know.
-- `arxave render` rebuild any past brief from the bag with zero LLM call.
+1. Singh et al., *SciRepEval: A Multi-Format Benchmark for Scientific Document Representations*, EMNLP 2023. [arXiv:2211.13308](https://arxiv.org/abs/2211.13308) (SPECTER2)
+2. Cohan et al., *SPECTER: Document-level Representation Learning using Citation-informed Transformers*, ACL 2020. [arXiv:2004.07180](https://arxiv.org/abs/2004.07180)
+3. Ethayarajh, *How Contextual are Contextualized Word Representations?*, EMNLP 2019. [arXiv:1909.00512](https://arxiv.org/abs/1909.00512) (the cone)
+4. Mu & Viswanath, *All-but-the-Top: Simple and Effective Postprocessing for Word Representations*, ICLR 2018. [arXiv:1702.01417](https://arxiv.org/abs/1702.01417) (subtract the mean)
+5. Priem, Piwowar & Orr, *OpenAlex: A fully-open index of scholarly works*, 2022. [arXiv:2205.01833](https://arxiv.org/abs/2205.01833) (the corpus' citation counts)
+6. Leys et al., *Detecting outliers: Do not use standard deviation around the mean, use absolute deviation around the median*, J. Exp. Soc. Psychol. 49 (2013). [doi](https://doi.org/10.1016/j.jesp.2013.03.013) (MAD × 1.4826)
+7. Lance & Williams, *A general theory of classificatory sorting strategies: 1. Hierarchical systems*, Comput. J. 9 (1967). [doi](https://doi.org/10.1093/comjnl/9.4.373) (average linkage update)
+8. arXiv, [API documentation](https://info.arxiv.org/help/api/) (the nightly listing)
 
-Full run prune on rolling window (`retention.days`); `--stage` run never prune,
-so re-running one step stay non-destructive.
-
-**Trading is the point.** Bag only worth so much alone. Real gain come when
-miner open bag to miner: swap stone, compare seam, catch nugget from tunnel you
-never dug. Shared store is the M4 target — one nightly run feeding a shared
-Supabase, text only. Not built yet.
+Every number here is a property of one model on one archive, and is dated or
+reproducible: `scripts/cave-promise-ref.mjs`, `scripts/cave-topics.mjs`,
+`scripts/measure-centroid.mjs`.
 
 ---
 
-## Still to build
-
-**Browser sieve — mesh not finished**
-
-- **Corpus signal** — WIP, title only. Need full abstract embeddings.
-- **Crowd attention** — Scirate behind bot challenge. Need other source.
-- **Citation overlap** — need backend, not browser.
-- **LLM refine step** — not wired yet.
-
-Those slider sit disabled until signal real. Ranking renormalise over signal
-actually present, so missing signal redistribute weight instead of scoring paper
-"nobody care".
-
-**Deeper shaft (spec M2–M4)**
-
-- **M2 — graph merge.** `link.py` + `oa_fetch` refactor. New rock enter rebuilt
-  graph, connection line and centrality signal go live.
-- **M3 — semantic layer + real scites.** Real scites in ranking (`scirate.py`
-  today is stub returning `None`). Embeddings for "related but uncited" and
-  "sciting but unseen" — nugget sitting next to your seam that cite nobody you
-  know. Citation route cannot see those at all.
-- **M4 — live + scheduled + trading post.** Brief as refreshing artifact, nightly
-  scheduled run, shared store so miner swap bag.
-
-**Open question** (spec §11)
-
-- Cite-key scheme — collision-proof convention, needed before first ingest.
-- De-duplication — preprint later published get new DOI. Need merge rule so
-  arXiv v1 and journal version not become two node.
-- Ranking weight — hand-tuned now. Worth logging read feedback to learn them.
-
----
-
-## Edge functions
-
-Two Supabase function back the browser page. Both public, no auth — page is
-static, no session.
-
-| Function | Why |
-|----------|-----|
-| `relay` | arXiv and Scirate send **no** CORS header. Browser cannot fetch them at all. This relay the GET server-side, allowlisted to those host. |
-| `embed` | The pick. Run server-side so browser download no model. Text sent get embedded and thrown away; published text also land in shared cache, text you typed never do. |
-
-Deploy step and cost cap: [`supabase/functions/README.md`](supabase/functions/README.md).
-
----
-
-## Tests
-
-```bash
-uv run pytest             # Python: pipeline, ranking, storage
-cd scripts && node --test  # Node: warmer, feed builder, enricher, demath
-```
-
-No network, no API key, no fixture outside `tmp_path`.
+Want to help? See [CONTRIBUTING.md](CONTRIBUTING.md).

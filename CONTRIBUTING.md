@@ -18,8 +18,7 @@ Two goals, only two:
 1. Never miss a nugget that matters.
 2. More tunnel swept in the same hours, less pyrite carried home.
 
-The [README](README.md) has the longer version and the layout of the four
-rooms (Dig, Stockpile, Haul, Details).
+The [README](README.md) has the longer version and how the Cave grades papers.
 
 ## Help wanted
 

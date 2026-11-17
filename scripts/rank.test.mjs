@@ -1,7 +1,7 @@
 /**
  * `node --test scripts/rank.test.mjs`.
  *
- * Two kinds of check, both hand-computed from the contract in INTERFACES.md and
+ * Two kinds of check, both hand-computed from the scoring contract and
  * from spec §8.2 rather than from this code's own output:
  *
  *   - the pure functions, on orthonormal 3-vectors whose cosines are exactly 1,
