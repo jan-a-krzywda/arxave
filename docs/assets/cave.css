@@ -24,11 +24,19 @@
 #cave-app {
   /* The walls are this box's siblings out in the gutters (see below), so the
      lift is belt and braces: if a gutter ever miscalculated, the cards still
-     win the paint order. 60rem is the whole page — rail, cards, hero. */
+     win the paint order.
+
+     71rem is the whole page — rail, cards, hero — padding included, which
+     makes the card column 54rem: 120% of the 45rem it had inside 60rem. That
+     is wider than minima's wrapper (1110 px inside), so the box sizes itself
+     against the viewport and centres on the wrapper with a margin that goes
+     negative once it outgrows it. 100vw - 2rem never reaches the scrollbar. */
+  --cave-w: min(71rem, 100vw - 2rem);
   position: relative;
   z-index: 1;
-  max-width: 60rem;
-  margin: 0 auto;
+  box-sizing: border-box;
+  width: var(--cave-w);
+  margin: 0 0 0 calc((100% - var(--cave-w)) / 2);
   padding: 0.5rem 1rem 3rem;
 }
 
@@ -39,26 +47,21 @@
    `.cave-wall` whatever order the two land in, and no other room carries the
    class, so Stockpile, Haul and Details keep their gutters untouched.
 
-   Width is the gutter left outside a 60rem centre with 3rem of slack, capped
-   at 320px. It never overlaps #cave-app's box:
+   Width is the gutter left outside the 71rem box with 3rem of slack, capped
+   at 320px. It never overlaps #cave-app's box, which is 1136px (71rem at the
+   default 16px root) centred on the page:
+     at 1240px: wall = (1240 - 1136 - 48) / 2 = 28;  app left = (1240 - 1136) / 2 = 52
+       — 24px clear, and both edges move 1px per 2px of viewport, so the 24px
+       holds until the wall hits its 320px cap at 1136 + 48 + 640 = 1824px.
+     at 1920px: wall = 320; app left = 392 — 72px clear.
 
-     #cave-app is 960px of content (60rem at the default 16px root) + 2×16px
-     padding = 992px, centred in minima's .wrapper (style.css caps it at
-     1140px, inner width 1110px).
-     at 1100px: wall = (1100 - 960 - 48) / 2 = 46;  app left = 15 + (1070 - 992) / 2 = 54
-     at 1140px: wall = (1140 - 960 - 48) / 2 = 66;  app left = 15 + (1110 - 992) / 2 = 74
-       — 8px clear in both, and above 1140 the wrapper stops growing, so both
-       edges move 1px per 2px of viewport and the 8px holds until the wall
-       hits its 320px cap at 960 + 48 + 640 = 1648px.
-     at 1920px: wall = 320; app left = (1920 - 1140) / 2 + 74 = 464 — 144px clear.
-
-   Shown from 1100px up, not the site's 1340: a 46px strip of rock still reads
-   as a wall, and the centre has already narrowed to pay for it. */
+   Shown from 1240px up, not the site's 1340: a 28px strip of rock still reads
+   as a wall. Below that the box has the whole width and there is no gutter. */
 .cave-wall.cave-wall-dig {
-  width: clamp(0px, calc((100vw - 60rem - 3rem) / 2), 320px);
+  width: clamp(0px, calc((100vw - 71rem - 3rem) / 2), 320px);
 }
 
-@media (min-width: 1100px) {
+@media (min-width: 1240px) {
   .cave-wall.cave-wall-dig {
     display: block;
   }
