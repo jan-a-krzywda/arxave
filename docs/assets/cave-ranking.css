@@ -146,12 +146,10 @@
 .rk-row {
   display: grid;
   grid-template-columns: 2.2rem minmax(0, 1fr) auto;
-  grid-template-areas:
-    "rank main   toggle"
-    "rank meters meters";
+  grid-template-areas: "rank main toggle";
   align-items: start;
   gap: 0.35rem 0.5rem;
-  padding: 0.55rem 0.6rem;
+  padding: 0.4rem 0.6rem;
   border-top: 1px solid var(--rock-edge);
   cursor: pointer;
 }
@@ -233,17 +231,28 @@ h3.rk-title {
 }
 
 .rk-authors {
-  margin: 0.2rem 0 0;
+  margin: 0.1rem 0 0;
   color: var(--text-faint);
   font-size: 0.78rem;
   line-height: 1.35;
+}
+
+/* Under the title: Score and grades first, so the bar starts at the same x on
+   every row, then the topic chips. One line on a desktop, wrapping on a phone. */
+.rk-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.6rem;
+  margin: 0.25rem 0 0;
 }
 
 .rk-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 0.3rem;
-  margin: 0.3rem 0 0;
+  min-width: 0;
+  margin: 0;
 }
 
 .rk-chip {
@@ -293,10 +302,10 @@ h3.rk-title {
    own grid cell so they can never paint over one another. */
 
 .rk-meters {
-  grid-area: meters;
   display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.5rem;
   min-width: 0;
 }
 
@@ -347,9 +356,8 @@ h3.rk-title {
   grid-template-columns: auto minmax(0, 1fr) 2rem;
   align-items: center;
   gap: 0.35rem;
-  flex: 1 1 0;
+  flex: 0 0 11rem;
   min-width: 0;
-  max-width: 24rem;
   font-size: 0.72rem;
 }
 
@@ -655,22 +663,10 @@ h3.rk-title {
   line-height: 1.5;
 }
 
-/* ── Wide enough for the meter in its own column ─────────────── */
-
-@media (min-width: 720px) {
-  .rk-row {
-    grid-template-columns: 2.2rem minmax(0, 1fr) 15rem auto;
-    grid-template-areas: "rank main meters toggle";
-    align-items: center;
-    gap: 0.5rem;
-  }
-}
-
 /* ── Phones: the meter takes a line under the title ───────────── */
 
 @media (max-width: 600px) {
-  /* The row is already one column of title, one of meter; only the targets
-     change. A 36 px button at 360 px, in a bar that wraps rather than scrolls. */
+  /* The row is one column at every width; only the targets change. A 36 px button at 360 px, in a bar that wraps rather than scrolls. */
   /* Three squares still fit at 360 px, each a 36 px target. */
 
   .pa-btn {

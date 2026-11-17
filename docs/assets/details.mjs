@@ -56,7 +56,7 @@ const STAGES = [
   {
     name: 'Ranking',
     does: 'Grades and orders the night; you pick papers.',
-    io: ['night + priorities', 'Match · Impact · Surprise · Exp. per paper, 5 at a time'],
+    io: ['night + priorities', 'Match · Impact · Surprise · Exp. per paper, 10 at a time'],
     rule: 'No gate: Topic match is a weight on the order, not a filter that can empty the night.',
     file: 'cave-stage-ranking.mjs',
   },
