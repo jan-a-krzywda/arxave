@@ -24,6 +24,9 @@ import { paperEmbedText, parseAnnouncementRSS, parseAtomEntries } from '../docs/
 
 const DEFAULT = 'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1/dig-cache';
 
+/* Tests must not sit through arXiv's real three-second courtesy gap. */
+const NO_WAIT = { sleep: async () => {} };
+
 test('an unset Actions variable does not become the endpoint', () => {
   // `env: DIG_CACHE_URL: ${{ vars.NOT_SET }}` hands us '', not undefined. With
   // `??` that passed straight through and failed 20 s later inside fetch, after
@@ -313,11 +316,11 @@ test('each category gets its own window, and a cross-list is still one stone', a
     ]) };
   };
   try {
-    const got = await fetchEarlier(['quant-ph', 'math-ph'], 2, 400, new Date('2026-08-14T06:00:00Z'));
+    const got = await fetchEarlier(['quant-ph', 'math-ph'], 2, 400, new Date('2026-08-14T06:00:00Z'), NO_WAIT);
     assert.equal(asked.length, 2);
     assert.match(asked[0], /search_query=cat:quant-ph&/);
     assert.match(asked[1], /search_query=cat:math-ph&/);
-    for (const u of asked) assert.match(u, /max_results=400/);
+    for (const u of asked) assert.match(u, /max_results=200&start=0/);
     assert.deepEqual(got.map((s) => s.arxivId).sort(), ['2508.00001', '2508.00002', '2508.99999']);
   } finally {
     globalThis.fetch = real;
@@ -330,12 +333,86 @@ test('one dead category does not take the other categories down with it', async 
     ? { ok: false, status: 503, text: async () => '' }
     : { ok: true, text: async () => atom([entry({ published: '2026-08-13T00:00:00Z' })]) });
   try {
-    const got = await fetchEarlier(['dead', 'math-ph'], 2, 400, new Date('2026-08-14T06:00:00Z'));
+    const got = await fetchEarlier(['dead', 'math-ph'], 2, 400, new Date('2026-08-14T06:00:00Z'), NO_WAIT);
     assert.equal(got.length, 1);
     // But all of them failing is a real failure, not an empty warm.
     globalThis.fetch = async () => ({ ok: false, status: 503, text: async () => '' });
     await assert.rejects(
-      fetchEarlier(['dead'], 2, 400, new Date('2026-08-14T06:00:00Z')), /HTTP 503/);
+      fetchEarlier(['dead'], 2, 400, new Date('2026-08-14T06:00:00Z'), NO_WAIT), /HTTP 503/);
+  } finally {
+    globalThis.fetch = real;
+  }
+});
+
+test('a busy category is paged until the window reaches the cutoff', async () => {
+  // 3 pages of 2: two full pages in the window, then a page whose second paper
+  // is older than the cutoff — that page is the last one asked for.
+  const pages = [
+    [['2508.00001', '2026-08-13'], ['2508.00002', '2026-08-13']],
+    [['2508.00003', '2026-08-12'], ['2508.00004', '2026-08-12']],
+    [['2508.00005', '2026-08-12'], ['2508.00006', '2026-08-01']],
+    [['2508.00007', '2026-07-30'], ['2508.00008', '2026-07-30']],
+  ];
+  const asked = [];
+  const real = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    asked.push(String(url));
+    const n = Number(String(url).match(/start=(\d+)/)[1]) / 2;
+    return { ok: true, text: async () => atom(pages[n].map(([id, d]) =>
+      entry({ id, summary: 'abstract ' + id, published: d + 'T00:00:00Z' }))) };
+  };
+  try {
+    const got = await fetchEarlier(['cs.AI'], 3, 100, new Date('2026-08-14T06:00:00Z'),
+      { sleep: async () => {}, pageSize: 2 });
+    assert.equal(asked.length, 3);
+    assert.match(asked[2], /start=4/);
+    assert.deepEqual(got.map((s) => s.arxivId),
+      ['2508.00001', '2508.00002', '2508.00003', '2508.00004', '2508.00005']);
+  } finally {
+    globalThis.fetch = real;
+  }
+});
+
+test('paging stops at max-results rather than running past it', async () => {
+  const asked = [];
+  const real = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    asked.push(String(url));
+    const start = Number(String(url).match(/start=(\d+)/)[1]);
+    return { ok: true, text: async () => atom([0, 1].map((i) =>
+      entry({ id: `2508.${start + i}`, summary: 'a' + (start + i), published: '2026-08-13T00:00:00Z' }))) };
+  };
+  try {
+    const got = await fetchEarlier(['cs.AI'], 2, 4, new Date('2026-08-14T06:00:00Z'),
+      { sleep: async () => {}, pageSize: 2 });
+    assert.equal(asked.length, 2);
+    assert.equal(got.length, 4);
+  } finally {
+    globalThis.fetch = real;
+  }
+});
+
+test('a 429 is retried with backoff, honouring Retry-After, and then succeeds', async () => {
+  let calls = 0;
+  const waits = [];
+  const real = globalThis.fetch;
+  globalThis.fetch = async () => {
+    calls++;
+    if (calls === 1) return { ok: false, status: 429, headers: new Headers({ 'retry-after': '7' }), text: async () => '' };
+    if (calls === 2) return { ok: false, status: 503, text: async () => '' };
+    return { ok: true, text: async () => atom([entry({ published: '2026-08-13T00:00:00Z' })]) };
+  };
+  try {
+    const got = await fetchEarlier(['cs.AI'], 2, 400, new Date('2026-08-14T06:00:00Z'),
+      { sleep: async (ms) => { waits.push(ms); } });
+    assert.equal(calls, 3);
+    assert.equal(got.length, 1);
+    assert.deepEqual(waits, [7000, 20000]);
+    // A 400 is the request's fault: no retry.
+    calls = 0;
+    globalThis.fetch = async () => { calls++; return { ok: false, status: 400, text: async () => '' }; };
+    await assert.rejects(fetchEarlier(['cs.AI'], 2, 400, new Date('2026-08-14T06:00:00Z'), NO_WAIT), /HTTP 400/);
+    assert.equal(calls, 1);
   } finally {
     globalThis.fetch = real;
   }
