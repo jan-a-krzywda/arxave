@@ -36,6 +36,9 @@ nav_icon: dig
       worth reading.
     </p>
     <p class="cave-sub">Six stages, top to bottom. Each opens once the one before it is done.</p>
+    <!-- Shown at load when Dig's categories span both fields: which pack the
+         page is reading, and a one-click switch to the other. -->
+    <p class="cave-field-note" id="cave-field-note" role="status" hidden></p>
   </header>
 
   <nav class="cave-rail" id="cave-rail" aria-label="Tonight's stages"></nav>

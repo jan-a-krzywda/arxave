@@ -127,13 +127,21 @@ export const DEFAULT_CATEGORIES = 'cond-mat.mes-hall, quant-ph';
 export const FORM_KEY = 'arxave-cave-dig';
 
 /**
- * The field these categories belong to, when it is not tonight's: digging
- * cs.LG into the quantum tree files every paper under the nearest quantum
- * topic, so the form offers the AI pack instead. Null when the categories
- * touch tonight's field at all, or no field claims them.
+ * Set (to a timestamp) by a field switch that came from the Dig button: the
+ * reloaded page presses Dig itself. Stale after a minute, so a switch that
+ * never finished loading does not dig on some later visit.
+ */
+export const AUTODIG_KEY = 'arxave-cave-autodig';
+const AUTODIG_FRESH_MS = 60_000;
+
+/**
+ * The field these categories belong to, when it is not tonight's: the first
+ * category a field claims picks it (cave-fields.mjs), so putting cs.LG in
+ * front of quant-ph asks for the AI pack. Null when the lead category is
+ * tonight's field, or no field claims any of them.
  */
 export function otherField(categories, field) {
-  if (!field || (categories ?? []).some((code) => field.categories.includes(code))) return null;
+  if (!field) return null;
   const claim = fieldForCategories(categories);
   return claim && claim.id !== field.id ? claim : null;
 }
@@ -423,10 +431,10 @@ export function mountDig(body, ctx) {
     const other = otherField(categories(), ctx.field);
     fieldEl.hidden = !other;
     fieldEl.innerHTML = other
-      ? 'These are ' + escapeHtml(other.label) + ' papers, but tonight\'s topics are ' +
-        escapeHtml(ctx.field.label) + '. ' +
+      ? escapeHtml(categories()[0]) + ' leads, so Dig will switch to ' + escapeHtml(other.label) +
+        ' topics. ' +
         '<button type="button" class="cave-dig-field-btn" data-field="' + escapeHtml(other.id) + '">' +
-          'Use ' + escapeHtml(other.label) + ' topics</button>'
+          'Switch now</button>'
       : '';
   }
 
@@ -461,6 +469,15 @@ export function mountDig(body, ctx) {
     const cats = categories();
     if (!cats.length) {
       say('Pick at least one arXiv category first.', true);
+      return;
+    }
+    /* The lead category belongs to the other field: reload on its pack and
+       dig there, rather than filing these papers under the wrong tree. */
+    const other = otherField(cats, ctx.field);
+    if (other && ctx.switchField) {
+      saveForm();
+      say('Switching to ' + other.label + ' topics…');
+      ctx.switchField(other.id, { dig: true });
       return;
     }
     const lookback = whole(lookbackEl.value, 1, 7, 1);
@@ -603,6 +620,13 @@ export function mountDig(body, ctx) {
 
   lookbackEl.addEventListener('change', saveForm);
   maxEl.addEventListener('change', saveForm);
+
+  /* Back from a switch the Dig button asked for: finish what it started. */
+  const autodig = Number(readStore(ctx.storage, AUTODIG_KEY, 0)) || 0;
+  if (autodig) {
+    writeStore(ctx.storage, AUTODIG_KEY, 0);
+    if (Date.now() - autodig < AUTODIG_FRESH_MS) dig();
+  }
 }
 
 

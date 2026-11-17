@@ -178,6 +178,18 @@ body {
   text-decoration: none;
 }
 
+/* A shut room: still on the bar so the layout does not jump the day it opens,
+   but grey and inert. */
+.cave-nav .room.is-off,
+.cave-nav .room.is-off:hover {
+  color: var(--text-faint);
+  background: none;
+  border-color: transparent;
+  opacity: 0.45;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+
 /* The room you are standing in. Lit, not merely bolded: the marker has to
    survive being read at a glance from across the bar. */
 .cave-nav .room.is-here,

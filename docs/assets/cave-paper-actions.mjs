@@ -132,10 +132,6 @@ export function scirateUrl(id) {
   return 'https://scirate.com/arxiv/' + bareArxivId(id);
 }
 
-const button = (act, id, label, extra = '') =>
-  '<button type="button" class="pa-btn' + (extra ? ' ' + extra : '') + '" data-act="' + act +
-    '" data-id="' + escapeHtml(id) + '">' + label + '</button>';
-
 const link = (cls, href, label) =>
   '<a class="pa-btn ' + cls + '" href="' + escapeHtml(href) +
     '" target="_blank" rel="noopener">' + label + '</a>';
@@ -157,15 +153,10 @@ export function actionsHtml(item, state = {}) {
   const parts = [link('pa-scirate', scirateUrl(id), 'SciRate')];
 
   if (s.repo && parseRepo(s.repo)) {
-    const thread = s.thread;
-    if (thread && typeof thread === 'object' && thread.url) {
-      parts.push(link('pa-discussion', thread.url, '💬 Thread'));
-    } else {
-      /* No thread known — none exists, or the lookup could not say. The click
-         asks once more, then joins the thread it finds or opens GitHub's form
-         with the post already written. */
-      parts.push(button('discuss', id, '✚ Discuss', 'pa-discuss'));
-    }
+    /* Threads are switched off for now: the button holds its square in the
+       bar, greyed, so the row keeps its shape for the day they come back. */
+    parts.push('<button type="button" class="pa-btn pa-discuss" disabled ' +
+      'title="Discussions are coming soon">✚ Discuss</button>');
   }
 
   parts.push('<button type="button" class="pa-btn pa-summarize" data-act="summarize" data-id="' +

@@ -27,10 +27,11 @@
  * rewrites its floor, which is what lets the cage slide instead of jump.
  */
 import {
-  FIELD_KEY, chooseField, fieldBase, fieldById, fieldHref,
+  FIELD_KEY, alignCategories, chooseField, fieldBase, fieldById, fieldFromUrl, fieldsInCategories,
+  withoutField,
 } from './cave-fields.mjs';
 import { STAGES, createFlow } from './cave-flow.mjs';
-import { FORM_KEY as DIG_KEY } from './cave-stage-dig.mjs';
+import { AUTODIG_KEY, FORM_KEY as DIG_KEY } from './cave-stage-dig.mjs';
 import { loadAxes, loadCorpus, loadTopics } from './sieve-core.mjs';
 import {
   escapeHtml, joinUrl, loadCorpusFrom, readStore, writeStore,
@@ -163,16 +164,24 @@ function startPage() {
   const flow = createFlow({ storage });
 
   /* The field pack is picked before anything loads (cave-fields.mjs): the
-     corpus, the tree and the axes all come from its folder. */
+     corpus, the tree and the axes all come from its folder. Dig's first
+     category decides it, unless a shared ?field= link says otherwise. */
   const digSaved = readStore(storage, DIG_KEY, null) || {};
+  const digCats = String(digSaved.categories || '').split(',').map((c) => c.trim()).filter(Boolean);
   const field = chooseField({
     search: window.location.search,
     stored: readStore(storage, FIELD_KEY, null),
-    digCategories: String(digSaved.categories || '').split(',').map((c) => c.trim()).filter(Boolean),
+    digCategories: digCats,
   });
   const CORPUS_BASE = fieldBase(CORPUS_ROOT, field);
-  /* A shared ?field= link is a choice too: remember it for the next visit. */
-  if (new URLSearchParams(window.location.search).has('field')) writeStore(storage, FIELD_KEY, field.id);
+  /* A shared ?field= link is a choice too: remember it, and put its categories
+     first so Dig and the field agree. */
+  if (fieldFromUrl(window.location.search)) {
+    writeStore(storage, FIELD_KEY, field.id);
+    if (digCats.length) {
+      writeStore(storage, DIG_KEY, { ...digSaved, categories: alignCategories(digCats, field).join(', ') });
+    }
+  }
 
   const ctx = {
     flow,
@@ -192,20 +201,40 @@ function startPage() {
 
   /**
    * Another field is another world, so the switch is a reload. Dig's saved
-   * categories follow the field when they belong to none of its archives —
-   * otherwise the reader would dig quantum papers into the AI tree.
+   * categories are reordered so the new field's lead the list (or replaced by
+   * its defaults when it has none there): the first category is what picks
+   * the field on the next load. `{ dig: true }` presses Dig once the page is
+   * back, for a switch that came from the Dig button itself.
    */
-  function switchField(id) {
+  function switchField(id, { dig = false } = {}) {
     const next = fieldById(id);
     if (!next || next.id === field.id) return;
     writeStore(storage, FIELD_KEY, next.id);
     const saved = readStore(storage, DIG_KEY, null) || {};
     const cats = String(saved.categories || '').split(',').map((c) => c.trim()).filter(Boolean);
-    if (!cats.some((code) => next.categories.includes(code))) {
-      writeStore(storage, DIG_KEY, { ...saved, categories: next.categories.join(', ') });
-    }
-    window.location.assign(fieldHref(window.location.href, next.id));
+    writeStore(storage, DIG_KEY, { ...saved, categories: alignCategories(cats, next).join(', ') });
+    if (dig) writeStore(storage, AUTODIG_KEY, Date.now());
+    window.location.assign(withoutField(window.location.href));
   }
+
+  /* Both fields in Dig's list: say which one the page is reading, and offer
+     the other. Said once, at load, above the cards. */
+  function paintFieldNote() {
+    const el = byId('cave-field-note');
+    if (!el) return;
+    const touched = fieldsInCategories(digCats);
+    const other = touched.find((f) => f.id !== field.id);
+    el.hidden = !(touched.length > 1 && other);
+    if (el.hidden) return;
+    el.innerHTML = 'Using <b>' + escapeHtml(field.label) + '</b> topics. ' +
+      '<button type="button" class="cave-field-note-btn" data-field="' + escapeHtml(other.id) + '">' +
+        'Switch to ' + escapeHtml(other.label) + ' instead</button>';
+    el.addEventListener('click', (event) => {
+      const btn = event.target.closest ? event.target.closest('.cave-field-note-btn') : null;
+      if (btn) switchField(btn.getAttribute('data-field'));
+    });
+  }
+  paintFieldNote();
 
   /* ── the rail and the folds ─────────────────────────────────────────── */
 

@@ -9,7 +9,8 @@ The rooms come from site.header_pages, so the order lives in _config.yml and
 each page carries its own gloss and icon in front matter. A page with no
 `nav_icon` still renders — label and gloss, no sprite — so adding a room cannot
 break the bar. `nav_wip: true` hangs a pyrite WIP tag off the room's name: the
-door is open, what is behind it is half dug.
+door is open, what is behind it is half dug. `nav_off: true` shuts the door: the
+room stays in the bar, greyed, as a span rather than a link.
 
 No hamburger. Four icons fit one row at 320px, and a menu you have to open is
 exactly the thing this bar exists to stop being.
@@ -51,9 +52,13 @@ exactly the thing this bar exists to stop being.
       {%- for path in page_paths -%}
         {%- assign my_page = site.pages | where: "path", path | first -%}
         {%- if my_page.title -%}
+        {%- if my_page.nav_off -%}
+        <span class="room is-off" aria-disabled="true" title="Coming soon">
+        {%- else -%}
         <a class="room{% if page.url == my_page.url %} is-here{% endif %}"
            href="{{ my_page.url | relative_url }}"
            {% if page.url == my_page.url %}aria-current="page"{% endif %}>
+        {%- endif -%}
           {%- if my_page.nav_icon -%}
             {%- include nav-icon.html icon=my_page.nav_icon -%}
           {%- endif -%}
@@ -61,7 +66,7 @@ exactly the thing this bar exists to stop being.
           {%- if my_page.gloss -%}
           <span class="room-gloss">{{ my_page.gloss | escape }}</span>
           {%- endif -%}
-        </a>
+        {%- if my_page.nav_off -%}</span>{%- else -%}</a>{%- endif -%}
         {%- endif -%}
       {%- endfor -%}
     </nav>

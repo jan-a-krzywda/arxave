@@ -288,7 +288,27 @@
   color: var(--text-dim);
 }
 
-.cave-dig-field-btn {
+.cave-field-note {
+  display: inline-block;
+  margin: 0.6rem 0 0;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 6px;
+  background: var(--rock-deep);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.cave-field-note[hidden] {
+  display: none;
+}
+
+.cave-field-note b {
+  color: var(--gold);
+}
+
+.cave-dig-field-btn,
+.cave-field-note-btn {
   padding: 0;
   background: none;
   border: 0;
@@ -298,7 +318,8 @@
   text-decoration: underline;
 }
 
-.cave-dig-field-btn:focus-visible {
+.cave-dig-field-btn:focus-visible,
+.cave-field-note-btn:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }

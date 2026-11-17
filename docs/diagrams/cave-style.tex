@@ -1,0 +1,22 @@
+% Shared look for the Details diagrams: the site's cave palette on a
+% transparent ground, so the SVG sits on the dark page with no box around it.
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+\usepackage{amsmath,amssymb}
+\renewcommand{\familydefault}{\sfdefault}
+\usetikzlibrary{arrows.meta,positioning,calc,backgrounds,fit}
+\definecolor{ink}{HTML}{D7DBE0}
+\definecolor{dim}{HTML}{99A1AD}
+\definecolor{faint}{HTML}{6D7682}
+\definecolor{rock}{HTML}{21262E}
+\definecolor{edge}{HTML}{4A525E}
+\definecolor{lamp}{HTML}{7AA2F7}
+\definecolor{gold}{HTML}{F5B301}
+\definecolor{moss}{HTML}{4AA06A}
+\definecolor{ember}{HTML}{E05A4D}
+\tikzset{
+  every node/.style={text=ink},
+  flow/.style={-{Stealth[length=2.4mm]}, line width=0.8pt, draw=dim},
+  call/.style={-{Stealth[length=2mm]}, line width=0.7pt, draw=gold, dashed},
+  lab/.style={font=\scriptsize, text=dim, align=center, inner sep=1.5pt},
+}

@@ -1,0 +1,45 @@
+\documentclass[tikz,border=6pt]{standalone}
+\input{cave-style}
+\tikzset{
+  st/.style={draw=#1, fill=rock, rounded corners=4pt, line width=0.9pt, align=center,
+             minimum width=3.6cm, minimum height=1.45cm, inner sep=4pt, font=\small},
+  src/.style={draw=edge, fill=rock, rounded corners=3pt, align=center, font=\scriptsize,
+              text=dim, inner sep=4pt, minimum width=2.6cm},
+  llm/.style={draw=gold, rounded corners=3pt, align=center, font=\scriptsize,
+              text=gold, inner sep=3pt, minimum width=2.2cm},
+}
+\begin{document}
+\begin{tikzpicture}
+\def\cw{4.4}
+\node[st=lamp] (dig)  at (0,0)       {\textbf{1 Dig}\\[-1pt]\scriptsize\color{dim}tonight's listing};
+\node[st=moss] (train) at (\cw,0)    {\textbf{2 Train}\\[-1pt]\scriptsize\color{dim}abstract $\to$ 768-d vector};
+\node[st=lamp] (map)  at (2*\cw,0)   {\textbf{3 Map}\\[-1pt]\scriptsize\color{dim}wagons + topics};
+\node[st=lamp] (pri)  at (0,-2.5)    {\textbf{4 Priorities}\\[-1pt]\scriptsize\color{dim}topic weights, your words};
+\node[st=lamp] (rank) at (\cw,-2.5)  {\textbf{5 Ranking}\\[-1pt]\scriptsize\color{dim}Match $\cdot$ Impact $\cdot$ Surprise};
+\node[st=gold] (story) at (2*\cw,-2.5) {\textbf{6 Story}\\[-1pt]\scriptsize\color{dim}your picks, told};
+
+\draw[flow] (dig) -- (train);
+\draw[flow] (train) -- (map);
+\draw[flow] (map.south) -- ++(0,-0.45) -| (pri.north);
+\draw[flow] (pri) -- (rank);
+\draw[flow] (rank) -- node[lab, above] {picks} (story);
+
+\node[src, above=0.55cm of dig] (arxiv) {arXiv listing\\via relay};
+\draw[flow] (arxiv) -- (dig);
+\node[src, above=0.55cm of train] (spec) {SPECTER2\\embed service};
+\draw[flow, draw=moss] (spec) -- (train);
+\node[src, minimum width=4.2cm, below=0.7cm of rank] (pack) {field pack: 5\,000 papers,\\citations, topic tree, axes};
+\draw[flow] (pack.west) -| (pri.south);
+\draw[flow] (pack) -- (rank);
+
+\node[llm, above=0.55cm of map] (name) {LLM: wagon names};
+\draw[call] (name) -- (map);
+\node[llm, right=0.35cm of pack] (sum) {LLM: Summarize,\\AI trace};
+\draw[call] (sum.north) -- ++(0,0.25) -| ([xshift=6mm]rank.south);
+
+\node[lab, anchor=north west] at ([yshift=-0.35cm]pri.south west |- pack.south) {%
+  \textcolor{lamp}{$\blacksquare$} arithmetic in your tab\quad
+  \textcolor{moss}{$\blacksquare$} embedding service\quad
+  \textcolor{gold}{$\blacksquare$} LLM call};
+\end{tikzpicture}
+\end{document}
