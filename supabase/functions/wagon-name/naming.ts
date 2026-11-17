@@ -33,6 +33,9 @@ export interface Member {
 export interface Rung {
   model: string;
   thinking: Record<string, unknown> | null;
+  /** Who serves it. `gemini` (the default) is generateContent with the Gemini
+   *  key; `chat` is an OpenAI-compatible /chat/completions with LLM_API_KEY. */
+  provider?: 'gemini' | 'chat';
 }
 
 /**
@@ -54,14 +57,17 @@ export interface Rung {
 export const LADDER: Rung[] = [
   { model: 'gemini-3.5-flash-lite', thinking: { thinkingLevel: 'low' } },
   { model: 'gemini-3.1-flash-lite', thinking: { thinkingBudget: 0 } },
+  /* The fallback off Google's quota entirely. A 429 on the Gemini rungs says
+     nothing about this one, which is the same reason the ladder exists at all —
+     and it is the same model story/refine/diamond already run, on the same
+     key. Ahead of the Gemma rungs, which are the loosest with terminology. */
+  { model: 'deepseek-ai/DeepSeek-V4.1-Flash-1017', thinking: null, provider: 'chat' },
   { model: 'gemma-4-31b-it', thinking: null },
   { model: 'gemma-4-26b-a4b-it', thinking: null },
 ];
 
-/** What each known model wants in `thinkingConfig`, for ids that arrive by env. */
-const THINKING: Record<string, Record<string, unknown> | null> = Object.fromEntries(
-  LADDER.map((r) => [r.model, r.thinking]),
-);
+/** Each known model's whole rung — its thinkingConfig and its provider — for ids that arrive by env. */
+const KNOWN: Record<string, Rung> = Object.fromEntries(LADDER.map((r) => [r.model, r]));
 
 /**
  * The ladder to actually climb, from a comma-separated env override or the
@@ -71,7 +77,7 @@ const THINKING: Record<string, Record<string, unknown> | null> = Object.fromEntr
 export function ladderFrom(env?: string | null): Rung[] {
   const ids = String(env ?? '').split(',').map((s) => s.trim()).filter(Boolean);
   if (!ids.length) return LADDER;
-  return ids.map((model) => ({ model, thinking: THINKING[model] ?? null }));
+  return ids.map((model) => KNOWN[model] ?? { model, thinking: null });
 }
 
 export interface WagonName {
@@ -140,6 +146,15 @@ export const SYSTEM = [
   'Never invent a topic no title supports: if the titles have',
   'little in common, say so in the gloss and give the label the broadest',
   'accurate name. Do not editorialize about importance or novelty.',
+].join(' ');
+
+/* For the providers that have no enforced schema. A /chat/completions
+   json_object mode guarantees *valid JSON*, not this shape, so the shape is
+   stated in the prompt and parseGroups drops anything that does not fit. */
+export const JSON_FORMAT = [
+  'Reply with JSON only, exactly this shape:',
+  '{"groups":[{"group":1,"name":"...","gloss":"..."}]}',
+  'with one entry per group, "group" being the number you were given.',
 ].join(' ');
 
 /* An enforced schema rather than "reply in JSON", for the reason enrich.mjs
@@ -240,11 +255,22 @@ export function promptFor(wagons: Member[][]): string {
  * nothing it could correctly refer to.
  */
 export function parseResponse(body: unknown, count: number): Record<number, WagonName> {
-  const out: Record<number, WagonName> = {};
   const b = body as {
     candidates?: { content?: { parts?: { text?: string }[] } }[];
   };
-  const text = b?.candidates?.[0]?.content?.parts?.[0]?.text;
+  return parseGroups(b?.candidates?.[0]?.content?.parts?.[0]?.text, count);
+}
+
+/** The same, for an OpenAI-compatible /chat/completions reply. */
+export function parseChatResponse(body: unknown, count: number): Record<number, WagonName> {
+  const b = body as { choices?: { message?: { content?: unknown } }[] };
+  const content = b?.choices?.[0]?.message?.content;
+  return parseGroups(typeof content === 'string' ? content : undefined, count);
+}
+
+/** The `{groups:[…]}` text both providers return, reduced to a name per index. */
+export function parseGroups(text: string | undefined, count: number): Record<number, WagonName> {
+  const out: Record<number, WagonName> = {};
   if (!text) return out;
   let parsed: { groups?: unknown };
   try {

@@ -39,9 +39,9 @@
  * `LADDER` is what remains of the per-wagon fallback, and it is now a backstop
  * rather than the mechanism: if a model is full, refuses the request, or names
  * only some of the groups, the leftovers go to the next model. One metered call
- * per rung, four rungs, so a request is at most four calls however it fails.
+ * per rung, so a request is at most LADDER.length calls however it fails.
  *
- * EVERY FAILURE IS A MISSING NAME, NEVER AN ERROR. No Gemini key, an exhausted
+ * EVERY FAILURE IS A MISSING NAME, NEVER AN ERROR. No key at all, an exhausted
  * budget, a refused call, a timeout: the wagon comes back without a name and
  * the page shows "Wagon 3" exactly as it does today. A name is an embellishment
  * on a clustering that already happened locally, and it must never be the
@@ -50,8 +50,10 @@
 
 import {
   generationConfig,
+  JSON_FORMAT,
   ladderFrom,
   MAX_WAGONS,
+  parseChatResponse,
   parseResponse,
   promptFor,
   readWagons,
@@ -64,6 +66,11 @@ import {
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const GEMINI_KEY = Deno.env.get('GEMINI_API_KEY') ?? '';
+/* The chat-completions rungs (DeepSeek) run on the deployment's own LLM key and
+   base URL — the same two story, refine and diamond use, so a deployment that
+   points those at its own endpoint points this one too. */
+const LLM_KEY = Deno.env.get('LLM_API_KEY') ?? '';
+const CHAT_BASE_URL = Deno.env.get('REFINE_BASE_URL') ?? 'https://api.sailresearch.com/v1';
 /* Salts the client hash so the budget table holds no raw IP addresses. Any
    stable random string; changing it resets everyone's budget, which is a
    blunt but real way to clear a stuck day. */
@@ -288,6 +295,49 @@ async function callGemini(
   return parseResponse(await resp.json(), count);
 }
 
+/**
+ * The same request to an OpenAI-compatible /chat/completions rung. Returns the
+ * same shape as callGemini, so the ladder below does not care who answered, and
+ * maps failures onto the same two verdicts: a 429 is RateLimited, a 400/404 is
+ * BadRequest, everything else is an ordinary error and the next rung.
+ */
+async function callChat(
+  titles: string,
+  count: number,
+  rung: Rung,
+): Promise<Record<number, { name: string; gloss: string }>> {
+  const resp = await fetch(`${CHAT_BASE_URL.replace(/\/+$/, '')}/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${LLM_KEY}` },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+    body: JSON.stringify({
+      model: rung.model,
+      messages: [
+        { role: 'system', content: `${SYSTEM} ${JSON_FORMAT}` },
+        { role: 'user', content: titles },
+      ],
+      temperature: 0.2,
+      response_format: { type: 'json_object' },
+    }),
+  });
+  if (!resp.ok) {
+    const text = await resp.text();
+    if (resp.status === 429) {
+      throw new RateLimited(retryAfterSeconds(resp.headers.get('retry-after'), text));
+    }
+    if (resp.status === 400 || resp.status === 404) {
+      throw new BadRequest(`HTTP ${resp.status}: ${text.slice(0, 160)}`);
+    }
+    throw new Error(`HTTP ${resp.status}: ${text.slice(0, 160)}`);
+  }
+  return parseChatResponse(await resp.json(), count);
+}
+
+/** Whether this rung's provider has a key on this deployment. */
+function hasKey(rung: Rung): boolean {
+  return rung.provider === 'chat' ? !!LLM_KEY : !!GEMINI_KEY;
+}
+
 /** Write a generated name. A failed write only costs a regeneration later. */
 async function store(
   key: string,
@@ -354,12 +404,20 @@ Deno.serve(async (req) => {
      groups, the *remaining* wagons go to the next model. Each attempt spends
      exactly one metered call and advances one rung, so a request makes at most
      LADDER.length calls no matter what goes wrong. */
-  if (missing.length && GEMINI_KEY) {
+  if (missing.length && LADDER.some(hasKey)) {
     const client = await clientHash(req);
     let pending = missing;
 
     while (pending.length && rung < LADDER.length) {
       const model = LADDER[rung];
+
+      /* A rung whose provider has no key here is not a failure and not a
+         charge — skip it before the meter is touched, so a deployment with
+         only a Gemini key still climbs exactly the ladder it always did. */
+      if (!hasKey(model)) {
+        rung++;
+        continue;
+      }
 
       /* One call, one debit — asked for immediately before spending it, so a
          request that dies on rung 1 does not hold rungs 2-4's budget. */
@@ -373,7 +431,9 @@ Deno.serve(async (req) => {
       const batch = pending.map((k) => wagons[keys.indexOf(k)]);
       let answered: Record<number, { name: string; gloss: string }> = {};
       try {
-        answered = await callGemini(promptFor(batch), batch.length, model);
+        answered = model.provider === 'chat'
+          ? await callChat(promptFor(batch), batch.length, model)
+          : await callGemini(promptFor(batch), batch.length, model);
       } catch (err) {
         await refund(client, 1);   // a call that produced nothing is not a charge
         /* A 429 and a 400 are both verdicts on the model rather than on the
