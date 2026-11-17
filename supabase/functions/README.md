@@ -86,6 +86,16 @@ wagon. A wrong name is worse than no name, because only someone who reads the
 titles can catch it. Carrying the number makes a dropped group a missing key
 instead of a shifted one; out-of-range numbers are discarded.
 
+**The model is a ladder, and DeepSeek is on it.** Two Gemini flash-lite rungs
+first, then `deepseek-ai/DeepSeek-V4.1-Flash-1017` over the same
+OpenAI-compatible endpoint `story`, `refine` and `diamond` use (`LLM_API_KEY`,
+`REFINE_BASE_URL`), then the Gemma rungs. A 429 on a Gemini rung says nothing
+about DeepSeek's quota, which is the point of a ladder. A rung whose key is not
+set on the deployment is skipped before the meter is touched. Each attempt is one
+metered call; `ARXAVE_NAME_MODELS` overrides the order. A wagon may hold up to
+1000 members (2000 across the request) — a size guard, since only 12 titles per
+wagon reach the prompt but every member goes into the cache key.
+
 The cache key is `sha256` over the wagon's **sorted `id\ttitle` lines**, defined
 once in [`naming.ts`](wagon-name/naming.ts) and recomputed independently by the
 browser. Sorted because a wagon is a set and component order comes out of a DFS.
