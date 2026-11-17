@@ -1,7 +1,7 @@
 /**
  * `node --test scripts/corpus-fetch.test.mjs`.
  *
- * Every expectation is hand-computed from `sieve2-spec.md` (the S1 contract) and
+ * Every expectation is hand-computed from the Sieve v2 S1 contract and
  * written out as a literal — the percentile fractions, the week slices and the
  * whole `corpus-raw.json` object — never read back from this file's own output.
  * Nothing touches the network: `fetchImpl` and `sleep` are both injected and the

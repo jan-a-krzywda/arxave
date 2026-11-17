@@ -1,7 +1,7 @@
 /**
  * cave-axes — C2: the two directions the Cave page's sliders project onto.
  *
- * WHAT THIS PRODUCES. `axes.json` (contract: `cave-v3-interfaces.md`) holds two
+ * WHAT THIS PRODUCES. `axes.json` holds two
  * logistic-regression directions fitted on the corpus' own SPECTER2 vectors:
  *
  *   exp_theory  high p = theory, low p = experiment/hardware  (the slider's ends)

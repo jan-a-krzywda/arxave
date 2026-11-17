@@ -176,7 +176,7 @@ Everything else — weights, picks, stories — lives in your browser's storage.
 | Discuss threads | button greyed; GitHub Discussions wiring parked |
 | AI-field axes | no Theory ↔ Experiment probe for AI yet |
 | Bring your own LLM key | not on this page |
-| Command-line pipeline | separate, older design — see the [README](https://github.com/jan-a-krzywda/arxave#readme) |
+| Command-line pipeline | separate, older design in [<code>src/arxave/</code>](https://github.com/jan-a-krzywda/arxave/tree/main/src/arxave) |
 
 ## Sources
 

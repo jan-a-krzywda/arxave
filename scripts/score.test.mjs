@@ -1,7 +1,7 @@
 /**
  * `node --test scripts/score.test.mjs`.
  *
- * Every expectation below is hand-computed from the contract in INTERFACES.md
+ * Every expectation below is hand-computed from the scoring contract
  * and from the formula the page and the feed already use, never from this
  * file's own output. Two tricks keep the arithmetic checkable by eye:
  * orthonormal vectors, whose cosines are exactly 1 and 0, and a MAD of 1, which

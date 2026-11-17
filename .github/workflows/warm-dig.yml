@@ -136,7 +136,7 @@ jobs:
       #   node background.mjs --pack ../criteria/quantum-systems \
       #     --config ../config/quantum-systems.yml \
       #     --out ../criteria/quantum-systems/background.json --embed-local
-      # (see scripts/INTERFACES.md) — it is not a nightly product and this job
+      # It is not a nightly product and this job
       # never rebuilds it. If it is missing, `rank.mjs` warns and falls back to
       # the day's own `z_day`, so an absent file weakens the ranking rather than
       # failing the run.

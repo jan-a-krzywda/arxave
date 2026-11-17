@@ -1,8 +1,8 @@
 /**
  * `node --test scripts/sieve-core.test.mjs`.
  *
- * Every expectation below is hand-computed from the Scoring section of
- * sieve2-spec.md (and from the formulas the page already uses), never from this
+ * Every expectation below is hand-computed from the Sieve v2 scoring rules
+ * (and from the formulas the page already uses), never from this
  * file's own output. Two fixtures keep the arithmetic readable by eye:
  *
  *   * 3-dim orthonormal vectors, so every cosine is exactly 1, 0 or -1;

@@ -537,7 +537,7 @@ function wagonByStone(night) {
 
 /**
  * Mount stage 5. `body` is the stage card's body element; `ctx` is the page's
- * shared context (see cave-v4-interfaces.md). Every input is optional: a page
+ * shared context. Every input is optional: a page
  * with no night yet, or a build with no corpus, gets one muted line instead of
  * an exception.
  */

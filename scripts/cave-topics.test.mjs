@@ -102,7 +102,7 @@ test('leave-one-out recall on the fixture is exact for well-separated leaves', (
 
 /* ── the shipped tree ───────────────────────────────────────────────────── */
 
-/* cave-v3-interfaces.md says "Leaf ids (fixed, 14)" and then lists twelve:
+/* The Cave v3 contract said "Leaf ids (fixed, 14)" and then lists twelve:
    four under Computing and two under each of the other four parents. The
    twelve enumerated ids are the only definition in the repo, so they are what
    ships; a thirteenth would have no id any other card could refer to. */

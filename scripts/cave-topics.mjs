@@ -29,7 +29,7 @@ import { join } from 'node:path';
 
 import { loadCorpus } from '../docs/assets/sieve-core.mjs';
 
-/* ── the contract's tree (cave-v3-interfaces.md) ────────────────────────── */
+/* ── the contract's tree ────────────────────────── */
 
 export const PARENTS = Object.freeze([
   ['computing', 'Computing', 'prefer'],
