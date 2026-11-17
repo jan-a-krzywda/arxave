@@ -7,41 +7,13 @@
         {
           "date": "2026-11-17",
           "feeds": {
-            "qs-a": {
-              "items": 8,
-              "paydirt": 2
-            },
-            "qs-b": {
-              "items": 8,
-              "paydirt": 1
-            },
-            "qs-c": {
-              "items": 8,
+            "qs-h": {
+              "items": 3,
               "paydirt": 3
             },
-            "qs-d": {
-              "items": 8,
-              "paydirt": 1
-            },
-            "qs-e": {
-              "items": 8,
-              "paydirt": 2
-            },
-            "qs-f": {
-              "items": 8,
-              "paydirt": 8
-            },
-            "qs-g": {
-              "items": 8,
-              "paydirt": 8
-            },
-            "qs-h": {
-              "items": 8,
-              "paydirt": 8
-            },
             "qs-i": {
-              "items": 8,
-              "paydirt": 2
+              "items": 3,
+              "paydirt": 1
             }
           }
         },

@@ -57,14 +57,14 @@
     },
     "qs-h": {
       "name": "Error correction route",
-      "items": 8,
-      "paydirt": 8,
+      "items": 3,
+      "paydirt": 3,
       "updated": "2026-11-17"
     },
     "qs-i": {
       "name": "NISQ algorithms",
-      "items": 8,
-      "paydirt": 2,
+      "items": 3,
+      "paydirt": 1,
       "updated": "2026-11-17"
     },
     "quantum-algorithms": {

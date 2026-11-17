@@ -3681,5 +3681,100 @@
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
+ },
+ "2611.20017": {
+  "fields": {
+   "kind": "theory",
+   "result": "Open-barrier quantum-dot cellular automata chains carry linear polarization waves whose intercellular Hartree approximation frequencies match exact Jordan-Wigner solutions within $6\\%$ when $\\gamma \\ge 2E_{k}$. Small-amplitude waves persist down to $\\gamma > E_{k}/2$, extending past the latching boundary predicted by mean-field theory.",
+   "question": "How do small analog polarization signals propagate, disperse, decay, and scatter in open-barrier quantum-dot cellular automata lines that do not latch?",
+   "prior": "Linearized ICHA had been applied only about the polarized latched state for $\\gamma < E_{k}$ (Tóth 2000), leaving the unpolarized small-signal regime undescribed.",
+   "limits": "Nearest-neighbour two-state cell approximation; clean, uniform chains; small-signal linearization; leading stationary low-temperature estimate of thermal dephasing.",
+   "tools": [
+    "intercellular Hartree approximation (ICHA)",
+    "Jordan-Wigner transformation",
+    "exact diagonalization (Lanczos)",
+    "linearized coherence-vector equations"
+   ],
+   "figure": "S7.F5",
+   "figure_url": "https://arxiv.org/html/2611.20017v1/fig_ed_structure_factor.png",
+   "figure_caption": "Figure 5: Exact dynamical structure factor $S^{zz}(k,\\omega)$ of Eq. ( 6 ) at $T=0$ , from ED with Lanczos continued fractions (log colour scale, Gaussian broadening $0.02\\,E_{k}$ for display). Frequencies assume $E_{k}=$1\\text{\\,}\\mathrm{m}\\mathrm{e}\\mathrm{V}$$ . (a) $\\gamma=2E_{k}$ (Envelope I), momenta from $N=12$ –20. (b) $\\gamma=0.6\\,E_{k}$ , $N=20$ ; the ICHA is unstable here for $|ka| -1 ) applies to both. (c) Multi-particle weight $1-Z_{k}/S(k)$ , with $S(k)=\\int S^{zz}(k,\\omega)\\,\\mathrm{d}\\omega$ the static structure factor: the fraction of the spectral weight outside the single-quasiparticle pole, for $N=12$ –20 (one marker shape per $N$ ); black, $\\gamma=2E_{k}$ ; purple, $\\gamma=0.6\\,E_{k}$ ; both exact.",
+   "figure_gloss": "Exact dynamical structure factor $S^{zz}(k,\\omega)$ versus wavenumber $ka/\\pi$ and frequency. Panels display sharp single-quasiparticle bands for $\\gamma=2E_{k}$ and $\\gamma=0.6E_{k}$, along with multi-particle spectral weight fractions.",
+   "code": ""
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.18280": {
+  "fields": {
+   "kind": "new method",
+   "result": "In-situ stencil-mask MBE growth with sequential digital alloying yields Cr-doped $(\\text{Bi}_y\\text{Sb}_{1-y})_2\\text{Te}_3$ Hall bars down to 100 nm width. Ferromagnetic coercive field $B_c$ is largely width-independent, and zero-field resistance follows standard $1/W$ scaling with carrier density $n_{\\mathrm{2d}} \\approx 1\\times 10^{14}$ to $5\\times 10^{14}\\text{ cm}^{-2}$.",
+   "question": "Can magnetic topological insulator micro- and nanostructures be fabricated purely in-situ via stencil masks and molecular beam epitaxy to avoid lithographic damage and provide clean interfaces?",
+   "prior": "",
+   "limits": "Measurements performed down to 1.5 K; strong disorder and electron/hole charge puddles distort classical Hall carrier-density extraction.",
+   "tools": [
+    "molecular beam epitaxy (MBE)",
+    "digital alloying",
+    "$\\text{Si}_3\\text{N}_4$/$\\text{SiO}_2$ stencil masks",
+    "magnetotransport measurements",
+    "transmission electron microscopy (TEM)"
+   ],
+   "figure": "S3.F7",
+   "figure_url": "https://arxiv.org/html/2611.18280v1/Figure7.jpg",
+   "figure_caption": "Figure 7: Comparison of Hall bars with $x=0.051$ Cr content and varying widths $W$ . (a) $B_{c}$ as a function of Hall bar width $W$ . (b) Zero field resistance $R_{xx}(B=0)$ as a function of $W$ . The black dashed line represents the expected $1/W$ dependence of $R_{xx}(B=0)$ (c) Electron concentration $n_{\\mathrm{2d}}$ as a function of $W$ .",
+   "figure_gloss": "Coercive field $B_c$, zero-field longitudinal resistance $R_{xx}(B=0)$, and 2D carrier density $n_{\\mathrm{2d}}$ plotted against Hall bar width $W$ from 100 nm to $3\\,\\mu\\text{m}$ at Cr doping $x=0.051$. Shows resistance scales as $1/W$ while $B_c$ and carrier density remain roughly constant across widths.",
+   "code": ""
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.18489": {
+  "fields": {
+   "kind": "new result",
+   "result": "Dissipative optical pumping purifies a thermally mixed $S=5/2$ spin mediator to $\\mathrm{Tr}[\\rho_M^2] \\approx 0.80$, raising two-qubit first-recurrence negativity from $0.18$ to $0.64$ at $12$ K. Coherent driving cannot exceed the mediator's thermal purity.",
+   "question": "Can dissipative rather than coherent control purify a thermally mixed high-spin mediator to restore entanglement generation between two spin qubits?",
+   "prior": "Without pumping, first-recurrence negativity falls to 0.18 at 12 K and 0.10 at 30 K under pure dephasing and thermal relaxation.",
+   "limits": "Theoretical and numerical open-system simulation; assumes Markovian dephasing, initial product state, and mediator optical pumping cycle limits purity to $\\mathrm{Tr}[\\rho_M^2] \\approx 0.81$.",
+   "tools": [
+    "Lindblad master equation",
+    "QuTiP numerical solver",
+    "Optical pumping rate equations for Mn 2+ spin in CdTe dot"
+   ],
+   "figure": "S3.F6",
+   "figure_url": "https://arxiv.org/html/2611.18489v1/FIG6.svg",
+   "figure_caption": "Figure 6: First-recurrence negativity $\\mathcal{N}_{1}$ as a function of temperature, with dephasing and mediator relaxation always active. Without the pulse (black squares), $\\mathcal{N}_{1}$ falls from $\\approx 0.88$ at $T=1\\,$ K to $\\approx 0.10$ at $T=30\\,$ K. With a single purification pulse applied at $t=0$ (red triangles), $\\mathcal{N}_{1}$ stays between $0.61$ and $0.67$ from $8$ to $30\\,$ K, and reaches $0.93$ at $1\\,$ K.",
+   "figure_gloss": "First-recurrence negativity $\\mathcal{N}_1$ versus temperature from $1$ K to $30$ K. Unpumped system drops from $\\approx 0.88$ to $\\approx 0.10$, while a single $80$ ns dissipative pulse maintains $\\mathcal{N}_1$ between $0.61$ and $0.67$ up to $30$ K.",
+   "code": ""
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.18532": {
+  "fields": {
+   "kind": "new result",
+   "result": "Zero-field electron and hole Wigner solids in cadmium arsenide melt into quantum Hall liquids at low integer filling factors, followed by finite-field re-entrant solid formation at elevated temperatures driven by spin entropy via a Pomeranchuk-like mechanism.",
+   "question": "How do zero-field electron and hole Wigner solids compete and transition into quantum Hall liquids as functions of magnetic field and temperature?",
+   "prior": "",
+   "limits": "Finite magnetic fields away from base temperature; applies specifically to cadmium arsenide quantum wells at low integer filling factors.",
+   "tools": [
+    "cadmium arsenide quantum wells",
+    "magnetotransport measurements",
+    "finite-temperature phase mapping"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "abstract"
  }
 }
