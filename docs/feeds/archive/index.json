@@ -1,39 +1,31 @@
 {
-  "built": "2026-11-16",
+  "built": "2026-11-17",
   "months": [
     {
       "month": "2026-11",
       "days": [
         {
-          "date": "2026-11-16",
+          "date": "2026-11-17",
           "feeds": {
-            "atoms-ions-photons": {
-              "items": 3,
-              "paydirt": 0
-            },
-            "fault-tolerant-architecture": {
-              "items": 8,
-              "paydirt": 4
-            },
             "qs-a": {
-              "items": 5,
-              "paydirt": 1
-            },
-            "qs-b": {
               "items": 8,
               "paydirt": 2
             },
+            "qs-b": {
+              "items": 8,
+              "paydirt": 1
+            },
             "qs-c": {
               "items": 8,
-              "paydirt": 8
+              "paydirt": 3
             },
             "qs-d": {
               "items": 8,
-              "paydirt": 7
+              "paydirt": 1
             },
             "qs-e": {
               "items": 8,
-              "paydirt": 5
+              "paydirt": 2
             },
             "qs-f": {
               "items": 8,
@@ -49,18 +41,47 @@
             },
             "qs-i": {
               "items": 8,
-              "paydirt": 5
-            },
-            "quantum-algorithms": {
-              "items": 5,
               "paydirt": 2
+            }
+          }
+        },
+        {
+          "date": "2026-11-16",
+          "feeds": {
+            "qs-a": {
+              "items": 0,
+              "paydirt": 0
             },
-            "quantum-simulation": {
-              "items": 7,
-              "paydirt": 3
+            "qs-b": {
+              "items": 0,
+              "paydirt": 0
             },
-            "solid-state-qubits": {
-              "items": 3,
+            "qs-c": {
+              "items": 0,
+              "paydirt": 0
+            },
+            "qs-d": {
+              "items": 0,
+              "paydirt": 0
+            },
+            "qs-e": {
+              "items": 0,
+              "paydirt": 0
+            },
+            "qs-f": {
+              "items": 1,
+              "paydirt": 0
+            },
+            "qs-g": {
+              "items": 2,
+              "paydirt": 0
+            },
+            "qs-h": {
+              "items": 1,
+              "paydirt": 0
+            },
+            "qs-i": {
+              "items": 1,
               "paydirt": 0
             }
           }

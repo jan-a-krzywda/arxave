@@ -1,5 +1,5 @@
 {
-  "built": "2026-11-16",
+  "built": "2026-11-17",
   "feeds": {
     "atoms-ions-photons": {
       "name": "Atoms, ions and photons",
@@ -15,57 +15,57 @@
     },
     "qs-a": {
       "name": "Spin qubit devices and figures of merit",
-      "items": 5,
-      "paydirt": 1,
-      "updated": "2026-11-16"
+      "items": 8,
+      "paydirt": 2,
+      "updated": "2026-11-17"
     },
     "qs-b": {
       "name": "Gate and device benchmarking",
       "items": 8,
-      "paydirt": 2,
-      "updated": "2026-11-16"
+      "paydirt": 1,
+      "updated": "2026-11-17"
     },
     "qs-c": {
       "name": "Application benchmarks",
       "items": 8,
-      "paydirt": 8,
-      "updated": "2026-11-16"
+      "paydirt": 3,
+      "updated": "2026-11-17"
     },
     "qs-d": {
       "name": "Calibration, tuning and drift",
       "items": 8,
-      "paydirt": 7,
-      "updated": "2026-11-16"
+      "paydirt": 1,
+      "updated": "2026-11-17"
     },
     "qs-e": {
       "name": "Control electronics and cryogenics",
       "items": 8,
-      "paydirt": 5,
-      "updated": "2026-11-16"
+      "paydirt": 2,
+      "updated": "2026-11-17"
     },
     "qs-f": {
       "name": "Software stack: compilers and pulse level",
       "items": 8,
       "paydirt": 8,
-      "updated": "2026-11-16"
+      "updated": "2026-11-17"
     },
     "qs-g": {
       "name": "HPC-QC integration and resource management",
       "items": 8,
       "paydirt": 8,
-      "updated": "2026-11-16"
+      "updated": "2026-11-17"
     },
     "qs-h": {
       "name": "Error correction route",
       "items": 8,
       "paydirt": 8,
-      "updated": "2026-11-16"
+      "updated": "2026-11-17"
     },
     "qs-i": {
       "name": "NISQ algorithms",
       "items": 8,
-      "paydirt": 5,
-      "updated": "2026-11-16"
+      "paydirt": 2,
+      "updated": "2026-11-17"
     },
     "quantum-algorithms": {
       "name": "Quantum algorithms",

@@ -2710,7 +2710,7 @@
    "figure_gloss": "Measured ground-state energy $E_{\\rm GS}/(N\\Omega)$ and separation to the first excited band versus detuning $\\Delta/\\Omega$ for 5- and 19-atom chains, extracted from the Fourier transform of the reconstructed complex Loschmidt echo.",
    "code": ""
   },
-  "seen": "2026-11-16",
+  "seen": "2026-11-17",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -2784,7 +2784,7 @@
    "figure_gloss": "The agentic evolutionary program synthesis workflow. Left: prompt specification with targets, layout, and fault-tolerance constraints. Right: LLM tool use, verifier evaluation, island-based database scoring, and inter-generation memory.",
    "code": ""
   },
-  "seen": "2026-11-16",
+  "seen": "2026-11-17",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -2808,7 +2808,7 @@
    "figure_gloss": "",
    "code": ""
   },
-  "seen": "2026-11-16",
+  "seen": "2026-11-17",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -2833,7 +2833,7 @@
    "figure_gloss": "Reconstruction of 784-pixel grayscale and 1568-value colour pixel art retrieved experimentally from IBM Phoenix using 8192 shots per basis with and without phase encoding.",
    "code": ""
   },
-  "seen": "2026-11-16",
+  "seen": "2026-11-17",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -2905,7 +2905,7 @@
    "figure_gloss": "Measured two-qubit conditional negativities across the 64-qubit square-lattice processor and the sorted distribution of edge negativities used to evaluate PEQ at the bond-percolation threshold.",
    "code": ""
   },
-  "seen": "2026-11-16",
+  "seen": "2026-11-17",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -2953,7 +2953,7 @@
    "figure_gloss": "Target assembly success plotted against added per-cycle host round-trip latency across multiple trap lifetimes, showing severe fidelity degradation when host communications add tens of milliseconds.",
    "code": ""
   },
-  "seen": "2026-11-16",
+  "seen": "2026-11-17",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -2978,7 +2978,7 @@
    "figure_gloss": "Energy error relative to DMRG (top) and total spin deviation $|\\langle\\hat{S}^{2}\\rangle - S(S+1)|$ (bottom) versus diagonalized subspace dimension for singlet, triplet, and quintet states of oxo-Mn(Salen). Spin completion maintains exact spin purity and reaches target energy accuracy with subspaces two to three orders of magnitude smaller than Cartesian post-processing.",
    "code": ""
   },
-  "seen": "2026-11-16",
+  "seen": "2026-11-17",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -3050,7 +3050,7 @@
    "figure_gloss": "Quantum circuit schematic implementing the normalized block encoding $\\mathbf{U}_B = \\mathbf{U}_L^\\dagger \\mathbf{R}_{L,\\text{out}} \\mathbf{U}_L$ for the shifted stiffness matrix, displaying register allocations across $n = n_x + n_y$ system qubits and auxiliary registers.",
    "code": ""
   },
-  "seen": "2026-11-16",
+  "seen": "2026-11-17",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -3074,7 +3074,7 @@
    "figure_gloss": "Total MARBLE compile time (seconds) on the y-axis broken down by phase across matrix dimension $N$ up to $2^{100}$ on the x-axis for three benchmark matrices. Circuit optimization time remains flat, keeping total execution under 5 seconds.",
    "code": ""
   },
-  "seen": "2026-11-16",
+  "seen": "2026-11-17",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -3290,6 +3290,394 @@
    "code": ""
   },
   "seen": "2026-11-16",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.18888": {
+  "fields": {
+   "kind": "theory",
+   "result": "Andreev bound state spin splitting $E_{S}$ in planar Ge Josephson junctions is independent of junction width $w$ under fixed relative chemical potential, but susceptibility to charge traps persists due to induced shifts in chemical potential $\\tilde{\\mu}$.",
+   "question": "How do geometrical channel confinement and gate-tunable chemical potential govern spin splitting for Andreev spin qubits with cubic spin-orbit coupling?",
+   "prior": "",
+   "limits": "Theoretical simulation; assumes single occupied subband, transparent super-semi interfaces, zero magnetic field, and split-off hole band neglected.",
+   "tools": [
+    "2D effective Bogoliubov-de Gennes Hamiltonian",
+    "Schrieffer-Wolff projection",
+    "Luttinger-Kohn hole band model",
+    "Screened point-charge electrostatic trap modeling"
+   ],
+   "figure": "S3.F4",
+   "figure_url": "https://arxiv.org/html/2611.18888v1/Fig4.png",
+   "figure_caption": "Figure 4: Effect of a charge trap on the spin splitting $E_{S}$ . (a) Defects are commonly found at the semiconductor-oxide interface, as illustrated by the red circle in a cross-sectional view of the device. (b) We consider a model where the defect is positioned halfway between the two superconducting leads ( $x=0$ ), at varying locations $y=y_{\\text{ct}}$ , as indicated in this top-down view. (c) Effect of the charge trap on the scaled spin splitting, $E_{S}/E_{S0}$ ( $E_{S0}$ is the spin splitting with no charge trap), as a function of $y_{\\text{ct}}$ , for both linear (blue) and cubic (orange) SOC. Since the charge trap modifies the effective width of the channel, we could expect from Fig. 2 (a) that it has no effect on the spin splitting for the case of cubic SOC. However, we observe here similar behaviors for both linear and cubic SOC, because the charge trap affects the chemical potential $\\mu$ in addition to the channel width $w$ . (d) To see this, we plot the scaled spin splitting $E_{S}/\\Delta$ as a function of the relative energy, defined as $[(\\mu-\\mu_{0})^{2}+(\\hbar\\omega_{y}-\\hbar\\omega_{0})^{2}]^{1/2}$ , along several different paths through the ( $\\mu,\\hbar\\omega_{y}$ ) parameter space, where $\\omega_{y}=2\\hbar/(m_{\\text{eff}}w^{2})$ . The inset defines these paths and their point of intersection, ( $\\mu_{0},\\hbar\\omega_{0}$ ) (gray circle). Here, the dashed black lines represent the boundaries of the region where a single $y$ subband is filled, as consistent with the inset of Fig. 2 (a). For linear SOC, the yellow (blue) lines are chosen as paths with weak (strong) $E_{S}$ variations, as seen in the main figure. For cubic SOC, the red (green) lines are chosen as paths with weak (strong) $E_{S}$ variations. In particular, the red curve corresponds to the case with $\\tilde{\\mu}=\\text{constant}$ , as considered in Fig. 2 (a). Here, the gray dot-dashed line corresponds to zero relative energy (gray circle in the inset). The dashed vs solid portions of the colored (non-gray) curves clarify the direction of the paths in parameter space, by comparing to the inset.",
+   "figure_gloss": "Normalized spin splitting $E_{S}/\\Delta$ plotted against charge trap transverse position $y_{\\text{ct}}$ and along paths through the $(\\mu, \\hbar\\omega_{y})$ parameter space, demonstrating that localized potential shifts from charge traps alter $E_{S}$ via the chemical potential despite width independence.",
+   "code": ""
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.20410": {
+  "fields": {
+   "kind": "new method",
+   "result": "Constructed rate-above-1/2 qLDPC codes (e.g., $[\\![8688,4348,16]\\!]$) compatible with 5-to-6-tier superconducting hardware layouts; achieves circuit-level logical error rate of $1.62\\times 10^{-12}$ per logical qubit per round at physical error rate $p_{\\mathrm{phy}}=0.1\\%$.",
+   "question": "Can quantum low-density parity-check codes reach encoding rates above 1/2 while meeting the multi-tier routing, crossing-free layer, and bounded coupling constraints of fixed-connectivity superconducting hardware?",
+   "prior": "Rate-above-1/2 codes (Kasai) required reconfigurable atom transport, while multi-tier superconducting layouts (Gross code rate $1/12$, Mitten codes rate $1/5$) remained below rate 1/2.",
+   "limits": "Circuit-level simulations using phenomenological noise model with 4 noisy QEC rounds and ideal boundary operations; does not model length-dependent gate errors, vertical interconnect footprints, or electromagnetic crosstalk.",
+   "tools": [
+    "dynamic CXSWAP (iSWAP) routing",
+    "non-orthogonal parent matrix construction",
+    "relay-BP and MLE two-stage decoder",
+    "hardware-aware layout (HAL) optimization"
+   ],
+   "figure": "S0.F2",
+   "figure_url": "https://arxiv.org/html/2611.20410v1/fig3_decoding.svg",
+   "figure_caption": "Fig. 2: Decoding and circuit-level performance. a, Two-stage decoding with relay-BP and MLE. The proportions shown are for the $[\\![8688,4348,16]\\!]$ code. The downward percentage gives the fraction passed to MLE, and right-hand percentages give cumulative syndrome-consistent output rates. $P_{\\mathrm{fail}}$ is the probability that at least one logical error remains in a code block after decoding, including errors from either stage. b, Symbols give the logical error rate $P_{\\mathrm{L}}$ per logical qubit per QEC round at $p_{\\mathrm{phy}}=0.1\\%$ , with equally sampled $X$ and $Z$ bases. Whiskers give nominal 95% binomial reference intervals. The dashed line marks $10^{-12}$ . Sample counts and statistical details are given in the Supplementary Information [ 41 ] .",
+   "figure_gloss": "Two-stage relay-BP and MLE decoding architecture and circuit-level logical error rates per logical qubit per round across the code instances.",
+   "code": ""
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.19954": {
+  "fields": {
+   "kind": "new result",
+   "result": "Demonstrated full-photonic quantum teleportation between remote quantum dots emitting directly at $1537.14\\text{\\,}\\mathrm{nm}$, achieving maximum process matrix fidelity of $92.7(\\pm 0.5)\\%$ and average state fidelity of $94.2(\\pm 0.5)\\%$.",
+   "question": "Can full-photonic quantum teleportation be realized using two remote semiconductor quantum dots emitting directly in the telecom C-band?",
+   "prior": "Coincidence rates were over two orders of magnitude lower in prior remote-quantum-dot teleportation experiments at comparable fidelity (Benthin et al. 2024, Ref. 19).",
+   "limits": "Zero-delay peak fidelity evaluated in a $30\\text{\\,}\\mathrm{ps}$ temporal window; overall performance limited by two-photon interference visibility degradation at non-zero temporal separation and fine-structure splitting.",
+   "tools": [
+    "InAs/GaAs quantum dots in planar DBR cavities",
+    "resonant two-photon excitation at $76\\text{\\,}\\mathrm{MHz}$",
+    "piezoelectric actuator for spectral matching",
+    "superconducting nanowire single-photon detectors (SNSPDs)"
+   ],
+   "figure": "S3.F5",
+   "figure_url": "https://arxiv.org/html/2611.19954v1/Process_matrix_time_increasing.svg",
+   "figure_caption": "Figure 5: Measured time-integrated teleportation fidelity towards the static process matrix $\\chi_{\\ket{\\Psi^{-}}}^{\\text{ideal}}$ ) and corresponding three-photon coincidence rate for three different selections of time windows. Purple dots: Along both time axes linearly increasing window. Orange dots: Optimized selection of time bins based on the theoretical modeling. Turquoise dots: Optimized selection of time bins based on the theoretical modeling plus basis flip (for $X$ / $Y$ bases of the raw data) when $\\mathcal{F}\\left(\\chi_{\\ket{\\Psi^{-}}}^{\\text{simu}},\\chi_{\\ket{\\Psi^{-}}}^{\\text{ideal}}\\right)<\\mathcal{F}\\left(\\chi_{\\ket{\\Psi^{-}}}^{\\text{simu}},\\chi_{\\ket{\\Psi^{+}}}^{\\text{ideal}}\\right)$ .",
+   "figure_gloss": "Three-photon coincidence rate versus time-integrated teleportation fidelity for three time-bin selection methods, comparing agnostic integration with model-optimized binning and Pauli basis flipping.",
+   "code": ""
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.19994": {
+  "fields": {
+   "kind": "new method",
+   "result": "NEAT compiler shortens circuits by 1.9x, reduces negative log-fidelity by 1.5x, and compiles 6.6x faster on circuits up to 1,000 qubits.",
+   "question": "How to optimize qubit placement and routing under acousto-optic deflector hardware constraints in neutral-atom quantum computers to minimize circuit duration and loss.",
+   "prior": "Prior state-of-the-art AOD transport compilers (baseline not named by specific single paper in abstract).",
+   "limits": "Evaluated on standard and scalability benchmark circuits up to 1,000 qubits in simulation.",
+   "tools": [
+    "NEAT compiler",
+    "transport-informed placement with incremental equivalent time",
+    "partial-progress routing via intermediate waypoints",
+    "staggered trap array geometry",
+    "acousto-optic deflector (AOD) transport model"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "abstract"
+ },
+ "2611.20509": {
+  "fields": {
+   "kind": "theory",
+   "result": "Ground-state quantum Fisher information for locating a screened defect scales quadratically with sensor site count $N$ at fixed $\\xi/a$. Localized regime ($\\xi/a=0.1$) achieves up to approximately twofold higher sensitivity than delocalized ($\\xi/a=1$), with vanishing Uhlmann matrix ensuring saturability of the two-parameter bound for position and strength.",
+   "question": "What are the fundamental precision limits for locating an impurity defect and determining its coupling strength using ground-state quantum sensors with single and multiple excitations?",
+   "prior": "",
+   "limits": "Zero temperature, adiabatic ground-state preparation, non-interacting single- or two-excitation subspace, screened exponential defect-probe potential.",
+   "tools": [
+    "Quantum Fisher information (QFI)",
+    "Quantum Cramér-Rao and Holevo bounds",
+    "Uhlmann curvature matrix",
+    "Tight-binding spin-chain Hamiltonian"
+   ],
+   "figure": "S4.F2",
+   "figure_url": "https://arxiv.org/html/2611.20509v1/fig2a.svg",
+   "figure_caption": "Figure 2: The quantum Fisher Information $H(x)$ (semi-log scale) governing the precision in the estimation of the position of the defect and its scaling. Panel (a) refers to the delocalized regime ( $\\xi/a=1$ ) and Panel (b) is for the localized regime ( $\\xi/a=0.1$ ). The blue curves show the results for $N=11$ and the orange ones for $N=31$ . When the defect position coincides with the position of an element of the sensor the QFI typically shows a peak; in almost all cases, the closer the defect is to the center of the sensor, the higher the peak is. In all plots $h=J$ . Panel (c) : Scaling of the maximum of the QFI for the two different regimes: $\\xi/a=1$ (delocalized) and $\\xi/a=0.1$ (localized) (different colors and shapes are associated to the different regimes).",
+   "figure_gloss": "$H(x)$ versus defect position $x$ across probe length, contrasting the delocalized regime $\\xi/a=1$ (smooth peak at center) with localized regime $\\xi/a=0.1$ (sharp peaks aligned near central sites).",
+   "code": ""
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.18457": {
+  "fields": {
+   "kind": "theory",
+   "result": "In 16-site poly-bi-[8]-annulenylene, reflection symmetry decouples the single-excitation Hamiltonian into triplet and singlet sectors, where triplet transfer is independent of interchain rung coupling $r$. Finite Hubbard repulsion delays high-fidelity transfer peaks by $\tau_{\\rm Hub}\\simeq\\tau_{\\rm Heis}[1+\\kappa(t_{v}/U)^{2}]$, with uniform prefactor $\\kappa\\approx 3.15$ (triplet) and $2.46$ (singlet) for all peaks within a sector.",
+   "question": "Whether the molecular connectivity of poly-bi-[8]-annulenylene can achieve efficient, symmetry-controlled quantum state transfer under isotropic Heisenberg exchange and half-filled Hubbard dynamics.",
+   "prior": "",
+   "limits": "Pure single-excitation subspace, zero temperature, static disorder only; perfect transfer is strictly forbidden for positive couplings.",
+   "tools": [
+    "reflection symmetry decomposition",
+    "exact diagonalization",
+    "Lenstra–Lenstra–Lovász (LLL) lattice reduction",
+    "half-filled Hubbard perturbation theory"
+   ],
+   "figure": "S4.F8",
+   "figure_url": "https://arxiv.org/html/2611.18457v1/hubbard_figB_transfer_with_singlet.svg",
+   "figure_caption": "Figure 8: Transfer in the Hubbard model. (a)–(c) $P^{(+)}(\\tau)$ for $(v,w,r)=(4,3,1)$ at $U/t_{v}=5$ , $15.8$ and $50$ (solid), compared with the Heisenberg model (dashed). (d) Infidelity, $1-P_{\\rm best}$ , in the windows $3\\pi\\pm 0.5$ and $535\\pi/2\\pm 3$ [triplet (+)] and $27\\pi/2\\pm 0.5$ and $203\\pi\\pm 3$ [singlet ( $-$ ), $(8,9,6)$ ]; dashed lines give the Heisenberg values in the same windows. Below $U/t_{v}\\approx 100$ ( $535\\pi/2$ ) and $200$ ( $203\\pi$ ) a neighboring peak in the window is higher than the delayed one; these points are omitted. (e) Relative delay of the transfer peak (peak of the bound-band amplitude) in units of $(t_{v}/U)^{2}$ . Dotted lines give its limit $\\kappa$ of Eq. ( 29 ); colors as in (d). (f) Transfer at the Heisenberg peak time $\\tau_{\\rm Heis}$ ( $\\times$ ) and at the corrected time $\\tau_{\\rm Heis}[1+\\kappa\\,(t_{v}/U)^{2}]$ ( $\\bullet$ ); colors as in (d).",
+   "figure_gloss": "Triplet and singlet transfer probabilities, peak delays, and transfer infidelities plotted against interaction strength $U/t_{v}$. Comparing Hubbard dynamics to the Heisenberg baseline shows the $(t_{v}/U)^{2}$ peak delay and the recovery of high fidelity after readout-time correction.",
+   "code": ""
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.18838": {
+  "fields": {
+   "kind": "new method",
+   "result": "Incorporating measurement-circuit transformations into metamorphic relations reduces test runtime by an order of magnitude compared to testing with independently generated random stabilizer states, while identifying synthetic circuit-mutation faults and a non-termination bug in Qiskit's LookaheadSwap routing pass.",
+   "question": "How can metamorphic testing be formulated for quantum programs to systematically derive valid measurement circuits for follow-up quantum state outputs?",
+   "prior": "",
+   "limits": "Evaluated on stabilizer graph states; relies on the correctness of measurement-circuit transformations and tested on a specific set of mutation operators and compiler passes without physical device noise.",
+   "tools": [
+    "quantum metamorphic testing (QMT)",
+    "local complementation (LC)",
+    "graph states",
+    "stabilizer formalism",
+    "Qiskit"
+   ],
+   "figure": "S4.F6",
+   "figure_url": "https://arxave.com/figures/2611.18838-S4.F6.svg",
+   "figure_caption": "Figure 6 . Mean runtime components across 500 trials. Numeric labels show the mean recorded total runtime. The y-axis is split to accommodate the substantially larger runtime of the baseline while preserving the visibility of the remaining approaches.",
+   "figure_gloss": "Mean runtime components across 500 trials comparing baseline test generation against metamorphic testing variants; metamorphic relations cut total runtime by roughly an order of magnitude.",
+   "code": ""
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.20053": {
+  "fields": {
+   "kind": "new result",
+   "result": "Realized deterministic discrete-time quantum-walk search on complete bipartite graphs using a superconducting processor. Achieved success probabilities of 97.6% ($N = 4$) and 70.8% ($N = 8$) in full-space encoding, exceeding the classical baseline $P_{\\mathrm{cl}} = (t+1)/N$ at $N = 8$.",
+   "question": "Can deterministic discrete-time quantum-walk search algorithms be compiled and executed on gate-based quantum processors for complete bipartite graphs?",
+   "prior": "",
+   "limits": "Circuit depth for general encoding at $N = 16$ requires 743 CZ layers, which exceeds hardware capabilities. At nominal $N = 256$ in 2-qubit reduced-subspace encoding, decoherence reduces final success probability near 50%.",
+   "tools": [
+    "Zuchongzhi 3.1 superconducting quantum processor",
+    "Dynamical-phase compensation via virtual-Z corrections",
+    "Dynamical decoupling",
+    "Solovay-Kitaev fault-tolerant gate synthesis"
+   ],
+   "figure": "S3.F3",
+   "figure_url": "https://arxiv.org/html/2611.20053v1/prob_plot.png",
+   "figure_caption": "Figure 3 : Experimental realizations of deterministic DTQW search on complete bipartite graphs. Panels (a) and (b) correspond to the general case with graph sizes $N=4$ and $N=8$ , respectively, and panels (c) and (d) correspond to the special case with $N=8$ and $N=16$ , respectively. The processor layouts indicate the qubits and couplers of the Zuchongzhi 3.1 processor used in each experiment. The probability plots show the target-vertex success probability versus walk step; dashed lines denote theoretical predictions, symbols denote experimental data, and error bars represent one standard deviation estimated from $10^{5}$ measurement shots. The dash-dotted line in (b) denotes the classical success probability $P_{\\mathrm{cl}}$ . The colored complete-bipartite graphs show the vertex probability distributions at successive steps for the general case and at the final step for the special case.",
+   "figure_gloss": "Target-vertex success probability versus quantum-walk step for graph sizes $N = 4, 8, 16$. Shows experimental points tracking theoretical curves, with probability surpassing the classical search baseline at $N = 8$.",
+   "code": ""
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.18955": {
+  "fields": {
+   "kind": "theory",
+   "result": "For real-amplitude circuits of half-angle rotations, classical Fisher information equals quantum Fisher information almost everywhere, setting its trace to the parameter count $d=2^{n}-1$ with zero sensitivity to fit quality. Maximum mean discrepancy is redundant for certification whenever tolerance exceeds $2(1-e^{-\\gamma})\\tau_{\\mathrm{W}_{1}}^{2}$.",
+   "question": "Which diagnostic channels can reliably certify a trained real-amplitude quantum circuit Born machine once benchmark-construction artifacts are eliminated?",
+   "prior": "",
+   "limits": "Holds in noiseless statevector simulation without device noise. MMD redundancy result specifically assumes Hamming ground cost and unit-diagonal positive-semidefinite kernels.",
+   "tools": [
+    "classical and quantum Fisher information matrices",
+    "Wasserstein-1 distance duality",
+    "maximum mean discrepancy (MMD)",
+    "McDiarmid concentration inequality",
+    "statevector simulation"
+   ],
+   "figure": "S5.F4",
+   "figure_url": "https://arxiv.org/html/2611.18955v1/fig_window_phase.png",
+   "figure_caption": "Figure 4: Escalation window in the $(n,\\rho)$ plane, $\\rho=\\sqrt{\\tau_{\\mathrm{MMD}}}/\\tau_{\\mathrm{W}_{1}}$ , the only combination through which the operating point enters either closed form. Shading: the deployment window, the minimum over the two families. Lines: closure boundaries for mode collapse (solid) and correlation shift (dashed). The star marks the certification-grade point, where the deployment window is open at $n=3$ alone.",
+   "figure_gloss": "The certification escalation window plotted across qubit count $n$ and tolerance ratio $\\rho=\\sqrt{\\tau_{\\mathrm{MMD}}}/\\tau_{\\mathrm{W}_{1}}$. The region where MMD rejects generators admitted by Wasserstein distance narrows rapidly and closes as $n$ increases.",
+   "code": ""
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.19618": {
+  "fields": {
+   "kind": "new method",
+   "result": "Dynamic quantum circuit compiler `qlin` models up to 91.2% faster execution at 42 ns controller branch delay, speeding up 10 of 65 benchmarks by at least 10% through speculative multiway branching.",
+   "question": "Can classical control latency in dynamic quantum circuits be cut using semantics-preserving rewrites that are verified not to delay execution?",
+   "prior": "",
+   "limits": "Gains rely on non-zero classical controller decision delays. Ranking could not be confirmed on ibm_kingston due to noise, and fast-path execution is unsupported by the IBM control stack.",
+   "tools": [
+    "qlin compiler (Rust)",
+    "Lean 4 interactive theorem prover",
+    "QubiC register-transfer logic simulator",
+    "IBM ibm_kingston quantum device"
+   ],
+   "figure": "S8.F4",
+   "figure_url": "https://arxiv.org/html/2611.19618v1/copies.svg",
+   "figure_caption": "Figure 4. Amplified ranking test on ibm_kingston (measured). Left: time per shot against the number of copies $k$ , one point per kept job, with a least-squares line per program. The 4 jobs that the outlier rule drops are not shown. Right: the gap slope per round (source minus best defer program), with its mean and 95% CI. The dashed line is the modeled 19.22 $\\mu$ s per copy. Left: time per shot against copies for the source and defer programs, with two nearly parallel fitted lines. Right: per-round gap slopes scattered around a mean near 7 microseconds per copy, with the modeled 19.22 microseconds as a dashed line.",
+   "figure_gloss": "Execution time per shot plotted against repetition count $k$ on ibm_kingston (left), and gap slope distributions between source and defer programs across experimental rounds (right), showing device noise preventing clear performance ranking.",
+   "code": "https://github.com/rylanmalarchick/qlin"
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.20342": {
+  "fields": {
+   "kind": "new method",
+   "result": "Created ForShor, a Lean-based formal verification harness and submission platform that verifies mathematical correctness, circuit lowering, and $O(n^{2+\\epsilon})$ asymptotic gate scaling for user- or agent-supplied recursive Toom-Cook PhaseProduct policies.",
+   "question": "How can recursive quantum multiplication circuit designs for Shor's algorithm be certified for correctness and asymptotic cost while enabling open automated search across design choices?",
+   "prior": "",
+   "limits": "Independent recursion trees; table-construction step for exact optimal policy is computationally intractable at cryptographic sizes ($3.2 \\times 10^{51}$ core-hours estimated for RSA-2048 at arity 8).",
+   "tools": [
+    "Lean",
+    "Qualtran",
+    "PhaseProduct recursion",
+    "Toom-Cook arithmetic"
+   ],
+   "figure": "S0.F1",
+   "figure_url": "https://arxiv.org/html/2611.20342v1/ForShor.svg",
+   "figure_caption": "Figure 1: Schematic overview of the formally verified harness setup. A contributor supplies a design specification of the arithmetic circuit (namely a “policy”, see Section 2 ), while the harness checks it in Lean, builds and lowers the order-finding circuit, and emits it to Qualtran.",
+   "figure_gloss": "Schematic workflow showing an external contributor or AI agent submitting a recursive arithmetic policy, which Lean checks for conditions C1-C4 before lowering to certified intermediate representations and exporting to Qualtran.",
+   "code": ""
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.20222": {
+  "fields": {
+   "kind": "new method",
+   "result": "Presents feedback-grape, an open-source, GPU-accelerated JAX package implementing feedback GRadient Ascent Pulse Engineering with parameterized unitary and measurement gates optimized via recurrent neural networks or lookup tables.",
+   "question": "How can feedback-GRAPE be implemented as a general, GPU-accelerated, user-friendly Python package for arbitrary quantum feedback control tasks?",
+   "prior": "was limited to task-specific scripts for state preparation and GKP quantum error correction (Porotti 2023, Puviani 2024)",
+   "limits": "Restricted to generalized binary measurement outcomes $\\pm 1$; requires trajectory sampling to evaluate gradient averages.",
+   "tools": [
+    "JAX",
+    "Optax",
+    "Flax",
+    "Dynamiqs",
+    "POVM binary measurements"
+   ],
+   "figure": "S3.F1",
+   "figure_url": "https://arxiv.org/html/2611.20222v1/RL_diagram_v3.png",
+   "figure_caption": "Figure 1 : A high-level overview of the feedback-GRAPE algorithm. A physical system is controlled using a feedback loop mechanism: Measurement outcomes from the quantum system are fed into a recurrent neural network or a lookup table which generates the control parameters for the next time step.",
+   "figure_gloss": "Schematic of the feedback-GRAPE cycle showing binary measurement outcomes feeding into a recurrent neural network or lookup table to generate next-step control parameters.",
+   "code": ""
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.19801": {
+  "fields": {
+   "kind": "new method",
+   "result": "Checkpointing every $k\\approx\\sqrt{N}$ environment in finite MPS sweeps cuts environment memory by 4.6--10$\\times$ for 96--384-site cylinders. Attainable bond dimension on a 141 GB GPU increases by 1.77$\\times$ (one-level) and 2.07$\\times$ (two-level with 8 chunks) at 6--15% runtime overhead for one level.",
+   "question": "How can the dominant memory cost of storing full environment tensor stacks in DMRG and TDVP sweeps be minimized on a single device without modifying the algorithm's results?",
+   "prior": "Standard MPS implementations store all $N$ environment tensors (occupying $NB$ memory, about 158 GB for a 144-site $W=38$ triangular cylinder at $D=2048$), or offload environments to host memory or disk.",
+   "limits": "Dense GPU implementation tested without quantum-number symmetries; requires environments to dominate memory over working tensors; bitwise reproducibility holds only for deterministic floating-point contractions.",
+   "tools": [
+    "Environment checkpointing",
+    "Finite DMRG and TDVP sweeps",
+    "NVIDIA H200 GPU",
+    "Memory-pool contraction chunking"
+   ],
+   "figure": "S4.F3",
+   "figure_url": "https://arxiv.org/html/2611.19801v1/fig2_breakdown.svg",
+   "figure_caption": "Figure 3: Peak GPU memory split into MPS, environments and working memory for the triangular XC6 cylinder, with all environments stored (store) and checkpointed with $k=12$ (ckpt). Storing all environments at $D=2048$ does not fit on the device.",
+   "figure_gloss": "Peak GPU memory split across MPS, environment, and working memory as bond dimension $D$ increases, comparing full storage to $k=12$ checkpointing on a triangular XC6 cylinder.",
+   "code": "https://github.com/NihalShriv/envcheckpoint"
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.19715": {
+  "fields": {
+   "kind": "new method",
+   "result": "Proxima reduces syndrome extraction circuit logical error rate by 1.4--2.6$\\times$ over the best automated baseline across diverse CSS qLDPC codes, and cuts logical error rate by 2.1--5.1$\\times$ compared to IBM's depth-7 reference schedule on bivariate bicycle codes.",
+   "question": "How can syndrome extraction circuits for general CSS quantum LDPC codes be scheduled to minimize circuit-level fault propagation without the prohibitive computational cost of direct logical error rate estimation or full circuit-level distance calculations?",
+   "prior": "Prior automated schedulers scored by circuit depth alone (ASC), code-capacity residual distance without gate interleaving (LRC), syndrome ambiguity via MaxSAT (PropHunt), or in-loop Monte Carlo decoding simulations (AlphaSyndrome), while human-designed benchmarks relied on depth-7 heuristics (Bravyi et al., 2024).",
+   "limits": "Evaluated using circuit-level Pauli noise simulations with belief propagation ordered statistics decoding (BP-OSD) and Tesseract decoding. Proximity treats DEM fault mechanisms uniformly, neglecting heterogeneous error rates such as idling-dominated noise.",
+   "tools": [
+    "Detector error model (DEM) analysis",
+    "Satisfiability modulo theories (SMT)",
+    "DEM-level proximity metric",
+    "Monomial representation of parity checks"
+   ],
+   "figure": "S5.F6",
+   "figure_url": "https://arxiv.org/html/2611.19715v1/result_6codes.svg",
+   "figure_caption": "Figure 6. Per-cycle logical error rate versus physical error rate for schedules from ASC, AlphaSyndrome, PropHunt, LRC, and our proposed Proxima, under the noise model and decoder of Section 5.1 . AlphaSyndrome timed out on RQT108 and HGP625 . Shaded bands indicate 95% confidence intervals.",
+   "figure_gloss": "Per-cycle logical error rate plotted against physical error rate across six quantum LDPC codes, comparing schedules generated by Proxima against ASC, AlphaSyndrome, PropHunt, and LRC.",
+   "code": ""
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.19130": {
+  "fields": {
+   "kind": "new method",
+   "result": "Circuit-level simulations of the $[[144,12,12]]$ bivariate-bicycle code achieve a logical error rate of $p_L = 4.82 \\times 10^{-10}$ at physical error rate $p = 10^{-3}$. RTL simulation of a two-arm core at 250 MHz yields a 16 ns iteration interval and mean input-to-result latency of 173.8 ns at $p = 5 \\times 10^{-3}$.",
+   "question": "Can quantum low-density parity-check codes achieve low logical error rates within strict real-time hardware decoding latency budgets?",
+   "prior": "Relay-BP achieved an amortized average decoding time of 40 ns per QEC cycle at $p = 10^{-3}$.",
+   "limits": "Circuit-level numerical simulations and functional RTL simulations only, no experimental hardware deployment. RTL timed path excludes online dynamical classification, reseeding, and OSD fallback.",
+   "tools": [
+    "belief propagation (BP)",
+    "simulated annealing",
+    "linear discriminant analysis",
+    "RTL functional simulation"
+   ],
+   "figure": "S0.F4",
+   "figure_url": "https://arxiv.org/html/2611.19130v1/Full_Performance_Convergence_Plots_x110_reference.svg",
+   "figure_caption": "Figure 4: Circuit-level decoding performance and convergence. a , Logical error rate versus physical error rate for several BB codes decoded with SCOPE. For most data points, Monte Carlo sampling was continued until at least 100 logical failures were observed, yielding a relative standard error of approximately $10\\%$ or less. Error bars are omitted for clarity. b , Comparison of SCOPE with BP-based decoders on the $[[144,12,12]]$ code. The benchmark configurations are SCOPE with 80 preprocessing iterations followed by four parallel arms of $120$ iterations each (200 critical-path BP iterations), pure BP with $200$ iterations, Relay-BP-10 with $80+10\\times 60$ iterations, Relay-BP-30 with $80+30\\times 20$ iterations, and BP-OSD with $10^{4}$ BP iterations followed by OSD of combination-sweep (CS) order $7$ . Here, the suffixes 10 and 30 denote the maximum numbers of post-preprocessing relay legs. In both b and c , Relay-BP stops upon finding the first syndrome-consistent solution or exhausting its BP iteration budget. The Relay-BP-10 and Relay-BP-30 curves nearly overlap over the plotted range. c , Convergence comparison on the $[[144,12,12]]$ code at $p=5\\times 10^{-3}$ . The horizontal axis represents the critical-path BP iteration depth. SCOPE and Relay-BP share the same 80-iteration Mem-BP preprocessing stage; the inset enlarges the 80–110 iteration range. For SCOPE, each post-preprocessing point corresponds to a specified parallel-arm budget, with OSD applied only if all four arms remain unresolved after exhausting that budget. For Relay-BP, the curve beyond 80 iterations is generated by varying the maximum number of post-preprocessing relay legs, with a maximum of 30 BP iterations per leg.",
+   "figure_gloss": "Logical error rate plotted against physical error rate for bivariate-bicycle codes decoded with the SCOPE pipeline.",
+   "code": ""
+  },
+  "seen": "2026-11-17",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.18881": {
+  "fields": {
+   "kind": "new method",
+   "result": "Splitting linear operator $A$ into core $A_0$ and tail $A_\\epsilon$ and sampling $n_T$ tail terms in block-encodings cuts QSVT circuit depth to $\\mathcal{O}((L_0+n_T)d)$ with diamond norm error $\\mathcal{O}(C_P\\delta^2/n_T)$, where $\\delta = \\lambda_\\epsilon/\\lambda$. For iron-sulfur and long-range Heisenberg Hamiltonians at diamond norm error $10^{-3}$, required Pauli terms drop by over an order of magnitude.",
+   "question": "Can randomized block-encodings reduce the circuit depth of QSVT without degrading diamond norm error beyond quadratic scaling?",
+   "prior": "SparSto-randomized QSVT (Ref. [49]) had operator norm error $\\mathcal{O}(d\\sqrt{\\mathrm{Var_{coeff}}[H]})$ with independent layer samples, while single-ancilla randomized QSVT (Ref. [65]) required $\\tilde{\\mathcal{O}}(\\lambda^2 d^2)$ depth.",
+   "limits": "Error bound prefactor $C_P$ diverges with polynomial derivative norm; requires sampling overhead from channel mixing; verified on classical numerical simulations of spin and molecular Hamiltonians.",
+   "tools": [
+    "Quantum Singular Value Transformation (QSVT)",
+    "Randomized block-encoding (RBE)",
+    "Double-randomized QSVT (DR-QSVT)",
+    "Linear combination of unitaries (LCU)"
+   ],
+   "figure": "S5.F3",
+   "figure_url": "https://arxiv.org/html/2611.18881v1/figure/polynomial_families_cos_gaussian.png",
+   "figure_caption": "Figure 3: The diamond norm error bounds from Thm. 1 as a function of the fractional Pauli term budget for the iron-sulfur complexes $\\mathrm{Fe_{2}S_{2}}$ and $\\mathrm{Fe_{4}S_{4}}$ for the cosine and Gaussian filtering functions. Dashed lines denote the localized DFT orbitals described in Ref. [ 31 ] and solid lines denote the transformed MO orbitals from Ref. [ 54 ] in the same active space. The left and right columns correspond to the cosine and Gaussian filtering functions, respectively.",
+   "figure_gloss": "Diamond norm error bound as a function of fractional Pauli term budget $(L_0+n_T)/L$ for $\\mathrm{Fe_2S_2}$ and $\\mathrm{Fe_4S_4}$ complexes. Shows error curves falling below $10^{-3}$ while retaining only a small fraction of total Hamiltonian terms for cosine and Gaussian filter polynomials.",
+   "code": ""
+  },
+  "seen": "2026-11-17",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
