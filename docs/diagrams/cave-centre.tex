@@ -1,0 +1,21 @@
+\documentclass[tikz,border=6pt]{standalone}
+\input{cave-style}
+\begin{document}
+\begin{tikzpicture}
+% left: raw vectors in a narrow cone
+\begin{scope}
+  \draw[edge] (0,0) circle (1.6);
+  \foreach \a in {62,66,69,72,75,78,81,85} \draw[dim, line width=0.6pt, -{Stealth[length=1.6mm]}] (0,0) -- (\a:1.6);
+  \draw[gold, line width=1.1pt, -{Stealth[length=2mm]}] (0,0) -- (73.5:1.46);
+  \node[lab, text=gold, anchor=east] at (73.5:1.0) {$\mu$};
+  \node[lab, align=center] at (0,-2.05) {raw: every pair $\cos\approx0.83$\\spread $0.14$};
+\end{scope}
+\draw[flow] (2.1,0) -- node[lab, above] {$\dfrac{\hat v-\mu}{\lVert\hat v-\mu\rVert}$} (3.5,0);
+% right: centred vectors spread round the circle
+\begin{scope}[xshift=5.6cm]
+  \draw[edge] (0,0) circle (1.6);
+  \foreach \a in {10,55,100,150,195,240,290,330} \draw[lamp, line width=0.6pt, -{Stealth[length=1.6mm]}] (0,0) -- (\a:1.6);
+  \node[lab, align=center] at (0,-2.05) {centred: median $\cos\approx-0.03$\\spread $0.69$};
+\end{scope}
+\end{tikzpicture}
+\end{document}

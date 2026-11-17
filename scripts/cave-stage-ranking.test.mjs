@@ -172,7 +172,7 @@ test('rowHtml opens in place: the abstract, its landmarks, the action bar', () =
   assert.ok(open.includes('aria-expanded="true"'));
   assert.ok(open.includes('We &lt;show&gt; &amp; tell.'), 'detail is drawn when open');
   assert.ok(open.includes('Looks like'));
-  assert.ok(open.includes('https://github.com/o/r/discussions/4'), 'the thread link is there');
+  assert.ok(open.includes('pa-discuss" disabled'), 'Discuss is there, greyed out');
   assert.ok(open.includes('data-act="summarize"'));
   assert.ok(open.includes('class="rk-rankcol"><span class="rk-rank">'), 'the tick sits under the rank');
   assert.ok(open.includes('aria-label="Pick for the story"'));

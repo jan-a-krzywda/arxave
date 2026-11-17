@@ -33,25 +33,15 @@ test('actionsHtml: SciRate is keyed on the bare id, whatever the version', () =>
   assert.equal(scirateUrl('arxiv:2608.00001v7'), 'https://scirate.com/arxiv/2608.00001');
 });
 
-test('actionsHtml: a thread that exists is a Thread link to it', () => {
+test('actionsHtml: Discuss is greyed out — no thread link, no start, whatever is known', () => {
   const url = 'https://github.com/jan-a-krzywda/arxave/discussions/12';
-  const html = actionsHtml(paper(), { repo: REPO, thread: { url } });
-  assert.ok(html.includes('href="' + url + '"'), 'links to the thread itself');
-  assert.ok(html.includes('💬 Thread'));
-  assert.ok(!html.includes('data-act="discuss"'), 'no start button when one exists');
-});
-
-test('actionsHtml: no known thread — Discuss, which looks again then starts it', () => {
-  for (const thread of [null, undefined]) {
+  for (const thread of [{ url }, null, undefined]) {
     const html = actionsHtml(paper(), { repo: REPO, thread });
-    assert.ok(html.includes('data-act="discuss"'));
+    assert.ok(/<button type="button" class="pa-btn pa-discuss" disabled/.test(html), 'a disabled square');
     assert.ok(html.includes('✚ Discuss'));
-    assert.ok(!html.includes('discussions?discussions_q='), 'no search page any more');
-    assert.ok(!html.includes('data-act="md"'), 'no download until a post was started');
+    assert.ok(!html.includes('data-act="discuss"'), 'nothing to click');
+    assert.ok(!html.includes(url), 'no thread link while threads are off');
   }
-  const offered = actionsHtml(paper(), { repo: REPO, thread: null, md: true });
-  assert.ok(offered.includes('data-act="md"'), 'the .md link appears after');
-  assert.ok(offered.includes('the post as .md'));
 });
 
 test('actionsHtml: three squares of one class', () => {

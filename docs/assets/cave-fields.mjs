@@ -11,10 +11,12 @@
  * already hides an axis that does not ship.
  *
  * THE FIELD IS CHOSEN ONCE, AT LOAD. The world is loaded before any stage
- * mounts and every stage holds on to it, so a switch is a reload with
- * `?field=` rather than a hot swap that would leave half the stages on the old
- * corpus. Precedence: the URL (a shared link means what it says), then the
- * reader's last choice, then the categories Dig last scouted, then quantum.
+ * mounts and every stage holds on to it, so a switch is a reload rather than a
+ * hot swap that would leave half the stages on the old corpus. Precedence: the
+ * URL (a shared link means what it says), then Dig's FIRST category that a
+ * field claims (cs.AI first → AI, quant-ph first → quantum), then the reader's
+ * last choice, then quantum. A switch therefore reorders Dig's categories, so
+ * the list and the field never disagree.
  *
  * Pure: no DOM. `cave.js` and the Priorities stage do the reading and writing.
  */
@@ -47,37 +49,60 @@ export function fieldById(id) {
 }
 
 /**
- * The field whose categories the list overlaps most, or null when it touches
- * none. Ties go to the earlier field, so quantum wins an even split.
+ * The field that claims the first claimed category in the list, or null when
+ * no field claims any of them. Order is the reader's: ['cs.AI', 'quant-ph'] is
+ * AI, ['quant-ph', 'cs.AI'] is quantum.
  */
 export function fieldForCategories(categories) {
-  const list = Array.isArray(categories) ? categories : [];
-  let best = null;
-  let bestHits = 0;
-  for (const field of FIELDS) {
-    const hits = list.filter((code) => field.categories.includes(code)).length;
-    if (hits > bestHits) {
-      best = field;
-      bestHits = hits;
-    }
+  for (const code of Array.isArray(categories) ? categories : []) {
+    const field = FIELDS.find((f) => f.categories.includes(code));
+    if (field) return field;
   }
-  return best;
+  return null;
+}
+
+/** Every field the list touches, in the order its categories first appear. */
+export function fieldsInCategories(categories) {
+  const found = [];
+  for (const code of Array.isArray(categories) ? categories : []) {
+    const field = FIELDS.find((f) => f.categories.includes(code));
+    if (field && !found.includes(field)) found.push(field);
+  }
+  return found;
 }
 
 /**
- * Tonight's field: `?field=` → the stored choice → Dig's last categories →
- * quantum. `search` is `location.search`; `stored` the FIELD_KEY value;
- * `digCategories` the list Dig remembers.
+ * The list reordered so `field` leads it: the field's own codes move to the
+ * front (in the reader's order), the rest keep theirs. A list that has none
+ * of the field's codes becomes the field's defaults.
+ */
+export function alignCategories(categories, field) {
+  const list = Array.isArray(categories) ? categories : [];
+  if (!field) return [...list];
+  const own = list.filter((code) => field.categories.includes(code));
+  if (!own.length) return [...field.categories];
+  return [...own, ...list.filter((code) => !field.categories.includes(code))];
+}
+
+/**
+ * Tonight's field: `?field=` → Dig's first claimed category → the stored
+ * choice → quantum. `search` is `location.search`; `stored` the FIELD_KEY
+ * value; `digCategories` the list Dig remembers.
  */
 export function chooseField({ search = '', stored = null, digCategories = [] } = {}) {
-  let fromUrl = null;
-  try {
-    fromUrl = new URLSearchParams(search).get('field');
-  } catch (_) { /* a search string URLSearchParams will not read is no field */ }
-  return fieldById(fromUrl)
-    ?? fieldById(stored)
+  return fieldFromUrl(search)
     ?? fieldForCategories(digCategories)
+    ?? fieldById(stored)
     ?? DEFAULT_FIELD;
+}
+
+/** The field a `?field=` names, or null. */
+export function fieldFromUrl(search) {
+  try {
+    return fieldById(new URLSearchParams(search).get('field'));
+  } catch (_) {
+    return null; /* a search string URLSearchParams will not read is no field */
+  }
 }
 
 /** The pack's folder under the corpus base, with exactly one slash between. */
@@ -96,9 +121,13 @@ export function fieldKey(key, field) {
   return !field || field.id === DEFAULT_FIELD.id ? key : key + '-' + field.id;
 }
 
-/** `href` with `?field=` set to `id`; the hash and other params are kept. */
-export function fieldHref(href, id) {
+/**
+ * `href` without `?field=`. A switch reloads on this: Dig's reordered
+ * categories carry the choice, and a param left in the bar would outrank the
+ * reader's next reorder.
+ */
+export function withoutField(href) {
   const url = new URL(href);
-  url.searchParams.set('field', id);
+  url.searchParams.delete('field');
   return url.toString();
 }

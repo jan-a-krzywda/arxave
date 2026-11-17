@@ -1,0 +1,267 @@
+/* Details — the diagrams, the stage explorer and the grade calculator.
+   Dark only, like the rest of the site: the TikZ SVGs are drawn in the cave
+   palette on a transparent ground. */
+
+.dt-fig {
+  margin: 1rem 0 1.4rem;
+  text-align: center;
+}
+
+.dt-fig img {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  margin: 0 auto;
+}
+
+.dt-fig-sm img {
+  max-width: 380px;
+}
+
+.dt-fig figcaption {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--text-faint);
+}
+
+/* ── stage explorer ─────────────────────────────────────────────── */
+
+.dt-stages {
+  margin: 0 0 1.6rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 8px;
+  background: var(--rock-deep);
+  overflow: hidden;
+}
+
+.dt-tabs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  border-bottom: 1px solid var(--rock-edge);
+}
+
+.dt-tabs button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0.5rem 0.2rem;
+  border: 0;
+  border-right: 1px solid var(--rock-edge);
+  background: none;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.dt-tabs button:last-child {
+  border-right: 0;
+}
+
+.dt-tabs button:hover {
+  color: var(--text);
+  background: var(--rock);
+}
+
+.dt-tabs button[aria-selected="true"] {
+  color: var(--gold);
+  background: var(--rock);
+  box-shadow: inset 0 -2px 0 var(--gold);
+}
+
+.dt-n {
+  font-size: 0.68rem;
+  color: var(--text-faint);
+}
+
+.dt-panel {
+  padding: 0.8rem 1rem 0.9rem;
+}
+
+.dt-panel p {
+  margin: 0 0 0.45rem;
+}
+
+.dt-does {
+  color: var(--text);
+}
+
+.dt-io {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.dt-io span:not(.dt-arrow) {
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  background: var(--cave-air);
+  color: var(--text-dim);
+}
+
+.dt-arrow {
+  color: var(--lamp);
+}
+
+.dt-rule {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.dt-src {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+}
+
+/* ── grade calculator ───────────────────────────────────────────── */
+
+.dt-calc {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 1rem;
+  margin: 0.6rem 0 1.2rem;
+  padding: 0.9rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 8px;
+  background: var(--rock-deep);
+}
+
+.dt-calc-in {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.dt-calc-in label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.2rem 0.5rem;
+}
+
+.dt-calc-in input[type="range"] {
+  flex: 1 0 100%;
+  accent-color: var(--gold);
+}
+
+.dt-calc-in output {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.dt-calc-in select {
+  padding: 0.15rem 0.3rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+  background: var(--rock);
+  color: var(--text);
+  font: inherit;
+}
+
+.dt-calc-in .dt-check {
+  justify-content: flex-start;
+}
+
+.dt-calc-out {
+  width: 100%;
+  margin: 0;
+  font-size: 0.82rem;
+  border-collapse: collapse;
+}
+
+.dt-calc-out th,
+.dt-calc-out td {
+  padding: 0.35rem 0.4rem;
+  border-bottom: 1px solid var(--rock-edge);
+  text-align: left;
+  vertical-align: middle;
+  background: none;
+}
+
+.dt-calc-out th {
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+.dt-calc-out td {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.dt-bar {
+  display: inline-block;
+  width: 4.5rem;
+  height: 0.5rem;
+  margin-right: 0.4rem;
+  border-radius: 3px;
+  background: var(--lamp-0);
+  vertical-align: middle;
+  overflow: hidden;
+}
+
+.dt-bar span {
+  display: block;
+  height: 100%;
+  background: var(--lamp);
+}
+
+.dt-gold {
+  color: var(--gold);
+}
+
+.dt-more {
+  margin: 0.4rem 0 1.4rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--rock-edge);
+  border-radius: 6px;
+  background: var(--rock-deep);
+}
+
+.dt-more summary {
+  cursor: pointer;
+  color: var(--lamp);
+}
+
+.dt-more[open] summary {
+  margin-bottom: 0.5rem;
+}
+
+.dt-refs {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.dt-refs li {
+  margin-bottom: 0.3rem;
+}
+
+@media (max-width: 640px) {
+  .dt-calc {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dt-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dt-tabs button:nth-child(3) {
+    border-right: 0;
+  }
+
+  .dt-tabs button:nth-child(-n + 3) {
+    border-bottom: 1px solid var(--rock-edge);
+  }
+
+  .dt-calc-out td {
+    white-space: normal;
+  }
+}

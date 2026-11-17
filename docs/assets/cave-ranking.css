@@ -536,12 +536,20 @@ h3.rk-title {
   color: var(--text);
 }
 
+.pa-btn:disabled,
+.pa-btn:disabled:hover {
+  border-color: var(--rock-edge);
+  color: var(--text-faint);
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .pa-scirate {
   color: var(--lamp);
 }
 
 .pa-discussion,
-.pa-discuss {
+.pa-discuss:not(:disabled) {
   color: var(--gold);
 }
 

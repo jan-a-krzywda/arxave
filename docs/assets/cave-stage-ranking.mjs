@@ -673,8 +673,8 @@ export function mount(body, ctx) {
     moreWrap.hidden = total === 0;
     moreBtn.hidden = state.shown >= total;
     shownEl.textContent = shownLine(rows.length, total);
-
-    lookupThreads(rows.map((item) => item.id));
+    /* No thread lookup while Discuss is greyed out (actionsHtml): nothing on
+       the row would show the answer. */
   }
 
   function paintFoot() {

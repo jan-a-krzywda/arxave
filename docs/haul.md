@@ -3,6 +3,7 @@ layout: page
 title: Haul
 permalink: /haul/
 gloss: today
+nav_off: true
 nav_icon: haul
 ---
 
