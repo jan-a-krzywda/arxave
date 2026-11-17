@@ -71,6 +71,12 @@ const OPENALEX_BATCH = 50;
 /* Total tries, not retries — the ladder llm.mjs uses: one attempt plus the two
    the contract allows on a 429 or a 5xx. */
 const ATTEMPTS = 3;
+/* A 429 is arXiv asking us to slow down, not a fault: a crawl of two busy
+   categories hits it after a few dozen pages and needs minutes, not seconds,
+   to clear. So a 429 gets a longer ladder — the first wait is the usual three
+   seconds, then 30 s doubling — before the run gives up. */
+const RATE_ATTEMPTS = 7;
+const rateWait = (attempt) => (attempt === 1 ? ARXIV_WAIT_MS : 30000 * 2 ** (attempt - 2));
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const retryable = (status) => status === 429 || status >= 500;
@@ -193,10 +199,11 @@ async function request(url, { fetchImpl, sleep, what }) {
   for (let attempt = 1; ; attempt += 1) {
     const resp = await fetchImpl(url);
     if (resp.ok) return resp;
-    if (retryable(resp.status) && attempt < ATTEMPTS) {
+    const limit = resp.status === 429 ? RATE_ATTEMPTS : ATTEMPTS;
+    if (retryable(resp.status) && attempt < limit) {
       console.warn(`corpus-fetch: ${what} HTTP ${resp.status} — retrying ` +
-                   `(${attempt}/${ATTEMPTS - 1})`);
-      await sleep(ARXIV_WAIT_MS);
+                   `(${attempt}/${limit - 1})`);
+      await sleep(resp.status === 429 ? rateWait(attempt) : ARXIV_WAIT_MS);
       continue;
     }
     throw new Error(`${what} HTTP ${resp.status}`);

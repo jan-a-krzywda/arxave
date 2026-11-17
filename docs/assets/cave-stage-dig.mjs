@@ -31,6 +31,7 @@ import {
   createRelay, embedCandidates, escapeHtml, fetchAnnouncement, paperEmbedText, readStore, writeStore,
 } from './sieve-ui.mjs';
 import { startHaulTrain } from './cave-train.mjs';
+import { fieldForCategories } from './cave-fields.mjs';
 
 /* ── LaTeX → text ─────────────────────────────────────────────────────────
    Titles and author names come out of the announcement feed as the author
@@ -123,7 +124,19 @@ export function cleanTex(text) {
 export const DEFAULT_CATEGORIES = 'cond-mat.mes-hall, quant-ph';
 
 /** Where the form's three settings are remembered between visits. */
-const FORM_KEY = 'arxave-cave-dig';
+export const FORM_KEY = 'arxave-cave-dig';
+
+/**
+ * The field these categories belong to, when it is not tonight's: digging
+ * cs.LG into the quantum tree files every paper under the nearest quantum
+ * topic, so the form offers the AI pack instead. Null when the categories
+ * touch tonight's field at all, or no field claims them.
+ */
+export function otherField(categories, field) {
+  if (!field || (categories ?? []).some((code) => field.categories.includes(code))) return null;
+  const claim = fieldForCategories(categories);
+  return claim && claim.id !== field.id ? claim : null;
+}
 
 /**
  * The one-line summary stage 1 folds to: what was scouted and how far back.
@@ -326,7 +339,7 @@ export function mountDig(body, ctx) {
   const saved = readStore(ctx.storage, FORM_KEY, null) || {};
   const startCats = categoryList(saved.categories).length
     ? categoryList(saved.categories)
-    : categoryList(DEFAULT_CATEGORIES);
+    : (ctx.field ? [...ctx.field.categories] : categoryList(DEFAULT_CATEGORIES));
   const lookback0 = whole(saved.lookback, 1, 7, 1);
   const max0 = whole(saved.maxResults, 10, 1000, 200);
 
@@ -340,6 +353,7 @@ export function mountDig(body, ctx) {
            into it, and a restored form reads it back, exactly as on Dig. */
         '<input type="hidden" class="cave-categories" value="' +
           escapeHtml(startCats.join(', ')) + '">' +
+        '<p class="cave-dig-field" hidden></p>' +
       '</div>' +
       '<div class="role-grid scout-grid">' +
         '<label>Lookback (days)' +
@@ -365,6 +379,7 @@ export function mountDig(body, ctx) {
   const maxEl = body.querySelector('.cave-max');
   const btn = body.querySelector('.cave-dig-btn');
   const statusEl = body.querySelector('.stage-status');
+  const fieldEl = body.querySelector('.cave-dig-field');
   const relay = createRelay({ relayBase: ctx.config.relayUrl });
   let busy = false;
 
@@ -400,6 +415,19 @@ export function mountDig(body, ctx) {
         '<button type="button" class="cat-chip-x" data-code="' + escapeHtml(code) +
           '" aria-label="Remove ' + escapeHtml(code) + '">×</button></span>';
     }).join('');
+    renderField();
+  }
+
+  /** The one-line offer to read these categories with their own field's pack. */
+  function renderField() {
+    const other = otherField(categories(), ctx.field);
+    fieldEl.hidden = !other;
+    fieldEl.innerHTML = other
+      ? 'These are ' + escapeHtml(other.label) + ' papers, but tonight\'s topics are ' +
+        escapeHtml(ctx.field.label) + '. ' +
+        '<button type="button" class="cave-dig-field-btn" data-field="' + escapeHtml(other.id) + '">' +
+          'Use ' + escapeHtml(other.label) + ' topics</button>'
+      : '';
   }
 
   function setCategories(list) {
@@ -561,6 +589,11 @@ export function mountDig(body, ctx) {
     if (!x) return;
     const code = x.getAttribute('data-code');
     setCategories(categories().filter((c) => c !== code));
+  });
+
+  fieldEl.addEventListener('click', (event) => {
+    const button = event.target.closest ? event.target.closest('.cave-dig-field-btn') : null;
+    if (button && ctx.switchField) ctx.switchField(button.getAttribute('data-field'));
   });
 
   form.addEventListener('submit', (event) => {

@@ -153,7 +153,7 @@ export function meters(ranked, ref = PROMISE_REF) {
   const novelty = (ref && ref.novelty) || PROMISE_REF.novelty;
   const impact = (ref && ref.impact) || PROMISE_REF.impact;
   return list.map((item) => {
-    const theory = Number(item && item.theory);
+    const theory = item && item.theory != null ? Number(item.theory) : NaN;
     return {
       fitPct: Math.round(100 * phi(asNumber(item && item.fit))),
       promisePct: Math.round(100 * clamp01(asNumber(item && item.score))),
@@ -1042,6 +1042,9 @@ export function mount(body, ctx) {
     }
 
     if (prefs.ml4q) scored = scored.filter((item) => item.ml4q >= 0.5);
+    /* A field pack with no Theory ↔ Experiment axis (AI) scores every paper a
+       neutral 0.5; that is no reading, so the row shows no Exp. grade. */
+    if (!shipExp) scored = scored.map((item) => ({ ...item, theory: null }));
 
     /* The dislikes last, on scores `caveScore` has already normalised. */
     scored = applyLess(scored, lessVecs, { weight: LESS_WEIGHT });

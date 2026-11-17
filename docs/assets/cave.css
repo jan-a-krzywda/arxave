@@ -281,6 +281,28 @@
   margin-bottom: 0.4rem;
 }
 
+/* The offer to read these categories with their own field's topics. */
+.cave-dig-field {
+  margin: 0.45rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.cave-dig-field-btn {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--lamp);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.cave-dig-field-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
 .cave-dig .role-grid {
   margin-bottom: 0.8rem;
 }

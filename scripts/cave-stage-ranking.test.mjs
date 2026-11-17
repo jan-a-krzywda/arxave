@@ -55,16 +55,18 @@ test('meters: a weak night reads weak — its best paper is not 100', () => {
 
 test('meters: Surprise is novelty against the corpus spread; the lean only when known', () => {
   const ref = { novelty: { mean: 0.15, sd: 0.05 } };
-  const [mid, far, bare] = meters([
+  const [mid, far, bare, unshipped] = meters([
     item('m', 0, 0.5, { novelty: 0.15, theory: 0.8 }),
     item('f', 0, 0.5, { novelty: 0.25, theory: 0.1 }),
     item('b', 0, 0.5),
+    item('n', 0, 0.5, { theory: null }),
   ], ref);
   assert.equal(mid.surprisePct, 50);
   assert.equal(far.surprisePct, 98);              // two sd out
   assert.equal(mid.theoryPct, 80);
   assert.equal(far.theoryPct, 10);
   assert.equal(bare.theoryPct, null);
+  assert.equal(unshipped.theoryPct, null);      // a pack with no axis reads nothing, not 0
 });
 
 /* ── the order ──────────────────────────────────────────────────────────── */

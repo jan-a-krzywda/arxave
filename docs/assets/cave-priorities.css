@@ -233,6 +233,38 @@
   color: var(--text);
 }
 
+/* Field and Reset share the head's right side; Field is the bigger switch
+   (it reloads the page on another pack), so it reads as a control, Reset as a
+   link. */
+.cave-priorities-tree-tools {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.8rem;
+}
+
+.cave-field-switch {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.cave-field-select {
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.1rem 0.3rem;
+  color: var(--text);
+  background: var(--rock);
+  border: 1px solid var(--rock-edge);
+  border-radius: 4px;
+}
+
+.cave-field-select:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
 .cave-reset-topics {
   padding: 0;
   background: none;
