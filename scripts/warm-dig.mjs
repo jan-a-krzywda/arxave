@@ -32,7 +32,7 @@
  * Flags:
  *   --categories   comma-separated arXiv categories (required)
  *   --lookback     weekdays of history to warm as well (default 1: tonight only)
- *   --max-results  per-category cap on the search-API window (default 400)
+ *   --max-results  per-category cap on the search-API window (default 2000)
  *   --presets      directory of preset claims to warm as well (docs/presets)
  *   --endpoint     dig-cache URL (default: the project's deployed function)
  *   --embed        embed URL (default: the project's deployed function)
@@ -70,6 +70,13 @@ const DEFAULT_ENDPOINT =
   'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1/dig-cache';
 export const DEFAULT_EMBED =
   'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1/embed';
+/* Search-API paging. arXiv documents 2000 per request as the ceiling and asks
+   for smaller pages on large windows; 200 keeps each response small enough to
+   parse quickly and a failure cheap to retry. */
+const PAGE_SIZE = 200;
+const REQUEST_GAP_MS = 3_000;
+const PAGE_ATTEMPTS = 4;
+const RETRY_BASE_MS = 10_000;
 const PUT_CHUNK = 200;   // stays under the function's MAX_ITEMS
 const READ_CHUNK = 500;  // stays under the function's MAX_SHAS
 
@@ -556,41 +563,92 @@ export function parseAtom(xml) {
  * first paper older than the cutoff ends the list rather than filtering it — a
  * paper resubmitted into an old slot must not drag the window in behind it.
  */
-export async function fetchEarlier(categories, lookback, maxResults, now = new Date()) {
+export async function fetchEarlier(categories, lookback, maxResults, now = new Date(), opts = {}) {
+  const sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
+  const pageSize = opts.pageSize ?? PAGE_SIZE;
   const cutoff = cutoffDate(now, lookback);
   const seen = new Set();
   const out = [];
   const failures = [];
+  let first = true;
   for (const cat of categories) {
-    const url = 'https://export.arxiv.org/api/query?' +
-      'search_query=cat:' + encodeURIComponent(cat) +
-      '&sortBy=submittedDate&sortOrder=descending' +
-      '&max_results=' + maxResults +
-      '&start=0';
+    let got = 0;
     try {
-      const resp = await fetch(url, {
-        headers: { 'User-Agent': 'arxave-warmer/0.1 (+https://github.com/jan-a-krzywda/arxave)' },
-        signal: AbortSignal.timeout(60_000),
-      });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const xml = await resp.text();
-      for (const s of withinCutoff(withPageText(parseAtom(xml), parseAtomEntries(xml)), cutoff)) {
-        if (seen.has(s.arxivId)) continue;   // a cross-list is one abstract
-        seen.add(s.arxivId);
-        out.push(s);
+      /* Paged, because a busy archive does not fit one request: cs.AI and cs.LG
+         each reach ~1000 papers a day by submission date, and one big query
+         both truncated the window mid-day and drew the 429s that left the
+         earlier days cold. The window is newest-first, so the first page that
+         reaches the cutoff (or comes back short) is the last one needed. */
+      for (let start = 0; start < maxResults; start += pageSize) {
+        // arXiv asks for one request every three seconds, and means it.
+        if (!first) await sleep(REQUEST_GAP_MS);
+        first = false;
+        const url = 'https://export.arxiv.org/api/query?' +
+          'search_query=cat:' + encodeURIComponent(cat) +
+          '&sortBy=submittedDate&sortOrder=descending' +
+          '&max_results=' + Math.min(pageSize, maxResults - start) +
+          '&start=' + start;
+        const xml = await fetchPage(url, sleep);
+        const page = withPageText(parseAtom(xml), parseAtomEntries(xml));
+        const inWindow = withinCutoff(page, cutoff);
+        for (const s of inWindow) {
+          if (seen.has(s.arxivId)) continue;   // a cross-list is one abstract
+          seen.add(s.arxivId);
+          out.push(s);
+          got++;
+        }
+        // Reached the cutoff, or ran out of papers: nothing further back to ask for.
+        if (inWindow.length < page.length || page.length < Math.min(pageSize, maxResults - start)) break;
+        if (start + pageSize >= maxResults) {
+          console.warn(`warm-dig: ${cat} hit --max-results=${maxResults} before the cutoff ${cutoff} — ` +
+                       'the oldest day of the window may be partly cold');
+        }
       }
     } catch (err) {
       failures.push(`${cat} → ${err.message}`);
     }
-    // arXiv asks for one request every three seconds, and means it.
-    if (cat !== categories[categories.length - 1]) await new Promise((r) => setTimeout(r, 3_000));
+    console.log(`warm-dig: lookback ${cat}: ${got} papers back to ${cutoff}`);
   }
   if (failures.length && !out.length) throw new Error(`search API: ${failures.join(' | ')}`);
   if (failures.length) console.warn('warm-dig: some lookback windows failed — ' + failures.join(' | '));
   return out;
 }
 
-/** The page's loop: take from the newest until one falls past the cutoff. */
+/**
+ * One search-API page, retried through the failures that clear themselves: 429
+ * (arXiv's rate limit, which GitHub's shared runner IPs hit often), 5xx, and a
+ * timeout. Honours Retry-After when sent; otherwise backs off 10 s, 20 s, 40 s.
+ * Anything else (a 400, say) is a fault in the request and fails at once.
+ */
+async function fetchPage(url, sleep) {
+  let lastErr;
+  for (let attempt = 0; attempt < PAGE_ATTEMPTS; attempt++) {
+    if (attempt > 0) {
+      const wait = lastErr.retryAfterMs ?? RETRY_BASE_MS * 2 ** (attempt - 1);
+      console.warn(`warm-dig: ${lastErr.message} — retrying in ${Math.round(wait / 1000)}s (${attempt}/${PAGE_ATTEMPTS - 1})`);
+      await sleep(wait);
+    }
+    try {
+      const resp = await fetch(url, {
+        headers: { 'User-Agent': 'arxave-warmer/0.1 (+https://github.com/jan-a-krzywda/arxave)' },
+        signal: AbortSignal.timeout(60_000),
+      });
+      if (resp.ok) return await resp.text();
+      lastErr = new Error(`HTTP ${resp.status}`);
+      const ra = Number(resp.headers?.get?.('retry-after'));
+      if (Number.isFinite(ra) && ra > 0) lastErr.retryAfterMs = ra * 1000;
+      if (resp.status !== 429 && resp.status < 500) {
+        lastErr.fatal = true;
+        throw lastErr;
+      }
+    } catch (err) {
+      if (err.fatal) throw err;
+      lastErr = err;
+    }
+  }
+  throw lastErr;
+}
+
 export function withinCutoff(candidates, cutoff) {
   const out = [];
   for (const c of candidates) {
@@ -725,11 +783,14 @@ async function main() {
     try {
       const feed = await fetchAbstracts(cat);
       if (feed.builtOn) builtOn.add(feed.builtOn);
+      const before = stones.length;
       for (const s of feed.stones) {
         if (seen.has(s.arxivId)) continue;
         seen.add(s.arxivId);
         stones.push(s);
       }
+      console.log(`warm-dig: feed ${cat}: ${feed.stones.length} new/cross, ` +
+                  `${stones.length - before} not already seen`);
     } catch (err) {
       failures.push(`${cat} → ${err.message}`);
     }
@@ -773,12 +834,12 @@ async function main() {
      slot only appears in this window afterwards. Failure is a warning, never
      fatal — tonight is what people read, and it is already in hand. */
   const lookback = parseInt(arg('lookback', '1'), 10) || 1;
-  /* Deeper than the page's 200, because this window has to reach the cutoff
-     rather than fill a screen: cs.AI alone announced 211 papers on 2026-08-14,
-     so 200 does not survive one day of a busy archive, let alone `lookback` of
-     them. Over-fetching is nearly free — the surplus is one cache read that
-     hits — while under-fetching is silent, and lands as a cold boundary day. */
-  const maxResults = parseInt(arg('max-results', '400'), 10) || 400;
+  /* A ceiling, not a target: fetchEarlier pages newest-first and stops at the
+     cutoff. cs.AI and cs.LG each reach ~1000 papers a day by submission date,
+     so 400 left even one day cold; 2000 covers two busy days per category. A
+     window that hits it warns, because under-fetching is silent and lands as
+     a cold boundary day. */
+  const maxResults = parseInt(arg('max-results', '2000'), 10) || 2000;
   /* Reach for the earlier days whenever there are any to reach for, or
      whenever tonight brought nothing — the second case is the weekend, where
      the window is the only source there is. */
