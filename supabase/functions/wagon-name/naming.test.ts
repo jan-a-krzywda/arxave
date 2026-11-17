@@ -11,11 +11,13 @@ import {
   generationConfig,
   LADDER,
   ladderFrom,
+  JSON_FORMAT,
   MAX_MEMBERS,
   MAX_TOTAL_MEMBERS,
   MAX_TITLES,
   type Member,
   normalizeTitle,
+  parseChatResponse,
   parseResponse,
   promptFor,
   readWagons,
@@ -252,4 +254,35 @@ Deno.test('readWagons rejects everything malformed with a message', () => {
   ) {
     assertEquals(typeof readWagons(body as Record<string, unknown>), 'string');
   }
+});
+
+Deno.test('the ladder falls back to DeepSeek after the Gemini rungs and before Gemma', () => {
+  const ids = LADDER.map((r) => r.model);
+  const ds = ids.findIndex((m) => m.includes('DeepSeek'));
+  assertEquals(LADDER[ds].provider, 'chat');
+  assertEquals(ids.slice(0, ds).every((m) => m.startsWith('gemini-')), true);
+  assertEquals(ids.slice(ds + 1).every((m) => m.startsWith('gemma-')), true);
+});
+
+Deno.test('ladderFrom keeps a known rung\'s provider when it arrives by env', () => {
+  const [r] = ladderFrom('deepseek-ai/DeepSeek-V4.1-Flash-1017');
+  assertEquals(r.provider, 'chat');
+  assertEquals(ladderFrom('some-new-model')[0].provider, undefined);
+});
+
+Deno.test('parseChatResponse reads choices[0].message.content like parseResponse reads parts', () => {
+  const content = JSON.stringify({ groups: [
+    { group: 2, name: ' Valley   splitting in silicon ', gloss: 'g' },
+    { group: 9, name: 'invented', gloss: 'g' },
+  ] });
+  const got = parseChatResponse({ choices: [{ message: { content } }] }, 2);
+  assertEquals(got, { 1: { name: 'Valley splitting in silicon', gloss: 'g' } });
+  assertEquals(parseChatResponse({ choices: [] }, 2), {});
+  assertEquals(parseChatResponse({ choices: [{ message: { content: 'not json' } }] }, 2), {});
+  assertEquals(parseChatResponse({ choices: [{ message: { content: null } }] }, 2), {});
+});
+
+Deno.test('the chat prompt states the JSON shape it has no schema to enforce', () => {
+  assertEquals(JSON_FORMAT.includes('"groups"'), true);
+  assertEquals(JSON_FORMAT.includes('"group"'), true);
 });
