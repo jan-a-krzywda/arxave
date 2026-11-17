@@ -26,9 +26,15 @@
  * the markup is stateful — the shell keeps the one `.cave-lift` element and
  * rewrites its floor, which is what lets the cage slide instead of jump.
  */
+import {
+  FIELD_KEY, chooseField, fieldBase, fieldById, fieldHref,
+} from './cave-fields.mjs';
 import { STAGES, createFlow } from './cave-flow.mjs';
+import { FORM_KEY as DIG_KEY } from './cave-stage-dig.mjs';
 import { loadAxes, loadCorpus, loadTopics } from './sieve-core.mjs';
-import { escapeHtml, joinUrl, loadCorpusFrom } from './sieve-ui.mjs';
+import {
+  escapeHtml, joinUrl, loadCorpusFrom, readStore, writeStore,
+} from './sieve-ui.mjs';
 
 /** The words the stage heads and the rail use, in `STAGES` order. */
 export const STAGE_NAMES = Object.freeze({
@@ -130,7 +136,7 @@ function startPage() {
   /* The same endpoints and overrides docs/assets/sieve.js and filter.js carry,
      so a reader who pointed one page at their own pick gets it here too. */
   const FUNCTIONS_BASE = 'https://ugxxakguqgpxpdfhgtsb.supabase.co/functions/v1';
-  const CORPUS_BASE = window.ARXAVE_CORPUS_BASE || '/assets/corpus/';
+  const CORPUS_ROOT = window.ARXAVE_CORPUS_BASE || '/assets/corpus/';
 
   const config = {
     functionsBase: FUNCTIONS_BASE,
@@ -156,6 +162,18 @@ function startPage() {
 
   const flow = createFlow({ storage });
 
+  /* The field pack is picked before anything loads (cave-fields.mjs): the
+     corpus, the tree and the axes all come from its folder. */
+  const digSaved = readStore(storage, DIG_KEY, null) || {};
+  const field = chooseField({
+    search: window.location.search,
+    stored: readStore(storage, FIELD_KEY, null),
+    digCategories: String(digSaved.categories || '').split(',').map((c) => c.trim()).filter(Boolean),
+  });
+  const CORPUS_BASE = fieldBase(CORPUS_ROOT, field);
+  /* A shared ?field= link is a choice too: remember it for the next visit. */
+  if (new URLSearchParams(window.location.search).has('field')) writeStore(storage, FIELD_KEY, field.id);
+
   const ctx = {
     flow,
     bus: new EventTarget(),
@@ -168,7 +186,26 @@ function startPage() {
     ranked: [],
     picks: new Set(),
     storage,
+    field,
+    switchField,
   };
+
+  /**
+   * Another field is another world, so the switch is a reload. Dig's saved
+   * categories follow the field when they belong to none of its archives —
+   * otherwise the reader would dig quantum papers into the AI tree.
+   */
+  function switchField(id) {
+    const next = fieldById(id);
+    if (!next || next.id === field.id) return;
+    writeStore(storage, FIELD_KEY, next.id);
+    const saved = readStore(storage, DIG_KEY, null) || {};
+    const cats = String(saved.categories || '').split(',').map((c) => c.trim()).filter(Boolean);
+    if (!cats.some((code) => next.categories.includes(code))) {
+      writeStore(storage, DIG_KEY, { ...saved, categories: next.categories.join(', ') });
+    }
+    window.location.assign(fieldHref(window.location.href, next.id));
+  }
 
   /* ── the rail and the folds ─────────────────────────────────────────── */
 

@@ -45,18 +45,34 @@
  * "Only" toggle instead of a weight dropdown, and its count is tonight's
  * papers the axis calls ML-for-quantum, not a share of Computing's number.
  *
+ * THE FIELD SWITCH sits on the tree's head, because the tree is what it swaps:
+ * Quantum or AI picks the whole pack (cave-fields.mjs), and the page reloads
+ * on it. Each field keeps its own prefs under its own key, so the AI tree's
+ * weights never land on quantum's parents.
+ *
  * Pure helpers sit above `mount` so `node --test` can hold the arithmetic and
  * the codec: counts, leaf → wagons, weights, the one-line summary, and the
  * serialise/parse pair v3's tests already covered.
  */
+import { FIELDS, fieldKey } from './cave-fields.mjs';
 import { applyNudge } from './cave-nudge.mjs';
 import { axisProbability, corpusSpace, defaultSetting } from './sieve-core.mjs';
 import {
   cacheKeyText, embedTexts, escapeHtml, readStore, writeStore,
 } from './sieve-ui.mjs';
 
-/** The stage's entry in `ctx.storage`. */
+/** The stage's entry in `ctx.storage` (quantum's; other fields add `-<id>`). */
 export const STORE_KEY = 'arxave-cave-v4-prefs';
+
+/** The Field picker on the tree's head; '' when there is one field or none. */
+export function fieldSwitchHtml(field) {
+  if (!field || FIELDS.length < 2) return '';
+  return '<label class="cave-field-switch">Field ' +
+    '<select class="cave-field-select" aria-label="Field: which topics, corpus and axes to read tonight with">' +
+      FIELDS.map((f) => '<option value="' + escapeHtml(f.id) + '"' +
+        (f.id === field.id ? ' selected' : '') + '>' + escapeHtml(f.label) + '</option>').join('') +
+    '</select></label>';
+}
 
 /** The four dropdown settings, in the order topics.json uses. */
 export const CHOICES = Object.freeze(['equal', 'prefer', 'avoid', 'off']);
@@ -400,6 +416,13 @@ export function mount(body, ctx) {
 
   ensureStyles();
 
+  /* The switch works with or without a world: a field whose pack did not load
+     must still be the way back to one that does. */
+  body.addEventListener('change', (event) => {
+    const select = event.target.closest ? event.target.closest('.cave-field-select') : null;
+    if (select && ctx.switchField) ctx.switchField(select.value);
+  });
+
   /* Without the corpus there is no mean to centre words against; without
      topics there is no tree. One muted line beats eight broken controls. */
   if (!ctx.corpus || !ctx.topics) {
@@ -407,12 +430,13 @@ export function mount(body, ctx) {
       !ctx.topics
         ? 'No topics.json on this build, so there is nothing to weigh tonight.'
         : 'No corpus on this build, so your words cannot be placed — priorities wait.',
-    ) + '</p>';
+    ) + '</p>' + fieldSwitchHtml(ctx.field);
     return;
   }
 
   const topics = ctx.topics;
-  const saved = readStore(ctx.storage, STORE_KEY, null);
+  const storeKey = fieldKey(STORE_KEY, ctx.field);
+  const saved = readStore(ctx.storage, storeKey, null);
   const stored = saved && typeof saved === 'object' ? saved : {};
   const restored = parsePrefs(topics, stored.q || (typeof saved === 'string' ? saved : ''));
   const vectors = Array.isArray(stored.touchstones)
@@ -479,7 +503,10 @@ export function mount(body, ctx) {
       '<div class="cave-priorities-tree-wrap">' +
         '<div class="cave-priorities-tree-head">' +
           '<h3 class="cave-priorities-tree-title">Topics tonight</h3>' +
-          '<button type="button" class="cave-reset-topics">Reset topics</button>' +
+          '<span class="cave-priorities-tree-tools">' +
+            fieldSwitchHtml(ctx.field) +
+            '<button type="button" class="cave-reset-topics">Reset topics</button>' +
+          '</span>' +
         '</div>' +
         '<p class="cave-priorities-muted cave-tree-empty">Dig first — tonight\'s counts appear here.</p>' +
         '<div class="cave-priorities-tree"></div>' +
@@ -528,7 +555,7 @@ export function mount(body, ctx) {
     if (state.touchstones.length) {
       payload.touchstones = state.touchstones.map((vec) => Array.from(vec));
     }
-    writeStore(ctx.storage, STORE_KEY, payload);
+    writeStore(ctx.storage, storeKey, payload);
   }
 
   function emit() {

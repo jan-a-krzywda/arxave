@@ -56,6 +56,24 @@ export const LEAVES = Object.freeze([
 
 export const TAGS = Object.freeze([Object.freeze({ id: 'ml4q', label: 'ML for quantum' })]);
 
+/**
+ * The tree a seeds file asks for. The quantum file carries none and gets the
+ * contract's constants above; another field's pack (`cave-seeds/ai/topics.json`)
+ * names its own `tree: { parents, leaves, tags }`, so one CLI builds every
+ * field's `topics.json` and the leaf order is still the file's own.
+ */
+export function treeOf(file) {
+  const tree = file?.tree;
+  if (!tree) return { parents: PARENTS, leaves: LEAVES, tags: TAGS };
+  const parents = (tree.parents ?? []).map((p) => ({ id: p.id, label: p.label, default: p.default ?? 'equal' }));
+  const ids = new Set(parents.map((p) => p.id));
+  const leaves = (tree.leaves ?? []).map((l) => ({ id: l.id, parent: l.parent, label: l.label }));
+  if (!parents.length || !leaves.length) throw new Error('cave-topics: tree needs parents and leaves');
+  const orphan = leaves.find((l) => !ids.has(l.parent));
+  if (orphan) throw new Error(`cave-topics: leaf ${orphan.id} names unknown parent ${orphan.parent}`);
+  return { parents, leaves, tags: (tree.tags ?? []).map((t) => ({ id: t.id, label: t.label })) };
+}
+
 /** Cosine of two rows that are normally both unit; a zero norm scores 0, not NaN. */
 function cosine(a, b, dim) {
   let dot = 0;
@@ -216,9 +234,9 @@ function parseArgs(argv) {
  * corpus, so a mistyped arXiv id is an error here rather than a silently
  * missing seed later.
  */
-function orderedSeeds(file, corpusIds) {
+function orderedSeeds(file, corpusIds, tree) {
   const byLeaf = file.leaves ?? file;
-  const wanted = LEAVES.map((l) => l.id);
+  const wanted = tree.leaves.map((l) => l.id);
   const missing = wanted.filter((id) => !byLeaf[id]);
   const extra = Object.keys(byLeaf).filter((id) => !wanted.includes(id));
   if (missing.length) throw new Error(`cave-topics: seeds have no leaf ${missing.join(', ')}`);
@@ -226,7 +244,7 @@ function orderedSeeds(file, corpusIds) {
 
   const have = new Set(corpusIds);
   const ordered = {};
-  for (const leaf of LEAVES) {
+  for (const leaf of tree.leaves) {
     ordered[leaf.id] = byLeaf[leaf.id].map((entry) => {
       const id = typeof entry === 'string' ? entry : entry?.id;
       if (!have.has(id)) throw new Error(`cave-topics: seed ${id} in ${leaf.id} is not in the corpus`);
@@ -237,18 +255,18 @@ function orderedSeeds(file, corpusIds) {
 }
 
 /** topics.json: the tree the contract fixes, plus this run's centroids. */
-function topicsFromCentroids(dim, centroids) {
+function topicsFromCentroids(dim, centroids, tree) {
   return {
     version: 1,
     dim,
-    parents: PARENTS.map((p) => ({ ...p })),
-    leaves: LEAVES.map((leaf, i) => ({
+    parents: tree.parents.map((p) => ({ ...p })),
+    leaves: tree.leaves.map((leaf, i) => ({
       id: leaf.id,
       parent: leaf.parent,
       label: leaf.label,
       centroid: Array.from(centroids[i], round4),
     })),
-    tags: TAGS.map((t) => ({ ...t })),
+    tags: tree.tags.map((t) => ({ ...t })),
   };
 }
 
@@ -256,7 +274,9 @@ function main(argv) {
   const args = parseArgs(argv);
   const corpusJson = JSON.parse(readFileSync(join(args.corpus, 'corpus.json'), 'utf8'));
   const corpus = loadCorpus(corpusJson, readFileSync(join(args.corpus, 'corpus.vec.bin')));
-  const seeds = orderedSeeds(JSON.parse(readFileSync(args.seeds, 'utf8')), corpus.ids);
+  const seedFile = JSON.parse(readFileSync(args.seeds, 'utf8'));
+  const tree = treeOf(seedFile);
+  const seeds = orderedSeeds(seedFile, corpus.ids, tree);
 
   const { leafIds, dim, centroids } = centroidsFromSeeds(corpus, seeds);
   // topics.json's centroids are the rounded ones (4 decimals, as the contract
@@ -277,13 +297,13 @@ function main(argv) {
     counts[topic]++;
   }
 
-  writeFileSync(join(args.corpus, 'topics.json'), JSON.stringify(topicsFromCentroids(dim, published)));
+  writeFileSync(join(args.corpus, 'topics.json'), JSON.stringify(topicsFromCentroids(dim, published, tree)));
   writeFileSync(join(args.corpus, 'corpus.json'), JSON.stringify(corpusJson));
 
   const extra = corpusJson.topic2.reduce((n, t) => n + (t >= 0 ? 1 : 0), 0);
   const recall = leaveOneOut(corpus, seeds);
   console.log(`leave-one-out seed recall: ${recall.toFixed(3)} `
-    + `(${leafIds.length} leaves, ${LEAVES.reduce((n, l) => n + seeds[l.id].length, 0)} seeds)`);
+    + `(${leafIds.length} leaves, ${tree.leaves.reduce((n, l) => n + seeds[l.id].length, 0)} seeds)`);
   console.log(`papers with a close secondary: ${extra}/${corpus.n}`);
   console.log(leafIds.map((id, i) => `${id}: ${counts[i]}`).join('\n'));
 }

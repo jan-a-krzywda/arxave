@@ -1,0 +1,1541 @@
+{
+ "version": 1,
+ "note": "Seeds picked by cave-topic-seeds.mjs from the rules in ai/tree.json: titles matching exactly one leaf, the 25 closest to that leaf's pool mean.",
+ "tree": {
+  "parents": [
+   {
+    "id": "language",
+    "label": "Language models",
+    "default": "equal"
+   },
+   {
+    "id": "agents",
+    "label": "Agents & decisions",
+    "default": "equal"
+   },
+   {
+    "id": "trust",
+    "label": "Safety & trust",
+    "default": "equal"
+   },
+   {
+    "id": "perception",
+    "label": "Vision & generation",
+    "default": "equal"
+   },
+   {
+    "id": "methods",
+    "label": "Methods & theory",
+    "default": "equal"
+   },
+   {
+    "id": "applied",
+    "label": "Science & health",
+    "default": "equal"
+   }
+  ],
+  "leaves": [
+   {
+    "id": "llm-train",
+    "parent": "language",
+    "label": "LLM training & scaling"
+   },
+   {
+    "id": "reasoning",
+    "parent": "language",
+    "label": "Reasoning & evaluation"
+   },
+   {
+    "id": "agents",
+    "parent": "agents",
+    "label": "Agents & tool use"
+   },
+   {
+    "id": "rl",
+    "parent": "agents",
+    "label": "Reinforcement learning"
+   },
+   {
+    "id": "safety",
+    "parent": "trust",
+    "label": "Alignment & safety"
+   },
+   {
+    "id": "interp",
+    "parent": "trust",
+    "label": "Interpretability"
+   },
+   {
+    "id": "privacy",
+    "parent": "trust",
+    "label": "Privacy, fairness & robustness"
+   },
+   {
+    "id": "vision",
+    "parent": "perception",
+    "label": "Vision & multimodal"
+   },
+   {
+    "id": "generative",
+    "parent": "perception",
+    "label": "Diffusion & generative models"
+   },
+   {
+    "id": "theory",
+    "parent": "methods",
+    "label": "Optimisation & learning theory"
+   },
+   {
+    "id": "efficiency",
+    "parent": "methods",
+    "label": "Efficient training & inference"
+   },
+   {
+    "id": "graphs",
+    "parent": "methods",
+    "label": "Graphs, time series & tabular"
+   },
+   {
+    "id": "science",
+    "parent": "applied",
+    "label": "AI for science"
+   },
+   {
+    "id": "health",
+    "parent": "applied",
+    "label": "Medicine & health"
+   }
+  ],
+  "tags": []
+ },
+ "leaves": {
+  "llm-train": [
+   {
+    "id": "2511.18903",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2512.16248",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2511.04805",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2510.04682",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2509.25149",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2512.14080",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2510.13079",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2510.01631",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2509.01440",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2511.09323",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2512.06678",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2509.02046",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2509.14786",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2510.15020",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2509.23024",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2512.23407",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2510.02228",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2511.00101",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2510.02630",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2509.02753",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2510.08396",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2512.12167",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2510.04694",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2510.03313",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   },
+   {
+    "id": "2512.23017",
+    "why": "Title names LLM pre-training, scaling or tuning."
+   }
+  ],
+  "reasoning": [
+   {
+    "id": "2509.06024",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2511.10621",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2509.21128",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2510.11457",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2510.19990",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2510.27044",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2511.16660",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2511.10788",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2510.05069",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2510.08308",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2510.14901",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2510.15211",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2511.01170",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2510.20603",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2509.06174",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2510.16614",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2510.27072",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2509.26578",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2510.08146",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2510.04040",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2511.02130",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2510.06108",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2510.00194",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2511.15137",
+    "why": "Title names LLM reasoning."
+   },
+   {
+    "id": "2512.20760",
+    "why": "Title names LLM reasoning."
+   }
+  ],
+  "agents": [
+   {
+    "id": "2510.11977",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2512.12791",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2509.02360",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2509.21766",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2509.03310",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2512.06749",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2512.08296",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2511.00628",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2512.02393",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2510.03847",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2509.04642",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2510.27598",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2510.16079",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2510.05592",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2510.23682",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2512.08769",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2511.08042",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2510.14319",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2509.16330",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2510.04607",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2512.15813",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2511.16108",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2509.23586",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2509.25370",
+    "why": "Title names an agent or tool use."
+   },
+   {
+    "id": "2512.09543",
+    "why": "Title names an agent or tool use."
+   }
+  ],
+  "rl": [
+   {
+    "id": "2511.20347",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2509.02333",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2509.04501",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2509.20712",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2512.01374",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2509.26114",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2510.03222",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2509.24067",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2510.18927",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2512.03805",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2510.03669",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2510.01180",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2510.05251",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2510.15382",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2511.03710",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2511.05694",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2510.20235",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2509.01321",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2511.21356",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2509.18849",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2510.02212",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2509.23232",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2510.27329",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2509.18851",
+    "why": "Title names reinforcement learning."
+   },
+   {
+    "id": "2511.17598",
+    "why": "Title names reinforcement learning."
+   }
+  ],
+  "safety": [
+   {
+    "id": "2511.12497",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2512.24058",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2512.10150",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2509.01909",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2511.13788",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2511.14476",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2509.15541",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2509.01631",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2512.16245",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2509.03518",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2511.02376",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2512.07761",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2511.07842",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2510.27062",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2510.05024",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2512.01797",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2509.23037",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2511.15304",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2512.03107",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2510.21910",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2512.15353",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2512.18623",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2509.06596",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2509.14558",
+    "why": "Title names alignment, safety or hallucination."
+   },
+   {
+    "id": "2509.13813",
+    "why": "Title names alignment, safety or hallucination."
+   }
+  ],
+  "interp": [
+   {
+    "id": "2510.06912",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2511.21363",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2511.16482",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2511.19265",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2512.15712",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2512.02004",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2511.09332",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2511.13653",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2512.18792",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2510.00404",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2511.05541",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2509.21266",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2511.01836",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2511.04980",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2512.22568",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2511.12694",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2509.21341",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2510.11745",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2512.05794",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2509.26537",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2512.07848",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2510.20439",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2511.03807",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2510.12534",
+    "why": "Title names interpretability or explanation."
+   },
+   {
+    "id": "2510.02917",
+    "why": "Title names interpretability or explanation."
+   }
+  ],
+  "privacy": [
+   {
+    "id": "2512.15143",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2512.23171",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2510.27504",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2509.23190",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2509.25906",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2509.08089",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2511.03529",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2511.22616",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2509.24330",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2512.20363",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2511.09400",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2509.04914",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2510.04432",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2510.16122",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2509.09787",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2512.20218",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2510.11400",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2512.12617",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2509.19921",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2510.17642",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2509.14938",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2511.07471",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2512.06971",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2509.09097",
+    "why": "Title names privacy, fairness or robustness."
+   },
+   {
+    "id": "2509.05142",
+    "why": "Title names privacy, fairness or robustness."
+   }
+  ],
+  "vision": [
+   {
+    "id": "2512.06951",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2512.12822",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2510.27280",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2510.17439",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2512.05927",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2510.09608",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2511.14993",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2509.24365",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2509.18953",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2510.01784",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2511.16175",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2511.01266",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2512.10863",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2511.00062",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2512.06963",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2510.18573",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2512.14698",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2510.07077",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2512.08240",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2511.00940",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2509.17664",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2512.15692",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2511.13005",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2510.24331",
+    "why": "Title names vision or multimodal models."
+   },
+   {
+    "id": "2509.02055",
+    "why": "Title names vision or multimodal models."
+   }
+  ],
+  "generative": [
+   {
+    "id": "2510.00815",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2509.06040",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2512.08153",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2512.24138",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2511.19087",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2510.01329",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2510.15301",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2510.17786",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2510.24830",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2509.05342",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2512.20003",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2511.00124",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2510.08929",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2511.05664",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2510.01378",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2509.01543",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2512.04985",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2509.25713",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2510.03302",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2512.21514",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2510.14526",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2511.19365",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2512.19729",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2511.20821",
+    "why": "Title names a generative model."
+   },
+   {
+    "id": "2510.08669",
+    "why": "Title names a generative model."
+   }
+  ],
+  "theory": [
+   {
+    "id": "2510.20608",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2510.02174",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2510.19734",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2509.07972",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2511.01126",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2510.15548",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2512.07676",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2512.16598",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2511.11466",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2510.27562",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2510.04407",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2509.15816",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2509.11426",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2511.06675",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2510.05416",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2510.07935",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2511.12659",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2510.11169",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2512.13123",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2511.13421",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2510.21506",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2511.22823",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2510.09485",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2510.16657",
+    "why": "Title names an optimisation or learning-theory result."
+   },
+   {
+    "id": "2511.08567",
+    "why": "Title names an optimisation or learning-theory result."
+   }
+  ],
+  "efficiency": [
+   {
+    "id": "2509.23809",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2509.14230",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2510.05373",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2511.04214",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2511.01815",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2510.24273",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2510.03274",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2509.15974",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2510.00636",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2510.16807",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2511.04063",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2512.20687",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2510.05421",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2510.22489",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2512.14946",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2510.12178",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2511.00050",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2510.06213",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2601.11580",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2512.02010",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2511.21699",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2510.24021",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2511.12376",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2512.16391",
+    "why": "Title names an efficiency method."
+   },
+   {
+    "id": "2511.13841",
+    "why": "Title names an efficiency method."
+   }
+  ],
+  "graphs": [
+   {
+    "id": "2512.17453",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2509.23813",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2509.23313",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2510.15821",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2510.14510",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2510.09780",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2511.08049",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2510.19710",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2510.17106",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2510.23672",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2511.08396",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2509.26468",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2511.11698",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2509.23145",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2511.13756",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2510.04487",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2510.12681",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2510.02729",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2510.19236",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2510.16161",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2509.14933",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2511.06529",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2510.01111",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2512.00925",
+    "why": "Title names graphs, time series or tabular data."
+   },
+   {
+    "id": "2510.06680",
+    "why": "Title names graphs, time series or tabular data."
+   }
+  ],
+  "science": [
+   {
+    "id": "2510.05433",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2510.06635",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2511.05452",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2511.04576",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2510.25731",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2512.11686",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2509.13717",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2510.23501",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2510.02259",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2509.21670",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2511.00043",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2510.05568",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2512.14086",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2510.18900",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2510.16816",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2512.05297",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2510.14656",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2510.15651",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2509.18611",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2510.05385",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2511.13124",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2509.14198",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2510.08924",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2509.22411",
+    "why": "Title names a science application."
+   },
+   {
+    "id": "2510.11923",
+    "why": "Title names a science application."
+   }
+  ],
+  "health": [
+   {
+    "id": "2509.25095",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2512.23304",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2512.10098",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2512.11544",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2511.04158",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2510.18339",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2511.17803",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2512.22182",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2511.16625",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2509.10151",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2512.18031",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2512.24002",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2601.05276",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2511.02850",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2511.16333",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2509.08087",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2512.08029",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2510.00321",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2509.04053",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2511.18676",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2512.19691",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2511.22615",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2510.20239",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2512.06511",
+    "why": "Title names a medical application."
+   },
+   {
+    "id": "2509.02863",
+    "why": "Title names a medical application."
+   }
+  ]
+ }
+}
