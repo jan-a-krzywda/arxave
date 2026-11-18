@@ -31,6 +31,7 @@ import {
   withoutField,
 } from './cave-fields.mjs';
 import { STAGES, createFlow } from './cave-flow.mjs';
+import { resolveLaunch } from './cave-launch.mjs';
 import { AUTODIG_KEY, FORM_KEY as DIG_KEY } from './cave-stage-dig.mjs';
 import { loadAxes, loadCorpus, loadTopics } from './sieve-core.mjs';
 import {
@@ -162,6 +163,14 @@ function startPage() {
   }
 
   const flow = createFlow({ storage });
+
+  /* A shared launch link (`/ai/llms`, sent to the Cave as `?launch=ai/llms`
+     by 404.html) is a request, not a starting point: put the clean address
+     back first, so a reload, a copied bar or the back button all still name
+     the same launch. It also outranks Dig's saved categories below, since the
+     reader followed a link and did not come here to browse. */
+  const launch = resolveLaunch(window.location);
+  if (launch) history.replaceState(null, '', '/' + launch.id);
 
   /* The field pack is picked before anything loads (cave-fields.mjs): the
      corpus, the tree and the axes all come from its folder. Dig's first

@@ -23,8 +23,9 @@ import {
   launchById,
   launchFromPath,
   launchFromSearch,
+  resolveLaunch,
 } from '../../docs/assets/cave-launch.mjs';
-import { fieldById } from '../../docs/assets/cave-fields.mjs';
+import { FIELDS, fieldById } from '../../docs/assets/cave-fields.mjs';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const PROPOSAL = fs.readFileSync(
@@ -78,6 +79,15 @@ test('launchFromSearch reads ?launch=, and only that', () => {
   assert.equal(launchFromSearch(''), null);
 });
 
+test('resolveLaunch reads the rewritten search first, the clean path second', () => {
+  // `404.html` sends a reader to `/?launch=…`; the clean path is what
+  // `cave.js` sees when the page is opened without the detour.
+  assert.equal(resolveLaunch({ pathname: '/', search: '?launch=ai/llms' })?.id, 'ai/llms');
+  assert.equal(resolveLaunch({ pathname: '/ai/llms', search: '' })?.id, 'ai/llms');
+  assert.equal(resolveLaunch({ pathname: '/', search: '' }), null);
+  assert.equal(resolveLaunch({ pathname: '/quantum/nope', search: '' }), null);
+});
+
 test('ids are unique, and launchById finds every row', () => {
   const ids = LAUNCHES.map((launch) => launch.id);
   assert.equal(new Set(ids).size, ids.length);
@@ -128,4 +138,29 @@ test('the table is the proposal, verbatim and in order', () => {
 test('the storage record has a key and a freshness window', () => {
   assert.equal(LAUNCH_KEY, 'arxave-cave-launch');
   assert.equal(LAUNCH_FRESH_MS, 120000);
+});
+
+/*
+ * The two files that do the wiring, checked as text: there is no DOM here, and
+ * the failures these guard are silent ones. A 404 page that stops redirecting
+ * looks like a working 404; a Cave that forgets to restore the address leaves
+ * the reader on `/?launch=…` and every share of it grows a query string.
+ */
+test('404.html redirects a launch path, and only a launch path', () => {
+  const html = fs.readFileSync(path.join(ROOT, 'docs/404.html'), 'utf8');
+  assert.match(html, /\/\?launch=/, 'no redirect to /?launch=');
+  assert.match(html, /location\.replace\(/, 'no location.replace');
+
+  // The field alternation is hardcoded in a static page, so this is what keeps
+  // it in step with cave-fields.mjs when a third pack ever lands.
+  const alternation = /\^\\\/\(([a-z|]+)\)\\\//.exec(html);
+  assert.ok(alternation, 'no /^\\/(field)\\/…/ regex in 404.html');
+  assert.equal(alternation[1], FIELDS.map((field) => field.id).join('|'));
+});
+
+test('cave.js resolves a launch and puts the clean address back', () => {
+  const js = fs.readFileSync(path.join(ROOT, 'docs/assets/cave.js'), 'utf8');
+  assert.match(js, /resolveLaunch\(window\.location\)/, 'cave.js does not resolve the URL');
+  assert.match(js, /history\.replaceState\(null, '', '\/' \+ launch\.id\)/,
+    'cave.js does not restore /<field>/<slug>');
 });

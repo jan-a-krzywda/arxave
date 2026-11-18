@@ -163,3 +163,16 @@ export function launchFromSearch(search) {
     return null; /* a search string URLSearchParams will not read is no launch */
   }
 }
+
+/**
+ * The launch this address names, or null. `window.location` is the one caller.
+ *
+ * Search first, path second: `404.html` can only turn the clean URL into a
+ * query string (GitHub Pages has no rewrite rules), so the query form is the
+ * one that arrives from a shared link. The path form is the address the reader
+ * is left with once `cave.js` puts the clean URL back, so a reload or a copy of
+ * the bar still means the same launch.
+ */
+export function resolveLaunch(loc) {
+  return launchFromSearch(loc?.search) ?? launchFromPath(loc?.pathname);
+}
