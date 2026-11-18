@@ -26,6 +26,7 @@ import {
   resolveLaunch,
 } from '../../docs/assets/cave-launch.mjs';
 import { runningLaunch, seedLaunch } from '../../docs/assets/cave-launch-run.mjs';
+import { stripHtml } from '../../docs/assets/cave-launch-strip.mjs';
 import { FIELD_KEY, fieldById, fieldKey } from '../../docs/assets/cave-fields.mjs';
 import { AUTODIG_KEY, FORM_KEY } from '../../docs/assets/cave-stage-dig.mjs';
 import { STORE_KEY } from '../../docs/assets/cave-stage-priorities.mjs';
@@ -316,4 +317,90 @@ test('a failed embed keeps its reason when Rank tonight is pressed', () => {
   const guard = js.lastIndexOf("classList.contains('is-error')", note);
   assert.ok(guard > 0 && guard < note, 'the not-embedded note overwrites an embed error');
 });
+/*
+ * Task 5's markup, and the CSS it rides on. The strip is the only thing a
+ * launch link says while the night is doing itself, so "is this stuck?" has to
+ * be answerable at a glance: one wagon current, the ones behind it done, the
+ * one ahead untouched. The CSS half is checked as text because the two things
+ * it must not do are silent ones — pick a colour outside the theme (dark mode
+ * then reads it wrong) and slide an engine at a reader who asked for less
+ * motion.
+ */
+test('the strip marks the wagon in hand, and the ones behind it done', () => {
+  const html = stripHtml('embed', 'spin qubits');
+  const wagons = html.match(/<li[^>]*>/g) || [];
+  assert.equal(wagons.length, 3, html);
+
+  assert.match(wagons[0], /\bis-done\b/, 'Dig is not behind the embed');
+  assert.doesNotMatch(wagons[0], /aria-current/, 'Dig claims to be the current step');
+  assert.match(wagons[1], /aria-current="step"/, 'Embed is not the current step');
+  assert.doesNotMatch(wagons[1], /\bis-done\b/, 'the embed is already done');
+  assert.doesNotMatch(wagons[2], /aria-current|is-done/, 'Rank is not drafted yet');
+  assert.equal((html.match(/aria-current="step"/g) || []).length, 1, 'two current steps');
+
+  // The wagon names are the three things a launch does, in order.
+  const names = [...html.matchAll(/class="cave-launch-name">([^<]+)</g)].map((m) => m[1]);
+  assert.deepEqual(names, ['Dig', 'Embed', 'Rank']);
+
+  // The row's own words, and escaped: a label is page content, not markup.
+  assert.match(html, /spin qubits/);
+  assert.match(stripHtml('dig', '<b>x</b>'), /&lt;b&gt;x/, 'the label is not escaped');
+});
+
+test('the engine parks at the wagon in hand, and the whole train at done', () => {
+  // `--launch-step` is the one value cave.css reads; a wrong number parks the
+  // engine over the wrong wagon.
+  assert.match(stripHtml('dig', 'x'), /--launch-step: 0/);
+  assert.match(stripHtml('embed', 'x'), /--launch-step: 1/);
+  assert.match(stripHtml('rank', 'x'), /--launch-step: 2/);
+
+  const done = stripHtml('done', 'x');
+  assert.match(done, /class="cave-launch-strip is-done"/, 'the finished strip does not say so');
+  assert.doesNotMatch(done, /aria-current/, 'a finished run still has a current step');
+  for (const wagon of done.match(/<li[^>]*>/g)) {
+    assert.match(wagon, /\bis-done\b/, 'a wagon is not done: ' + wagon);
+  }
+});
+
+test('a failed embed is the strip\'s one error, on the wagon that failed', () => {
+  // The run goes on with the old order (Task 4), so the train still moves —
+  // but the reader is owed the reason, on the step it happened at.
+  const html = stripHtml('error', 'x');
+  assert.match(html, /\bis-error\b/, 'no error marker');
+  const wagons = html.match(/<li[^>]*>/g) || [];
+  assert.match(wagons[0], /\bis-done\b/);
+  assert.match(wagons[1], /aria-current="step"/, 'the error is not on the embed');
+  assert.doesNotMatch(wagons[2], /aria-current|is-done/);
+});
+
+test('the engine slides on theme tokens, and holds still for reduced motion', () => {
+  const css = fs.readFileSync(path.join(ROOT, 'docs/assets/cave.css'), 'utf8');
+  const loco = /\.cave-launch-loco\s*\{([^}]*)\}/.exec(css);
+  assert.ok(loco, 'no engine rule in cave.css');
+  assert.match(loco[1], /--launch-step/, 'the engine does not follow the step');
+  assert.match(loco[1], /transition:/, 'the engine would jump between wagons');
+  // No hex: every colour is a theme token, so both themes get the strip free.
+  assert.doesNotMatch(loco[1], /#[0-9a-f]{3,6}\b/i, 'the engine hardcodes a colour');
+  assert.match(loco[1], /var\(--/, 'the engine takes no colour from the theme');
+
+  const wagon = /\.cave-launch-wagon\s*\{([^}]*)\}/.exec(css);
+  assert.ok(wagon, 'no wagon rule in cave.css');
+  assert.doesNotMatch(wagon[1], /#[0-9a-f]{3,6}\b/i, 'the wagons hardcode a colour');
+
+  const reduced = css.slice(css.search(/@media \(prefers-reduced-motion: reduce\)/));
+  assert.match(reduced, /\.cave-launch-loco\s*\{[^}]*transition:\s*none/,
+    'the engine still slides at a reader who asked for less motion');
+});
+
+test('cave.js mounts the strip above the rail and moves it with the run', () => {
+  const js = fs.readFileSync(path.join(ROOT, 'docs/assets/cave.js'), 'utf8');
+  assert.match(js, /rail\.insertAdjacentHTML\('beforebegin',\s*stripHtml\(/,
+    'the strip is not drawn above the rail');
+  // The run's own three moments: the night landing is the embed going out,
+  // the ranking landing is the train arrived.
+  assert.match(js, /addEventListener\('night'/, 'the dig landing does not move the train');
+  assert.match(js, /addEventListener\('ranked'/, 'the ranking landing does not finish the strip');
+  assert.match(js, /runningLaunch\(/, 'a stale address grows a train too');
+});
+
 

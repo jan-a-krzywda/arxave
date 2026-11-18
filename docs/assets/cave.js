@@ -4,10 +4,11 @@
  *
  * WHAT THIS FILE OWNS. The flow (from `cave-flow.mjs`), the shared `ctx` the
  * stage modules read and write, the corpus / topics / axes load, the rail, the
- * fold state of every card, and the dynamic import that puts a stage module into
- * its body. It does not own a single control inside a stage: stages own their
- * own markup, the way `cave-stage-dig.mjs` owns the form and `cave-stage-map.mjs`
- * owns the wagons.
+ * fold state of every card, the launch strip a shared link rides
+ * (`cave-launch-strip.mjs`), and the dynamic import that puts a stage module
+ * into its body. It does not own a single control inside a stage: stages own
+ * their own markup, the way `cave-stage-dig.mjs` owns the form and
+ * `cave-stage-map.mjs` owns the wagons.
  *
  * A MISSING MODULE IS NOT AN ERROR. K6–K15 land after this card, so most stage
  * modules do not exist yet; the import is wrapped and a stage whose file or
@@ -33,6 +34,7 @@ import {
 import { STAGES, createFlow } from './cave-flow.mjs';
 import { resolveLaunch } from './cave-launch.mjs';
 import { runningLaunch, seedLaunch } from './cave-launch-run.mjs';
+import { stripHtml, stripState } from './cave-launch-strip.mjs';
 import { AUTODIG_KEY, FORM_KEY as DIG_KEY } from './cave-stage-dig.mjs';
 import { loadAxes, loadCorpus, loadTopics } from './sieve-core.mjs';
 import {
@@ -184,6 +186,11 @@ function startPage() {
     if (runningLaunch(storage, now)?.id !== launch.id) seedLaunch({ storage, launch, now });
   }
 
+  /* An address is not a run: the same clean URL opened after
+     `LAUNCH_FRESH_MS` is a reader browsing (`cave-launch-run.mjs`), so only a
+     record that is still fresh grows the strip below. */
+  const launched = launch && runningLaunch(storage) ? launch : null;
+
   /* The field pack is picked before anything loads (cave-fields.mjs): the
      corpus, the tree and the axes all come from its folder. Dig's first
      category decides it, unless a shared ?field= link says otherwise. */
@@ -219,6 +226,65 @@ function startPage() {
     field,
     switchField,
   };
+
+  /* ── the launch strip ───────────────────────────────────────────────── */
+
+  /* A launch is a run nobody pressed anything for, so it says where it is: a
+     train above the rail, one wagon per thing a launch does, the engine over
+     the one in hand. A click-through visit has no strip — the cards are the
+     page again. */
+  const strip = launched ? mountStrip(launched) : null;
+
+  function mountStrip(run) {
+    const rail = byId('cave-rail');
+    if (!rail) return null;
+    /* The flow remembers a night already dug, so a reload inside the window
+       starts the train where the run really is instead of back at Dig. */
+    rail.insertAdjacentHTML('beforebegin',
+      stripHtml(flow.status('dig') === 'done' ? 'embed' : 'dig', run.label));
+    return rail.previousElementSibling;
+  }
+
+  /**
+   * Move the train without redrawing it, for the same reason `paintRail` keeps
+   * the lift: a fresh engine would be born at its new wagon with no previous
+   * position to slide from. Every marker comes from `stripState`, so the
+   * wagons, the engine's parking spot and `aria-current` cannot disagree.
+   */
+  function paintStrip(step) {
+    if (!strip) return;
+    const state = stripState(step);
+    strip.style.setProperty('--launch-step', String(state.at));
+    strip.classList.toggle('is-error', state.error);
+    strip.classList.toggle('is-done', state.done);
+    const wagons = strip.querySelectorAll('.cave-launch-wagon');
+    state.wagons.forEach((wagon, i) => {
+      if (!wagons[i]) return;
+      wagons[i].classList.toggle('is-done', wagon.isDone);
+      if (wagon.current) wagons[i].setAttribute('aria-current', 'step');
+      else wagons[i].removeAttribute('aria-current');
+    });
+    /* Done is the strip's last stop: it fades where it stands (cave.css) and
+       leaves once the fade has played, so the rail comes back up under the
+       hero instead of sitting behind an empty box. */
+    if (state.done) strip.addEventListener('animationend', () => strip.remove(), { once: true });
+  }
+
+  if (strip) {
+    /* The night landing is the dig finishing, and the moment Priorities'
+       autorun sends the phrase out: the train pulls out of Dig. */
+    ctx.bus.addEventListener('night', () => paintStrip('embed'));
+    /* Priorities completing is the embed answered. It can answer with a
+       failure — the run still ranks, on the old vectors — and the card says so
+       in its own note; the train marks the same wagon. Either way the run
+       moves on: the strip never waits on the embed service. */
+    flow.onChange((snapshot) => {
+      if (!Object.prototype.hasOwnProperty.call(snapshot.done, 'priorities')) return;
+      const note = document.querySelector('#stage-priorities .cave-priorities-note');
+      paintStrip(note && note.classList.contains('is-error') ? 'error' : 'rank');
+    });
+    ctx.bus.addEventListener('ranked', () => paintStrip('done'));
+  }
 
   /**
    * Another field is another world, so the switch is a reload. Dig's saved
