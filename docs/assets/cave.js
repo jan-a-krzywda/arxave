@@ -230,31 +230,29 @@ function startPage() {
   /* ── the launch strip ───────────────────────────────────────────────── */
 
   /* A launch is a run nobody pressed anything for, so it says where it is: a
-     train above the rail, one wagon per thing a launch does, the engine over
-     the one in hand. A click-through visit has no strip — the cards are the
-     page again. */
+     cart above the rail, one marker per thing a launch does. A click-through
+     visit has no strip — the cards are the page again. */
   const strip = launched ? mountStrip(launched) : null;
 
   function mountStrip(run) {
     const rail = byId('cave-rail');
     if (!rail) return null;
     /* The flow remembers a night already dug, so a reload inside the window
-       starts the train where the run really is instead of back at Dig. */
+       starts the strip where the run really is instead of back at Dig. */
     rail.insertAdjacentHTML('beforebegin',
       stripHtml(flow.status('dig') === 'done' ? 'embed' : 'dig', run.label));
     return rail.previousElementSibling;
   }
 
   /**
-   * Move the train without redrawing it, for the same reason `paintRail` keeps
-   * the lift: a fresh engine would be born at its new wagon with no previous
-   * position to slide from. Every marker comes from `stripState`, so the
-   * wagons, the engine's parking spot and `aria-current` cannot disagree.
+   * Move the strip without redrawing it: the cart is the same element from the
+   * first paint to the last, so the rails keep running under it and nothing
+   * jumps. Every marker comes from `stripState`, so the wagons, the rails'
+   * error stop and the say line cannot disagree.
    */
   function paintStrip(step) {
     if (!strip) return;
     const state = stripState(step);
-    strip.style.setProperty('--launch-step', String(state.at));
     strip.classList.toggle('is-error', state.error);
     strip.classList.toggle('is-done', state.done);
     const wagons = strip.querySelectorAll('.cave-launch-wagon');
@@ -264,6 +262,8 @@ function startPage() {
       if (wagon.current) wagons[i].setAttribute('aria-current', 'step');
       else wagons[i].removeAttribute('aria-current');
     });
+    const say = strip.querySelector('.cave-launch-say');
+    if (say) say.textContent = state.say;
     /* Done is the strip's last stop: it fades where it stands (cave.css) and
        leaves once the fade has played, so the rail comes back up under the
        hero instead of sitting behind an empty box. */
@@ -272,12 +272,13 @@ function startPage() {
 
   if (strip) {
     /* The night landing is the dig finishing, and the moment Priorities'
-       autorun sends the phrase out: the train pulls out of Dig. */
+       autorun sends the phrase out: the strip moves on from Dig. */
     ctx.bus.addEventListener('night', () => paintStrip('embed'));
     /* Priorities completing is the embed answered. It can answer with a
        failure — the run still ranks, on the old vectors — and the card says so
-       in its own note; the train marks the same wagon. Either way the run
-       moves on: the strip never waits on the embed service. */
+       in its own note; the strip marks the same step and stops the rails.
+       Either way the run moves on: the strip never waits on the embed
+       service. */
     flow.onChange((snapshot) => {
       if (!Object.prototype.hasOwnProperty.call(snapshot.done, 'priorities')) return;
       const note = document.querySelector('#stage-priorities .cave-priorities-note');
