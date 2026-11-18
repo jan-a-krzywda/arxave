@@ -5,15 +5,17 @@ plugins:
   - jekyll-feed
 
 # The four rooms, in the order a reader wants them: Dig (the filter, at the
-# site root), Haul (tonight's, as wagons and feeds), Stockpile (everything
-# kept, still WIP), Details (what the machine does). Haul comes before
-# Stockpile because it is the finished room and the one a stranger should land
-# in first. This list is the whole nav — _includes/header.html reads the order
-# from here and the icon, gloss and WIP mark from each page's front matter.
-# filter-moved.md and seams-moved.md only redirect and stay out of the nav.
+# site root), Feeds (every launch link, one card each), Stockpile (everything
+# kept, still WIP), Details (what the machine does). Feeds takes the slot Haul
+# held: the launch links are the finished way in, and Feeds wears the `haul`
+# icon — a barrow of what you carry out. Haul is still a page (the wagons, the
+# per-seam feeds) but it is a link, not a room. This list is the whole nav —
+# _includes/header.html reads the order from here and the icon, gloss and WIP
+# mark from each page's front matter. filter-moved.md and seams-moved.md only
+# redirect and stay out of the nav.
 header_pages:
   - cave.md
-  - haul.md
+  - feeds.md
   - stockpile.md
   - details.md
 
