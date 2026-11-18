@@ -70,6 +70,7 @@ import { SLIDERS } from './cave-stage-priorities.mjs';
 import { bareArxivId, escapeHtml, joinUrl } from './sieve-ui.mjs';
 import { wagonLabel } from './cave-wagon-views.mjs';
 import { downloadText, toBibtex, toRis } from './cave-export.mjs';
+import { matchBannerHtml, matchVerdict } from './cave-match.mjs';
 import { parseRepo, threadBody } from './cave-thread.mjs';
 import {
   BUDGET_NOTE, actionsHtml, diamondHtml, diamondRequest, parseThreads, readCachedDiamond,
@@ -586,6 +587,9 @@ export function mount(body, ctx) {
         '</div>' +
       '</div>' +
       '<p class="rk-note" hidden></p>' +
+      /* The verdict's one line, created at mount so a repaint only rewrites its
+         text: an element built per paint would flicker the list down a line. */
+      '<div class="rk-match"></div>' +
       '<div class="rk-head" aria-hidden="true">' +
         '<span class="rk-head-pick">Pick</span>' +
         '<span class="rk-head-paper">Paper</span>' +
@@ -606,6 +610,7 @@ export function mount(body, ctx) {
     '</div>';
 
   const noteEl = body.querySelector('.rk-note');
+  const matchEl = body.querySelector('.rk-match');
   const listEl = body.querySelector('.rk-list');
   const moreWrap = body.querySelector('.rk-more-wrap');
   const moreBtn = body.querySelector('.rk-more');
@@ -622,6 +627,7 @@ export function mount(body, ctx) {
   const state = {
     night: null,        // the night this list was built from
     ranked: [],         // orderNight output, with the picked flags
+    answered: false,    // a scoring pass finished: `ranked` is tonight's answer
     shown: PAGE,        // how many rows the reader has opened up to
     open: null,         // the one row whose detail is showing, by id
     pending: new Set(), // ids with a diamond request in flight
@@ -673,10 +679,31 @@ export function mount(body, ctx) {
     return state.ranked.slice(0, state.shown);
   }
 
+  /**
+   * Paint the rows, and with them tonight's verdict.
+   *
+   * Recomputed on every paint — a slider drag, a new embed, a thread answer
+   * landing — because whether the night answers the reader's words is a fact
+   * about the list on screen, not about the visit. `is-weak` dims the rows the
+   * banner has just called a near miss; it is a class on the list rather than a
+   * wrapper, so nothing moves when the verdict changes.
+   */
   function paintList() {
     const rows = rowsOnScreen();
     const wagons = wagonByStone(ctx.night);
     const total = state.ranked.length;
+
+    /* The reader's words are the only thing that makes the night an answer to a
+       question; no words means no verdict, and the module draws no banner. And
+       only a finished pass can answer: a page waiting on a dig draws no banner
+       either, because its empty list is "not yet". */
+    const verdict = state.answered
+      ? matchVerdict(state.ranked, {
+        hasWords: !!(ctx.prefs && Array.isArray(ctx.prefs.touchstones) && ctx.prefs.touchstones.length > 0),
+      })
+      : null;
+    matchEl.innerHTML = verdict ? matchBannerHtml(verdict) : '';
+    listEl.classList.toggle('is-weak', !!verdict && verdict.state === 'none');
 
     listEl.innerHTML = rows.map((item, i) => rowHtml(item, {
       rank: i + 1,
@@ -1057,6 +1084,9 @@ export function mount(body, ctx) {
    * priorities tree, under Computing) hides papers after scoring, as v3 did.
    */
   function refresh() {
+    /* Not answered until a pass finishes: an empty list before the dig, or
+       after a pass that threw, is "not yet", never "announced nothing". */
+    state.answered = false;
     const absent = missing();
     if (absent) {
       state.ranked = [];
@@ -1127,6 +1157,7 @@ export function mount(body, ctx) {
       traces: state.traces,
       ref: ctx.corpus.promiseRef,
     }), ctx.picks);
+    state.answered = true;
     ctx.ranked = state.ranked;
     ctx.bus.dispatchEvent(new CustomEvent('ranked', { detail: state.ranked }));
     paint();

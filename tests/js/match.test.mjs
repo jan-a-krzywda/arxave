@@ -130,3 +130,39 @@ test('cave-match.mjs imports nothing but the escape helper', () => {
     assert.match(line, /from '\.\/sieve-ui\.mjs'/, 'unexpected import: ' + line);
   }
 });
+
+/*
+ * The ranking stage's wiring, as text. A verdict nobody draws is no verdict:
+ * the import, the list it judges, and the reader's own words are three silent
+ * ways for the banner to disappear, and nothing on screen would show it — an
+ * absent banner looks exactly like a good night.
+ */
+test('the ranking stage asks the match module about the list it painted', () => {
+  const js = fs.readFileSync(path.join(ROOT, 'docs/assets/cave-stage-ranking.mjs'), 'utf8');
+  assert.match(js, /from '\.\/cave-match\.mjs'/, 'the ranking stage never imports the verdict');
+  assert.match(js, /matchVerdict\(state\.ranked/, 'the verdict is not judged on the ranked list');
+  assert.match(js, /matchBannerHtml\(/, 'the banner markup is never drawn');
+  // A page waiting on a dig has an empty list too, and its empty list is "not
+  // yet", not "arXiv announced nothing": the verdict waits for a finished pass.
+  assert.match(js, /state\.answered\s*\n?\s*\?/,
+    'the verdict is drawn before a scoring pass has answered');
+  assert.match(js, /hasWords:[^\n]*ctx\.prefs\.touchstones\.length > 0/,
+    'hasWords does not come from the reader\'s own words');
+});
+
+/*
+ * The banner's colours and the dimmed list are stylesheet facts, so they are
+ * read as text: no hex, because dark mode gets its colours from the tokens.
+ * `is-weak` must dim, never move: a list that reflows when the verdict changes
+ * makes a slider drag jump the page.
+ */
+test('the banner and a weak list are styled on theme tokens', () => {
+  const css = fs.readFileSync(path.join(ROOT, 'docs/assets/cave-ranking.css'), 'utf8');
+  const banner = /\.cave-match-banner\s*\{([^}]*)\}/.exec(css);
+  assert.ok(banner, 'no banner rule in cave-ranking.css');
+  assert.match(banner[1], /var\(--/, 'the banner takes no colour from the theme');
+  assert.doesNotMatch(banner[1], /#[0-9a-f]{3,6}\b/i, 'the banner hardcodes a colour');
+  const weak = /\.is-weak[^{]*\{([^}]*)\}/.exec(css);
+  assert.ok(weak, 'a weak list is not styled');
+  assert.match(weak[1], /opacity:/, 'a weak list moves instead of dimming');
+});
