@@ -185,7 +185,7 @@
    reads as "Pick" without a label on every row. Same columns as a row. */
 .rk-head {
   display: grid;
-  grid-template-columns: 2.2rem minmax(0, 1fr);
+  grid-template-columns: 2.64rem minmax(0, 1fr);
   gap: 0.5rem;
   margin-top: 0.6rem;
   padding: 0 0.6rem 0.2rem;
@@ -235,6 +235,12 @@ h3.rk-title {
   color: var(--text-faint);
   font-size: 0.78rem;
   line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rk-affil {
+  font-style: italic;
 }
 
 /* Under the title: Score and grades first, so the bar starts at the same x on
@@ -249,7 +255,7 @@ h3.rk-title {
 
 .rk-chips {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.3rem;
   min-width: 0;
   margin: 0;
@@ -353,7 +359,7 @@ h3.rk-title {
 
 .rk-meter {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) 2rem;
+  grid-template-columns: auto 3rem 1.6rem;
   align-items: center;
   gap: 0.35rem;
   flex: 0 0 11rem;
@@ -503,13 +509,13 @@ h3.rk-title {
    scrollbar. */
 
 .pa-actions {
-  /* Three equal columns that share the row's width, so the squares stay one
-     size and never wrap one of the three onto a line of its own. */
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.3rem;
-  max-width: 24rem;
-  margin-top: 0.4rem;
+  /* Under the Pick tick, in the first column: the three exits stacked, each
+     as wide as the column. */
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  gap: 0.25rem;
+  margin-top: 0.15rem;
   min-width: 0;
 }
 
@@ -523,16 +529,17 @@ h3.rk-title {
   gap: 0.3rem;
   width: 100%;
   min-width: 0;
-  height: 2rem;
+  height: 1.5rem;
   overflow: hidden;
   margin: 0;
-  padding: 0 0.4rem;
+  padding: 0 0.1rem;
   border: 1px solid var(--rock-edge);
   border-radius: 6px;
   background: var(--rock-deep);
   color: var(--text-dim);
   font: inherit;
-  font-size: 0.78rem;
+  /* 120% of the old column's type, scaled with it so the word fits the width. */
+  font-size: 0.56rem;
   line-height: 1;
   text-decoration: none;
   white-space: nowrap;
@@ -562,10 +569,9 @@ h3.rk-title {
 }
 
 .pa-md {
-  grid-column: 1 / -1;
-  justify-self: start;
   color: var(--gold);
-  font-size: 0.75rem;
+  font-size: 0.56rem;
+  text-align: center;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -670,7 +676,7 @@ h3.rk-title {
   /* Three squares still fit at 360 px, each a 36 px target. */
 
   .pa-btn {
-    height: 36px;
+    height: 1.75rem;
   }
 }
 

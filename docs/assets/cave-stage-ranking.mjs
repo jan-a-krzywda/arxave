@@ -393,6 +393,8 @@ export function rowHtml(item, parts = {}) {
   const id = String(data.id ?? '');
   const title = data.title || id;
   const authors = shortAuthors(data.authors);
+  /* The last author's short affiliation, once the data carries one. */
+  const affil = String(data.affiliation || '').trim();
   const topic = parts.topic
     ? '<span class="rk-chip rk-chip-topic">' + escapeHtml(parts.topic) + '</span>' : '';
   const wagon = parts.wagon && !sameLabel(parts.wagon, parts.topic)
@@ -417,6 +419,7 @@ export function rowHtml(item, parts = {}) {
         '<span class="rk-rank">' + rank + '</span>' +
         '<input type="checkbox" class="pa-pick" data-id="' + escapeHtml(id) + '"' +
           (data.picked ? ' checked' : '') + ' aria-label="Pick for the story">' +
+        actions +
       '</span>' +
       '<div class="rk-main">' +
         '<h3 class="rk-title">' +
