@@ -244,6 +244,20 @@ test('404.html redirects a launch path, and only a launch path', () => {
 });
 
 /*
+ * The hero, as text: there is no DOM here to render it, and the failure is a
+ * copy that drifts back to the old three-line pitch. The sentence is the whole
+ * ask of the page, so it is pinned verbatim — and the sub line it replaced is
+ * gone, not hidden, so no later edit can resurrect it beside the new line.
+ */
+test('the Cave hero is one line, and the old sub line is gone', () => {
+  const md = fs.readFileSync(path.join(ROOT, 'docs/cave.md'), 'utf8');
+  assert.match(md, /arXiv drops hundreds of papers a night\. Let's dig together\./,
+    'the hero copy is not verbatim');
+  assert.doesNotMatch(md, /cave-sub/, 'the hero still carries a sub paragraph');
+  assert.doesNotMatch(md, /Six stages/, 'the old sub copy is still there');
+});
+
+/*
  * The other half of that contract, as text: the 404 page loads `cave-launch.mjs`
  * ALONE, so that module must import nothing. One import line would put the
  * Dig/fields/Priorities chain — and any failure in it — between every shared

@@ -80,12 +80,6 @@
   max-width: 46em;
 }
 
-.cave-sub {
-  font-size: 0.92rem;
-  color: var(--text-dim);
-  margin: 0;
-}
-
 /* ── The launch strip ───────────────────────────────────────────
    Only a shared launch link grows one (`cave-launch-strip.mjs`): three step
    markers for the three things a launch does, and under them a mine cart that
