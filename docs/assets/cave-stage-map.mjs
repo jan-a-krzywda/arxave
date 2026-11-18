@@ -27,6 +27,7 @@ import {
   nameWagons, trainStripHtml, wagonKey, wagonTableHtml, wireTrainStrip,
 } from './cave-wagon-views.mjs';
 import { WAGON_GRAPH_HINT, mountWagonGraph } from './cave-wagon-graph.mjs';
+import { runningLaunch } from './cave-launch-run.mjs';
 
 /** Where named wagons are remembered, keyed by `wagonKey`. */
 const NAMES_KEY = 'arxave-cave-wagon-names';
@@ -520,5 +521,20 @@ export function mount(body, ctx) {
 
   ctx.bus.addEventListener('night', (event) => setNight(event.detail));
   if (ctx.night) setNight(ctx.night);
+
+  /* A launch link has nobody to press this card's Continue, and Priorities
+     stays locked until the wagons are passed. The dig completes the train
+     AFTER it dispatches the night, so the press has to wait for the flow to
+     call the map open — `onChange` is that moment, and `passed` keeps the
+     map's own completion from pressing a second time. */
+  let passed = false;
+  function passLaunch() {
+    if (passed || !state.night) return;
+    if (!ctx.flow || ctx.flow.status('map') !== 'open' || !runningLaunch(ctx.storage)) return;
+    passed = true;
+    continueBtn.click();
+  }
+  if (ctx.flow && ctx.flow.onChange) ctx.flow.onChange(passLaunch);
+  passLaunch();
 }
 

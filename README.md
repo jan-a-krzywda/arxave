@@ -187,7 +187,7 @@ corpus mean, after the same int8 clip the corpus was stored with
 | Call | Sends | Model | When |
 |---|---|---|---|
 | `relay` | category, date range | — | Dig |
-| `embed` | abstracts; your Priorities box | SPECTER2 [1, 2] | Train; typing (600 ms debounce) |
+| `embed` | abstracts; your Priorities box | SPECTER2 [1, 2] | Train; **Embed & rank** |
 | `wagon-name` | titles only | Gemini flash-lite, DeepSeek V4.1 Flash as fallback | Map, on the button |
 | `diamond` | one paper | DeepSeek V4.1 Flash (default) | Ranking → Summarize |
 | `aitrace` | abstracts on screen | DeepSeek V4.1 Flash (default) | Ranking → AI trace button |

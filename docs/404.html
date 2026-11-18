@@ -1,0 +1,24 @@
+---
+layout: page
+title: Not found
+permalink: /404.html
+sitemap: false
+---
+<!-- A launch link is arxave.com/<field>/<slug>, and GitHub Pages has no rewrite
+     rules: a path with no file behind it gets this page at whatever depth was
+     asked for. So the script below is the router. It asks the module that owns
+     the table — cave-launch.mjs, whose twelve launch slugs are not repeated
+     here — whether the path names one of them, and only then becomes the
+     Cave's /?launch=<field>/<slug> form, which cave.js reads (cave-launch.mjs,
+     resolveLaunch) and turns back into the clean address.
+     Anything else — a typo, an unknown slug, a link to some other missing page,
+     or a module that will not load — falls through to the text below, because a
+     half-started Cave is worse than an honest 404. -->
+<h1>Not found</h1>
+<p>There is no page at this address. Start from <a href="{{ '/' | relative_url }}">the Cave</a>.</p>
+<script>
+  import('/assets/cave-launch.mjs').then(function (module) {
+    var launch = module.launchFromPath(window.location.pathname);
+    if (launch) window.location.replace('/?launch=' + launch.id);
+  }, function () { /* no table, no redirect: the 404 text stands */ });
+</script>

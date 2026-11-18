@@ -122,6 +122,31 @@ Dig's **first** category picks the field: `cs.AI` first → AI, `quant-ph` first
 A field is a whole pack — corpus, vectors, tree, axes — because a grade only means something against its own background.
 Files: [`docs/assets/corpus/`](https://github.com/jan-a-krzywda/arxave/tree/main/docs/assets/corpus).
 
+## Launch links
+
+A launch link is `arxave.com/<field>/<slug>`: one publishing day in the field's own categories, ranked by one written phrase, landing on the ranking with no card to press. GitHub Pages has no rewrite rules, so the path arrives at the 404 page, which turns it into `/?launch=<field>/<slug>`; the Cave puts the clean address back into the bar, so a reload or a copied link means the same launch. Anything else — an unknown slug, a field that is not one of the two — stays a 404, never a half-started Cave.
+
+While the run is going, a three-wagon train above the cards says which step is in hand (Dig, Embed, Rank), and the sliders come back at their defaults: the ranking belongs to the link, not to your last visit.
+
+| Link | Digs | Prefers |
+|---|---|---|
+| [`/ai/llms`](https://arxave.com/ai/llms) | `cs.AI`, `cs.CL` ⚠ | — |
+| [`/quantum/spin-qubits`](https://arxave.com/quantum/spin-qubits) | `cond-mat.mes-hall`, `quant-ph` | — |
+| [`/ai/reinforcement-learning`](https://arxave.com/ai/reinforcement-learning) | `cs.LG`, `cs.AI` | `rl` |
+| [`/quantum/quantum-error-correction`](https://arxave.com/quantum/quantum-error-correction) | `quant-ph` | `qec` |
+| [`/ai/llm-agents`](https://arxave.com/ai/llm-agents) | `cs.AI`, `cs.LG` | `agents` |
+| [`/quantum/superconducting-qubits`](https://arxave.com/quantum/superconducting-qubits) | `quant-ph`, `cond-mat.mes-hall` | `ft-roadmaps` |
+| [`/ai/diffusion-models`](https://arxave.com/ai/diffusion-models) | `cs.LG`, `cs.CV` ⚠ | `generative` |
+| [`/quantum/neutral-atoms`](https://arxave.com/quantum/neutral-atoms) | `quant-ph`, `physics.atom-ph` ⚠ | `cold-atoms` |
+| [`/ai/interpretability`](https://arxave.com/ai/interpretability) | `cs.LG`, `cs.AI` | `interp` |
+| [`/quantum/quantum-algorithms`](https://arxave.com/quantum/quantum-algorithms) | `quant-ph` | `opt-qalgo` |
+| [`/ai/ai-safety`](https://arxave.com/ai/ai-safety) | `cs.AI`, `cs.LG` | `safety` |
+| [`/quantum/quantum-sensing`](https://arxave.com/quantum/quantum-sensing) | `quant-ph`, `cond-mat.mes-hall` | `sensing` |
+
+⚠ the field's corpus does not carry this code yet, so the first launch of that link embeds a new pack — about a minute before the ranking. The launch table is data in [`cave-launch.mjs`](https://github.com/jan-a-krzywda/arxave/blob/main/docs/assets/cave-launch.mjs); the phrases are the proposal's, [verbatim](https://github.com/jan-a-krzywda/arxave/blob/main/docs/superpowers/plans/2026-11-18-launch-presets-proposal.md).
+
+**Your words go out when you send them.** Typing in the Priorities box no longer embeds anything: the text is kept, and one press of **Embed & rank** embeds it and re-ranks. A launch presses that button for you, with the link's phrase. Rank tonight without pressing it and the ranking uses the old vectors, and the note says your words were ignored; if the embed service is down, a launch still reaches the ranking on the old order and says why.
+
 ## The geometry
 
 <figure class="dt-fig">
@@ -159,7 +184,7 @@ Each field centres on its own corpus mean, after the same int8 clip the corpus w
 | Call | Sends | Model | When |
 |---|---|---|---|
 | `relay` | category, date range | — | Dig |
-| `embed` | abstracts; your Priorities box | SPECTER2 [1, 2] | Train; typing (600 ms debounce) |
+| `embed` | abstracts; your Priorities box | SPECTER2 [1, 2] | Train; **Embed & rank** |
 | `wagon-name` | titles only | Gemini flash-lite, DeepSeek V4.1 Flash as fallback | Map, on the button |
 | `diamond` | one paper | DeepSeek V4.1 Flash (default) | Ranking → Summarize |
 | `aitrace` | abstracts on screen | DeepSeek V4.1 Flash (default) | Ranking → AI trace button |
