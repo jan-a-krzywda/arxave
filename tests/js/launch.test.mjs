@@ -24,8 +24,13 @@ import {
   launchFromPath,
   launchFromSearch,
   resolveLaunch,
+  runningLaunch,
+  seedLaunch,
 } from '../../docs/assets/cave-launch.mjs';
-import { fieldById } from '../../docs/assets/cave-fields.mjs';
+import { FIELD_KEY, fieldById, fieldKey } from '../../docs/assets/cave-fields.mjs';
+import { AUTODIG_KEY, FORM_KEY } from '../../docs/assets/cave-stage-dig.mjs';
+import { STORE_KEY } from '../../docs/assets/cave-stage-priorities.mjs';
+import { readStore } from '../../docs/assets/sieve-ui.mjs';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const PROPOSAL = fs.readFileSync(
@@ -141,6 +146,82 @@ test('the storage record has a key and a freshness window', () => {
 });
 
 /*
+ * Seeding is the launch's whole trick: nothing in the page knows a launch is
+ * running, it just finds a dig asked for and a box already written. So these
+ * check storage, not behaviour — a seeded key that Dig no longer reads, or a
+ * launch whose categories did not switch the pack, would quietly dig the wrong
+ * morning. A fake store is enough and needs no DOM.
+ */
+function fakeStorage(initial = {}) {
+  const map = new Map(Object.entries(initial).map(([key, value]) => [key, JSON.stringify(value)]));
+  return {
+    map,
+    getItem: (key) => (map.has(key) ? map.get(key) : null),
+    setItem: (key, value) => { map.set(key, String(value)); },
+    removeItem: (key) => { map.delete(key); },
+  };
+}
+
+test('a launch seeds Dig for its own field, and asks for one day', () => {
+  // The reader was last reading quantum: a launch must win, categories and all.
+  const storage = fakeStorage({
+    [FORM_KEY]: { categories: 'cond-mat.mes-hall, quant-ph', lookback: 3, maxResults: 40 },
+    [FIELD_KEY]: 'quantum',
+  });
+  seedLaunch({ storage, launch: launchById('ai/llms'), now: 1700000000000 });
+
+  const form = readStore(storage, FORM_KEY, null);
+  assert.equal(form.categories, 'cs.AI, cs.CL');
+  assert.equal(form.lookback, 1);
+  assert.equal(form.maxResults, 40, 'the reader\'s own max results are kept');
+  assert.equal(readStore(storage, FIELD_KEY, null), 'ai');
+  assert.equal(readStore(storage, AUTODIG_KEY, 0), 1700000000000, 'Dig does not autorun');
+  assert.deepEqual(readStore(storage, LAUNCH_KEY, null),
+    { id: 'ai/llms', at: 1700000000000 });
+});
+
+test('a launch forgets the saved priorities, then prefers its own topic', () => {
+  const ai = fieldById('ai');
+  const aiPrefs = fieldKey(STORE_KEY, ai);
+  const storage = fakeStorage({
+    [aiPrefs]: { q: 'topics=rl:avoid&match=10&surprise=90&exp=-50', text: 'old words' },
+  });
+  seedLaunch({ storage, launch: launchById('ai/llms'), now: 1 });
+
+  // ai/llms has no nudge: the sliders must come back at their defaults, which
+  // means no stored prefs at all rather than a half-overwritten set.
+  assert.equal(readStore(storage, aiPrefs, null), null);
+
+  const nudged = fakeStorage();
+  seedLaunch({ storage: nudged, launch: launchById('ai/reinforcement-learning'), now: 1 });
+  assert.equal(readStore(nudged, aiPrefs, null)?.q, 'topics=rl:prefer');
+
+  // A launch with no nudge writes nothing, so the box stays empty too.
+  const quiet = fakeStorage();
+  seedLaunch({ storage: quiet, launch: launchById('quantum/spin-qubits'), now: 1 });
+  assert.equal(readStore(quiet, fieldKey(STORE_KEY, fieldById('quantum')), null), null);
+});
+
+test('seeding a launch with no storage is a no-op, not a crash', () => {
+  // Private mode: null storage is the page's normal state, and a launch link
+  // must still open rather than throw on the way to the dig.
+  seedLaunch({ storage: null, launch: launchById('quantum/spin-qubits'), now: 1 });
+  seedLaunch({ storage: null, launch: null, now: 1 });
+});
+
+test('runningLaunch is a launch only while the record is fresh', () => {
+  const storage = fakeStorage({ [LAUNCH_KEY]: { id: 'quantum/spin-qubits', at: 1000 } });
+  assert.equal(runningLaunch(storage, 1000)?.id, 'quantum/spin-qubits');
+  assert.equal(runningLaunch(storage, 1000 + LAUNCH_FRESH_MS - 1)?.id, 'quantum/spin-qubits');
+  // An hour later the reader is browsing, not following the link any more.
+  assert.equal(runningLaunch(storage, 1000 + LAUNCH_FRESH_MS), null);
+  assert.equal(runningLaunch(fakeStorage(), 1000), null);
+  // A record naming a launch this build does not have is not one either.
+  const ghost = fakeStorage({ [LAUNCH_KEY]: { id: 'ai/ghost', at: 1000 } });
+  assert.equal(runningLaunch(ghost, 1000), null);
+});
+
+/*
  * The two files that do the wiring, checked as text: there is no DOM here, and
  * the failures these guard are silent ones. A 404 page that stops redirecting
  * looks like a working 404; a Cave that forgets to restore the address leaves
@@ -176,3 +257,48 @@ test('cave.js resolves a launch and puts the clean address back', () => {
   assert.match(js, /history\.replaceState\(null, '', '\/' \+ launch\.id\)/,
     'cave.js does not restore /<field>/<slug>');
 });
+
+/*
+ * The autorun's wiring, again as text: a launch that seeds after `chooseField`
+ * would load the other field's corpus and dig the other field's categories, and
+ * a launch whose priorities stage never runs is a link that stops on a filled
+ * box. Both fail silently, so both are pinned here.
+ */
+test('cave.js seeds the launch before it picks the field', () => {
+  const js = fs.readFileSync(path.join(ROOT, 'docs/assets/cave.js'), 'utf8');
+  const seed = js.indexOf('seedLaunch(');
+  assert.ok(seed > 0, 'cave.js does not seed the launch');
+  assert.ok(seed > js.indexOf('resolveLaunch(window.location)'), 'seeded before the URL was read');
+  assert.ok(seed < js.indexOf('chooseField('), 'the field is picked before the launch is seeded');
+  // A reload inside the window must not dig the same night again.
+  assert.match(js, /runningLaunch\(/, 'no reload guard on the launch record');
+});
+
+test('the map passes its own card, so Priorities can open', () => {
+  const js = fs.readFileSync(path.join(ROOT, 'docs/assets/cave-stage-map.mjs'), 'utf8');
+  assert.match(js, /runningLaunch\(ctx\.storage\)/, 'the map never looks for a launch');
+  assert.match(js, /continueBtn\.click\(\)/, 'the map does not press its own Continue');
+});
+
+test('Priorities runs a launch: phrase, embed, rank, whatever the embed says', () => {
+  const js = fs.readFileSync(path.join(ROOT, 'docs/assets/cave-stage-priorities.mjs'), 'utf8');
+  assert.match(js, /LAUNCH_KEY/, 'Priorities never reads the launch record');
+  assert.match(js, /launch\.phrase/, 'the box is not given the launch phrase');
+  assert.match(js, /addEventListener\('night'/, 'the autorun does not wait for the night');
+  assert.match(js, /await embedNow\(\)/, 'the autorun does not embed');
+  assert.match(js, /continueBtn\.click\(\)/, 'the autorun does not press Rank tonight');
+  assert.match(js, /removeItem\(LAUNCH_KEY\)|removeItem\([a-zA-Z]+, LAUNCH_KEY\)/,
+    'the one-shot record is never cleared');
+});
+
+test('a failed embed keeps its reason when Rank tonight is pressed', () => {
+  const js = fs.readFileSync(path.join(ROOT, 'docs/assets/cave-stage-priorities.mjs'), 'utf8');
+  const note = js.indexOf('Your words were not embedded');
+  assert.ok(note > 0, 'no not-embedded note');
+  // The button must look at the note before writing over it: `embedNow` puts
+  // the embed service's own failure there (is-error), and that is the reason
+  // the reader needs, not "your words were not embedded".
+  const guard = js.lastIndexOf("classList.contains('is-error')", note);
+  assert.ok(guard > 0 && guard < note, 'the not-embedded note overwrites an embed error');
+});
+

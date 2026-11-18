@@ -31,6 +31,13 @@
  * twice. Unchanged words are never fetched, and Rank tonight without the button
  * keeps the old vectors and says the words were not embedded.
  *
+ * A LAUNCH LINK RUNS THIS CARD. `cave-launch.mjs` seeded the phrase and the
+ * field before the page loaded; `runningLaunch` says so, and then the box is
+ * filled, the night the dig is hauling is waited for, the words are embedded
+ * and Rank tonight is pressed — whether or not that worked, because a dead
+ * embed service leaves a ranking and its own error line, and a link that
+ * stopped on a filled box would be worse.
+ *
  * A MISSING WORLD IS A SENTENCE, NOT A CRASH. Without the corpus or
  * `topics.json` there is nothing to weigh, and the stage says so in one muted
  * line. Without a night the tree still works — counts read "—" until Dig
@@ -58,6 +65,7 @@
  * serialise/parse pair v3's tests already covered.
  */
 import { FIELDS, fieldKey } from './cave-fields.mjs';
+import { LAUNCH_KEY, runningLaunch } from './cave-launch.mjs';
 import { applyNudge } from './cave-nudge.mjs';
 import { axisProbability, corpusSpace, defaultSetting } from './sieve-core.mjs';
 import {
@@ -966,8 +974,10 @@ export function mount(body, ctx) {
   continueBtn.addEventListener('click', () => {
     if (!ctx.flow || ctx.flow.status('priorities') === 'locked') return;
     /* Ranking can only read vectors, so words typed after the last press are
-       shelved — say so rather than let the list look deaf to them. */
-    if (cacheKeyText(textEl.value) !== touchKey) {
+       shelved — say so rather than let the list look deaf to them. An error
+       from Embed & rank is the reason there are no vectors, and the reader
+       came for that reason: it is left standing. */
+    if (cacheKeyText(textEl.value) !== touchKey && !noteEl.classList.contains('is-error')) {
       note('Your words were not embedded, so the ranking ignores them.');
     }
     ctx.flow.complete('priorities', prefsSummary(topics, currentPrefs()));
@@ -1003,6 +1013,39 @@ export function mount(body, ctx) {
   /* Restored or default: the rest of the page gets one prefs event at mount,
      before any control is touched. */
   emit();
+
+  /**
+   * A launch link runs this stage too: the row's phrase goes into the box, the
+   * night Dig is hauling is waited for, the words are embedded, and the button
+   * a reader would press is pressed.
+   *
+   * `embedNow`'s answer is deliberately not checked — an embed service that is
+   * down leaves the old order and its own error line, which is still a
+   * ranking, and a link that stopped on a filled box would be worse. The
+   * record is cleared last, so a later visit does not re-run it.
+   */
+  async function runLaunch() {
+    const launch = runningLaunch(ctx.storage);
+    if (!launch) return;
+
+    state.text = launch.phrase;
+    textEl.value = launch.phrase;
+    persist();
+    /* Dig is still hauling when this card mounts — stages mount in order, the
+       dig does not — so the phrase would be embedded for a night that is not
+       in hand yet. The bus is the one thing that says it is. */
+    if (!state.night) {
+      await new Promise((resolve) => ctx.bus.addEventListener('night', resolve, { once: true }));
+    }
+    await embedNow();
+    continueBtn.click();
+    try {
+      ctx.storage.removeItem(LAUNCH_KEY);
+    } catch (_) { /* a storage that will not forget clears on the next seeding */ }
+  }
+
+  /* Not awaited: the page must paint the card while the dig is still out. */
+  runLaunch();
 
   /* The launch autorun embeds without a press, so the one way into the box's
      vectors is reachable from the mount rather than only through the button. */

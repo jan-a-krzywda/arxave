@@ -31,7 +31,7 @@ import {
   withoutField,
 } from './cave-fields.mjs';
 import { STAGES, createFlow } from './cave-flow.mjs';
-import { resolveLaunch } from './cave-launch.mjs';
+import { resolveLaunch, runningLaunch, seedLaunch } from './cave-launch.mjs';
 import { AUTODIG_KEY, FORM_KEY as DIG_KEY } from './cave-stage-dig.mjs';
 import { loadAxes, loadCorpus, loadTopics } from './sieve-core.mjs';
 import {
@@ -171,6 +171,17 @@ function startPage() {
      reader followed a link and did not come here to browse. */
   const launch = resolveLaunch(window.location);
   if (launch) history.replaceState(null, '', '/' + launch.id);
+
+  /* A launch asks for a night, so the request is written where the stages
+     already look — Dig's form, Dig's autorun flag, the Priorities store —
+     BEFORE the field is picked: Dig's categories are what choose the pack, so
+     seeding afterwards would dig one field's codes against the other field's
+     corpus. A reload inside the window finds the same launch already running
+     and seeds nothing: the night it asked for is the night in hand. */
+  if (launch) {
+    const now = Date.now();
+    if (runningLaunch(storage, now)?.id !== launch.id) seedLaunch({ storage, launch, now });
+  }
 
   /* The field pack is picked before anything loads (cave-fields.mjs): the
      corpus, the tree and the axes all come from its folder. Dig's first
