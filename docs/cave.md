@@ -30,12 +30,7 @@ nav_icon: dig
 <div id="cave-app">
 
   <header class="cave-hero">
-    <p class="cave-lede">
-      arXiv drops hundreds of papers a night. Dig tonight's announcement, watch
-      the haul train fill, then read the night as wagons — and keep what is
-      worth reading.
-    </p>
-    <p class="cave-sub">Six stages, top to bottom. Each opens once the one before it is done.</p>
+    <p class="cave-lede">arXiv drops hundreds of papers a night. Let's dig together.</p>
     <!-- Shown at load when Dig's categories span both fields: which pack the
          page is reading, and a one-click switch to the other. -->
     <p class="cave-field-note" id="cave-field-note" role="status" hidden></p>

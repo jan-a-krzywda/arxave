@@ -79,14 +79,29 @@ test('a night too short to judge says nothing, even when its papers are close', 
   assert.equal(matchVerdict(night(0.9, 0.9, 0.9), WORDS).state, 'ok', 'MIN_NIGHT is enough');
 });
 
-test('nothing over NONE_COS says nothing is close, with how close the best came', () => {
+/*
+ * A night with nothing close is the loud one: a lone cart in the wind, above
+ * the nearest papers, so the verdict arrives before the list does. The panel
+ * carries the closeness the same way the old one-liner did — two decimals, no
+ * parenthesis — and the cart and streaks are decoration, so the words alone
+ * would still be the message.
+ */
+test('nothing over NONE_COS: a lone cart says so above the closest papers', () => {
   const verdict = matchVerdict(night(0.6, 0.6, 0.6), WORDS);
   assert.equal(verdict.state, 'none');
   assert.equal(verdict.count, MIN_NIGHT);
   assert.ok(Math.abs(verdict.top3 - 0.6) < 1e-9, 'top3 is not the mean of the best three');
   const html = matchBannerHtml(verdict);
-  assert.match(html, /Nothing close tonight/, html);
-  assert.match(html, /0\.60/, 'the closeness is not given to two decimals: ' + html);
+  assert.match(html, /^<div class="cave-match-panel is-none" role="status">/, html);
+  assert.match(html, /class="cave-match-head">No match today</, html);
+  assert.match(html,
+    /Nothing on tonight&#39;s arXiv is close to your words, so here are the closest ones\./,
+    'the copy line is missing, or its apostrophe is not escaped: ' + html);
+  assert.equal((html.match(/class="cave-match-wind"/g) || []).length, 3,
+    'the scene does not blow three streaks past the cart: ' + html);
+  assert.match(html, /class="cave-match-cart"/, 'the scene has no cart: ' + html);
+  assert.match(html, /<p class="cave-match-close">closeness 0\.60<\/p>/,
+    'the closeness is not given to two decimals: ' + html);
   assert.doesNotMatch(html, /0\.600/, 'the closeness is printed at full precision: ' + html);
 });
 
@@ -147,9 +162,9 @@ test('two touchstones: a paper takes whichever it is closer to', () => {
     'the first touchstone is not read');
 });
 
-test('the banner is one status line, classed by its state', () => {
+test('one weak banner, one empty banner, and the panel for none', () => {
   assert.match(matchBannerHtml(matchVerdict(night(0.2, 0.2, 0.2), WORDS)),
-    /^<p class="cave-match-banner is-none" role="status">/);
+    /^<div class="cave-match-panel is-none" role="status">/);
   assert.match(matchBannerHtml(matchVerdict(night(0.72, 0.72, 0.72), WORDS)),
     /^<p class="cave-match-banner is-weak" role="status">/);
   assert.match(matchBannerHtml(matchVerdict([], WORDS)),
@@ -204,4 +219,28 @@ test('the banner and a weak list are styled on theme tokens', () => {
   const weak = /\.is-weak[^{]*\{([^}]*)\}/.exec(css);
   assert.ok(weak, 'a weak list is not styled');
   assert.match(weak[1], /opacity:/, 'a weak list moves instead of dimming');
+});
+
+/*
+ * The lone cart's scene is a stylesheet fact, so it is read as text too: three
+ * streaks run one slow keyframe past a cart whose wheels do not turn (it is
+ * standing, not travelling), and a reader who asked for reduced motion gets
+ * the panel without the wind. Colours stay on the tokens, as everywhere here.
+ */
+test('the wind blows in CSS, and stops for reduced motion', () => {
+  const css = fs.readFileSync(path.join(ROOT, 'docs/assets/cave-ranking.css'), 'utf8');
+  assert.match(css, /@keyframes cave-match-wind\b/, 'the wind has no keyframes');
+  assert.match(css, /\.cave-match-wind[^{]*\{[^}]*animation:[^;]*cave-match-wind/,
+    'the streaks do not run the wind keyframes');
+  assert.doesNotMatch(css, /\.cave-match-wheel[^{]*\{[^}]*animation:/,
+    'the lone cart\'s wheels turn, so it reads as travelling');
+  const panel = /\.cave-match-panel\s*\{([^}]*)\}/.exec(css);
+  assert.ok(panel, 'no panel rule in cave-ranking.css');
+  assert.match(panel[1], /var\(--/, 'the panel takes no colour from the theme');
+  assert.doesNotMatch(panel[1], /#[0-9a-f]{3,6}\b/i, 'the panel hardcodes a colour');
+  // The rule lives in the file's last reduced-motion block, so the tail from
+  // that media query is the reachable scope to check it sits in.
+  const reduce = css.slice(css.lastIndexOf('prefers-reduced-motion'));
+  assert.match(reduce, /\.cave-match-wind[^{]*\{[^}]*(animation:\s*none|display:\s*none)/,
+    'reduced motion keeps the wind blowing');
 });

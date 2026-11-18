@@ -26,7 +26,7 @@ import {
   resolveLaunch,
 } from '../../docs/assets/cave-launch.mjs';
 import { runningLaunch, seedLaunch } from '../../docs/assets/cave-launch-run.mjs';
-import { stripHtml } from '../../docs/assets/cave-launch-strip.mjs';
+import { RIDE_MS, rideHtml } from '../../docs/assets/cave-launch-ride.mjs';
 import { FIELD_KEY, fieldById, fieldKey } from '../../docs/assets/cave-fields.mjs';
 import { AUTODIG_KEY, FORM_KEY } from '../../docs/assets/cave-stage-dig.mjs';
 import { STORE_KEY } from '../../docs/assets/cave-stage-priorities.mjs';
@@ -244,6 +244,20 @@ test('404.html redirects a launch path, and only a launch path', () => {
 });
 
 /*
+ * The hero, as text: there is no DOM here to render it, and the failure is a
+ * copy that drifts back to the old three-line pitch. The sentence is the whole
+ * ask of the page, so it is pinned verbatim — and the sub line it replaced is
+ * gone, not hidden, so no later edit can resurrect it beside the new line.
+ */
+test('the Cave hero is one line, and the old sub line is gone', () => {
+  const md = fs.readFileSync(path.join(ROOT, 'docs/cave.md'), 'utf8');
+  assert.match(md, /arXiv drops hundreds of papers a night\. Let's dig together\./,
+    'the hero copy is not verbatim');
+  assert.doesNotMatch(md, /cave-sub/, 'the hero still carries a sub paragraph');
+  assert.doesNotMatch(md, /Six stages/, 'the old sub copy is still there');
+});
+
+/*
  * The other half of that contract, as text: the 404 page loads `cave-launch.mjs`
  * ALONE, so that module must import nothing. One import line would put the
  * Dig/fields/Priorities chain — and any failure in it — between every shared
@@ -319,134 +333,72 @@ test('a failed embed keeps its reason when Rank tonight is pressed', () => {
   const guard = js.lastIndexOf("classList.contains('is-error')", note);
   assert.ok(guard > 0 && guard < note, 'the not-embedded note overwrites an embed error');
 });
+
 /*
- * Task 5's markup, and the CSS it rides on. The strip is the only thing a
- * launch link says while the night is doing itself, so "is this stuck?" has to
- * be answerable at a glance: one wagon current, the ones behind it done, the
- * one ahead untouched. The CSS half is checked as text because the two things
- * it must not do are silent ones — pick a colour outside the theme (dark mode
- * then reads it wrong) and run the rails at a reader who asked for less
- * motion.
+ * The ride, and the box that rides with it. A shared launch link starts a run
+ * nobody pressed anything for, so the page owes the reader two answers at
+ * once: where the work is (the lift riding down to Ranking) and why the
+ * ranking is not here yet (the box beside the cards). The markup is a string,
+ * like the rail's, so the copy is held to without a document; the rest is
+ * checked as text because every failure here is a silent one — the strip still
+ * imported, the lift never told to ride, the overlay sitting over the cards.
  */
-test('the strip marks the wagon in hand, and the ones behind it done', () => {
-  const html = stripHtml('embed', 'spin qubits');
-  const wagons = html.match(/<li[^>]*>/g) || [];
-  assert.equal(wagons.length, 3, html);
-
-  assert.match(wagons[0], /\bis-done\b/, 'Dig is not behind the embed');
-  assert.doesNotMatch(wagons[0], /aria-current/, 'Dig claims to be the current step');
-  assert.match(wagons[1], /aria-current="step"/, 'Embed is not the current step');
-  assert.doesNotMatch(wagons[1], /\bis-done\b/, 'the embed is already done');
-  assert.doesNotMatch(wagons[2], /aria-current|is-done/, 'Rank is not drafted yet');
-  assert.equal((html.match(/aria-current="step"/g) || []).length, 1, 'two current steps');
-
-  // The wagon names are the three things a launch does, in order.
-  const names = [...html.matchAll(/class="cave-launch-name">([^<]+)</g)].map((m) => m[1]);
-  assert.deepEqual(names, ['Dig', 'Embed', 'Rank']);
-
-  // The row's own words, and escaped: a label is page content, not markup.
-  assert.match(html, /spin qubits/);
-  assert.match(stripHtml('dig', '<b>x</b>'), /&lt;b&gt;x/, 'the label is not escaped');
+test('the ride says where the reader is going, and whose run it is', () => {
+  const html = rideHtml('Spin qubits');
+  assert.match(html, /^<aside class="cave-ride" role="status">/,
+    'the ride is not announced as one status');
+  assert.match(html, /On our way…/, 'no heading');
+  assert.match(html, /Your ranking should be here in a few seconds\./, 'no line');
+  assert.match(html, /Spin qubits/, 'the launch label is missing');
+  // A label is page content, not markup.
+  assert.match(rideHtml('<b>x</b>'), /&lt;b&gt;x/, 'the label is not escaped');
+  assert.equal(RIDE_MS, 6000, 'the slow descent is not six seconds');
 });
 
-test('the cart holds still while the rails move, and says what it is doing', () => {
-  const html = stripHtml('embed', 'x');
-  assert.match(html, /class="cave-launch-cart"/, 'no cart');
-  assert.match(html, /class="cave-launch-rails"/, 'no rails');
-  assert.doesNotMatch(html, /cave-launch-loco/, 'the engine of the sliding strip is still drawn');
-  // Nothing parks the cart by number any more: the rails carry it, so there is
-  // no step variable left for a render to get wrong.
-  assert.doesNotMatch(html, /--launch-step/);
-  assert.equal((html.match(/class="cave-launch-say"/g) || []).length, 1, 'no single say line');
-  assert.match(html, /class="cave-launch-say">Embedding your words/);
-});
-
-test('the say line says the step in hand, and what a failed embed left behind', () => {
-  assert.match(stripHtml('dig', 'x'), /class="cave-launch-say">Digging tonight/);
-  assert.match(stripHtml('rank', 'x'), /class="cave-launch-say">Ranking/);
-  assert.match(stripHtml('done', 'x'), /class="cave-launch-say">Done\./);
-  // The run ranks the old order after a failed embed, and the reader is owed
-  // that sentence rather than a wagon that quietly moved on.
-  const failed = stripHtml('error', 'x');
-  assert.match(failed, /\bis-error\b/, 'no error marker');
-  assert.match(failed, /class="cave-launch-say">[^<]*old order/,
-    'the failed embed does not say which order it ranked');
-});
-
-test('the whole strip is done when the ranking lands', () => {
-  const done = stripHtml('done', 'x');
-  assert.match(done, /class="cave-launch-strip is-done"/, 'the finished strip does not say so');
-  assert.doesNotMatch(done, /aria-current/, 'a finished run still has a current step');
-  for (const wagon of done.match(/<li[^>]*>/g)) {
-    assert.match(wagon, /\bis-done\b/, 'a wagon is not done: ' + wagon);
-  }
-});
-
-test('a failed embed is the strip\'s one error, on the step that failed', () => {
-  // The run goes on with the old order (Task 4), but nothing pretends the
-  // phrase was carried — and the reader is owed the reason, on the step it
-  // happened at.
-  const html = stripHtml('error', 'x');
-  assert.match(html, /\bis-error\b/, 'no error marker');
-  const wagons = html.match(/<li[^>]*>/g) || [];
-  assert.match(wagons[0], /\bis-done\b/);
-  assert.match(wagons[1], /aria-current="step"/, 'the error is not on the embed');
-  assert.doesNotMatch(wagons[2], /aria-current|is-done/);
-});
-
-test('the rails run on theme tokens, and hold still for reduced motion', () => {
-  const css = fs.readFileSync(path.join(ROOT, 'docs/assets/cave.css'), 'utf8');
-  const rails = /\.cave-launch-rails\s*\{([^}]*)\}/.exec(css);
-  assert.ok(rails, 'no rails rule in cave.css');
-  assert.match(rails[1], /animation:/, 'the rails never move');
-  // The loop is a background-position shift of exactly one tile; anything else
-  // seams at the loop or crawls a pixel at a time.
-  const roll = /@keyframes cave-launch-roll\s*\{([\s\S]*?)\n\}/.exec(css);
-  assert.ok(roll, 'no rails loop in cave.css');
-  assert.match(roll[1], /background-position/, 'the loop moves nothing');
-  assert.match(roll[1], /1\.1rem/, 'the loop does not move a whole sleeper');
-  // No hex: every colour is a theme token, so both themes get the strip free.
-  assert.doesNotMatch(rails[1], /#[0-9a-f]{3,6}\b/i, 'the rails hardcode a colour');
-  assert.match(rails[1], /var\(--/, 'the rails take no colour from the theme');
-
-  const cart = /\.cave-launch-cart\s*\{([^}]*)\}/.exec(css);
-  assert.ok(cart, 'no cart rule in cave.css');
-  // The cart's colours live on its SVG parts, so the whole section is checked
-  // at once: one hex anywhere and dark mode reads the cart wrong.
-  const stripRules = css.slice(css.indexOf('── The launch strip'), css.indexOf('── The rail'));
-  assert.doesNotMatch(stripRules, /#[0-9a-f]{3,6}\b/i, 'the cart hardcodes a colour');
-  assert.match(stripRules, /var\(--rock\)/, 'the cart takes no colour from the theme');
-
-  const wagon = /\.cave-launch-wagon\s*\{([^}]*)\}/.exec(css);
-  assert.ok(wagon, 'no wagon rule in cave.css');
-  assert.doesNotMatch(wagon[1], /#[0-9a-f]{3,6}\b/i, 'the wagons hardcode a colour');
-
-  // A failed embed is the one moment the scene must not pretend to travel.
-  const paused = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].some(([, selector, body]) =>
-    selector.includes('.cave-launch-strip.is-error') &&
-    selector.includes('.cave-launch-rails') &&
-    /animation-play-state:\s*paused/.test(body));
-  assert.ok(paused, 'the rails run on after a failed embed');
-
-  const reduced = css.slice(css.search(/@media \(prefers-reduced-motion: reduce\)/));
-  const rules = [...reduced.matchAll(/([^{}]+)\{([^}]*)\}/g)];
-  for (const part of ['rails', 'lamp', 'cart']) {
-    assert.ok(
-      rules.some(([, selector, body]) =>
-        selector.includes('.cave-launch-' + part) && /animation:\s*none/.test(body)),
-      'the ' + part + ' still moves at a reader who asked for less motion');
-  }
-});
-
-test('cave.js mounts the strip above the rail and moves it with the run', () => {
+test('the cart strip is gone, and cave.js rides the lift instead', () => {
+  assert.equal(fs.existsSync(path.join(ROOT, 'docs/assets/cave-launch-strip.mjs')), false,
+    'the strip module is still there');
   const js = fs.readFileSync(path.join(ROOT, 'docs/assets/cave.js'), 'utf8');
-  assert.match(js, /rail\.insertAdjacentHTML\('beforebegin',\s*stripHtml\(/,
-    'the strip is not drawn above the rail');
-  // The run's own three moments: the night landing is the embed going out,
-  // the ranking landing is the last step arriving.
-  assert.match(js, /addEventListener\('night'/, 'the dig landing does not move the strip');
-  assert.match(js, /addEventListener\('ranked'/, 'the ranking landing does not finish the strip');
-  assert.match(js, /runningLaunch\(/, 'a stale address grows a strip too');
+  assert.doesNotMatch(js, /cave-launch-strip/, 'cave.js still reads the strip');
+  assert.match(js, /import \{[^}]*RIDE_MS[^}]*rideHtml[^}]*\} from '\.\/cave-launch-ride\.mjs'/,
+    'cave.js never draws the ride, or does not know its pace');
+  // The ride's floor outranks the reader's last click and the open stage, so the
+  // cage keeps descending while the run does; it clears when the ride ends.
+  assert.match(js, /moveLift\(rideFloor \?\?/, 'the rail does not honour the ride floor');
+  assert.match(js, /rideFloor = null/, 'the ride floor is never cleared');
+  assert.match(js, /classList\.add\('is-riding'\)/, 'the cage is never told to ride slowly');
+  assert.match(js, /addEventListener\('ranked', endRide\)/, 'the ranking landing does not end the ride');
+  assert.match(js, /rideHtml\(run\.label\)/, 'the ride is not given the launch label');
+});
+
+test('the ride parks beside the cards on a desktop, at the bottom on a phone', () => {
+  const css = fs.readFileSync(path.join(ROOT, 'docs/assets/cave.css'), 'utf8');
+  const ride = /\.cave-ride\s*\{([^}]*)\}/.exec(css);
+  assert.ok(ride, 'no ride rule in cave.css');
+  assert.match(ride[1], /position:\s*fixed/, 'the ride scrolls away with the page');
+  // Fixed means it floats over the cards; it must not swallow their clicks, or
+  // a phone reader cannot press anything until the run lands.
+  assert.match(ride[1], /pointer-events:\s*none/, 'the ride blocks clicks on the cards');
+  assert.match(ride[1], /bottom:/, 'the phone has no sheet');
+  assert.match(ride[1], /var\(--/, 'the ride takes no colour from the theme');
+  assert.doesNotMatch(ride[1], /#[0-9a-f]{3,6}\b/i, 'the ride hardcodes a colour');
+  // From 900 px the box leaves the bottom edge for the gutter beside the rail.
+  assert.match(css, /@media \(min-width: 900px\) \{[\s\S]*?\.cave-ride\s*\{[^}]*right:/,
+    'no right-hand box from 900 px up');
+
+  // The cage's one slow descent, on the pace CSS declares for RIDE_MS: a module
+  // constant cannot be read from a stylesheet, so the two numbers are held
+  // together here rather than left to drift apart.
+  assert.match(css, new RegExp('--ride-ms:\\s*' + RIDE_MS + 'ms'),
+    'the ride\'s pace in cave.css is not RIDE_MS');
+  const riding = /#cave-app\.is-riding \.cave-lift\s*\{([^}]*)\}/.exec(css);
+  assert.ok(riding, 'the cage is never given a slow transition');
+  assert.match(riding[1], /transition:[^;]*var\(--ride-ms\)/, 'the cage does not ride');
+  // Six seconds of travel is exactly what this setting exists to spare a
+  // reader: the cage jumps to Ranking and the box still says where it is.
+  const reduce = css.slice(css.lastIndexOf('prefers-reduced-motion'));
+  assert.match(reduce, /#cave-app\.is-riding \.cave-lift\s*\{[^}]*transition:\s*none/,
+    'the cage still rides at a reader who asked for less motion');
 });
 
 

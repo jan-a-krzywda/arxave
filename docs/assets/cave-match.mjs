@@ -20,9 +20,9 @@
  * with any touchstone, and `top3` is the mean of the three largest cos on the
  * night.
  *
- * THE VERDICT IS PURE, AND THE MARKUP IS A STRING, like `stripHtml`: the states
- * are held to by `tests/js/match.test.mjs` with no document. Nothing here
- * colours or places the banner — that is `cave-ranking.css`, on theme tokens.
+ * THE VERDICT IS PURE, AND THE MARKUP IS A STRING: the states are held to by
+ * `tests/js/match.test.mjs` with no document. Nothing here colours or places
+ * the panel — that is `cave-ranking.css`, on theme tokens.
  */
 import { escapeHtml } from './sieve-ui.mjs';
 
@@ -98,24 +98,68 @@ export function matchVerdict(ranked, options = {}) {
 }
 
 /**
+ * The cart, drawn once, standing still.
+ *
+ * A no-match night has nothing to show but the truth, and the Cave draws a
+ * night as a haul through a mine (filter.css): a lone cart says "empty haul"
+ * before the sentence does. The drawing is the launch strip's hopper and spoked
+ * wheels with its classes renamed, because the strip goes away with the ride —
+ * a shared class would leave this cart unstyled. The wheels do not turn: a
+ * turning wheel reads as travelling, and this cart is stuck.
+ *
+ * One `aria-hidden` span: the words are the information, the scene is the tone.
+ */
+export const CART_SVG = '<span class="cave-match-cart" aria-hidden="true">' +
+    '<span class="cave-match-lamp"></span>' +
+    '<svg class="cave-match-cart-shape" viewBox="0 0 48 24" focusable="false">' +
+      '<path class="cave-match-body" d="M4 3h40l-5 12H9z"/>' +
+      '<g class="cave-match-wheel cave-match-wheel-rear">' +
+        '<circle cx="15" cy="18" r="4"/><path d="M15 14v8M11 18h8"/>' +
+      '</g>' +
+      '<g class="cave-match-wheel cave-match-wheel-front">' +
+        '<circle cx="33" cy="18" r="4"/><path d="M33 14v8M29 18h8"/>' +
+      '</g>' +
+    '</svg>' +
+  '</span>';
+
+/**
+ * The wind: three empty spans, because the streaks are CSS's. They drift past
+ * the cart at their own speeds (nth-of-type, in `cave-ranking.css`), so the
+ * scene does not read as one line sliding by.
+ */
+const WIND = '<span class="cave-match-wind"></span>'.repeat(3);
+
+/**
  * The banner for a verdict, or '' for the two states that need none: `off` (no
- * words, or too few papers to say) and `ok` (the list is the answer). One
- * `<p role="status">` line, so a reader with a screen reader hears the verdict
- * once, where the list begins.
+ * words, or too few papers to say) and `ok` (the list is the answer).
+ *
+ * `weak` and `empty` are one `<p role="status">` line, so a reader with a
+ * screen reader hears the verdict once, where the list begins. `none` gets a
+ * panel instead: the one verdict that means "this page is not what you asked
+ * for" has to read before the closest papers do, or the list still looks like
+ * an answer. One `role="status"` for the whole panel, headings and all, so it
+ * is announced in one go rather than three.
  *
  * Copy is written for the second person and never blames the night for an empty
  * day — those are different facts and the reader acts differently on each.
  */
 export function matchBannerHtml(verdict) {
   const { state, top3 } = verdict || {};
-  // With no finite top3 there is no closeness to quote, so the sentence skips
-  // the parenthesis instead of printing "closeness NaN".
-  const howClose = Number.isFinite(top3) ? ' (closeness ' + top3.toFixed(2) + ')' : '';
-  let text = '';
+  // With no finite top3 there is no closeness to quote, so the sentences skip
+  // it instead of printing "closeness NaN".
+  const closeness = Number.isFinite(top3) ? top3.toFixed(2) : '';
+  const howClose = closeness ? ' (closeness ' + closeness + ')' : '';
   if (state === 'none') {
-    text = 'Nothing close tonight. Even the closest papers are only a weak match' +
-      howClose + '. The list below is the nearest, not a match.';
-  } else if (state === 'weak') {
+    return '<div class="cave-match-panel is-none" role="status">' +
+      '<div class="cave-match-scene" aria-hidden="true">' + CART_SVG + WIND + '</div>' +
+      '<p class="cave-match-head">No match today</p>' +
+      '<p class="cave-match-copy">' + escapeHtml('Nothing on tonight\'s arXiv is close to' +
+        ' your words, so here are the closest ones.') + '</p>' +
+      (closeness ? '<p class="cave-match-close">closeness ' + closeness + '</p>' : '') +
+    '</div>';
+  }
+  let text = '';
+  if (state === 'weak') {
     text = 'Only weak matches tonight. The closest papers are not very close to your words' +
       howClose + '.';
   } else if (state === 'empty') {
