@@ -79,6 +79,14 @@ jobs:
         working-directory: scripts
         run: npm install --no-package-lock --no-audit --no-fund
 
+      # The model package used to be an optionalDependency, which npm drops
+      # without a word when its install fails. The warm then ran for twenty
+      # minutes and died at the embed step with ERR_MODULE_NOT_FOUND, three
+      # mornings running, and nothing was committed. Say so here, up front.
+      - name: Check the embedder can be loaded
+        working-directory: scripts
+        run: node -e "import('@huggingface/transformers').then(() => console.log('transformers ok'))"
+
       # Cheap, and they guard the two failures this job cannot detect itself: a
       # parse that diverges from the browser's files every vector under a key
       # nobody looks up, and a blend that diverges from the browser's makes the
