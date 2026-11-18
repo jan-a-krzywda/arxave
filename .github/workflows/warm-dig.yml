@@ -77,6 +77,11 @@ jobs:
 
       - name: Install warmer dependencies
         working-directory: scripts
+        # onnxruntime-node's postinstall fetches a CUDA build on Linux, which
+        # now 404s, and the runner has no GPU to use it. The CPU build is what
+        # embed-local.mjs runs.
+        env:
+          ONNXRUNTIME_NODE_INSTALL_CUDA: skip
         run: npm install --no-package-lock --no-audit --no-fund
 
       # The model package used to be an optionalDependency, which npm drops
