@@ -177,9 +177,23 @@ test('rowHtml opens in place: the abstract, its landmarks, the action bar', () =
   assert.ok(open.includes('class="rk-rankcol"><span class="rk-rank">'), 'the tick sits under the rank');
   assert.ok(open.includes('aria-label="Pick for the story"'));
 
+  assert.equal(open.match(/class="pa-actions"/g).length, 1, 'one action bar, not two');
+  assert.ok(open.indexOf('class="pa-actions"') > open.indexOf('class="rk-detail"'),
+    'the bar is in the detail, not on the row');
+
   const closed = rowHtml(ROW_ITEM, { ...ROW_PARTS, open: false });
   assert.ok(closed.includes('<div class="rk-detail" hidden>'));
   assert.ok(!closed.includes('We &lt;show&gt; &amp; tell.'), 'nothing is drawn closed');
+  assert.ok(!closed.includes('pa-actions'), 'a closed row carries no buttons');
+});
+
+test('rowHtml puts the last author\'s affiliation beside the authors', () => {
+  const html = rowHtml(ROW_ITEM, { ...ROW_PARTS, affil: 'Q<Tech>' });
+  assert.ok(html.includes('<p class="rk-authors"><span class="rk-names">Ada Lovelace, Alan Turing … Edsger Dijkstra</span>' +
+    '<span class="rk-affil" title="Last author\'s institution, from OpenAlex">Q&lt;Tech&gt;</span></p>'));
+  assert.ok(!rowHtml(ROW_ITEM, ROW_PARTS).includes('rk-affil'), 'no slot without an answer');
+  assert.ok(rowHtml({ id: 'x', title: 'T', affiliation: 'MIT' }, {}).includes('>MIT</span>'),
+    'an affiliation on the item works too');
 });
 
 test('rowHtml marks a ticked row, and tolerates a bare item', () => {
@@ -249,9 +263,10 @@ test('mergeTraces keeps the newest TRACE_KEEP, a re-ask moves to the end', () =>
   assert.ok(TRACE_KEEP >= 100);
 });
 
-test('shortAuthors keeps three names, then says et al.', () => {
+test('shortAuthors keeps three names, then the first two and the last', () => {
   assert.equal(shortAuthors(['A One', 'B Two']), 'A One, B Two');
-  assert.equal(shortAuthors(['A One', 'B Two', 'C Three', 'D Four']), 'A One, B Two, C Three et al.');
+  assert.equal(shortAuthors(['A One', 'B Two', 'C Three']), 'A One, B Two, C Three');
+  assert.equal(shortAuthors(['A One', 'B Two', 'C Three', 'D Four']), 'A One, B Two … D Four');
   assert.equal(shortAuthors([]), '');
   assert.equal(shortAuthors(undefined), '');
 });

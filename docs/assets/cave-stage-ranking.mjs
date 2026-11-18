@@ -38,10 +38,15 @@
  * button; the line under the list says where the reader is ("10 of 24 tonight").
  * There is no bulk bar and no near-miss fallback: a short list is a short night.
  *
- * EACH ROW ACTS. SciRate, the paper's GitHub Discussions thread (join it, or
- * start it with the diamond inside), and Summarize (the LLM diamond, cached per
- * paper). The Pick tick sits under the rank, in the list's first column, which
- * a header names "Pick". The bar is
+ * A CLOSED ROW IS THREE LINES, so a reader can skim twenty of them: title;
+ * authors and the last author's affiliation (`cave-affil.mjs`, looked up per
+ * name on OpenAlex for the rows on screen, cached in storage); Score, grades
+ * and chips. The Pick tick sits under the rank, in the list's first column,
+ * which a header names "Pick".
+ *
+ * AN OPEN ROW ACTS. SciRate, the paper's GitHub Discussions thread (join it,
+ * or start it with the diamond inside), and Summarize (the LLM diamond, cached
+ * per paper) head the detail, above the abstract. The bar is
  * `actionsHtml` from `cave-paper-actions.mjs`; the thread states and the lookup
  * that fills them live there too. Thread answers are fetched once per page for
  * every row on screen, in ONE POST, and remembered in a module Map, so "Show 10
@@ -70,6 +75,9 @@ import {
   BUDGET_NOTE, actionsHtml, diamondHtml, diamondRequest, parseThreads, readCachedDiamond,
   startThreadUrl, threadsRequest, writeCachedDiamond,
 } from './cave-paper-actions.mjs';
+import {
+  authorQueryUrl, lastAuthor, pickAffiliation, readCachedAffil, writeCachedAffil,
+} from './cave-affil.mjs';
 
 /** How many rows the first paint shows, and what "Show 10 more" adds. */
 export const PAGE = 10;
@@ -247,14 +255,14 @@ export function storySummary(k) {
   return n + ' for the story';
 }
 
-/** The first three authors, then "et al." — a phone-width line. */
+/** Up to three authors; past that the first two, "…", and the last. */
 export function shortAuthors(authors) {
   const list = (Array.isArray(authors) ? authors : [])
     .map((name) => String(name || '').trim())
     .filter(Boolean);
-  if (!list.length) return '';
-  const shown = list.slice(0, 3).join(', ');
-  return list.length > 3 ? shown + ' et al.' : shown;
+  if (list.length <= 3) return list.join(', ');
+  /* The last author stays: the row's affiliation is theirs. */
+  return list.slice(0, 2).join(', ') + ' … ' + list[list.length - 1];
 }
 
 /**
@@ -367,12 +375,26 @@ function panelHtml(parts) {
   return '';
 }
 
-/** What opens in place under a row: the abstract, the landmarks, the diamond. */
+/**
+ * What opens in place under a row: the action bar (SciRate, Discuss,
+ * Summarize), the abstract, the landmarks, the diamond. The bar lives here and
+ * only here, so a closed row stays three lines.
+ */
 function detailHtml(item, parts) {
+  const actions = actionsHtml(item, {
+    repo: parts.repo || '',
+    thread: parts.thread,
+    diamond: !!parts.diamond,
+    md: !!parts.md,
+    open: true,
+  });
+  const error = parts.error
+    ? '<p class="pa-status pa-status-error" role="status">' + escapeHtml(parts.error) + '</p>'
+    : '';
   const abstract = item.abstract
     ? '<p class="rk-abstract">' + escapeHtml(item.abstract) + '</p>'
     : '';
-  return abstract + landmarksHtml(item) + panelHtml(parts);
+  return actions + error + abstract + landmarksHtml(item) + panelHtml(parts);
 }
 
 /**
@@ -380,10 +402,12 @@ function detailHtml(item, parts) {
  *
  * `parts` is what the page knows that the item does not: `rank`, `total` (the
  * night's size, for the meter's title), `open`, `repo`, `thread` (the three
- * states `actionsHtml` reads), `diamond`, `pending`, `error`, `md`, `trace`.
- * The title is a link to the arXiv abstract page and takes the row's full
- * width; the Score bar and grades sit on one line under it, beside the topic
- * chips, so ten rows fit where five did. The row's ▸ opens the detail.
+ * states `actionsHtml` reads), `diamond`, `pending`, `error`, `md`, `trace`,
+ * `affil` (the last author's institution, from `cave-affil.mjs`).
+ * A closed row is three lines, built for skimming: the title (a link to the
+ * arXiv abstract page), the authors with the last one's affiliation, then the
+ * Score bar and grades beside the topic chips. Everything else — SciRate,
+ * Discuss, Summarize — waits in the detail the row's ▸ opens.
  * The Pick tick sits under the rank, so the first column reads down the list.
  * Titles, authors, links and landmarks all arrive from arXiv, so every one of
  * them is escaped — `rowHtml` is the one place that happens.
@@ -393,8 +417,7 @@ export function rowHtml(item, parts = {}) {
   const id = String(data.id ?? '');
   const title = data.title || id;
   const authors = shortAuthors(data.authors);
-  /* The last author's short affiliation, once the data carries one. */
-  const affil = String(data.affiliation || '').trim();
+  const affil = String(parts.affil || data.affiliation || '').trim();
   const topic = parts.topic
     ? '<span class="rk-chip rk-chip-topic">' + escapeHtml(parts.topic) + '</span>' : '';
   const wagon = parts.wagon && !sameLabel(parts.wagon, parts.topic)
@@ -402,16 +425,9 @@ export function rowHtml(item, parts = {}) {
   const open = !!parts.open;
   const rank = Number(parts.rank) || 0;
   const total = Math.max(0, Math.round(Number(parts.total) || 0));
-  const actions = actionsHtml(data, {
-    repo: parts.repo || '',
-    thread: parts.thread,
-    diamond: !!parts.diamond,
-    md: !!parts.md,
-    open,
-  });
-  const error = parts.error
-    ? '<p class="pa-status pa-status-error" role="status">' + escapeHtml(parts.error) + '</p>'
-    : '';
+  const who = (authors ? '<span class="rk-names">' + escapeHtml(authors) + '</span>' : '') +
+    (affil ? '<span class="rk-affil" title="Last author\'s institution, from OpenAlex">' +
+      escapeHtml(affil) + '</span>' : '');
 
   return '<div class="rk-row' + (open ? ' is-open' : '') + (data.picked ? ' is-picked' : '') +
       '" data-id="' + escapeHtml(id) + '">' +
@@ -419,20 +435,18 @@ export function rowHtml(item, parts = {}) {
         '<span class="rk-rank">' + rank + '</span>' +
         '<input type="checkbox" class="pa-pick" data-id="' + escapeHtml(id) + '"' +
           (data.picked ? ' checked' : '') + ' aria-label="Pick for the story">' +
-        actions +
       '</span>' +
       '<div class="rk-main">' +
         '<h3 class="rk-title">' +
-          '<a class="rk-title-link" href="' + escapeHtml(absUrl(id)) + '" target="_blank" rel="noopener">' +
+          '<a class="rk-title-link" href="' + escapeHtml(absUrl(id)) + '" title="' + escapeHtml(title) +
+            '" target="_blank" rel="noopener">' +
             escapeHtml(title) + '</a>' +
         '</h3>' +
-        (authors ? '<p class="rk-authors">' + escapeHtml(authors) + '</p>' : '') +
+        (who ? '<p class="rk-authors">' + who + '</p>' : '') +
         '<div class="rk-line">' +
           '<div class="rk-meters">' + meterHtml(data.rel, total) + gradesHtml(data, parts.trace) + '</div>' +
           ((topic || wagon) ? '<p class="rk-chips">' + topic + wagon + '</p>' : '') +
         '</div>' +
-        actions +
-        error +
       '</div>' +
       '<button type="button" class="rk-toggle" aria-expanded="' + (open ? 'true' : 'false') +
         '" aria-label="' + (open ? 'Hide' : 'Show') + ' abstract">▸</button>' +
@@ -616,6 +630,8 @@ export function mount(body, ctx) {
     md: new Set(),      // ids whose .md download was offered
     traces: readTraces(ctx.storage), // bare id -> { p, why }, the AI-trace answers
     tracing: false,     // one AI-trace request at a time
+    affils: new Map(),  // last author's name -> short institution ('' = unknown)
+    affilAsked: new Set(), // names already sent to OpenAlex this page
   };
 
   /* ── the page's knobs, read defensively ─────────────────────────────── */
@@ -675,6 +691,7 @@ export function mount(body, ctx) {
       error: state.errors.get(String(item.id)) || '',
       md: state.md.has(String(item.id)),
       trace: state.traces[bareArxivId(item.id)],
+      affil: affilOf(lastAuthor(item.authors)),
     })).join('');
 
     moreWrap.hidden = total === 0;
@@ -682,6 +699,53 @@ export function mount(body, ctx) {
     shownEl.textContent = shownLine(rows.length, total);
     /* No thread lookup while Discuss is greyed out (actionsHtml): nothing on
        the row would show the answer. */
+    lookupAffils(rows);
+  }
+
+  /* ── the last author's affiliation: OpenAlex, per name, cached ──────── */
+
+  /** This page's answer, else storage's; '' when unknown or not asked yet. */
+  function affilOf(name) {
+    if (!name) return '';
+    if (state.affils.has(name)) return state.affils.get(name);
+    const cached = readCachedAffil(ctx.storage, name);
+    if (cached !== null) state.affils.set(name, cached);
+    return cached || '';
+  }
+
+  /**
+   * Ask OpenAlex about the last authors on screen that neither this page nor
+   * storage knows, a few at a time, and repaint once if any came back. A
+   * failed call is not cached, so the next visit asks again; `affilAsked`
+   * keeps this page from asking twice.
+   */
+  async function lookupAffils(rows) {
+    if (config().affiliations === false || typeof fetch !== 'function') return;
+    const base = String(config().openalexAuthorsUrl || '') || undefined;
+    const names = [...new Set(rows.map((item) => lastAuthor(item.authors)))]
+      .filter((name) => name && !state.affilAsked.has(name) && !state.affils.has(name) &&
+        readCachedAffil(ctx.storage, name) === null);
+    if (!names.length) return;
+    for (const name of names) state.affilAsked.add(name);
+
+    let found = 0;
+    const one = async (name) => {
+      try {
+        const resp = await fetch(authorQueryUrl(name, base));
+        if (!resp.ok) return;
+        const affil = pickAffiliation(await resp.json(), name);
+        state.affils.set(name, affil);
+        writeCachedAffil(ctx.storage, name, affil);
+        if (affil) found += 1;
+      } catch (_) {
+        /* offline or blocked: the row just shows no affiliation */
+      }
+    };
+    /* OpenAlex asks for at most ten requests a second; four in flight is polite. */
+    for (let i = 0; i < names.length; i += 4) {
+      await Promise.all(names.slice(i, i + 4).map(one));
+    }
+    if (found) paintList();
   }
 
   function paintFoot() {
