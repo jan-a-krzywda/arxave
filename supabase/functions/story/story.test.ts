@@ -453,6 +453,26 @@ Deno.test('a provider failure refunds both calls and is a 502', async () => {
   assertEquals(spy.refunds, [CALLS_PER_STORY]);
 });
 
+Deno.test('a provider timeout is a 504 in plain words, and refunds both calls', async () => {
+  const { deps, spy } = harness({
+    fetch: () => Promise.reject(new DOMException('The signal has timed out', 'TimeoutError')),
+  });
+  const resp = await handleStory(post(request()), deps);
+  assertEquals(resp.status, 504);
+  assertEquals((await resp.json()).error, 'The provider took too long. Try again in a moment.');
+  assertEquals(spy.refunds, [CALLS_PER_STORY]);
+});
+
+Deno.test('a BYO-key timeout is a 504 with nothing refunded', async () => {
+  const { deps, spy } = harness({
+    fetch: () => Promise.reject(new DOMException('The signal has timed out', 'TimeoutError')),
+  });
+  const resp = await handleStory(post(request(), { 'x-llm-key': 'byo-key' }), deps);
+  assertEquals(resp.status, 504);
+  assertEquals(spy.spends, []);
+  assertEquals(spy.refunds, []);
+});
+
 Deno.test('bad model output is a 502 and a refund, never a 200', async () => {
   for (
     const content of [

@@ -492,6 +492,13 @@ export async function handleStory(req: Request, deps: Deps): Promise<Response> {
     /* A call that produced nothing is not a charge — but only the meter's own
        calls are refunded; a BYO call never debited it. */
     if (!byo) await deps.usage.refund(client, CALLS_PER_STORY);
+    /* AbortSignal.timeout rejects with a TimeoutError; the raw message
+       ("signal timed out") means nothing to a reader, and a slow provider is
+       not a bad gateway, so it gets its own status and plain words. */
+    if (err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
+      log('story: timeout');
+      return fail(504, 'The provider took too long. Try again in a moment.');
+    }
     const detail = err instanceof Error ? err.message : String(err);
     log(`story: ${detail}`);
     return fail(502, detail);
