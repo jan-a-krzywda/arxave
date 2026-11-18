@@ -20,13 +20,16 @@
  * counting `topic2` as well would make the tree's numbers add up to more
  * papers than the night has. The map's topic bar makes the same call.
  *
- * THE BOX IS THE ONLY THING THAT CAN COST A CALL. Its words are embedded with
- * `embedTexts` (no shared cache — typed text is not a corpus paper) 600 ms
- * after the last keystroke, and only when the collapsed words changed. The
- * vectors are put through the corpus' own clip and then centred (`corpusSpace`,
- * so they live in the same space as the stored rows) and handed on as
- * touchstones; they are persisted beside the settings so a reload does not pay
- * for the same sentence twice. If the words are unchanged, nothing is fetched.
+ * THE BOX COSTS A CALL ONLY WHEN THE READER ASKS FOR ONE. Typing keeps the
+ * words and writes them once, 400 ms after the last keystroke — persisting
+ * vectors per keystroke was the lag, and a fetch per pause is a bill nobody
+ * asked for. "Embed & rank" embeds `cacheKeyText(box)` with `embedTexts` (no
+ * shared cache — typed text is not a corpus paper). The vectors are put through
+ * the corpus' own clip and then centred (`corpusSpace`, so they live in the
+ * same space as the stored rows) and handed on as touchstones; they are
+ * persisted beside the settings so a reload does not pay for the same sentence
+ * twice. Unchanged words are never fetched, and Rank tonight without the button
+ * keeps the old vectors and says the words were not embedded.
  *
  * A MISSING WORLD IS A SENTENCE, NOT A CRASH. Without the corpus or
  * `topics.json` there is nothing to weigh, and the stage says so in one muted
@@ -497,6 +500,7 @@ export function mount(body, ctx) {
         '<textarea class="cave-priorities-text" id="cave-priorities-text" rows="3" placeholder="' +
           escapeHtml(textPlaceholder) + '"></textarea>' +
         '<p class="cave-priorities-hint">Empty is fine — the topics still rank the night. The sliders sit on the ranking.</p>' +
+        '<button type="button" class="cave-embed-btn">Embed &amp; rank</button>' +
         '<p class="cave-priorities-note" role="status"></p>' +
       '</div>' +
       '<div class="cave-priorities-chips" role="group" aria-label="Applied topic weights and paper nudges"></div>' +
@@ -522,6 +526,7 @@ export function mount(body, ctx) {
   const treeEl = body.querySelector('.cave-priorities-tree');
   const emptyEl = body.querySelector('.cave-tree-empty');
   const continueBtn = body.querySelector('.cave-continue-btn');
+  const embedBtn = body.querySelector('.cave-embed-btn');
 
   textEl.value = state.text;
   emptyEl.hidden = !!state.night;
@@ -586,12 +591,19 @@ export function mount(body, ctx) {
   /* ── the box's words ────────────────────────────────────────────────── */
 
   /**
-   * Embed the box, if the collapsed words changed. `touchKey` is the guard
-   * that makes a slider drag, a topic press or a reload free.
+   * Make the box's words tonight's touchstones. `touchKey` is the guard that
+   * makes a second press, a slider drag or a reload free: the same collapsed
+   * words are never embedded twice.
+   *
+   * Returns true when the ranking can use the words — they were embedded, or
+   * the box is empty and there is nothing to use — and false when it cannot:
+   * the fetch failed, this build has no embedder, or the reader typed again
+   * while the call was out. Task 4 (launch autorun) presses Rank tonight on
+   * either answer; a failure must not stop the run.
    */
-  async function embedWords() {
+  async function embedNow() {
     const words = cacheKeyText(textEl.value);
-    if (words === touchKey) return;
+    if (words === touchKey) return true;
     const gen = textGen;
 
     if (!words) {
@@ -599,28 +611,32 @@ export function mount(body, ctx) {
       touchKey = '';
       note('');
       publish();
-      return;
+      return true;
     }
     if (!ctx.config || !ctx.config.embedUrl) {
       note('Embedding is off on this build, so your words are saved but not used.');
-      return;
+      return false;
     }
 
-    note('Embedding what you care about…');
+    note('Embedding…');
     try {
       const [vec] = await embedTexts({
         texts: [words],
         embedUrl: ctx.config.embedUrl,
-        onProgress: (done, total) => note(`Embedding what you care about… ${done}/${total}`),
+        onProgress: (done, total) => note(`Embedding… ${done}/${total}`),
       });
-      if (gen !== textGen) return;      // the reader typed again while it was out
+      if (gen !== textGen) return false;  // the reader typed again while it was out
       state.touchstones = [corpusSpace(vec, ctx.corpus)];
       touchKey = words;
-      note('');
-      publish();
+      note('Ranked by your words.');
+      publish();                          // re-rank on the new vectors
+      return true;
     } catch (err) {
-      if (gen !== textGen) return;
+      /* The old vectors stay, so the night still ranks — just not by these
+         words. Saying so beats a note that lies about being up to date. */
+      if (gen !== textGen) return false;
       note('Could not embed your words: ' + ((err && err.message) || err), true);
+      return false;
     }
   }
 
@@ -855,10 +871,24 @@ export function mount(body, ctx) {
   textEl.addEventListener('input', () => {
     state.text = textEl.value.trim();
     textGen += 1;
-    persist();                 // the words survive even if the embed never does
-    emit();                    // prefs follow the text; touchstones catch up after the pause
+    /* One deferred write, no fetch and no `prefs` event: the words survive a
+       reload, but typing costs neither an embed nor a re-rank. */
     clearTimeout(textTimer);
-    textTimer = setTimeout(embedWords, 600);
+    textTimer = setTimeout(persist, 400);
+    note(cacheKeyText(textEl.value) === touchKey
+      ? ''
+      : 'Words changed. Press Embed & rank to use them.');
+  });
+
+  embedBtn.addEventListener('click', async () => {
+    /* One call at a time: a second press while the first is out would trade
+       the same words for a second bill and race the newer answer. */
+    embedBtn.disabled = true;
+    try {
+      await embedNow();
+    } finally {
+      embedBtn.disabled = false;
+    }
   });
 
   treeEl.addEventListener('change', (event) => {
@@ -935,6 +965,11 @@ export function mount(body, ctx) {
 
   continueBtn.addEventListener('click', () => {
     if (!ctx.flow || ctx.flow.status('priorities') === 'locked') return;
+    /* Ranking can only read vectors, so words typed after the last press are
+       shelved — say so rather than let the list look deaf to them. */
+    if (cacheKeyText(textEl.value) !== touchKey) {
+      note('Your words were not embedded, so the ranking ignores them.');
+    }
     ctx.flow.complete('priorities', prefsSummary(topics, currentPrefs()));
   });
 
@@ -968,5 +1003,9 @@ export function mount(body, ctx) {
   /* Restored or default: the rest of the page gets one prefs event at mount,
      before any control is touched. */
   emit();
+
+  /* The launch autorun embeds without a press, so the one way into the box's
+     vectors is reachable from the mount rather than only through the button. */
+  return { embedNow };
 }
 

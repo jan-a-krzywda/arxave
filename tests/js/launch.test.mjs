@@ -158,6 +158,18 @@ test('404.html redirects a launch path, and only a launch path', () => {
   assert.match(html, /launchFromPath/, '404.html does not validate the path');
 });
 
+/*
+ * Task 3's wiring, also as text: typing must stop costing a call. A warm cache
+ * hides the regression — the embed timer fires, hits the cache and the network
+ * tab stays quiet — so the guard is that no timer embeds at all.
+ */
+test('Priorities embeds on the button, not on typing', () => {
+  const js = fs.readFileSync(path.join(ROOT, 'docs/assets/cave-stage-priorities.mjs'), 'utf8');
+  assert.match(js, /cave-embed-btn/, 'no Embed & rank button');
+  assert.match(js, /await embedNow\(\)/, 'the button does not call embedNow()');
+  assert.doesNotMatch(js, /setTimeout\(embedWords/, 'still embeds on a typing timer');
+});
+
 test('cave.js resolves a launch and puts the clean address back', () => {
   const js = fs.readFileSync(path.join(ROOT, 'docs/assets/cave.js'), 'utf8');
   assert.match(js, /resolveLaunch\(window\.location\)/, 'cave.js does not resolve the URL');

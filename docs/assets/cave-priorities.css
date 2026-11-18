@@ -66,6 +66,41 @@
   color: var(--ember);
 }
 
+/* The one action on the box. Same gold and weight as Ranking's Rank tonight
+   (cave.css `.button-bar .cave-primary`), because pressing this is what makes
+   the words count; the selector is not scoped to `.button-bar`, so the look is
+   repeated rather than borrowed across files. */
+.cave-embed-btn {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1.1rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: var(--gold);
+  color: var(--cave-air);
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 6px 22px -10px color-mix(in srgb, var(--gold) 55%, transparent);
+}
+
+.cave-embed-btn:hover:not(:disabled) {
+  background: var(--ore-6);
+}
+
+.cave-embed-btn:disabled {
+  background: var(--rock);
+  color: var(--text-faint);
+  border-color: var(--rock-edge);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.cave-embed-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
 /* ── applied-topic chips ─────────────────────────────────────────── */
 
 .cave-priorities-chips {
