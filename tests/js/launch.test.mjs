@@ -30,7 +30,9 @@ import { stripHtml } from '../../docs/assets/cave-launch-strip.mjs';
 import { FIELD_KEY, fieldById, fieldKey } from '../../docs/assets/cave-fields.mjs';
 import { AUTODIG_KEY, FORM_KEY } from '../../docs/assets/cave-stage-dig.mjs';
 import { STORE_KEY } from '../../docs/assets/cave-stage-priorities.mjs';
-import { readStore } from '../../docs/assets/sieve-ui.mjs';
+import { loadLaunchVector } from '../../docs/assets/cave-launch-vectors.mjs';
+import { MODEL, readStore } from '../../docs/assets/sieve-ui.mjs';
+import { buildVectorsFile } from '../../scripts/launch-vectors.mjs';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const PROPOSAL = fs.readFileSync(
@@ -448,3 +450,96 @@ test('cave.js mounts the strip above the rail and moves it with the run', () => 
 });
 
 
+/*
+ * Task 4: a launch's phrase is fixed, so it is embedded once by a script and
+ * shipped as an asset instead of paid for on every visit. Two failures here are
+ * silent. A file built by a different model scores plausibly and ranks the
+ * wrong papers, and an autorun that still embeds on a hit would look exactly
+ * like one that did not — the list would be the same, the bill would not.
+ *
+ * The file itself is built from the live service by the orchestrator, so these
+ * use a fake embedder and a fake fetch; no network, ever.
+ */
+test('buildVectorsFile embeds each phrase once, under the model that made it', async () => {
+  const asked = [];
+  const embed = async (texts) => {
+    asked.push(...texts);
+    return texts.map(() => [0.1, 0.2, 0.123456789]);
+  };
+  const file = await buildVectorsFile(LAUNCHES, embed);
+
+  assert.deepEqual(asked, LAUNCHES.map((launch) => launch.phrase),
+    'the phrases are not what the table says');
+  assert.equal(file.model, MODEL, 'the file does not name the model that made it');
+  // The width is read off the vectors, not assumed from DIM: a file that claims
+  // 768 while the pick answered 512 would load and score nonsense.
+  assert.equal(file.dim, 3);
+  assert.ok(Number.isFinite(Date.parse(file.built)), 'built is not a date: ' + file.built);
+  assert.equal(Object.keys(file.vectors).length, LAUNCHES.length);
+  for (const launch of LAUNCHES) {
+    assert.equal(file.vectors[launch.id]?.length, 3, launch.id + ': no vector, or the wrong width');
+  }
+  // Five decimals: twelve vectors are a page asset, not a full-precision dump.
+  assert.deepEqual(file.vectors['ai/llms'], [0.1, 0.2, 0.12346]);
+});
+
+/** A fetch that answers one JSON body, or fails the way a missing file does. */
+function fetchJson(body, { ok = true } = {}) {
+  return async () => ({ ok, json: async () => body });
+}
+
+const VECTORS_FILE = Object.freeze({
+  model: MODEL,
+  dim: 4,
+  built: '2026-11-18T00:00:00.000Z',
+  vectors: { 'ai/llms': [0.1, 0.2, 0.3, 0.4] },
+});
+
+test('loadLaunchVector reads a vector from this model, at the width asked for', async () => {
+  const vec = await loadLaunchVector('ai/llms', {
+    url: '/assets/corpus/launch-vectors.json', dim: 4, fetchImpl: fetchJson(VECTORS_FILE),
+  });
+  assert.ok(vec instanceof Float32Array, 'not a Float32Array');
+  assert.equal(vec.length, 4);
+  assert.deepEqual(Array.from(vec), [0.1, 0.2, 0.3, 0.4].map(Math.fround));
+});
+
+test('loadLaunchVector is null for every reason the file cannot be used', async () => {
+  const ask = (file, id = 'ai/llms', options = {}) => loadLaunchVector(id, {
+    url: '/assets/corpus/launch-vectors.json', dim: 4, fetchImpl: fetchJson(file), ...options,
+  });
+
+  // A same-shaped vector from another model ranks the wrong papers, so it is
+  // ignored and the run falls back to the endpoint like a missing file would.
+  assert.equal(await ask({ ...VECTORS_FILE, model: 'other/model' }), null);
+  // The file's width, and the vector's, are both checked: either being off is
+  // a vector this corpus cannot centre.
+  assert.equal(await ask({ ...VECTORS_FILE, dim: 5 }), null);
+  assert.equal(await ask({ ...VECTORS_FILE, vectors: { 'ai/llms': [0.1, 0.2] } }), null);
+  // A launch this build has, and a file predating it.
+  assert.equal(await ask(VECTORS_FILE, 'ai/ghost'), null);
+  // A build that never shipped the file, and a fetch that never answered.
+  assert.equal(await ask(VECTORS_FILE, 'ai/llms', {
+    fetchImpl: fetchJson({}, { ok: false }),
+  }), null);
+  assert.equal(await ask(VECTORS_FILE, 'ai/llms', {
+    fetchImpl: async () => { throw new Error('offline'); },
+  }), null);
+});
+
+test('Priorities reads the stored phrase vector, and embeds only on a miss', () => {
+  const js = fs.readFileSync(path.join(ROOT, 'docs/assets/cave-stage-priorities.mjs'), 'utf8');
+  assert.match(js, /import \{ loadLaunchVector \} from '\.\/cave-launch-vectors\.mjs'/,
+    'Priorities never loads the shipped vectors');
+
+  const run = js.slice(js.indexOf('async function runLaunch'));
+  assert.ok(run.length > 0, 'no runLaunch');
+  assert.match(run, /await loadLaunchVector\(launch\.id\)/,
+    'the autorun never asks for the stored vector');
+  // A hit must skip the embed entirely — that call is the visit's whole cost —
+  // and a miss is the only thing that reaches it.
+  assert.match(run, /if \(!vec\) \{\s*await embedNow\(\)/, 'a stored vector still goes to the endpoint');
+  assert.match(run, /state\.touchstones = \[corpusSpace\(/, 'the stored vector misses the corpus clip');
+  assert.match(run, /touchKey = cacheKeyText\(launch\.phrase\)/,
+    'the box would pay to embed the same phrase again');
+});
