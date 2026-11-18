@@ -134,8 +134,9 @@
 /* ── The verdict: what tonight answered, above the list ─────────
    A launch link asks for papers like its phrase; on an off night the honest
    answer is "nothing close", and a ranked list alone then reads as an answer.
-   One status line, a gold edge for "only a few" and a fainter one for an empty
-   day, and the rows underneath dim rather than reflow. */
+   Weak and empty stay one status line; `none` gets a panel with a lone cart in
+   the wind, large enough to be read before the closest papers are. The rows
+   underneath dim rather than reflow. */
 
 .cave-match-banner {
   margin: 0.5rem 0 0;
@@ -151,6 +152,144 @@
 /* An empty day is arXiv's news, not the reader's: the edge steps back. */
 .cave-match-banner.is-empty {
   border-left-color: var(--text-faint);
+}
+
+/* The no-match panel: centred and generous, because it is the one verdict the
+   reader has to meet before the list. The edge is the strip's gold so it reads
+   as the same mine as the rest of the Cave. */
+.cave-match-panel {
+  margin: 0.6rem 0 0;
+  padding: 1.4rem 1.2rem 1.1rem;
+  border: 1px solid var(--gold-dim);
+  border-radius: 10px;
+  background: var(--rock-deep);
+  text-align: center;
+}
+
+/* The scene holds its height whatever the words say, so a repaint never moves
+   the list under the reader's pointer. */
+.cave-match-scene {
+  position: relative;
+  height: 5rem;
+  margin: 0 0 0.7rem;
+  overflow: hidden;
+}
+
+/* Standing, not travelling: no bob, no wheel spin. A cart that moved would
+   claim a haul is coming, and tonight's is not. */
+.cave-match-cart {
+  position: absolute;
+  left: 50%;
+  bottom: 0.1rem;
+  width: 5rem;
+  height: 2.5rem;
+  margin-left: -2.5rem;
+}
+
+.cave-match-cart-shape {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.cave-match-body {
+  fill: var(--rock);
+  stroke: var(--rock-edge);
+  stroke-width: 1.5;
+}
+
+.cave-match-wheel circle {
+  fill: var(--rock-deep);
+  stroke: var(--text-faint);
+  stroke-width: 1.5;
+}
+
+.cave-match-wheel path {
+  stroke: var(--text-faint);
+  stroke-width: 1;
+}
+
+/* The lamp is still on — the cart has not been abandoned, it has nowhere to
+   go — but it does not flicker, for the same reason the wheels do not turn. */
+.cave-match-lamp {
+  position: absolute;
+  top: 0;
+  right: 0.1rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--lamp);
+  box-shadow: 0 0 0.45rem var(--lamp);
+  opacity: 0.65;
+}
+
+/* The wind: a thin line that fades at both ends, crossed over the scene one
+   width per loop, so there is no seam and no pause. Three of them, slowed and
+   staggered by nth-of-type below — the cart is the scene's first span, so the
+   streaks are types 2 to 4. */
+.cave-match-wind {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--text-faint) 40% 60%, transparent);
+  opacity: 0.4;
+  animation: cave-match-wind 4s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes cave-match-wind {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.cave-match-wind:nth-of-type(2) {
+  top: 22%;
+  animation-duration: 3.4s;
+  animation-delay: -0.8s;
+}
+
+.cave-match-wind:nth-of-type(3) {
+  top: 52%;
+  animation-duration: 4.2s;
+  animation-delay: -2.1s;
+  opacity: 0.28;
+}
+
+.cave-match-wind:nth-of-type(4) {
+  top: 80%;
+  animation-duration: 5s;
+  animation-delay: -3.4s;
+}
+
+.cave-match-head {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.cave-match-copy {
+  max-width: 32em;
+  margin: 0.5rem auto 0;
+  color: var(--text-dim);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* The evidence, small: it is why the panel is up, not something to read first. */
+.cave-match-close {
+  margin: 0.6rem 0 0;
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 /* Dimmed, never moved: the same rows at the same heights, so a verdict that
@@ -737,6 +876,20 @@ h3.rk-title {
   .rk-detail {
     padding-left: 0.7rem;
   }
+
+  /* The panel keeps its words and loses some air: at 360 px the heading and the
+     copy still fit above the list without pushing it off the first screen. */
+  .cave-match-panel {
+    padding: 1rem 0.8rem 0.9rem;
+  }
+
+  .cave-match-head {
+    font-size: 1.3rem;
+  }
+
+  .cave-match-scene {
+    height: 4rem;
+  }
 }
 
 /* ── Reduced motion ──────────────────────────────────────────── */
@@ -748,6 +901,12 @@ h3.rk-title {
 
   .pa-spark {
     animation: none;
+  }
+
+  /* No wind: the panel's words carry the verdict, and a line that keeps
+     drifting is the one thing on this page a reader asked not to see move. */
+  .cave-match-wind {
+    display: none;
   }
 }
 
