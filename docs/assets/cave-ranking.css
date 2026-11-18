@@ -185,7 +185,7 @@
    reads as "Pick" without a label on every row. Same columns as a row. */
 .rk-head {
   display: grid;
-  grid-template-columns: 2.64rem minmax(0, 1fr);
+  grid-template-columns: 2.2rem minmax(0, 1fr);
   gap: 0.5rem;
   margin-top: 0.6rem;
   padding: 0 0.6rem 0.2rem;
@@ -217,6 +217,13 @@ h3.rk-title {
   font-weight: 600;
   line-height: 1.35;
   overflow-wrap: anywhere;
+  /* Two lines at most, so every row is the same skim; the link's title
+     attribute carries the rest. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
 /* The title goes to the paper on arXiv; the ▸ and the row open the detail. */
@@ -230,17 +237,36 @@ h3.rk-title {
   text-decoration: underline;
 }
 
+/* Authors, then the last author's institution: one line, whichever is longer
+   gives way first. */
 .rk-authors {
+  display: flex;
+  min-width: 0;
   margin: 0.1rem 0 0;
   color: var(--text-faint);
   font-size: 0.78rem;
   line-height: 1.35;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.rk-names,
 .rk-affil {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rk-affil {
+  flex-shrink: 2;
+  color: var(--text-dim);
   font-style: italic;
+}
+
+.rk-names + .rk-affil::before {
+  content: "·";
+  padding: 0 0.4em;
+  font-style: normal;
 }
 
 /* Under the title: Score and grades first, so the bar starts at the same x on
@@ -255,7 +281,7 @@ h3.rk-title {
 
 .rk-chips {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 0.3rem;
   min-width: 0;
   margin: 0;
@@ -359,7 +385,7 @@ h3.rk-title {
 
 .rk-meter {
   display: grid;
-  grid-template-columns: auto 3rem 1.6rem;
+  grid-template-columns: auto minmax(0, 1fr) 2rem;
   align-items: center;
   gap: 0.35rem;
   flex: 0 0 11rem;
@@ -394,8 +420,9 @@ h3.rk-title {
 
 /* ── The detail: abstract, landmarks, the diamond ─────────────── */
 
+/* Indented to the title's column: the detail reads as the row's own. */
 .rk-detail {
-  padding: 0.1rem 0.7rem 0.7rem;
+  padding: 0.1rem 0.7rem 0.7rem 3.3rem;
   border-top: 1px solid var(--rock-edge);
   color: var(--text-dim);
   font-size: 0.88rem;
@@ -504,18 +531,18 @@ h3.rk-title {
 }
 
 /* ── The action bar ────────────────────────────────────────────
-   Three things to do with a paper. It wraps instead of scrolling: at 360 px
-   each button is still a 36 px target and the row never grows a horizontal
-   scrollbar. */
+   Three things to do with a paper, at the top of the open row's detail —
+   never on the closed row, which stays three lines. At 360 px each button is
+   still a 36 px target. */
 
 .pa-actions {
-  /* Under the Pick tick, in the first column: the three exits stacked, each
-     as wide as the column. */
-  display: flex;
-  flex-direction: column;
-  align-self: stretch;
-  gap: 0.25rem;
-  margin-top: 0.15rem;
+  /* Three equal columns, so the squares stay one size and never wrap one of
+     the three onto a line of its own. */
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.3rem;
+  max-width: 20rem;
+  margin-top: 0.5rem;
   min-width: 0;
 }
 
@@ -529,17 +556,16 @@ h3.rk-title {
   gap: 0.3rem;
   width: 100%;
   min-width: 0;
-  height: 1.5rem;
+  height: 1.8rem;
   overflow: hidden;
   margin: 0;
-  padding: 0 0.1rem;
+  padding: 0 0.4rem;
   border: 1px solid var(--rock-edge);
   border-radius: 6px;
   background: var(--rock-deep);
   color: var(--text-dim);
   font: inherit;
-  /* 120% of the old column's type, scaled with it so the word fits the width. */
-  font-size: 0.56rem;
+  font-size: 0.78rem;
   line-height: 1;
   text-decoration: none;
   white-space: nowrap;
@@ -569,9 +595,10 @@ h3.rk-title {
 }
 
 .pa-md {
+  grid-column: 1 / -1;
+  justify-self: start;
   color: var(--gold);
-  font-size: 0.56rem;
-  text-align: center;
+  font-size: 0.75rem;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -676,7 +703,11 @@ h3.rk-title {
   /* Three squares still fit at 360 px, each a 36 px target. */
 
   .pa-btn {
-    height: 1.75rem;
+    height: 36px;
+  }
+
+  .rk-detail {
+    padding-left: 0.7rem;
   }
 }
 
