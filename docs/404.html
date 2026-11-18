@@ -6,24 +6,19 @@ sitemap: false
 ---
 <!-- A launch link is arxave.com/<field>/<slug>, and GitHub Pages has no rewrite
      rules: a path with no file behind it gets this page at whatever depth was
-     asked for. So the script below is the router. A valid field/slug pair
-     becomes the Cave's /?launch=<field>/<slug> form, which cave.js reads
-     (cave-launch.mjs, resolveLaunch) and turns back into the clean address.
-     Anything whose path is not field/slug — a typo, a link to some other
-     missing page — falls through to the text below, because a half-started
-     Cave is worse than an honest 404. A field/slug shape with a slug we do
-     not know redirects anyway: the twelve slugs live in cave-launch.mjs and
-     are not repeated here, so the Cave resolves those links to nothing and
-     opens as the plain Cave.
-     The field list is repeated in the regex because a static page cannot wait
-     for a module to load before redirecting; tests/js/launch.test.mjs holds it
-     to cave-fields.mjs FIELDS. -->
+     asked for. So the script below is the router. It asks the module that owns
+     the table — cave-launch.mjs, whose twelve launch slugs are not repeated
+     here — whether the path names one of them, and only then becomes the
+     Cave's /?launch=<field>/<slug> form, which cave.js reads (cave-launch.mjs,
+     resolveLaunch) and turns back into the clean address.
+     Anything else — a typo, an unknown slug, a link to some other missing page,
+     or a module that will not load — falls through to the text below, because a
+     half-started Cave is worse than an honest 404. -->
 <h1>Not found</h1>
 <p>There is no page at this address. Start from <a href="{{ '/' | relative_url }}">the Cave</a>.</p>
 <script>
-  (function () {
-    var found = /^\/(quantum|ai)\/([a-z0-9-]+)\/?$/.exec(window.location.pathname);
-    if (!found) return;
-    window.location.replace('/?launch=' + found[1] + '/' + found[2]);
-  }());
+  import('/assets/cave-launch.mjs').then(function (module) {
+    var launch = module.launchFromPath(window.location.pathname);
+    if (launch) window.location.replace('/?launch=' + launch.id);
+  }, function () { /* no table, no redirect: the 404 text stands */ });
 </script>

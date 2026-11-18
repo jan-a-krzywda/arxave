@@ -25,7 +25,7 @@ import {
   launchFromSearch,
   resolveLaunch,
 } from '../../docs/assets/cave-launch.mjs';
-import { FIELDS, fieldById } from '../../docs/assets/cave-fields.mjs';
+import { fieldById } from '../../docs/assets/cave-fields.mjs';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const PROPOSAL = fs.readFileSync(
@@ -151,11 +151,11 @@ test('404.html redirects a launch path, and only a launch path', () => {
   assert.match(html, /\/\?launch=/, 'no redirect to /?launch=');
   assert.match(html, /location\.replace\(/, 'no location.replace');
 
-  // The field alternation is hardcoded in a static page, so this is what keeps
-  // it in step with cave-fields.mjs when a third pack ever lands.
-  const alternation = /\^\\\/\(([a-z|]+)\)\\\//.exec(html);
-  assert.ok(alternation, 'no /^\\/(field)\\/…/ regex in 404.html');
-  assert.equal(alternation[1], FIELDS.map((field) => field.id).join('|'));
+  // The slugs are not copied into a static page: the script asks
+  // cave-launch.mjs, so an unknown slug stays a plain 404 instead of opening
+  // a half-started Cave.
+  assert.match(html, /import\(/, '404.html does not load cave-launch.mjs');
+  assert.match(html, /launchFromPath/, '404.html does not validate the path');
 });
 
 test('cave.js resolves a launch and puts the clean address back', () => {
