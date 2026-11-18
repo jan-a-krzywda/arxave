@@ -131,6 +131,34 @@
   font-size: 0.74rem;
 }
 
+/* ── The verdict: what tonight answered, above the list ─────────
+   A launch link asks for papers like its phrase; on an off night the honest
+   answer is "nothing close", and a ranked list alone then reads as an answer.
+   One status line, a gold edge for "only a few" and a fainter one for an empty
+   day, and the rows underneath dim rather than reflow. */
+
+.cave-match-banner {
+  margin: 0.5rem 0 0;
+  padding: 0.4rem 0.6rem;
+  border-left: 3px solid var(--gold-dim);
+  border-radius: 4px;
+  background: var(--rock-deep);
+  color: var(--text-dim);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+/* An empty day is arXiv's news, not the reader's: the edge steps back. */
+.cave-match-banner.is-empty {
+  border-left-color: var(--text-faint);
+}
+
+/* Dimmed, never moved: the same rows at the same heights, so a verdict that
+   lands mid-drag does not jump the list under the pointer. */
+.rk-list.is-weak .rk-row {
+  opacity: 0.7;
+}
+
 /* ── The list ─────────────────────────────────────────────────── */
 
 .rk-list {

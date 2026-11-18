@@ -30,7 +30,9 @@ import { stripHtml } from '../../docs/assets/cave-launch-strip.mjs';
 import { FIELD_KEY, fieldById, fieldKey } from '../../docs/assets/cave-fields.mjs';
 import { AUTODIG_KEY, FORM_KEY } from '../../docs/assets/cave-stage-dig.mjs';
 import { STORE_KEY } from '../../docs/assets/cave-stage-priorities.mjs';
-import { readStore } from '../../docs/assets/sieve-ui.mjs';
+import { loadLaunchVector } from '../../docs/assets/cave-launch-vectors.mjs';
+import { MODEL, readStore } from '../../docs/assets/sieve-ui.mjs';
+import { buildVectorsFile } from '../../scripts/launch-vectors.mjs';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const PROPOSAL = fs.readFileSync(
@@ -323,7 +325,7 @@ test('a failed embed keeps its reason when Rank tonight is pressed', () => {
  * be answerable at a glance: one wagon current, the ones behind it done, the
  * one ahead untouched. The CSS half is checked as text because the two things
  * it must not do are silent ones — pick a colour outside the theme (dark mode
- * then reads it wrong) and slide an engine at a reader who asked for less
+ * then reads it wrong) and run the rails at a reader who asked for less
  * motion.
  */
 test('the strip marks the wagon in hand, and the ones behind it done', () => {
@@ -347,13 +349,31 @@ test('the strip marks the wagon in hand, and the ones behind it done', () => {
   assert.match(stripHtml('dig', '<b>x</b>'), /&lt;b&gt;x/, 'the label is not escaped');
 });
 
-test('the engine parks at the wagon in hand, and the whole train at done', () => {
-  // `--launch-step` is the one value cave.css reads; a wrong number parks the
-  // engine over the wrong wagon.
-  assert.match(stripHtml('dig', 'x'), /--launch-step: 0/);
-  assert.match(stripHtml('embed', 'x'), /--launch-step: 1/);
-  assert.match(stripHtml('rank', 'x'), /--launch-step: 2/);
+test('the cart holds still while the rails move, and says what it is doing', () => {
+  const html = stripHtml('embed', 'x');
+  assert.match(html, /class="cave-launch-cart"/, 'no cart');
+  assert.match(html, /class="cave-launch-rails"/, 'no rails');
+  assert.doesNotMatch(html, /cave-launch-loco/, 'the engine of the sliding strip is still drawn');
+  // Nothing parks the cart by number any more: the rails carry it, so there is
+  // no step variable left for a render to get wrong.
+  assert.doesNotMatch(html, /--launch-step/);
+  assert.equal((html.match(/class="cave-launch-say"/g) || []).length, 1, 'no single say line');
+  assert.match(html, /class="cave-launch-say">Embedding your words/);
+});
 
+test('the say line says the step in hand, and what a failed embed left behind', () => {
+  assert.match(stripHtml('dig', 'x'), /class="cave-launch-say">Digging tonight/);
+  assert.match(stripHtml('rank', 'x'), /class="cave-launch-say">Ranking/);
+  assert.match(stripHtml('done', 'x'), /class="cave-launch-say">Done\./);
+  // The run ranks the old order after a failed embed, and the reader is owed
+  // that sentence rather than a wagon that quietly moved on.
+  const failed = stripHtml('error', 'x');
+  assert.match(failed, /\bis-error\b/, 'no error marker');
+  assert.match(failed, /class="cave-launch-say">[^<]*old order/,
+    'the failed embed does not say which order it ranked');
+});
+
+test('the whole strip is done when the ranking lands', () => {
   const done = stripHtml('done', 'x');
   assert.match(done, /class="cave-launch-strip is-done"/, 'the finished strip does not say so');
   assert.doesNotMatch(done, /aria-current/, 'a finished run still has a current step');
@@ -362,9 +382,10 @@ test('the engine parks at the wagon in hand, and the whole train at done', () =>
   }
 });
 
-test('a failed embed is the strip\'s one error, on the wagon that failed', () => {
-  // The run goes on with the old order (Task 4), so the train still moves —
-  // but the reader is owed the reason, on the step it happened at.
+test('a failed embed is the strip\'s one error, on the step that failed', () => {
+  // The run goes on with the old order (Task 4), but nothing pretends the
+  // phrase was carried — and the reader is owed the reason, on the step it
+  // happened at.
   const html = stripHtml('error', 'x');
   assert.match(html, /\bis-error\b/, 'no error marker');
   const wagons = html.match(/<li[^>]*>/g) || [];
@@ -373,23 +394,48 @@ test('a failed embed is the strip\'s one error, on the wagon that failed', () =>
   assert.doesNotMatch(wagons[2], /aria-current|is-done/);
 });
 
-test('the engine slides on theme tokens, and holds still for reduced motion', () => {
+test('the rails run on theme tokens, and hold still for reduced motion', () => {
   const css = fs.readFileSync(path.join(ROOT, 'docs/assets/cave.css'), 'utf8');
-  const loco = /\.cave-launch-loco\s*\{([^}]*)\}/.exec(css);
-  assert.ok(loco, 'no engine rule in cave.css');
-  assert.match(loco[1], /--launch-step/, 'the engine does not follow the step');
-  assert.match(loco[1], /transition:/, 'the engine would jump between wagons');
+  const rails = /\.cave-launch-rails\s*\{([^}]*)\}/.exec(css);
+  assert.ok(rails, 'no rails rule in cave.css');
+  assert.match(rails[1], /animation:/, 'the rails never move');
+  // The loop is a background-position shift of exactly one tile; anything else
+  // seams at the loop or crawls a pixel at a time.
+  const roll = /@keyframes cave-launch-roll\s*\{([\s\S]*?)\n\}/.exec(css);
+  assert.ok(roll, 'no rails loop in cave.css');
+  assert.match(roll[1], /background-position/, 'the loop moves nothing');
+  assert.match(roll[1], /1\.1rem/, 'the loop does not move a whole sleeper');
   // No hex: every colour is a theme token, so both themes get the strip free.
-  assert.doesNotMatch(loco[1], /#[0-9a-f]{3,6}\b/i, 'the engine hardcodes a colour');
-  assert.match(loco[1], /var\(--/, 'the engine takes no colour from the theme');
+  assert.doesNotMatch(rails[1], /#[0-9a-f]{3,6}\b/i, 'the rails hardcode a colour');
+  assert.match(rails[1], /var\(--/, 'the rails take no colour from the theme');
+
+  const cart = /\.cave-launch-cart\s*\{([^}]*)\}/.exec(css);
+  assert.ok(cart, 'no cart rule in cave.css');
+  // The cart's colours live on its SVG parts, so the whole section is checked
+  // at once: one hex anywhere and dark mode reads the cart wrong.
+  const stripRules = css.slice(css.indexOf('── The launch strip'), css.indexOf('── The rail'));
+  assert.doesNotMatch(stripRules, /#[0-9a-f]{3,6}\b/i, 'the cart hardcodes a colour');
+  assert.match(stripRules, /var\(--rock\)/, 'the cart takes no colour from the theme');
 
   const wagon = /\.cave-launch-wagon\s*\{([^}]*)\}/.exec(css);
   assert.ok(wagon, 'no wagon rule in cave.css');
   assert.doesNotMatch(wagon[1], /#[0-9a-f]{3,6}\b/i, 'the wagons hardcode a colour');
 
+  // A failed embed is the one moment the scene must not pretend to travel.
+  const paused = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].some(([, selector, body]) =>
+    selector.includes('.cave-launch-strip.is-error') &&
+    selector.includes('.cave-launch-rails') &&
+    /animation-play-state:\s*paused/.test(body));
+  assert.ok(paused, 'the rails run on after a failed embed');
+
   const reduced = css.slice(css.search(/@media \(prefers-reduced-motion: reduce\)/));
-  assert.match(reduced, /\.cave-launch-loco\s*\{[^}]*transition:\s*none/,
-    'the engine still slides at a reader who asked for less motion');
+  const rules = [...reduced.matchAll(/([^{}]+)\{([^}]*)\}/g)];
+  for (const part of ['rails', 'lamp', 'cart']) {
+    assert.ok(
+      rules.some(([, selector, body]) =>
+        selector.includes('.cave-launch-' + part) && /animation:\s*none/.test(body)),
+      'the ' + part + ' still moves at a reader who asked for less motion');
+  }
 });
 
 test('cave.js mounts the strip above the rail and moves it with the run', () => {
@@ -397,10 +443,103 @@ test('cave.js mounts the strip above the rail and moves it with the run', () => 
   assert.match(js, /rail\.insertAdjacentHTML\('beforebegin',\s*stripHtml\(/,
     'the strip is not drawn above the rail');
   // The run's own three moments: the night landing is the embed going out,
-  // the ranking landing is the train arrived.
-  assert.match(js, /addEventListener\('night'/, 'the dig landing does not move the train');
+  // the ranking landing is the last step arriving.
+  assert.match(js, /addEventListener\('night'/, 'the dig landing does not move the strip');
   assert.match(js, /addEventListener\('ranked'/, 'the ranking landing does not finish the strip');
-  assert.match(js, /runningLaunch\(/, 'a stale address grows a train too');
+  assert.match(js, /runningLaunch\(/, 'a stale address grows a strip too');
 });
 
 
+/*
+ * Task 4: a launch's phrase is fixed, so it is embedded once by a script and
+ * shipped as an asset instead of paid for on every visit. Two failures here are
+ * silent. A file built by a different model scores plausibly and ranks the
+ * wrong papers, and an autorun that still embeds on a hit would look exactly
+ * like one that did not — the list would be the same, the bill would not.
+ *
+ * The file itself is built from the live service by the orchestrator, so these
+ * use a fake embedder and a fake fetch; no network, ever.
+ */
+test('buildVectorsFile embeds each phrase once, under the model that made it', async () => {
+  const asked = [];
+  const embed = async (texts) => {
+    asked.push(...texts);
+    return texts.map(() => [0.1, 0.2, 0.123456789]);
+  };
+  const file = await buildVectorsFile(LAUNCHES, embed);
+
+  assert.deepEqual(asked, LAUNCHES.map((launch) => launch.phrase),
+    'the phrases are not what the table says');
+  assert.equal(file.model, MODEL, 'the file does not name the model that made it');
+  // The width is read off the vectors, not assumed from DIM: a file that claims
+  // 768 while the pick answered 512 would load and score nonsense.
+  assert.equal(file.dim, 3);
+  assert.ok(Number.isFinite(Date.parse(file.built)), 'built is not a date: ' + file.built);
+  assert.equal(Object.keys(file.vectors).length, LAUNCHES.length);
+  for (const launch of LAUNCHES) {
+    assert.equal(file.vectors[launch.id]?.length, 3, launch.id + ': no vector, or the wrong width');
+  }
+  // Five decimals: twelve vectors are a page asset, not a full-precision dump.
+  assert.deepEqual(file.vectors['ai/llms'], [0.1, 0.2, 0.12346]);
+});
+
+/** A fetch that answers one JSON body, or fails the way a missing file does. */
+function fetchJson(body, { ok = true } = {}) {
+  return async () => ({ ok, json: async () => body });
+}
+
+const VECTORS_FILE = Object.freeze({
+  model: MODEL,
+  dim: 4,
+  built: '2026-11-18T00:00:00.000Z',
+  vectors: { 'ai/llms': [0.1, 0.2, 0.3, 0.4] },
+});
+
+test('loadLaunchVector reads a vector from this model, at the width asked for', async () => {
+  const vec = await loadLaunchVector('ai/llms', {
+    url: '/assets/corpus/launch-vectors.json', dim: 4, fetchImpl: fetchJson(VECTORS_FILE),
+  });
+  assert.ok(vec instanceof Float32Array, 'not a Float32Array');
+  assert.equal(vec.length, 4);
+  assert.deepEqual(Array.from(vec), [0.1, 0.2, 0.3, 0.4].map(Math.fround));
+});
+
+test('loadLaunchVector is null for every reason the file cannot be used', async () => {
+  const ask = (file, id = 'ai/llms', options = {}) => loadLaunchVector(id, {
+    url: '/assets/corpus/launch-vectors.json', dim: 4, fetchImpl: fetchJson(file), ...options,
+  });
+
+  // A same-shaped vector from another model ranks the wrong papers, so it is
+  // ignored and the run falls back to the endpoint like a missing file would.
+  assert.equal(await ask({ ...VECTORS_FILE, model: 'other/model' }), null);
+  // The file's width, and the vector's, are both checked: either being off is
+  // a vector this corpus cannot centre.
+  assert.equal(await ask({ ...VECTORS_FILE, dim: 5 }), null);
+  assert.equal(await ask({ ...VECTORS_FILE, vectors: { 'ai/llms': [0.1, 0.2] } }), null);
+  // A launch this build has, and a file predating it.
+  assert.equal(await ask(VECTORS_FILE, 'ai/ghost'), null);
+  // A build that never shipped the file, and a fetch that never answered.
+  assert.equal(await ask(VECTORS_FILE, 'ai/llms', {
+    fetchImpl: fetchJson({}, { ok: false }),
+  }), null);
+  assert.equal(await ask(VECTORS_FILE, 'ai/llms', {
+    fetchImpl: async () => { throw new Error('offline'); },
+  }), null);
+});
+
+test('Priorities reads the stored phrase vector, and embeds only on a miss', () => {
+  const js = fs.readFileSync(path.join(ROOT, 'docs/assets/cave-stage-priorities.mjs'), 'utf8');
+  assert.match(js, /import \{ loadLaunchVector \} from '\.\/cave-launch-vectors\.mjs'/,
+    'Priorities never loads the shipped vectors');
+
+  const run = js.slice(js.indexOf('async function runLaunch'));
+  assert.ok(run.length > 0, 'no runLaunch');
+  assert.match(run, /await loadLaunchVector\(launch\.id\)/,
+    'the autorun never asks for the stored vector');
+  // A hit must skip the embed entirely — that call is the visit's whole cost —
+  // and a miss is the only thing that reaches it.
+  assert.match(run, /if \(!vec\) \{\s*await embedNow\(\)/, 'a stored vector still goes to the endpoint');
+  assert.match(run, /state\.touchstones = \[corpusSpace\(/, 'the stored vector misses the corpus clip');
+  assert.match(run, /touchKey = cacheKeyText\(launch\.phrase\)/,
+    'the box would pay to embed the same phrase again');
+});

@@ -126,7 +126,7 @@ Files: [`docs/assets/corpus/`](https://github.com/jan-a-krzywda/arxave/tree/main
 
 A launch link is `arxave.com/<field>/<slug>`: one publishing day in the field's own categories, ranked by one written phrase, landing on the ranking with no card to press. GitHub Pages has no rewrite rules, so the path arrives at the 404 page, which turns it into `/?launch=<field>/<slug>`; the Cave puts the clean address back into the bar, so a reload or a copied link means the same launch. Anything else — an unknown slug, a field that is not one of the two — stays a 404, never a half-started Cave.
 
-While the run is going, a three-wagon train above the cards says which step is in hand (Dig, Embed, Rank), and the sliders come back at their defaults: the ranking belongs to the link, not to your last visit.
+While the run is going, a mine cart above the cards stands still while its rails scroll, and the line under it says the step in hand (Dig, Embed, Rank). The cart holds still on purpose: a cart that travelled would claim to show how far a step had got, and nothing knows that. A failed embed stops the rails and the line says which order it is ranking instead; with `prefers-reduced-motion` the drawing stops too, and the markers and the line still carry the step. The sliders come back at their defaults: the ranking belongs to the link, not to your last visit.
 
 | Link | Digs | Prefers |
 |---|---|---|
@@ -145,7 +145,11 @@ While the run is going, a three-wagon train above the cards says which step is i
 
 ⚠ the field's corpus does not carry this code yet, so the first launch of that link embeds a new pack — about a minute before the ranking. The launch table is data in [`cave-launch.mjs`](https://github.com/jan-a-krzywda/arxave/blob/main/docs/assets/cave-launch.mjs); the phrases are the proposal's, [verbatim](https://github.com/jan-a-krzywda/arxave/blob/main/docs/superpowers/plans/2026-11-18-launch-presets-proposal.md).
 
-**Your words go out when you send them.** Typing in the Priorities box no longer embeds anything: the text is kept, and one press of **Embed & rank** embeds it and re-ranks. A launch presses that button for you, with the link's phrase. Rank tonight without pressing it and the ranking uses the old vectors, and the note says your words were ignored; if the embed service is down, a launch still reaches the ranking on the old order and says why.
+**Your words go out when you send them.** Typing in the Priorities box no longer embeds anything: the text is kept, and one press of **Embed & rank** embeds it and re-ranks. A launch presses that button for you, with the link's phrase. Rank tonight without pressing it and the ranking uses the old vectors, and the note says your words were ignored; if a launch has to embed and the service is down, it still reaches the ranking on the old order and says why.
+
+**The page says when tonight is not an answer.** With words in play — typed, or a launch's phrase — the night is judged by how close its three nearest papers are to those words, not by how many clear a bar: closeness is a paper's largest cosine to a touchstone, and the verdict is the mean of the three largest. Real matches reach about 0.7 and up. Below 0.70 the banner says *Nothing close tonight* and the list dims without moving; 0.70 to 0.73 says *Only weak matches*, quoting the closeness; at 0.73 and above there is no banner, because the list is the answer. A night under 30 papers, or a reader who typed nothing, gets no verdict, and a day with no announcement says arXiv announced nothing rather than that nothing is close. A count of papers above a z-score cut was tried first and does not separate the cases: titles that truly match sit at a median z of 0.7 to 2.8 — for `llms`, none of 1176 reach 3 — while noise reaches 1.5 on 2 to 8 percent of nights, so a normal night invents close papers.
+
+**A launch phrase is embedded once.** The twelve phrases ship as vectors in [`launch-vectors.json`](https://github.com/jan-a-krzywda/arxave/blob/main/docs/assets/corpus/launch-vectors.json), built by [`scripts/launch-vectors.mjs`](https://github.com/jan-a-krzywda/arxave/blob/main/scripts/launch-vectors.mjs) against the deployed `/embed` — 12 × 768, `allenai/specter2_base` — so a launch costs no embed call at all and reaches the ranking even with the embed service down; the old-order fallback above runs only for a phrase the file does not carry. The file names the model that made it, and a file from another model or another width is ignored rather than ranked with, because a same-shaped vector from elsewhere scores plausibly and orders the wrong papers. Rebuild it with `node scripts/launch-vectors.mjs` when a phrase or the model changes.
 
 ## The geometry
 
@@ -184,7 +188,7 @@ Each field centres on its own corpus mean, after the same int8 clip the corpus w
 | Call | Sends | Model | When |
 |---|---|---|---|
 | `relay` | category, date range | — | Dig |
-| `embed` | abstracts; your Priorities box | SPECTER2 [1, 2] | Train; **Embed & rank** |
+| `embed` | abstracts; your Priorities box | SPECTER2 [1, 2] | Train; **Embed & rank**; a launch with no stored vector |
 | `wagon-name` | titles only | Gemini flash-lite, DeepSeek V4.1 Flash as fallback | Map, on the button |
 | `diamond` | one paper | DeepSeek V4.1 Flash (default) | Ranking → Summarize |
 | `aitrace` | abstracts on screen | DeepSeek V4.1 Flash (default) | Ranking → AI trace button |

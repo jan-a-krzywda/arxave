@@ -33,10 +33,12 @@
  *
  * A LAUNCH LINK RUNS THIS CARD. `cave-launch-run.mjs` seeded the phrase and
  * the field before the page loaded; `runningLaunch` says so, and then the box
- * is filled, the night the dig is hauling is waited for, the words are embedded
- * and Rank tonight is pressed — whether or not that worked, because a dead
- * embed service leaves a ranking and its own error line, and a link that
- * stopped on a filled box would be worse.
+ * is filled, the night the dig is hauling is waited for, and Rank tonight is
+ * pressed. The phrase's vector ships with the page (`cave-launch-vectors.mjs`),
+ * so the common run costs no embed at all; a file that cannot supply one — an
+ * older model, a launch newer than the file, no file — falls back to the
+ * endpoint, whose failure leaves the old order and its own error line. A link
+ * that stopped on a filled box would be worse than either.
  *
  * A MISSING WORLD IS A SENTENCE, NOT A CRASH. Without the corpus or
  * `topics.json` there is nothing to weigh, and the stage says so in one muted
@@ -66,6 +68,7 @@
  */
 import { FIELDS, fieldKey } from './cave-fields.mjs';
 import { runningLaunch } from './cave-launch-run.mjs';
+import { loadLaunchVector } from './cave-launch-vectors.mjs';
 import { LAUNCH_KEY } from './cave-launch.mjs';
 import { applyNudge } from './cave-nudge.mjs';
 import { axisProbability, corpusSpace, defaultSetting } from './sieve-core.mjs';
@@ -1017,13 +1020,14 @@ export function mount(body, ctx) {
 
   /**
    * A launch link runs this stage too: the row's phrase goes into the box, the
-   * night Dig is hauling is waited for, the words are embedded, and the button
-   * a reader would press is pressed.
+   * night Dig is hauling is waited for, and the button a reader would press is
+   * pressed — by the phrase's shipped vector, or by an embed if the file has
+   * none for this launch.
    *
-   * `embedNow`'s answer is deliberately not checked — an embed service that is
-   * down leaves the old order and its own error line, which is still a
-   * ranking, and a link that stopped on a filled box would be worse. The
-   * record is cleared last, so a later visit does not re-run it.
+   * Neither answer is checked for failure — an embed service that is down
+   * leaves the old order and its own error line, which is still a ranking, and
+   * a link that stopped on a filled box would be worse. The record is cleared
+   * last, so a later visit does not re-run it.
    */
   async function runLaunch() {
     const launch = runningLaunch(ctx.storage);
@@ -1038,7 +1042,22 @@ export function mount(body, ctx) {
     if (!state.night) {
       await new Promise((resolve) => ctx.bus.addEventListener('night', resolve, { once: true }));
     }
-    await embedNow();
+    /* The phrase is fixed, so its vector ships with the page
+       (`cave-launch-vectors.mjs`): a visit costs no embed at all, and the run
+       works with the embed service down. A file from an older model, a missing
+       launch in it, or no file at all is a miss, and only a miss pays for the
+       call — the ordinary path, unchanged. */
+    const vec = await loadLaunchVector(launch.id);
+    if (!vec) {
+      await embedNow();
+    } else {
+      state.touchstones = [corpusSpace(vec, ctx.corpus)];
+      /* The same collapsed phrase `embedNow` would have keyed on, so a later
+         press in the box sees the words as already embedded. */
+      touchKey = cacheKeyText(launch.phrase);
+      note('Ranked by your words.');
+      publish();
+    }
     continueBtn.click();
     try {
       ctx.storage.removeItem(LAUNCH_KEY);
