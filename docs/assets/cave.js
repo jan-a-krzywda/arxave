@@ -4,8 +4,8 @@
  *
  * WHAT THIS FILE OWNS. The flow (from `cave-flow.mjs`), the shared `ctx` the
  * stage modules read and write, the corpus / topics / axes load, the rail, the
- * fold state of every card, the launch strip a shared link rides
- * (`cave-launch-strip.mjs`), and the dynamic import that puts a stage module
+ * fold state of every card, the ride a shared link starts
+ * (`cave-launch-ride.mjs`), and the dynamic import that puts a stage module
  * into its body. It does not own a single control inside a stage: stages own
  * their own markup, the way `cave-stage-dig.mjs` owns the form and
  * `cave-stage-map.mjs` owns the wagons.
@@ -34,7 +34,7 @@ import {
 import { STAGES, createFlow } from './cave-flow.mjs';
 import { resolveLaunch } from './cave-launch.mjs';
 import { runningLaunch, seedLaunch } from './cave-launch-run.mjs';
-import { stripHtml, stripState } from './cave-launch-strip.mjs';
+import { RIDE_MS, rideHtml } from './cave-launch-ride.mjs';
 import { AUTODIG_KEY, FORM_KEY as DIG_KEY } from './cave-stage-dig.mjs';
 import { loadAxes, loadCorpus, loadTopics } from './sieve-core.mjs';
 import {
@@ -188,7 +188,7 @@ function startPage() {
 
   /* An address is not a run: the same clean URL opened after
      `LAUNCH_FRESH_MS` is a reader browsing (`cave-launch-run.mjs`), so only a
-     record that is still fresh grows the strip below. */
+     record that is still fresh starts the ride below. */
   const launched = launch && runningLaunch(storage) ? launch : null;
 
   /* The field pack is picked before anything loads (cave-fields.mjs): the
@@ -227,65 +227,59 @@ function startPage() {
     switchField,
   };
 
-  /* ── the launch strip ───────────────────────────────────────────────── */
+  /* ── the ride ───────────────────────────────────────────────────────── */
 
-  /* A launch is a run nobody pressed anything for, so it says where it is: a
-     cart above the rail, one marker per thing a launch does. A click-through
-     visit has no strip — the cards are the page again. */
-  const strip = launched ? mountStrip(launched) : null;
+  /* A launch is a run nobody pressed anything for, so it says where it is:
+     the rail's lift rides down to Ranking (cave.css slows the descent) and one
+     box beside the cards says why the ranking is not here yet. A click-through
+     visit has no ride — the cards are the page again. */
+  let rideFloor = null;   // the floor the lift is riding to, outranking a click
+  let rideTimer = 0;
+  const ride = launched ? mountRide(launched) : null;
 
-  function mountStrip(run) {
-    const rail = byId('cave-rail');
-    if (!rail) return null;
-    /* The flow remembers a night already dug, so a reload inside the window
-       starts the strip where the run really is instead of back at Dig. */
-    rail.insertAdjacentHTML('beforebegin',
-      stripHtml(flow.status('dig') === 'done' ? 'embed' : 'dig', run.label));
-    return rail.previousElementSibling;
+  function mountRide(run) {
+    rideFloor = STAGES.indexOf('ranking');
+    const app = byId('cave-app');
+    if (app) app.classList.add('is-riding');
+    document.body.insertAdjacentHTML('beforeend', rideHtml(run.label));
+    /* ponytail: a run that dies before `ranked` — Dig's fetch throwing, a
+       scoring pass that never lands — is only told apart from a slow night by
+       the clock, so a long wait ends the ride on its own. Ceiling: a run that
+       legitimately takes longer than this loses its box, not its ranking.
+       Upgrade path: a `failed` bus event from Dig and the ranking stage. */
+    rideTimer = setTimeout(endRide, RIDE_MS * 15);
+    return document.body.lastElementChild;
   }
 
   /**
-   * Move the strip without redrawing it: the cart is the same element from the
-   * first paint to the last, so the rails keep running under it and nothing
-   * jumps. Every marker comes from `stripState`, so the wagons, the rails'
-   * error stop and the say line cannot disagree.
+   * The run is over: put the rail back under the flow's control, fade the box
+   * out where it stands, and take the reader to the ranking they came for.
+   *
+   * The fade is left to play and cave.js removes the empty element on
+   * animationend, the way the strip it replaces did. Reduced motion keeps the
+   * fade: it is opacity only, and it is what says the element may go.
    */
-  function paintStrip(step) {
-    if (!strip) return;
-    const state = stripState(step);
-    strip.classList.toggle('is-error', state.error);
-    strip.classList.toggle('is-done', state.done);
-    const wagons = strip.querySelectorAll('.cave-launch-wagon');
-    state.wagons.forEach((wagon, i) => {
-      if (!wagons[i]) return;
-      wagons[i].classList.toggle('is-done', wagon.isDone);
-      if (wagon.current) wagons[i].setAttribute('aria-current', 'step');
-      else wagons[i].removeAttribute('aria-current');
-    });
-    const say = strip.querySelector('.cave-launch-say');
-    if (say) say.textContent = state.say;
-    /* Done is the strip's last stop: it fades where it stands (cave.css) and
-       leaves once the fade has played, so the rail comes back up under the
-       hero instead of sitting behind an empty box. */
-    if (state.done) strip.addEventListener('animationend', () => strip.remove(), { once: true });
+  function endRide() {
+    /* One ride, one ending: the first `ranked` lands it. A re-rank from the
+       reader's own sliders afterwards must not scroll them to the ranking
+       again, and a watchdog that has already ended it must not either. */
+    if (!ride || ride.classList.contains('is-done')) return;
+    clearTimeout(rideTimer);
+    rideFloor = null;
+    const app = byId('cave-app');
+    if (app) app.classList.remove('is-riding');
+    ride.classList.add('is-done');
+    ride.addEventListener('animationend', () => ride.remove(), { once: true });
+    const ranking = byId('stage-ranking');
+    if (ranking && ranking.scrollIntoView) {
+      ranking.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    /* The lift's override has just gone: repaint so the cage moves to whatever
+       floor the flow says is open now (Story, once Ranking is done). */
+    paintRail(flow.snapshot());
   }
 
-  if (strip) {
-    /* The night landing is the dig finishing, and the moment Priorities'
-       autorun sends the phrase out: the strip moves on from Dig. */
-    ctx.bus.addEventListener('night', () => paintStrip('embed'));
-    /* Priorities completing is the embed answered. It can answer with a
-       failure — the run still ranks, on the old vectors — and the card says so
-       in its own note; the strip marks the same step and stops the rails.
-       Either way the run moves on: the strip never waits on the embed
-       service. */
-    flow.onChange((snapshot) => {
-      if (!Object.prototype.hasOwnProperty.call(snapshot.done, 'priorities')) return;
-      const note = document.querySelector('#stage-priorities .cave-priorities-note');
-      paintStrip(note && note.classList.contains('is-error') ? 'error' : 'rank');
-    });
-    ctx.bus.addEventListener('ranked', () => paintStrip('done'));
-  }
+  if (ride) ctx.bus.addEventListener('ranked', endRide);
 
   /**
    * Another field is another world, so the switch is a reload. Dig's saved
@@ -372,9 +366,18 @@ function startPage() {
     const lift = rail.querySelector('.cave-lift');
     if (!lift) {
       rail.innerHTML = stageRailHtml(snapshot, STAGES);
+      /* A cage built inside this markup has no previous transform to animate
+         from, so a ride sets its floor a frame later: without the pause the
+         descent is the jump the ride exists to avoid. */
+      const riding = rideFloor;
+      if (riding !== null) {
+        requestAnimationFrame(() => requestAnimationFrame(() => moveLift(riding)));
+      }
       return;
     }
-    moveLift(visitFloor ?? floor);
+    /* A ride's floor outranks both the reader's last click and the open stage:
+       nobody else's run is allowed to pull the cage back up mid-descent. */
+    moveLift(rideFloor ?? visitFloor ?? floor);
     const list = rail.querySelector('.cave-rail-list');
     if (list) list.innerHTML = stageRailStepsHtml(snapshot, STAGES);
   }

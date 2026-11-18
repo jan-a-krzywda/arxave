@@ -80,239 +80,98 @@
   max-width: 46em;
 }
 
-/* ── The launch strip ───────────────────────────────────────────
-   Only a shared launch link grows one (`cave-launch-strip.mjs`): three step
-   markers for the three things a launch does, and under them a mine cart that
-   holds still while the rails run. Standing still is the point — a moving cart
-   would claim to show how far a step had got, which nothing knows — so the
-   motion is the world's: sleepers scrolling, wheels turning, the headlamp
-   flickering. All of it is CSS, so `cave.js` can repaint the strip without
-   restarting a single loop.
+/* ── The ride ───────────────────────────────────────────────────
+   Only a shared launch link starts one (`cave-launch-ride.mjs`): the lift in
+   the rail rides down to Ranking at a walking pace — `--ride-ms`, declared
+   below and held to the module's RIDE_MS by a test — and this box parks beside
+   the cards with the reason the ranking is not here yet. It replaces a strip of
+   three small step markers, which said the same thing at a size nobody read.
 
-   The rails are a repeating-linear-gradient whose background-position shifts
-   exactly one tile per loop, which is what makes the scroll seamless. Every
-   colour is a theme token — done is the rail's gold, in hand is the lamp, the
-   one failure a launch has is the ember — so the strip needs no palette of
-   its own and the dark theme (docs/_sass/cave-theme.scss) draws it like the
-   rest of the page. */
-.cave-launch-strip {
-  margin: 0 0 1.1rem;
-  /* A strip, not a banner: above the rail it has the whole page width at
-     900 px up, and three half-metre markers read as chrome rather than
-     progress. The label and the scene keep this one measure. */
-  max-width: 34rem;
-}
-
-.cave-launch-label {
-  margin: 0 0 0.45rem;
-  font-size: 0.82rem;
-  color: var(--text-dim);
-}
-
-/* The markers sit above the scene like the stations on a line map: they carry
-   the step, the cart carries the work. */
-.cave-launch-wagons {
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+   `position: fixed` and `pointer-events: none` together are what make the box
+   safe over a phone: it floats above the cards (z-index) but every control
+   under it still takes a press, and cave.js takes the box away when the
+   ranking lands. Colours are theme tokens, so the dark theme draws it free. */
+.cave-ride {
+  position: fixed;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  z-index: 20;
+  box-sizing: border-box;
   margin: 0;
-  padding: 0;
+  padding: 1.2rem 1.3rem 1.3rem;
+  background: var(--rock-deep);
+  border: 1px solid var(--rock-lit);
+  border-radius: 8px;
+  box-shadow: 0 18px 40px -18px color-mix(in srgb, var(--cave-air) 85%, transparent);
+  pointer-events: none;
+  animation: cave-ride-in 400ms ease-out;
 }
 
-.cave-launch-wagon {
-  margin: 0 0.15rem;
-  padding: 0.2rem 0.4rem;
-  border: 1px solid var(--rock-edge);
-  border-radius: 3px;
-  background: var(--rock);
-  color: var(--text-faint);
-  font-size: 0.78rem;
-  line-height: 1.3;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+@keyframes cave-ride-in {
+  from {
+    opacity: 0;
+  }
 }
 
-/* Behind, as on the rail: gold. In hand: the lamp. Said twice on purpose —
-   the colour for the eye, `aria-current` for the reader who is not looking. */
-.cave-launch-wagon.is-done {
-  border-color: var(--gold-dim);
-  color: var(--text-dim);
+/* From 900 px the lift exists to ride, so the box leaves the bottom edge for
+   the gutter beside the cards, roughly over the ranking they are waiting for.
+   22rem holds the heading on one or two lines and leaves the cards readable. */
+@media (min-width: 900px) {
+  .cave-ride {
+    left: auto;
+    right: 1.5rem;
+    top: 7rem;
+    bottom: auto;
+    width: 22rem;
+    padding: 1.6rem 1.7rem 1.7rem;
+  }
 }
 
-.cave-launch-wagon[aria-current="step"] {
-  border-color: var(--lamp);
+.cave-ride-head {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.2;
   color: var(--text);
 }
 
-.cave-launch-strip.is-error .cave-launch-wagon[aria-current="step"] {
-  border-color: var(--ember);
-  color: var(--ember);
-}
-
-/* The scene's box is a fixed height so a repaint never moves the cards below
-   it: the cart rides in it, the rails run along its floor. */
-.cave-launch-track {
-  position: relative;
-  height: 2.6rem;
-  margin: 0.5rem 0 0;
-  overflow: hidden;
-}
-
-/* The rails: two lines and their sleepers, scrolling one sleeper per loop. The
-   shift is a whole tile, so the loop has no seam and the rails never crawl. */
-.cave-launch-rails {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0.35rem;
-  height: 0.55rem;
-  background:
-    linear-gradient(to bottom, transparent 15%, var(--text-faint) 15% 32%,
-      transparent 32% 68%, var(--text-faint) 68% 85%, transparent 85%) 0 0 / 100% 100% no-repeat,
-    repeating-linear-gradient(to right, var(--rock-edge) 0 0.25rem,
-      transparent 0.25rem 1.1rem) 0 0 / 1.1rem 100% repeat-x;
-  animation: cave-launch-roll 1.1s linear infinite;
-  pointer-events: none;
-}
-
-@keyframes cave-launch-roll {
-  to {
-    background-position: 0 0, 1.1rem 0;
-  }
-}
-
-/* The cart is decoration: the markers say which step is in hand and the say
-   line says what it is doing, so it is hidden from assistive tech. Centred by
-   a negative margin rather than a transform, because the bob animates the
-   transform. */
-.cave-launch-cart {
-  position: absolute;
-  left: 50%;
-  bottom: 0.8rem;
-  width: 3.6rem;
-  height: 1.8rem;
-  margin-left: -1.8rem;
-  animation: cave-launch-bob 0.55s ease-in-out infinite;
-}
-
-@keyframes cave-launch-bob {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(2px);
-  }
-}
-
-.cave-launch-cart-shape {
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-/* The hopper: rock for the sides, the border colour for its edge, so it reads
-   as the same metal as the markers in either theme. */
-.cave-launch-body {
-  fill: var(--rock);
-  stroke: var(--rock-edge);
-  stroke-width: 1.5;
-}
-
-/* Spoked wheels, turning. The cross is why there is anything to see: a plain
-   circle rotating looks exactly like a stopped circle.
-
-   The origin is in viewBox units, which is what keeps the wheel a wheel: with
-   `transform-box: fill-box` a rotate about `center` comes out sheared (the
-   circle draws as a tilted ellipse mid-turn), so each wheel names its own
-   centre instead. The two numbers are the `cx`/`cy` of the circles above. */
-.cave-launch-wheel {
-  transform-box: view-box;
-  animation: cave-launch-spin 0.55s linear infinite;
-}
-
-.cave-launch-wheel-rear {
-  transform-origin: 15px 18px;
-}
-
-.cave-launch-wheel-front {
-  transform-origin: 33px 18px;
-}
-
-.cave-launch-wheel circle {
-  fill: var(--rock-deep);
-  stroke: var(--text-faint);
-  stroke-width: 1.5;
-}
-
-.cave-launch-wheel path {
-  stroke: var(--text-faint);
-  stroke-width: 1;
-}
-
-@keyframes cave-launch-spin {
-  to {
-    transform: rotate(1turn);
-  }
-}
-
-/* The headlamp, in front of the cart and above it: a dot that mostly glows and
-   occasionally does not, which is what a lamp at the end of a shift does. */
-.cave-launch-lamp {
-  position: absolute;
-  top: 0;
-  right: 0.1rem;
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  background: var(--lamp);
-  box-shadow: 0 0 0.45rem var(--lamp);
-  animation: cave-launch-flicker 3.7s linear infinite;
-}
-
-@keyframes cave-launch-flicker {
-  0%, 38%, 42%, 100% {
-    opacity: 0.9;
-  }
-  40% {
-    opacity: 0.45;
-  }
-  71% {
-    opacity: 0.6;
-  }
-}
-
-/* The one line of words. It holds its height so swapping "Ranking…" for
-   "Done." does not nudge the page. */
-.cave-launch-say {
-  margin: 0.3rem 0 0;
-  min-height: 1.1em;
-  font-size: 0.78rem;
+.cave-ride-copy {
+  margin: 0.55rem 0 0;
+  font-size: 1rem;
+  line-height: 1.5;
   color: var(--text-dim);
 }
 
-/* A failed embed stops the world: the run goes on to rank the old order, but
-   nothing pretends the phrase was carried. */
-.cave-launch-strip.is-error .cave-launch-rails,
-.cave-launch-strip.is-error .cave-launch-cart,
-.cave-launch-strip.is-error .cave-launch-wheel,
-.cave-launch-strip.is-error .cave-launch-lamp {
-  animation-play-state: paused;
+.cave-ride-label {
+  margin: 0.95rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-faint);
 }
 
-.cave-launch-strip.is-error .cave-launch-say {
-  color: var(--ember);
+/* The pace, in CSS's own numbers: a module constant is not readable from here,
+   so `tests/js/launch.test.mjs` holds this one to RIDE_MS. It sits on the app
+   because the cage is a descendant and inherits it. */
+#cave-app.is-riding {
+  --ride-ms: 6000ms;
 }
 
-/* Done: the ranking is on the page and the strip has nothing left to say. It
-   fades where it stands; cave.js takes the empty box away on animationend. */
-.cave-launch-strip.is-done {
-  animation: cave-launch-fade 700ms ease 600ms forwards;
+/* The descent. The rail's ordinary move is 700ms (below, in the desktop
+   block), which is right for a click the reader made; six floors in one go at
+   that pace is a jump. */
+@media (min-width: 900px) {
+  #cave-app.is-riding .cave-lift {
+    transition: transform var(--ride-ms) ease-in-out;
+  }
 }
 
-@keyframes cave-launch-fade {
+/* Ranking landed: the box has nothing left to say. It fades where it stands and
+   cave.js removes the empty element on animationend. Opacity only, so a reader
+   who asked for less motion keeps the fade — it is what says the box may go. */
+.cave-ride.is-done {
+  animation: cave-ride-fade 500ms ease forwards;
+}
+
+@keyframes cave-ride-fade {
   to {
     opacity: 0;
   }
@@ -717,14 +576,8 @@
     grid-column: 1 / -1;
   }
 
-  /* A launch's train needs a row of its own above the rail, so the rail and the
-     cards start one row down. Row 2 is implicit and empty on every ordinary
-     visit — no gap, no height — so the extra row costs nothing there. */
-  .cave-launch-strip {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-
+  /* Hero on row 1, the notice line on row 2; the rail and the cards share
+     row 3 so a floor of the lift lines up with the card beside it. */
   .cave-rail {
     grid-column: 1;
     grid-row: 3;
@@ -880,16 +733,12 @@
     transition: none;
   }
 
-  /* The mine cart's world stops too: no scrolling sleepers, no spinning
-     wheels, no bob, no flicker. Nothing is lost — the step is in the wagon
-     markers and the words in the say line — and the fade the finished strip
-     plays is opacity only, so it is left alone: it is what tells cave.js the
-     empty box may go. */
-  .cave-launch-rails,
-  .cave-launch-cart,
-  .cave-launch-wheel,
-  .cave-launch-lamp {
-    animation: none;
+  /* A six-second descent is exactly the travel this setting exists to spare a
+     reader, so the ride's slow transition goes too: the cage jumps to Ranking
+     and the box still says where the ranking is. The box's own fade is opacity
+     only and is kept — it is what tells cave.js the element may go. */
+  #cave-app.is-riding .cave-lift {
+    transition: none;
   }
 }
 
