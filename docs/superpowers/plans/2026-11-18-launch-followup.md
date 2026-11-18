@@ -21,7 +21,7 @@
 
 ## Review Focus
 
-- A percentile saturates: over ~200 papers some paper is always above the 99th percentile of the field, so "no match" must be judged on the raw `fit` z-score, never `fitPct` (this is why Task 1 takes z-scores).
+- A percentile saturates (some paper is always above the 99th percentile of the field), and so does a count above a z cut (real matches sit at z 0.7 to 2.8, noise reaches z 1.5 on every night). "No match" is judged on the absolute closeness of the night's top-3 papers to the touchstones (Task 5 has the evidence; Task 1 was rebuilt on it as F5).
 - Reader typed no words (no touchstones): no banner at all, never "nothing close".
 - Zero papers tonight (weekend, holiday): its own message, not "nothing close".
 - A launch phrase vector from an older embedding model: it must be ignored, not used, and the run must fall back to `/embed`.
@@ -36,10 +36,9 @@
 - Test: `tests/js/match.test.mjs`
 
 **Interfaces:**
-- Produces:
-  - `CLOSE_Z = 3` (a paper counts as close when its `fit` z-score is at least this; tuned in Task 5)
-  - `FEW_CLOSE = 3` (fewer close papers than this reads as "few")
-  - `matchVerdict(ranked: {fit: number}[], { hasWords: boolean }): { state: 'off'|'empty'|'none'|'few'|'ok', close: number, best: number | null }`
+- Produces (as rebuilt by F5 after Task 5's calibration; the first version counted z-scores and was replaced):
+  - `NONE_COS = 0.7`, `WEAK_COS = 0.73`, `MIN_NIGHT = 30`
+  - `matchVerdict(ranked: {vec}[], { touchstones }): { state: 'off'|'empty'|'none'|'weak'|'ok', top3: number | null, count: number }`
   - `matchBannerHtml(verdict): string` (empty string for `off` and `ok`)
 
 - [ ] **Step 1: Failing tests** in `match.test.mjs`: no words gives `state 'off'` and banner `''`, even for an empty list; words and `[]` gives `'empty'` with a banner containing "announced nothing"; all `fit` below `CLOSE_Z` gives `'none'`, banner contains "Nothing close tonight" and the best z formatted to one decimal; two papers at or above `CLOSE_Z` gives `'few'`, banner contains "Only 2"; three or more gives `'ok'` and `''`; `best` is the maximum `fit`; non-finite `fit` values are ignored, not counted close.
@@ -95,9 +94,15 @@
 - [ ] **Step 4: `runLaunch`:** when the loader returns a vector, set `state.touchstones = [corpusSpace(vec, ctx.corpus)]`, set `touchKey` to the collapsed phrase, `publish()`, and skip `embedNow()`; otherwise unchanged.
 - [ ] **Step 5: Run tests; commit** `feat(cave): launch phrases ship their vectors`. (The JSON itself is built and committed by the orchestrator, because it needs the live service.)
 
-### Task 5: Calibrate the thresholds (orchestrator, not Cline)
+### Task 5: Calibrate the thresholds (orchestrator, not Cline) — DONE
 
-- [ ] Build `launch-vectors.json` with the script. Rank each field's corpus with each launch vector. Compare the `fit` z-scores of papers whose titles match the launch's keywords against the null (everything else) and pick `CLOSE_Z` and `FEW_CLOSE` so a strong night passes and an off-topic one does not. Write the numbers and the evidence into the constants' comment. Commit `tune(cave): match thresholds from the corpus`.
+Built `launch-vectors.json` from the live `/embed` (12 × 768, `allenai/specter2_base`). Findings that replaced Task 1's rule:
+
+- **z-count fails.** Title-matched papers have a median fit z of 0.7 to 2.8 (none of 1176 `llms` titles reach z 3); non-matching papers reach z 1.5 in 2 to 8% of cases. A count above a z cut cannot tell "no match" from "a few matches".
+- **Absolute closeness works.** `cos(paper)` = largest dot of the paper's corpus-space vector with a touchstone; `top3` = mean of a night's three largest. Simulated 200-paper nights: launch phrases 5th percentile 0.719 (spin-qubits) to 0.832; 6 off-topic phrases 95th percentile 0.623 to 0.758 (all but the adjacent "quantum dots for solar cells" below 0.73).
+- **Rule (F5):** `NONE_COS = 0.70`, `WEAK_COS = 0.73`, `MIN_NIGHT = 30` (smaller nights get no verdict). States: off / empty / none / weak / ok.
+- **End to end with the real `caveScore`**, 40 random nights each: quantum-sensing 40 ok; spin-qubits 35 ok, 5 weak (12%, the narrowest phrase); sourdough 40 none. About 100 papers survive the topic gate on a 200-paper night.
+- Known cost: a narrow launch like spin-qubits will say "only weak matches" on roughly one normal night in eight. Lowering `WEAK_COS` to about 0.715 would halve that.
 
 ### Task 6: Docs
 
