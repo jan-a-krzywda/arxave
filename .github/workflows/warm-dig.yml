@@ -77,7 +77,20 @@ jobs:
 
       - name: Install warmer dependencies
         working-directory: scripts
+        # onnxruntime-node's postinstall fetches a CUDA build on Linux, which
+        # now 404s, and the runner has no GPU to use it. The CPU build is what
+        # embed-local.mjs runs.
+        env:
+          ONNXRUNTIME_NODE_INSTALL_CUDA: skip
         run: npm install --no-package-lock --no-audit --no-fund
+
+      # The model package used to be an optionalDependency, which npm drops
+      # without a word when its install fails. The warm then ran for twenty
+      # minutes and died at the embed step with ERR_MODULE_NOT_FOUND, three
+      # mornings running, and nothing was committed. Say so here, up front.
+      - name: Check the embedder can be loaded
+        working-directory: scripts
+        run: node -e "import('@huggingface/transformers').then(() => console.log('transformers ok'))"
 
       # Cheap, and they guard the two failures this job cannot detect itself: a
       # parse that diverges from the browser's files every vector under a key
