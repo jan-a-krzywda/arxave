@@ -31,7 +31,8 @@ import {
   withoutField,
 } from './cave-fields.mjs';
 import { STAGES, createFlow } from './cave-flow.mjs';
-import { resolveLaunch, runningLaunch, seedLaunch } from './cave-launch.mjs';
+import { resolveLaunch } from './cave-launch.mjs';
+import { runningLaunch, seedLaunch } from './cave-launch-run.mjs';
 import { AUTODIG_KEY, FORM_KEY as DIG_KEY } from './cave-stage-dig.mjs';
 import { loadAxes, loadCorpus, loadTopics } from './sieve-core.mjs';
 import {

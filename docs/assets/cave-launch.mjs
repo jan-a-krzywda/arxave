@@ -15,18 +15,14 @@
  *
  * "Launch", never "preset": `filter.js` already owns "preset" for RSS feeds.
  *
- * THE KEYS ARE THE STAGES', IMPORTED. Seeding writes Dig's form, Dig's one-shot
- * autorun flag and the Priorities store, so those names come from the modules
- * that own them instead of being retyped here: a renamed key would otherwise
- * leave a launch silently half-seeded (it would open, and do nothing). The
- * Priorities and map stages import `runningLaunch` back, so those two edges
- * form a cycle; every binding is read inside a function, at call time, so it
- * resolves whichever module the page loads first.
+ * THIS FILE IMPORTS NOTHING, ON PURPOSE. `404.html` loads it alone to ask one
+ * question — does this path name a launch? — and a 404 that pulled in the Cave
+ * (Dig, the fields, Priorities, the sieves) would break every launch redirect
+ * whenever any link in that chain failed. So this is the table and the two URL
+ * forms, and nothing else. What a launch *does* (seeding the stages' storage,
+ * and the run's freshness rule) lives in `cave-launch-run.mjs`, which only the
+ * Cave's own pages load.
  */
-import { FIELD_KEY, alignCategories, fieldById, fieldKey } from './cave-fields.mjs';
-import { AUTODIG_KEY, FORM_KEY } from './cave-stage-dig.mjs';
-import { STORE_KEY } from './cave-stage-priorities.mjs';
-import { readStore, writeStore } from './sieve-ui.mjs';
 
 /**
  * Where the one-shot autorun record `{ id, at }` lives. It is written before
@@ -36,11 +32,14 @@ import { readStore, writeStore } from './sieve-ui.mjs';
 export const LAUNCH_KEY = 'arxave-cave-launch';
 
 /**
- * How long that record counts as this visit. Two minutes is longer than a
- * dig-plus-embed and shorter than a reader wandering off and coming back; a
- * stale record must not swallow a deliberate reload an hour later.
+ * How long that record counts as this visit. Five minutes is longer than a cold
+ * first load — an uncached `cs.CL`, `cs.CV` or `physics.atom-ph` pack takes
+ * about a minute before the embed, and the run must not stop at the map while
+ * the night is still landing — and still short enough that a reader who
+ * wandered off and came back is browsing, not following the link. A stale
+ * record must not swallow a deliberate reload an hour later.
  */
-export const LAUNCH_FRESH_MS = 120000;
+export const LAUNCH_FRESH_MS = 300000;
 
 /** The 12 launches, in the proposal's ranked order. Frozen like `FIELDS`. */
 export const LAUNCHES = Object.freeze([
@@ -187,74 +186,4 @@ export function launchFromSearch(search) {
  */
 export function resolveLaunch(loc) {
   return launchFromSearch(loc?.search) ?? launchFromPath(loc?.pathname);
-}
-
-/**
- * The launch this page is still inside, or null.
- *
- * One rule, three askers: `cave.js` seeds only when no launch of this id is
- * running, the map passes its own card, and the Priorities stage runs the
- * phrase. A record older than `LAUNCH_FRESH_MS` is a visit, not a run — the
- * reader came back later and is browsing, so nothing may move on its own.
- *
- * ponytail: the window is counted from the seed, so a dig that outlives it (a
- * cold `cs.CL` pack on a slow link) stops the run at the map, where the
- * reader's own Continue finishes it. Re-stamp the record when the night lands
- * if that ever bites.
- */
-export function runningLaunch(storage, now = Date.now()) {
-  const record = readStore(storage, LAUNCH_KEY, null);
-  if (!record || !(now - Number(record.at) < LAUNCH_FRESH_MS)) return null;
-  return launchById(record.id);
-}
-
-/**
- * Write what a launch asks for into the places the stages already read, so the
- * night runs itself: Dig's form becomes the launch's field and categories one
- * day back, Dig's autorun flag asks for the press a link cannot make, and the
- * Priorities store is emptied so the sliders come back at their defaults — a
- * launch is a stranger's ranking, and the reader's old sliders are not part of
- * it. The one thing taken from the row is the topic leaf, written as `prefer`
- * so the tree agrees with the phrase beside it.
- *
- * The record goes in last and is the page's proof that this is a launch rather
- * than a visit: `runningLaunch` reads it back in each stage, and the
- * Priorities stage clears it once the run has ranked.
- *
- * Called before `chooseField`, because Dig's categories are what pick the pack:
- * seeding after the field was chosen would dig one field's codes out of the
- * other field's corpus.
- */
-export function seedLaunch({ storage, launch, now = Date.now() } = {}) {
-  if (!storage || !launch) return;
-
-  const field = fieldById(launch.field);
-  writeStore(storage, FIELD_KEY, launch.field);
-
-  /* `{ ...form }` keeps the reader's max results: a launch says nothing about
-     how many papers are enough, and 200 is a sensible answer for everyone.
-     The categories go through `alignCategories` like any other list that
-     arrives with a field, so the pack's own codes lead it. */
-  const form = readStore(storage, FORM_KEY, null) || {};
-  writeStore(storage, FORM_KEY, {
-    ...form,
-    categories: alignCategories(launch.categories, field).join(', '),
-    lookback: 1,
-  });
-
-  writeStore(storage, AUTODIG_KEY, now);
-  writeStore(storage, LAUNCH_KEY, { id: launch.id, at: now });
-
-  const prefsKey = fieldKey(STORE_KEY, field);
-  try {
-    storage.removeItem(prefsKey);
-  } catch (_) {
-    /* nothing stored, or a storage that will not forget: writeStore below
-       still writes the nudge, and the defaults are what parsePrefs reads */
-  }
-  /* Only the topic part of the prefs: `parsePrefs` fills the sliders in at
-     their defaults, so this is the smallest set of words that means "this
-     leaf, preferred, everything else untouched". An id this field's tree does
-     not know is dropped there, which is the right answer too. */
-  if (launch.nudge) writeStore(storage, prefsKey, { q: 'topics=' + launch.nudge + ':prefer' });
 }

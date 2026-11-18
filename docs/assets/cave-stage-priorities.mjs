@@ -31,9 +31,9 @@
  * twice. Unchanged words are never fetched, and Rank tonight without the button
  * keeps the old vectors and says the words were not embedded.
  *
- * A LAUNCH LINK RUNS THIS CARD. `cave-launch.mjs` seeded the phrase and the
- * field before the page loaded; `runningLaunch` says so, and then the box is
- * filled, the night the dig is hauling is waited for, the words are embedded
+ * A LAUNCH LINK RUNS THIS CARD. `cave-launch-run.mjs` seeded the phrase and
+ * the field before the page loaded; `runningLaunch` says so, and then the box
+ * is filled, the night the dig is hauling is waited for, the words are embedded
  * and Rank tonight is pressed — whether or not that worked, because a dead
  * embed service leaves a ranking and its own error line, and a link that
  * stopped on a filled box would be worse.
@@ -65,7 +65,8 @@
  * serialise/parse pair v3's tests already covered.
  */
 import { FIELDS, fieldKey } from './cave-fields.mjs';
-import { LAUNCH_KEY, runningLaunch } from './cave-launch.mjs';
+import { runningLaunch } from './cave-launch-run.mjs';
+import { LAUNCH_KEY } from './cave-launch.mjs';
 import { applyNudge } from './cave-nudge.mjs';
 import { axisProbability, corpusSpace, defaultSetting } from './sieve-core.mjs';
 import {

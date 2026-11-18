@@ -24,9 +24,8 @@ import {
   launchFromPath,
   launchFromSearch,
   resolveLaunch,
-  runningLaunch,
-  seedLaunch,
 } from '../../docs/assets/cave-launch.mjs';
+import { runningLaunch, seedLaunch } from '../../docs/assets/cave-launch-run.mjs';
 import { FIELD_KEY, fieldById, fieldKey } from '../../docs/assets/cave-fields.mjs';
 import { AUTODIG_KEY, FORM_KEY } from '../../docs/assets/cave-stage-dig.mjs';
 import { STORE_KEY } from '../../docs/assets/cave-stage-priorities.mjs';
@@ -142,7 +141,9 @@ test('the table is the proposal, verbatim and in order', () => {
 
 test('the storage record has a key and a freshness window', () => {
   assert.equal(LAUNCH_KEY, 'arxave-cave-launch');
-  assert.equal(LAUNCH_FRESH_MS, 120000);
+  // Five minutes: a cold, uncached category is about a minute before the embed,
+  // and the run must not run out of road at the map on the way there.
+  assert.equal(LAUNCH_FRESH_MS, 300000);
 });
 
 /*
@@ -237,6 +238,20 @@ test('404.html redirects a launch path, and only a launch path', () => {
   // a half-started Cave.
   assert.match(html, /import\(/, '404.html does not load cave-launch.mjs');
   assert.match(html, /launchFromPath/, '404.html does not validate the path');
+});
+
+/*
+ * The other half of that contract, as text: the 404 page loads `cave-launch.mjs`
+ * ALONE, so that module must import nothing. One import line would put the
+ * Dig/fields/Priorities chain — and any failure in it — between every shared
+ * link and its redirect, and a 404 that silently stops redirecting looks like a
+ * working 404. `cave-launch-run.mjs` is where the pieces that need the rest of
+ * the Cave live.
+ */
+test('cave-launch.mjs stays loadable on its own: no import lines', () => {
+  const js = fs.readFileSync(path.join(ROOT, 'docs/assets/cave-launch.mjs'), 'utf8');
+  const imports = js.split('\n').filter((line) => /^\s*import\b/.test(line));
+  assert.deepEqual(imports, [], 'cave-launch.mjs imports: ' + imports.join(' | '));
 });
 
 /*

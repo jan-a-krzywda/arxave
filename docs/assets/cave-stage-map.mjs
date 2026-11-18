@@ -27,7 +27,7 @@ import {
   nameWagons, trainStripHtml, wagonKey, wagonTableHtml, wireTrainStrip,
 } from './cave-wagon-views.mjs';
 import { WAGON_GRAPH_HINT, mountWagonGraph } from './cave-wagon-graph.mjs';
-import { runningLaunch } from './cave-launch.mjs';
+import { runningLaunch } from './cave-launch-run.mjs';
 
 /** Where named wagons are remembered, keyed by `wagonKey`. */
 const NAMES_KEY = 'arxave-cave-wagon-names';
