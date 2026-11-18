@@ -4,14 +4,17 @@
  *
  * A launch link promises "papers like this phrase"; on an off night the honest
  * answer is "nothing close", not a list of the least-unrelated papers served as
- * if it were the answer. The verdict is judged on `fit` — the corpus-normalised
- * z-score `caveScore` returns — and never on `fitPct`: a percentile saturates,
- * so over ~200 papers some paper is always above the 99th percentile of the
- * field and "nothing close" would never fire on a busy night.
+ * if it were the answer. The verdict is judged on how close the best papers
+ * are — the mean of the three largest dot products between tonight's vectors
+ * and the reader's touchstones — and never on a count of papers over a z bar: a
+ * truly matching title's z sits inside the range a normal night's non-matching
+ * papers reach by noise, so a count cannot tell "no real match" from "a few".
+ * Closeness is easy to pin down here because the touchstone is a unit axis, so
+ * a paper's dot with it is its first component.
  *
- * The two states with no banner at all are the ones that would lie: no words
- * typed (nothing was asked) and three or more close papers (the answer is the
- * list itself). Both are pinned here because neither is visible on screen.
+ * The two states with no banner at all are the ones that would lie: no
+ * touchstones (nothing was asked) and a close night (the answer is the list
+ * itself). Both are pinned here because neither is visible on screen.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -20,100 +23,135 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  CLOSE_Z,
-  FEW_CLOSE,
+  MIN_NIGHT,
+  NONE_COS,
+  WEAK_COS,
   matchBannerHtml,
   matchVerdict,
 } from '../../docs/assets/cave-match.mjs';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const WORDS = { hasWords: true };
-const SILENT = { hasWords: false };
 
-/** A ranked row, as the ranking stage passes it; only `fit` is read here. */
-const row = (fit) => ({ fit });
+/** The reader's words as one unit vector: a paper's closeness is its x. */
+const WORDS = { touchstones: [[1, 0, 0]] };
 
-test('no words means no verdict: the banner stays off, even on an empty night', () => {
-  for (const list of [[], [row(9)], [row(0)]]) {
-    const verdict = matchVerdict(list, SILENT);
+/** A ranked row whose vector sits `cos` away from the touchstone. */
+const row = (cos) => ({ vec: [cos, 0.1, 0] });
+
+/**
+ * A normal night: the papers named, then zero-closeness papers until it is long
+ * enough to be judged — a thin night is what `MIN_NIGHT` refuses to read.
+ */
+const night = (...cosines) => {
+  const list = cosines.map((cos) => row(cos));
+  while (list.length < MIN_NIGHT) list.push(row(0));
+  return list;
+};
+
+/** The mean of the three largest cosines, worked out without the module. */
+const meanTop3 = (cosines) => cosines.slice().sort((a, b) => b - a).slice(0, 3)
+  .reduce((sum, cos) => sum + cos, 0) / 3;
+
+test('no touchstones means no verdict: the banner stays off, even on an empty night', () => {
+  for (const list of [[], [row(0.9)], night(0.9)]) {
+    const verdict = matchVerdict(list, { touchstones: [] });
     assert.equal(verdict.state, 'off', JSON.stringify(verdict));
+    assert.equal(verdict.top3, null, 'a night nobody asked about has a closeness');
     assert.equal(matchBannerHtml(verdict), '', 'a reader who typed nothing is told nothing');
   }
+  assert.equal(matchVerdict([row(0.9)]).state, 'off', 'a missing option is not "no words"');
 });
 
-test('words and no papers is an empty day, not a weak match', () => {
+test('touchstones and no papers is an empty day, not a weak match', () => {
   const verdict = matchVerdict([], WORDS);
-  assert.deepEqual(verdict, { state: 'empty', close: 0, best: null });
+  assert.deepEqual(verdict, { state: 'empty', top3: null, count: 0 });
   const html = matchBannerHtml(verdict);
   assert.match(html, /announced nothing/, html);
   assert.doesNotMatch(html, /Nothing close tonight/, 'an empty day is blamed on the reader');
 });
 
-test('everything below CLOSE_Z says nothing is close, with how close the best came', () => {
-  const verdict = matchVerdict([row(1.44), row(-2), row(0.5)], WORDS);
+test('a night too short to judge says nothing, even when its papers are close', () => {
+  const short = Array.from({ length: MIN_NIGHT - 1 }, () => row(0.9));
+  const verdict = matchVerdict(short, WORDS);
+  assert.equal(verdict.state, 'off', 'top3 of a short night was compared');
+  assert.equal(verdict.top3, null);
+  assert.equal(matchBannerHtml(verdict), '');
+  assert.equal(matchVerdict(night(0.9, 0.9, 0.9), WORDS).state, 'ok', 'MIN_NIGHT is enough');
+});
+
+test('nothing over NONE_COS says nothing is close, with how close the best came', () => {
+  const verdict = matchVerdict(night(0.6, 0.6, 0.6), WORDS);
   assert.equal(verdict.state, 'none');
-  assert.equal(verdict.close, 0);
+  assert.equal(verdict.count, MIN_NIGHT);
+  assert.ok(Math.abs(verdict.top3 - 0.6) < 1e-9, 'top3 is not the mean of the best three');
   const html = matchBannerHtml(verdict);
   assert.match(html, /Nothing close tonight/, html);
-  assert.match(html, /z 1\.4\)/, 'the best z is not given to one decimal: ' + html);
-  assert.doesNotMatch(html, /z 1\.44/, 'the z is printed at full precision: ' + html);
+  assert.match(html, /0\.60/, 'the closeness is not given to two decimals: ' + html);
+  assert.doesNotMatch(html, /0\.600/, 'the closeness is printed at full precision: ' + html);
 });
 
-test('one or two close papers reads as few, and says how many', () => {
-  const one = matchVerdict([row(CLOSE_Z), row(1)], WORDS);
-  assert.equal(one.state, 'few');
-  assert.equal(one.close, 1);
-  assert.match(matchBannerHtml(one), /Only 1 paper\b/, 'the count is wrong or unreadable');
-
-  const two = matchVerdict([row(CLOSE_Z + 1), row(0), row(CLOSE_Z)], WORDS);
-  assert.equal(two.state, 'few');
-  assert.equal(two.close, 2);
-  assert.match(matchBannerHtml(two), /Only 2/, 'the count is wrong or missing');
+test('between the thresholds the matches are weak, and the banner says so', () => {
+  const verdict = matchVerdict(night(0.72, 0.72, 0.72), WORDS);
+  assert.equal(verdict.state, 'weak');
+  const html = matchBannerHtml(verdict);
+  assert.match(html, /Only weak matches tonight/, html);
+  assert.match(html, /0\.72/, 'the closeness is missing: ' + html);
+  assert.doesNotMatch(html, /Nothing close tonight/, 'a weak night is called a dead one');
 });
 
-
-test('three or more close papers need no banner', () => {
-  const list = [row(CLOSE_Z - 1), row(CLOSE_Z), row(CLOSE_Z + 2), row(CLOSE_Z + 0.5)];
-  const verdict = matchVerdict(list, WORDS);
+test('a close night needs no banner', () => {
+  const verdict = matchVerdict(night(0.8, 0.8, 0.8), WORDS);
   assert.equal(verdict.state, 'ok');
-  assert.equal(verdict.close, 3);
+  assert.ok(Math.abs(verdict.top3 - 0.8) < 1e-9, 'top3 is not the best three, meaned');
   assert.equal(matchBannerHtml(verdict), '', 'the list is the answer, and it came with a caption');
 });
 
-test('the thresholds are what decide "close" and "few", not tonight\'s luck', () => {
-  const close = Array.from({ length: FEW_CLOSE }, () => row(CLOSE_Z));
-  assert.equal(matchVerdict(close, WORDS).state, 'ok', 'FEW_CLOSE papers do not read as enough');
-  assert.equal(matchVerdict(close.slice(1), WORDS).state, 'few', 'one short of FEW_CLOSE is not few');
+test('the thresholds are what decide, not tonight\'s luck', () => {
+  const under = NONE_COS - 0.01;
+  const over = NONE_COS + 0.01;
+  assert.equal(matchVerdict(night(under, under, under), WORDS).state, 'none',
+    'a night just under NONE_COS reads as a match');
+  assert.equal(matchVerdict(night(over, over, over), WORDS).state, 'weak',
+    'a night just over NONE_COS reads as dead');
 });
 
-test('best is the largest fit, whatever the order', () => {
-  assert.equal(matchVerdict([row(1), row(4.5), row(2)], WORDS).best, 4.5);
-  assert.equal(matchVerdict([row(-3)], WORDS).best, -3, 'a negative z is still the best on offer');
+test('top3 is the mean of the three largest, wherever they sit in the list', () => {
+  const cosines = [0.5, 0.9, 0.2, 0.8, 0.75];
+  const verdict = matchVerdict(night(...cosines), WORDS);
+  assert.ok(Math.abs(verdict.top3 - meanTop3(cosines)) < 1e-9,
+    'top3 is not the mean of the three largest: ' + verdict.top3);
+  assert.equal(verdict.state, 'ok');
 });
 
-test('a paper with no finite fit is ignored: not close, and never the best', () => {
-  const verdict = matchVerdict([row(NaN), row(Infinity), row(undefined), row(1)], WORDS);
-  assert.equal(verdict.close, 0, 'a non-finite fit counted as close');
-  assert.equal(verdict.best, 1, 'a non-finite fit won the comparison');
+test('a paper with no placeable vector is ignored, and a night of none is not judged', () => {
+  const list = night(0.6, 0.6, 0.6);
+  list.push({}, { vec: [] }, { vec: [1, 0] }, { vec: [NaN, 0.1, 0] }, { vec: [Infinity, 0.1, 0] });
+  const verdict = matchVerdict(list, WORDS);
+  assert.ok(Math.abs(verdict.top3 - 0.6) < 1e-9,
+    'a paper the numbers cannot place won the top three: ' + verdict.top3);
   assert.equal(verdict.state, 'none');
+  assert.equal(verdict.count, list.length, 'count is the papers on the night');
+
+  const unplaceable = Array.from({ length: MIN_NIGHT }, () => ({ vec: [NaN, 0, 0] }));
+  assert.equal(matchVerdict(unplaceable, WORDS).state, 'off',
+    'a night with nothing placeable was judged');
 });
 
-test('a night with no finite fit at all still says nothing close, and quotes no z', () => {
-  // A paper the scorer could not place has no z; the sentence must not print
-  // "z null" or "z NaN" at a reader.
-  const verdict = matchVerdict([row(NaN)], WORDS);
-  assert.equal(verdict.state, 'none');
-  assert.equal(verdict.best, null);
-  const html = matchBannerHtml(verdict);
-  assert.match(html, /Nothing close tonight/, html);
-  assert.doesNotMatch(html, /\(z /, 'a missing z is quoted: ' + html);
+test('two touchstones: a paper takes whichever it is closer to', () => {
+  const words = { touchstones: [[1, 0, 0], [0, 1, 0]] };
+  const across = Array.from({ length: MIN_NIGHT }, () => ({ vec: [0.3, 0.8, 0] }));
+  assert.ok(Math.abs(matchVerdict(across, words).top3 - 0.8) < 1e-9,
+    'the smaller dot won instead of the larger');
+  const along = Array.from({ length: MIN_NIGHT }, () => ({ vec: [0.95, 0.1, 0] }));
+  assert.ok(Math.abs(matchVerdict(along, words).top3 - 0.95) < 1e-9,
+    'the first touchstone is not read');
 });
 
 test('the banner is one status line, classed by its state', () => {
-  assert.match(matchBannerHtml(matchVerdict([row(0)], WORDS)),
+  assert.match(matchBannerHtml(matchVerdict(night(0.2, 0.2, 0.2), WORDS)),
     /^<p class="cave-match-banner is-none" role="status">/);
-  assert.match(matchBannerHtml(matchVerdict([row(CLOSE_Z)], WORDS)),
-    /^<p class="cave-match-banner is-few" role="status">/);
+  assert.match(matchBannerHtml(matchVerdict(night(0.72, 0.72, 0.72), WORDS)),
+    /^<p class="cave-match-banner is-weak" role="status">/);
   assert.match(matchBannerHtml(matchVerdict([], WORDS)),
     /^<p class="cave-match-banner is-empty" role="status">/);
 });
@@ -133,7 +171,7 @@ test('cave-match.mjs imports nothing but the escape helper', () => {
 
 /*
  * The ranking stage's wiring, as text. A verdict nobody draws is no verdict:
- * the import, the list it judges, and the reader's own words are three silent
+ * the import, the list it judges, and the reader's own vectors are three silent
  * ways for the banner to disappear, and nothing on screen would show it — an
  * absent banner looks exactly like a good night.
  */
@@ -146,8 +184,9 @@ test('the ranking stage asks the match module about the list it painted', () => 
   // yet", not "arXiv announced nothing": the verdict waits for a finished pass.
   assert.match(js, /state\.answered\s*\n?\s*\?/,
     'the verdict is drawn before a scoring pass has answered');
-  assert.match(js, /hasWords:[^\n]*ctx\.prefs\.touchstones\.length > 0/,
-    'hasWords does not come from the reader\'s own words');
+  assert.match(js, /touchstones:[^\n]*ctx\.prefs\.touchstones/,
+    'the verdict is not given the reader\'s own vectors');
+  assert.doesNotMatch(js, /hasWords/, 'the z-score count rule is still wired in');
 });
 
 /*

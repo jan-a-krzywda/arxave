@@ -694,12 +694,12 @@ export function mount(body, ctx) {
     const total = state.ranked.length;
 
     /* The reader's words are the only thing that makes the night an answer to a
-       question; no words means no verdict, and the module draws no banner. And
-       only a finished pass can answer: a page waiting on a dig draws no banner
-       either, because its empty list is "not yet". */
+       question; no touchstones means no verdict, and the module draws no banner.
+       And only a finished pass can answer: a page waiting on a dig draws no
+       banner either, because its empty list is "not yet". */
     const verdict = state.answered
       ? matchVerdict(state.ranked, {
-        hasWords: !!(ctx.prefs && Array.isArray(ctx.prefs.touchstones) && ctx.prefs.touchstones.length > 0),
+        touchstones: (ctx.prefs && ctx.prefs.touchstones) || [],
       })
       : null;
     matchEl.innerHTML = verdict ? matchBannerHtml(verdict) : '';
