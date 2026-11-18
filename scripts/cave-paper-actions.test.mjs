@@ -38,7 +38,7 @@ test('actionsHtml: Discuss is greyed out — no thread link, no start, whatever 
   for (const thread of [{ url }, null, undefined]) {
     const html = actionsHtml(paper(), { repo: REPO, thread });
     assert.ok(/<button type="button" class="pa-btn pa-discuss" disabled/.test(html), 'a disabled square');
-    assert.ok(html.includes('✚ Discuss'));
+    assert.ok(html.includes('Discuss'));
     assert.ok(!html.includes('data-act="discuss"'), 'nothing to click');
     assert.ok(!html.includes(url), 'no thread link while threads are off');
   }
@@ -59,8 +59,8 @@ test('actionsHtml: no repo, no discussion button at all', () => {
 });
 
 test('actionsHtml: Summarize reads Summary once a diamond is known', () => {
-  assert.ok(actionsHtml(paper(), {}).includes('✦ Summarize'));
-  assert.ok(actionsHtml(paper(), { diamond: true }).includes('✦ Summary'));
+  assert.ok(actionsHtml(paper(), {}).includes('Summarize'));
+  assert.ok(actionsHtml(paper(), { diamond: true }).includes('Summary'));
 });
 
 test('actionsHtml: the Pick tick is not on the bar — it sits under the rank', () => {

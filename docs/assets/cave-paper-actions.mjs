@@ -156,12 +156,12 @@ export function actionsHtml(item, state = {}) {
     /* Threads are switched off for now: the button holds its square in the
        bar, greyed, so the row keeps its shape for the day they come back. */
     parts.push('<button type="button" class="pa-btn pa-discuss" disabled ' +
-      'title="Discussions are coming soon">✚ Discuss</button>');
+      'title="Discussions are coming soon">Discuss</button>');
   }
 
   parts.push('<button type="button" class="pa-btn pa-summarize" data-act="summarize" data-id="' +
     escapeHtml(id) + '" aria-expanded="' + (s.open ? 'true' : 'false') + '">' +
-    (s.diamond ? '✦ Summary' : '✦ Summarize') + '</button>');
+    (s.diamond ? 'Summary' : 'Summarize') + '</button>');
 
   const md = s.md && s.repo
     ? '<a class="pa-md" href="#" data-act="md" data-id="' + escapeHtml(id) + '">⤓ the post as .md</a>'

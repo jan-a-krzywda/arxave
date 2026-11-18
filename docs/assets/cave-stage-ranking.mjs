@@ -382,7 +382,9 @@ function detailHtml(item, parts) {
  * night's size, for the meter's title), `open`, `repo`, `thread` (the three
  * states `actionsHtml` reads), `diamond`, `pending`, `error`, `md`, `trace`.
  * The title is a link to the arXiv abstract page; the row's ▸ opens the detail.
- * The Pick tick sits under the rank, so the first column reads down the list.
+ * The first column reads down the list: rank, the Pick tick, then the three
+ * exits (SciRate, Discuss, Summarize). Four lines in the middle: title, authors
+ * and chips, last-author affiliation and the score with its grades.
  * Titles, authors, links and landmarks all arrive from arXiv, so every one of
  * them is escaped — `rowHtml` is the one place that happens.
  */
@@ -391,6 +393,8 @@ export function rowHtml(item, parts = {}) {
   const id = String(data.id ?? '');
   const title = data.title || id;
   const authors = shortAuthors(data.authors);
+  /* The last author's short affiliation, once the data carries one. */
+  const affil = String(data.affiliation || '').trim();
   const topic = parts.topic
     ? '<span class="rk-chip rk-chip-topic">' + escapeHtml(parts.topic) + '</span>' : '';
   const wagon = parts.wagon && !sameLabel(parts.wagon, parts.topic)
@@ -415,18 +419,23 @@ export function rowHtml(item, parts = {}) {
         '<span class="rk-rank">' + rank + '</span>' +
         '<input type="checkbox" class="pa-pick" data-id="' + escapeHtml(id) + '"' +
           (data.picked ? ' checked' : '') + ' aria-label="Pick for the story">' +
+        actions +
       '</span>' +
       '<div class="rk-main">' +
         '<h3 class="rk-title">' +
           '<a class="rk-title-link" href="' + escapeHtml(absUrl(id)) + '" target="_blank" rel="noopener">' +
             escapeHtml(title) + '</a>' +
         '</h3>' +
-        (authors ? '<p class="rk-authors">' + escapeHtml(authors) + '</p>' : '') +
-        ((topic || wagon) ? '<p class="rk-chips">' + topic + wagon + '</p>' : '') +
-        actions +
+        '<div class="rk-line rk-line-who">' +
+          '<p class="rk-authors">' + escapeHtml(authors) + '</p>' +
+          '<p class="rk-chips">' + topic + wagon + '</p>' +
+        '</div>' +
+        '<div class="rk-line rk-line-meta">' +
+          '<span class="rk-affil" title="' + escapeHtml(affil) + '">' + escapeHtml(affil) + '</span>' +
+          '<div class="rk-meters">' + meterHtml(data.rel, total) + gradesHtml(data, parts.trace) + '</div>' +
+        '</div>' +
         error +
       '</div>' +
-      '<div class="rk-meters">' + meterHtml(data.rel, total) + gradesHtml(data, parts.trace) + '</div>' +
       '<button type="button" class="rk-toggle" aria-expanded="' + (open ? 'true' : 'false') +
         '" aria-label="' + (open ? 'Hide' : 'Show') + ' abstract">▸</button>' +
     '</div>' +
