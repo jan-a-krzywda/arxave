@@ -30,22 +30,22 @@ Next in line: `moire-materials` (`cond-mat.mes-hall, cond-mat.str-el`, `material
 ## Embed phrases
 
 - llms: "Large language models: pretraining, instruction tuning, in-context learning, reasoning and efficient inference of transformer language models, evaluated on knowledge, coding and multilingual benchmarks"
-- spin-qubits: "Spin qubits in semiconductors and defects: electron and hole spins in silicon and germanium quantum dots, donor spins, and nitrogen-vacancy and other colour-centre spins, with coherent control, readout and coupling"
+- spin-qubits: "Semiconductor spin qubits: electron and hole spins in silicon and germanium quantum dots and donor spins, with coherent control, exchange coupling, readout, spin-orbit effects and scaling of spin qubit arrays"
 - reinforcement-learning: "Reinforcement learning for sequential decision making: online and offline policy optimization, value-based and model-based methods, exploration and multi-agent learning in control, robotics and games"
 - quantum-error-correction: "Quantum error correction and fault tolerance: surface, colour, bosonic and low-density parity-check codes, decoding, magic state distillation, logical qubit experiments and error thresholds"
 - llm-agents: "Language model agents: planning, tool use, memory and multi-agent collaboration of autonomous agents acting in software, web, embodied and scientific environments, measured on agent benchmarks"
-- superconducting-qubits: "Superconducting qubits and circuit quantum electrodynamics: transmon, fluxonium and bosonic cavity qubits, Josephson junction devices, coherence and materials losses, gates, readout and scaling of multi-qubit processors"
+- superconducting-qubits: "Superconducting qubits and circuit quantum electrodynamics: transmon, fluxonium and bosonic cavity qubits, Josephson junctions, materials and surface losses, superconducting resonators, microwave control and cryogenic packaging, gates, readout and scaling of multi-qubit processors"
 - diffusion-models: "Diffusion and flow-based generative models: score matching, flow matching and consistency training, fast sampling, guidance and conditional generation of images, video, audio and molecules"
 - neutral-atoms: "Neutral-atom quantum platforms: optical tweezer and lattice arrays of atoms, Rydberg interactions and entangling gates, atom loading and rearrangement, mid-circuit readout and analog quantum simulation"
 - interpretability: "Interpretability of neural networks: mechanistic circuits, sparse autoencoder features, probing of internal representations, and attribution and explanation methods for language and vision models"
-- quantum-algorithms: "Quantum algorithms and complexity: Hamiltonian simulation, quantum linear algebra and search, variational and optimization algorithms, resource estimation and provable quantum speedups over classical computation"
+- quantum-algorithms: "Quantum algorithms and complexity: Hamiltonian simulation, quantum linear algebra and search, variational and optimization algorithms, quantum machine learning, resource estimation and provable quantum speedups over classical computation"
 - ai-safety: "AI safety and alignment: reward hacking, deceptive and misaligned behaviour, jailbreaks and adversarial robustness, red-teaming, scalable oversight and dangerous capability evaluations of frontier models"
 - quantum-sensing: "Quantum sensing and metrology: nitrogen-vacancy and other defect spins, atomic magnetometers and clocks, interferometric and optomechanical sensors, using entanglement and squeezing beyond the standard quantum limit"
 
 Breadth check (verify against real top tens):
-- Too broad: `llms` still spans most of cs.AI/cs.CL and will pull agents, safety and reasoning papers; `quantum-algorithms` covers most quant-ph theory and may admit generic quantum information papers; `interpretability` now includes attribution/explanation methods, which can drag in general explainable-AI and vision work.
-- Overlap: `spin-qubits` and `quantum-sensing` both name nitrogen-vacancy and defect spins, so NV papers may top both; `reinforcement-learning` may surface RL fine-tuning of language models that also belong to `llms`.
-- Too narrow: `neutral-atoms` stays tweezer/Rydberg-centred and may under-rank optical-lattice many-body physics; `superconducting-qubits` may miss pure materials or microwave-engineering papers that never say "qubit".
+- Too broad: `llms` still spans most of cs.AI/cs.CL and will pull agents, safety and reasoning papers; `quantum-algorithms` covers most quant-ph theory and, with quantum machine learning added, may admit generic quantum information papers; `interpretability` now includes attribution/explanation methods, which can drag in general explainable-AI and vision work.
+- Overlap: NV centres now live only in `quantum-sensing` (removed from `spin-qubits` by the user's call), so NV qubit papers may under-rank in `spin-qubits`; `reinforcement-learning` may surface RL fine-tuning of language models that also belong to `llms`.
+- Too narrow: `neutral-atoms` stays tweezer/Rydberg-centred and may under-rank optical-lattice many-body physics; `superconducting-qubits` now names materials, resonators and microwave control, but may still miss pure materials papers that never say "qubit" or "circuit QED"; check that it does not drift into generic superconductivity.
 
 ## Writing phrases for SPECTER2
 
