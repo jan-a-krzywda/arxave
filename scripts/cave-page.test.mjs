@@ -95,12 +95,12 @@ test('the page carries the rail, the app wrapper and the two side walls', () => 
 
 test('cave.css widens the walls and narrows the centre, for this page only', () => {
   assert.match(CSS, /\.cave-wall-dig/, 'cave.css has no .cave-wall-dig rule');
-  /* 60rem centre, gutter walls up to 320px, shown from 1100px up. */
-  assert.match(CSS, /#cave-app \{[^}]*max-width: 60rem/, '#cave-app is not 60rem wide');
-  assert.match(CSS, /\.cave-wall\.cave-wall-dig \{[^}]*width: clamp\(0px, calc\(\(100vw - 60rem - 3rem\) \/ 2\), 320px\)/,
-    'the walls do not take the gutter outside the 60rem centre');
+  /* 71rem box, gutter walls up to 320px, shown from 1240px up. */
+  assert.match(CSS, /#cave-app \{[^}]*--cave-w: min\(71rem, 100vw - 2rem\)/, '#cave-app is not 71rem wide');
+  assert.match(CSS, /\.cave-wall\.cave-wall-dig \{[^}]*width: clamp\(0px, calc\(\(100vw - 71rem - 3rem\) \/ 2\), 320px\)/,
+    'the walls do not take the gutter outside the 71rem box');
   const walls = CSS.slice(CSS.indexOf('.cave-wall.cave-wall-dig'));
-  assert.match(walls, /@media \(min-width: 1100px\)/, 'the walls do not start at 1100px');
+  assert.match(walls, /@media \(min-width: 1240px\)/, 'the walls do not start at 1240px');
   /* Scoped by the page's own class, so no other room changes with it. */
   assert.ok(!/^\.cave-wall \{/m.test(CSS), 'cave.css restyles every room\'s walls');
 });

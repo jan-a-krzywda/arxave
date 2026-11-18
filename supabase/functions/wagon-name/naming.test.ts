@@ -11,10 +11,13 @@ import {
   generationConfig,
   LADDER,
   ladderFrom,
+  JSON_FORMAT,
   MAX_MEMBERS,
+  MAX_TOTAL_MEMBERS,
   MAX_TITLES,
   type Member,
   normalizeTitle,
+  parseChatResponse,
   parseResponse,
   promptFor,
   readWagons,
@@ -225,6 +228,13 @@ Deno.test('readWagons accepts a well-formed body', () => {
   assertEquals((got as Member[][])[0].length, 2);
 });
 
+Deno.test('readWagons accepts a wagon bigger than the old 60 cap', () => {
+  const members = Array.from({ length: 188 }, (_, i) => ({ id: `id${i}`, title: `Title ${i}` }));
+  const got = readWagons({ wagons: [{ members }] });
+  assertEquals(Array.isArray(got), true);
+  assertEquals((got as unknown[][])[0].length, 188);
+});
+
 Deno.test('readWagons rejects everything malformed with a message', () => {
   for (
     const body of [
@@ -235,9 +245,44 @@ Deno.test('readWagons rejects everything malformed with a message', () => {
       { wagons: [{ members: [{ id: '', title: 't' }] }] },
       { wagons: [{ members: [{ id: 'x', title: '   ' }] }] },
       { wagons: Array.from({ length: 25 }, () => ({ members: [A] })) },
-      { wagons: [{ members: Array.from({ length: 61 }, () => A) }] },
+      { wagons: [{ members: Array.from({ length: MAX_MEMBERS + 1 }, () => A) }] },
+      // Each wagon within its own cap, the request over the total one.
+      { wagons: Array.from({ length: 3 }, () => ({
+        members: Array.from({ length: Math.ceil(MAX_TOTAL_MEMBERS / 3) + 1 }, () => A),
+      })) },
     ]
   ) {
     assertEquals(typeof readWagons(body as Record<string, unknown>), 'string');
   }
+});
+
+Deno.test('the ladder falls back to DeepSeek after the Gemini rungs and before Gemma', () => {
+  const ids = LADDER.map((r) => r.model);
+  const ds = ids.findIndex((m) => m.includes('DeepSeek'));
+  assertEquals(LADDER[ds].provider, 'chat');
+  assertEquals(ids.slice(0, ds).every((m) => m.startsWith('gemini-')), true);
+  assertEquals(ids.slice(ds + 1).every((m) => m.startsWith('gemma-')), true);
+});
+
+Deno.test('ladderFrom keeps a known rung\'s provider when it arrives by env', () => {
+  const [r] = ladderFrom('deepseek-ai/DeepSeek-V4.1-Flash-1017');
+  assertEquals(r.provider, 'chat');
+  assertEquals(ladderFrom('some-new-model')[0].provider, undefined);
+});
+
+Deno.test('parseChatResponse reads choices[0].message.content like parseResponse reads parts', () => {
+  const content = JSON.stringify({ groups: [
+    { group: 2, name: ' Valley   splitting in silicon ', gloss: 'g' },
+    { group: 9, name: 'invented', gloss: 'g' },
+  ] });
+  const got = parseChatResponse({ choices: [{ message: { content } }] }, 2);
+  assertEquals(got, { 1: { name: 'Valley splitting in silicon', gloss: 'g' } });
+  assertEquals(parseChatResponse({ choices: [] }, 2), {});
+  assertEquals(parseChatResponse({ choices: [{ message: { content: 'not json' } }] }, 2), {});
+  assertEquals(parseChatResponse({ choices: [{ message: { content: null } }] }, 2), {});
+});
+
+Deno.test('the chat prompt states the JSON shape it has no schema to enforce', () => {
+  assertEquals(JSON_FORMAT.includes('"groups"'), true);
+  assertEquals(JSON_FORMAT.includes('"group"'), true);
 });

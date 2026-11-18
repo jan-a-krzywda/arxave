@@ -34,8 +34,8 @@
  * read 100 just for being tonight's best. That key is the
  * row's one meter, `rel`, an integer 0..100. `orderNight` is the pure half.
  *
- * TOP FIVE, THEN FIVE MORE. The page shows PAGE = 5 rows and a "Show 5 more"
- * button; the line under the list says where the reader is ("5 of 12 tonight").
+ * TOP TEN, THEN TEN MORE. The page shows PAGE = 10 rows and a "Show 10 more"
+ * button; the line under the list says where the reader is ("10 of 24 tonight").
  * There is no bulk bar and no near-miss fallback: a short list is a short night.
  *
  * EACH ROW ACTS. SciRate, the paper's GitHub Discussions thread (join it, or
@@ -44,7 +44,7 @@
  * a header names "Pick". The bar is
  * `actionsHtml` from `cave-paper-actions.mjs`; the thread states and the lookup
  * that fills them live there too. Thread answers are fetched once per page for
- * every row on screen, in ONE POST, and remembered in a module Map, so "Show 5
+ * every row on screen, in ONE POST, and remembered in a module Map, so "Show 10
  * more" asks only about the ids it has not seen.
  *
  * THE ROW IS DIG'S LIST ROW. Rank, title, authors, chips, a detail that opens
@@ -71,8 +71,8 @@ import {
   startThreadUrl, threadsRequest, writeCachedDiamond,
 } from './cave-paper-actions.mjs';
 
-/** How many rows the first paint shows, and what "Show 5 more" adds. */
-export const PAGE = 5;
+/** How many rows the first paint shows, and what "Show 10 more" adds. */
+export const PAGE = 10;
 
 /** The mute line each missing input gets. */
 export const NO_NIGHT = 'Dig first — tonight\'s papers are what get ranked.';
@@ -381,10 +381,10 @@ function detailHtml(item, parts) {
  * `parts` is what the page knows that the item does not: `rank`, `total` (the
  * night's size, for the meter's title), `open`, `repo`, `thread` (the three
  * states `actionsHtml` reads), `diamond`, `pending`, `error`, `md`, `trace`.
- * The title is a link to the arXiv abstract page; the row's ▸ opens the detail.
- * The first column reads down the list: rank, the Pick tick, then the three
- * exits (SciRate, Discuss, Summarize). Four lines in the middle: title, authors
- * and chips, last-author affiliation and the score with its grades.
+ * The title is a link to the arXiv abstract page and takes the row's full
+ * width; the Score bar and grades sit on one line under it, beside the topic
+ * chips, so ten rows fit where five did. The row's ▸ opens the detail.
+ * The Pick tick sits under the rank, so the first column reads down the list.
  * Titles, authors, links and landmarks all arrive from arXiv, so every one of
  * them is escaped — `rowHtml` is the one place that happens.
  */
@@ -426,14 +426,12 @@ export function rowHtml(item, parts = {}) {
           '<a class="rk-title-link" href="' + escapeHtml(absUrl(id)) + '" target="_blank" rel="noopener">' +
             escapeHtml(title) + '</a>' +
         '</h3>' +
-        '<div class="rk-line rk-line-who">' +
-          '<p class="rk-authors">' + escapeHtml(authors) + '</p>' +
-          '<p class="rk-chips">' + topic + wagon + '</p>' +
-        '</div>' +
-        '<div class="rk-line rk-line-meta">' +
-          '<span class="rk-affil" title="' + escapeHtml(affil) + '">' + escapeHtml(affil) + '</span>' +
+        (authors ? '<p class="rk-authors">' + escapeHtml(authors) + '</p>' : '') +
+        '<div class="rk-line">' +
           '<div class="rk-meters">' + meterHtml(data.rel, total) + gradesHtml(data, parts.trace) + '</div>' +
+          ((topic || wagon) ? '<p class="rk-chips">' + topic + wagon + '</p>' : '') +
         '</div>' +
+        actions +
         error +
       '</div>' +
       '<button type="button" class="rk-toggle" aria-expanded="' + (open ? 'true' : 'false') +

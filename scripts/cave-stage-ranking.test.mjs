@@ -297,8 +297,8 @@ test('storySummary is "<k> for the story"', () => {
 
 /* ── the gate is gone ───────────────────────────────────────────────────── */
 
-test('PAGE is 5 — the first paint, and what Show 5 more adds', () => {
-  assert.equal(PAGE, 5);
+test('PAGE is 10 — the first paint, and what Show 10 more adds', () => {
+  assert.equal(PAGE, 10);
 });
 
 test('no exported string says "Nothing passes", and NO_GATE is gone', () => {

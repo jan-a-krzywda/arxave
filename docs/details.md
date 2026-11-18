@@ -160,7 +160,7 @@ Each field centres on its own corpus mean, after the same int8 clip the corpus w
 |---|---|---|---|
 | `relay` | category, date range | — | Dig |
 | `embed` | abstracts; your Priorities box | SPECTER2 [1, 2] | Train; typing (600 ms debounce) |
-| `wagon-name` | titles only | Gemini flash-lite | Map, on the button |
+| `wagon-name` | titles only | Gemini flash-lite, DeepSeek V4.1 Flash as fallback | Map, on the button |
 | `diamond` | one paper | DeepSeek V4.1 Flash (default) | Ranking → Summarize |
 | `aitrace` | abstracts on screen | DeepSeek V4.1 Flash (default) | Ranking → AI trace button |
 | `story` | ≤ 12 picks | DeepSeek V4.1 Flash (default) | Story |

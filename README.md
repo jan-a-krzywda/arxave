@@ -76,7 +76,7 @@ the ranking. ([TikZ](docs/diagrams/cave-flow.tex))
 | 2 | **Train** | abstracts → 768-d SPECTER2 vectors, clipped ±0.25, centred on the field mean | Cached by text hash, so a warm night is a download, not a computation. | [`cave-train.mjs`](docs/assets/cave-train.mjs) |
 | 3 | **Map** | vectors → wagons, plus one leaf topic (and a close runner-up) per paper | Average linkage; cut auto-picked in 0.40–0.75, slider 0.20–0.70; no wagon over 20% of the night. | [`cave-stage-map.mjs`](docs/assets/cave-stage-map.mjs) |
 | 4 | **Priorities** | topic tree, your text → weights 1.5 / 1 / 0.5 / off; your words as vectors | Off removes a topic from the corpus too: no neighbours, no landmarks, no median. | [`cave-stage-priorities.mjs`](docs/assets/cave-stage-priorities.mjs) |
-| 5 | **Ranking** | night + priorities → Match · Impact · Surprise · Exp. per paper, 5 at a time | No gate: Topic match is a weight on the order, not a filter that can empty the night. | [`cave-stage-ranking.mjs`](docs/assets/cave-stage-ranking.mjs) |
+| 5 | **Ranking** | night + priorities → Match · Impact · Surprise · Exp. per paper, 10 at a time | No gate: Topic match is a weight on the order, not a filter that can empty the night. | [`cave-stage-ranking.mjs`](docs/assets/cave-stage-ranking.mjs) |
 | 6 | **Story** | ≤ 12 picks → one narrative, cached per night + picks | The model's text is escaped first; only paper ids it was sent become links. | [`cave-stage-story.mjs`](docs/assets/cave-stage-story.mjs) |
 
 ## The grades
@@ -188,7 +188,7 @@ corpus mean, after the same int8 clip the corpus was stored with
 |---|---|---|---|
 | `relay` | category, date range | — | Dig |
 | `embed` | abstracts; your Priorities box | SPECTER2 [1, 2] | Train; typing (600 ms debounce) |
-| `wagon-name` | titles only | Gemini flash-lite | Map, on the button |
+| `wagon-name` | titles only | Gemini flash-lite, DeepSeek V4.1 Flash as fallback | Map, on the button |
 | `diamond` | one paper | DeepSeek V4.1 Flash (default) | Ranking → Summarize |
 | `aitrace` | abstracts on screen | DeepSeek V4.1 Flash (default) | Ranking → AI trace button |
 | `story` | ≤ 12 picks | DeepSeek V4.1 Flash (default) | Story |
