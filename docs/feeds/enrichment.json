@@ -3822,7 +3822,7 @@
    "figure_gloss": "Six-ring resource state graph. Vertices represent qubits in $|+\\rangle$ and edges represent $CZ$ gates; highlighted vertices show the stabilizer generator $K_{1} = Z_{6}X_{1}Z_{2}$.",
    "code": ""
   },
-  "seen": "2026-11-18",
+  "seen": "2026-11-19",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -4087,7 +4087,7 @@
    "figure_gloss": "Active-state amplitude count across execution time for a distance-5, 5-round surface code with coherent $R_Z$ noise. MASQ cuts the peak amplitude count from $2^{22}$ in Clifft down to $2^{13}$, a 512-fold reduction.",
    "code": ""
   },
-  "seen": "2026-11-18",
+  "seen": "2026-11-19",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -4410,14 +4410,13 @@
  "2611.23196": {
   "fields": {
    "kind": "new method",
-   "result": "Simulating cylinder wake dynamics to 1% relative root-mean-square field error takes an estimated 1.62 h on ~560,000 physical qubits. Per-step transport rotation counts scale polylogarithmically with cells per coordinate at fixed model dimension and drift degree.",
-   "question": "Can nonlinear flow dynamics be simulated with end-to-end feasibility under early fault-tolerant quantum computing resource constraints?",
+   "result": "Simulating cylinder wake dynamics via Koopman-von Neumann transport to 1% relative root-mean-square field error requires 1.62 h on about 560,000 physical qubits. Three-coordinate wake runtimes span hours to weeks under one million physical qubits.",
+   "question": "Can early fault-tolerant quantum computers feasibly simulate nonlinear fluid flows via ensemble transport without prohibitive circuit costs from grid discretization?",
    "prior": "",
-   "limits": "Polynomial reduced-order models with small numbers of coordinates; early fault-tolerant regime assumed via surface codes; hardware tests rely on reference-circuit noise mitigation.",
+   "limits": "Polynomial reduced-order models with fixed dimension and drift degree; assumes surface-code fault tolerance with early fault-tolerant overheads; hardware run relies on reference-circuit noise mitigation.",
    "tools": [
-    "Koopman-von Neumann (KvN) transport",
     "sparse identification of nonlinear dynamics (SINDy)",
-    "Walsh-synthesized rotation circuits",
+    "Walsh-synthesized Koopman-von Neumann (KvN) transport",
     "surface-code resource estimation",
     "IBM quantum hardware"
    ],
@@ -4894,16 +4893,17 @@
  },
  "2611.24687": {
   "fields": {
-   "kind": "theory",
-   "result": "Any Boolean arithmetic circuit can be implemented with constant quantum depth and constant reaction depth using homogeneous $Z$- and $X$-type Pauli Product Measurements (PPMs) plus Toffoli states, at the expense of exponential space and dirty qubits.",
-   "question": "How should reaction depth be formalized, and how efficiently can coherent Boolean logic be executed using low-reaction-depth LDPC-compatible gatesets?",
+   "kind": "new result",
+   "result": "Any Boolean arithmetic circuit can be implemented on a quantum computer with constant quantum depth and constant reaction depth using homogeneous $Z$- and $X$-type Pauli Product Measurements (PPMs) plus Toffoli states, at the cost of exponential space and dirty ancillae.",
+   "question": "How to formalize reaction depth and minimize it for fault-tolerant coherent Boolean logic using LDPC-compatible PPM gatesets?",
    "prior": "",
-   "limits": "Requires exponential space overhead and leaves dirty qubits; uncomputation in ripple-carry adder and schoolbook multiplier uses heterogeneous PPMs.",
+   "limits": "Requires exponential space and leaves some qubits dirty; uncomputation in adder and multiplier requires a low number of heterogeneous PPMs.",
    "tools": [
     "reaction depth formalization",
-    "homogeneous Pauli Product Measurements (PPMs)",
+    "homogeneous $Z$- and $X$-type Pauli Product Measurements (PPMs)",
     "Toffoli state injection",
-    "AutoAND circuits"
+    "AutoAND circuits",
+    "LDPC code operations"
    ],
    "figure": "",
    "figure_url": "",
@@ -5285,15 +5285,15 @@
  "2611.22170": {
   "fields": {
    "kind": "new result",
-   "result": "Monolithic bilayer $\\mathrm{MoSe}_2$-$\\mathrm{WSe}_2$ lateral heterojunction achieves photodetection with responsivity 35 A W-1, detectivity $5 \\times 10^{13}$ Jones, noise-equivalent power $6.3 \\times 10^{-18}\\text{ W Hz}^{-1/2}$, gate-switchable spatial electroluminescence, and CMOS inverter operation at 0.25 kHz.",
-   "question": "Can carrier generation, transport, and recombination be dynamically unified in a single monolithic 2D device platform?",
+   "result": "Monolithic bilayer $\\mathrm{MoSe_2}$-$\\mathrm{WSe_2}$ lateral heterojunction achieves photodetection responsivity of 35 A W-1, detectivity of $5 \\times 10^{13}\\text{ Jones}$, and noise-equivalent power of $6.3 \\times 10^{-18}\\text{ W Hz}^{-1/2}$, alongside gate-switched spatial electroluminescence and 0.25 kHz CMOS inverter operation.",
+   "question": "Can a single monolithic 2D lateral heterojunction integrate sensing, light emission, and complementary logic via electrostatic gating?",
    "prior": "",
    "limits": "CMOS inverter operation tested at 0.25 kHz.",
    "tools": [
-    "bilayer $\\mathrm{MoSe}_2$-$\\mathrm{WSe}_2$ lateral heterojunction",
+    "bilayer $\\mathrm{MoSe_2}$-$\\mathrm{WSe_2}$ lateral heterojunction",
     "electrostatic gating",
-    "electroluminescence spectroscopy",
-    "photoconductive photodetection"
+    "photodetection measurement",
+    "electroluminescence spectroscopy"
    ],
    "figure": "",
    "figure_url": "",
@@ -5332,15 +5332,15 @@
  "2611.24147": {
   "fields": {
    "kind": "new method",
-   "result": "Parallel quantum algorithm estimates multivariate traces $\\mathrm{Tr}(A_1 A_2 \\dots A_k)$ with circuit depth independent of $k$, scaling with qubit count $\\Theta(k)$ and distributable across $\\mathcal{O}(k)$ devices.",
-   "question": "Can multivariate traces $\\mathrm{Tr}(A_1 A_2 \\dots A_k)$ be estimated on near-term quantum devices with circuit depth independent of $k$?",
+   "result": "Multivariate trace $\\mathrm{Tr}(A_1 A_2 \\dots A_k)$ estimated with circuit depth independent of $k$, dominated solely by input state preparation, using $\\Theta(k)$ qubits distributable across $\\mathcal{O}(k)$ devices.",
+   "question": "Can multivariate trace estimation be implemented on near-term quantum hardware with circuit depth independent of the number of matrices $k$?",
    "prior": "",
-   "limits": "Requires access to matrices via vectorized state preparation oracles; qubit overhead scales as $\\Theta(k)$.",
+   "limits": "Requires $\\Theta(k)$ qubit overhead; depth reduction requires efficient vectorized state preparation oracles for target matrix classes.",
    "tools": [
-    "matrix vectorization",
-    "tensor network representations",
-    "parallel quantum circuits",
-    "distributed quantum computing"
+    "matrix vectorization state preparation",
+    "tensor-network circuit mapping",
+    "distributed quantum computing",
+    "quantum Lanczos method reduction"
    ],
    "figure": "",
    "figure_url": "",

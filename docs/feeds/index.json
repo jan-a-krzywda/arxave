@@ -22,7 +22,7 @@
     "qs-b": {
       "name": "Gate and device benchmarking",
       "items": 8,
-      "paydirt": 3,
+      "paydirt": 4,
       "updated": "2026-11-19"
     },
     "qs-c": {
@@ -34,7 +34,7 @@
     "qs-d": {
       "name": "Calibration, tuning and drift",
       "items": 8,
-      "paydirt": 5,
+      "paydirt": 0,
       "updated": "2026-11-19"
     },
     "qs-e": {

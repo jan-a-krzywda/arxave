@@ -21,7 +21,7 @@
             },
             "qs-b": {
               "items": 8,
-              "paydirt": 3
+              "paydirt": 4
             },
             "qs-c": {
               "items": 8,
@@ -29,7 +29,7 @@
             },
             "qs-d": {
               "items": 8,
-              "paydirt": 5
+              "paydirt": 0
             },
             "qs-e": {
               "items": 8,
