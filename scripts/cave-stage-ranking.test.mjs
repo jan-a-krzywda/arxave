@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 
 import * as ranking from '../docs/assets/cave-stage-ranking.mjs';
 import {
-  AI_MAX, PAGE, SOLO_MAX, TRACE_KEEP, TUNE, absUrl, applyPicks, authorCount, experimentText, gradesHtml,
+  AI_MAX, PAGE, SENIOR_MAX, SOLO_MAX, TRACE_KEEP, TUNE, absUrl, applyPicks, authorCount, experimentText, gradesHtml,
   mergeTraces, meters, orderNight, pickedLine, rowHtml, sameLabel, shortAuthors, shownLine, shownValue,
   storySummary, tuneRowHtml,
 } from '../docs/assets/cave-stage-ranking.mjs';
@@ -256,6 +256,52 @@ test('orderNight: the penalties sink a solo paper and a traced one, scaled by th
   assert.deepEqual(orderNight(night, 0).map((r) => r.rel), base.map((r) => r.rel));
 });
 
+test('orderNight: senior is a bonus on the same key, and senior 0 is today\'s order', () => {
+  /* At match 50: a 87, b 74, c 30. b's last author has arrived, so at the
+     default 50 it gains 50/100 * 30 * 1 = 15 and overtakes a. */
+  const base = orderNight(NIGHT, { match: 50 });
+  assert.deepEqual(idsOf(base), ['a', 'b', 'c']);
+  assert.deepEqual(
+    orderNight(NIGHT, { match: 50, senior: 0, signals: { b: 1 } }).map((row) => row.rel),
+    base.map((row) => row.rel),
+    'senior 0 adds nothing, even with a signal in hand');
+
+  const boosted = orderNight(NIGHT, { match: 50, senior: 50, signals: { b: 1 } });
+  assert.deepEqual(idsOf(boosted), ['b', 'a', 'c']);
+  assert.deepEqual(boosted.map((row) => row.rel), [89, 87, 30]);
+
+  /* Half a signal is half the bonus; a null signal and an unlisted id none. */
+  const half = orderNight(NIGHT, { match: 50, senior: 100, signals: { c: 0.5, a: null } });
+  const rel = Object.fromEntries(half.map((row) => [row.id, row.rel]));
+  assert.equal(rel.c, 45);
+  assert.equal(rel.a, 87, 'a null signal adds nothing');
+  assert.equal(rel.b, 74, 'an id the file does not name adds nothing');
+});
+
+test('orderNight: the senior bonus is clamped at 100, like every other part of the key', () => {
+  assert.equal(SENIOR_MAX, 30);
+  /* 90 + 30 would be 120; the bar is 0..100. */
+  const out = orderNight([item('a', 0, 0.9)], { match: 0, senior: 100, signals: { a: 1 } });
+  assert.equal(out[0].rel, 100);
+});
+
+test('the signal rides along as grades.senior, and only a strong one earns the chip', () => {
+  const out = orderNight(
+    [item('2608.00001v2', 0, 0.5), item('2608.00002', 0, 0.5)],
+    { match: 0, senior: 50, signals: { '2608.00001': 0.9, '2608.00002': null } });
+  const byId = Object.fromEntries(out.map((row) => [row.id, row]));
+  assert.equal(byId['2608.00001v2'].grades.senior, 0.9, 'a versioned id finds its bare key');
+  assert.equal(byId['2608.00002'].grades.senior, null);
+
+  assert.ok(rowHtml(byId['2608.00001v2'], {}).includes('rk-chip-senior'));
+  assert.ok(!rowHtml(byId['2608.00002'], {}).includes('rk-chip-senior'));
+
+  /* Under the threshold the signal is still a grade, just not a chip. */
+  const quiet = orderNight([item('x', 0, 0.5)], { signals: { x: 0.79 } })[0];
+  assert.equal(quiet.grades.senior, 0.79);
+  assert.ok(!rowHtml(quiet, {}).includes('rk-chip-senior'));
+});
+
 test('mergeTraces keeps the newest TRACE_KEEP, a re-ask moves to the end', () => {
   const merged = mergeTraces({ a: { p: 1 }, b: { p: 2 } }, { a: { p: 9 }, c: { p: 3 } }, 2);
   assert.deepEqual(Object.keys(merged), ['a', 'c']);
@@ -373,6 +419,19 @@ test('the sliders: explore ↔ match, and Theory ↔ Experiment drawn theory-lef
   const html = tuneRowHtml(lean, -40);
   assert.ok(html.includes('value="40"') && html.includes('min="-100" max="100"'));
   assert.ok(html.includes('>40</output>'));
+});
+
+test('the Senior author slider reads as the boost it adds, beside the penalties', () => {
+  const spec = TUNE.find((row) => row.id === 'senior');
+  assert.equal(spec.label, 'Senior author');
+  assert.deepEqual(spec.ends, ['any', 'senior']);
+  assert.equal(spec.text(50), '+15 max');
+  assert.equal(spec.text(100), '+30 max');
+  assert.equal(spec.text(0), 'off');
+  assert.equal(TUNE[TUNE.indexOf(spec) - 1].id, 'ai', 'next to the two penalties');
+  const html = tuneRowHtml(spec, 50);
+  assert.ok(html.includes('min="0" max="100"') && html.includes('data-tune="senior"'));
+  assert.ok(html.includes('>+15 max</output>'));
 });
 
 test('experimentText is just the number', () => {
