@@ -352,7 +352,7 @@ test('the ride says where the reader is going, and whose run it is', () => {
   assert.match(html, /Spin qubits/, 'the launch label is missing');
   // A label is page content, not markup.
   assert.match(rideHtml('<b>x</b>'), /&lt;b&gt;x/, 'the label is not escaped');
-  assert.equal(RIDE_MS, 6000, 'the slow descent is not six seconds');
+  assert.equal(RIDE_MS, 14000, 'the slow descent is not fourteen seconds');
 });
 
 test('the cart strip is gone, and cave.js rides the lift instead', () => {
@@ -494,4 +494,21 @@ test('Priorities reads the stored phrase vector, and embeds only on a miss', () 
   assert.match(run, /state\.touchstones = \[corpusSpace\(/, 'the stored vector misses the corpus clip');
   assert.match(run, /touchKey = cacheKeyText\(launch\.phrase\)/,
     'the box would pay to embed the same phrase again');
+});
+
+test('range triangles: rows carry them and the stage picks between two clicks', async () => {
+  const { rowHtml } = await import('../../docs/assets/cave-stage-ranking.mjs');
+  const html = rowHtml({ id: '2511.00001', title: 't' }, { rank: 1, total: 3, anchor: 'down' });
+  assert.match(html, /data-range="down"[^>]*>▼/);
+  assert.match(html, /data-range="up"[^>]*>▲/);
+  assert.match(html, /rk-tri is-anchor" data-range="down"/);
+  const src = fs.readFileSync(path.join(ROOT, 'docs/assets/cave-stage-ranking.mjs'), 'utf8');
+  assert.match(src, /function pickRange/);
+});
+
+test('a ride starts the lift at the top and the box dims the cards', () => {
+  const js = fs.readFileSync(path.join(ROOT, 'docs/assets/cave.js'), 'utf8');
+  assert.match(js, /stageRailHtml\(snapshot, STAGES, rideFloor !== null \? 0 : undefined\)/);
+  const css = fs.readFileSync(path.join(ROOT, 'docs/assets/cave.css'), 'utf8');
+  assert.match(css, /\.cave-ride::before\s*\{[^}]*pointer-events:\s*auto/);
 });

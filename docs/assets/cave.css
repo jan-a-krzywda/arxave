@@ -108,6 +108,20 @@
   animation: cave-ride-in 400ms ease-out;
 }
 
+/* The scrim: the cards under the box are waiting too, so they are dimmed and
+   cannot be pressed until the ranking lands (cave.js drops the box, and the
+   scrim with it, on `ranked` or after 90 s). It lives inside the box so one
+   fade takes both away; z-index -1 keeps it behind the box's own words. */
+.cave-ride::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: color-mix(in srgb, var(--cave-air) 55%, transparent);
+  pointer-events: auto;
+  cursor: progress;
+}
+
 @keyframes cave-ride-in {
   from {
     opacity: 0;
@@ -119,11 +133,12 @@
    22rem holds the heading on one or two lines and leaves the cards readable. */
 @media (min-width: 900px) {
   .cave-ride {
-    left: auto;
-    right: 1.5rem;
-    top: 7rem;
+    left: 50%;
+    right: auto;
+    top: 9rem;
     bottom: auto;
-    width: 22rem;
+    transform: translateX(-50%);
+    width: 24rem;
     padding: 1.6rem 1.7rem 1.7rem;
   }
 }
@@ -152,7 +167,7 @@
    so `tests/js/launch.test.mjs` holds this one to RIDE_MS. It sits on the app
    because the cage is a descendant and inherits it. */
 #cave-app.is-riding {
-  --ride-ms: 6000ms;
+  --ride-ms: 14000ms;
 }
 
 /* The descent. The rail's ordinary move is 700ms (below, in the desktop
@@ -733,7 +748,7 @@
     transition: none;
   }
 
-  /* A six-second descent is exactly the travel this setting exists to spare a
+  /* A fourteen-second descent is exactly the travel this setting exists to spare a
      reader, so the ride's slow transition goes too: the cage jumps to Ranking
      and the box still says where the ranking is. The box's own fade is opacity
      only and is kept — it is what tells cave.js the element may go. */
