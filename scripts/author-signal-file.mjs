@@ -20,8 +20,17 @@
  * null, and null adds nothing to the order key. A lookup that never happened is
  * not evidence against a paper.
  *
- * Everything with a socket is a parameter (`fetch`, `today`, `cache`), so the
- * tests run the whole thing on hand-built payloads without leaving the process.
+ * A 429 IS ASKED AGAIN, NOT BELIEVED. The first night with a fresh key answered
+ * error for 376 of 486 names, and the log said nothing more: every status was
+ * thrown away. So a throttled or wobbling answer is retried — three more tries,
+ * the server's `Retry-After` when it gives one, a 1/2/4 s ladder otherwise —
+ * the night counts its statuses on the last line (`http:`), and a name that is
+ * still an error is not written to the cache at all: tomorrow asks again. A key
+ * that throttles the first twenty names runs the rest one request at a time.
+ *
+ * Everything with a socket or a clock is a parameter (`fetch`, `today`, `cache`,
+ * `sleep`, `jitter`), so the tests run the whole thing on hand-built payloads
+ * without leaving the process.
  */
 
 import {
@@ -39,6 +48,39 @@ const plainName = (name) => affilKey(name).slice(AFFIL_PREFIX.length);
 
 const DAY_MS = 86_400_000;
 
+/** The wait after a failed try with no Retry-After: 1 s, 2 s, 4 s — and that
+    is also the number of retries, so four tries before a name is an error. */
+const RETRY_WAITS_MS = [1000, 2000, 4000];
+
+/** A server saying `Retry-After: 600` is asking for a night, not our evening. */
+const RETRY_AFTER_CAP_MS = 30_000;
+
+/** Spread concurrent retries, so the four in flight do not return in lockstep. */
+const jitterMs = () => Math.floor(Math.random() * 250);
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/* A 429 is the allowance and a 5xx a wobble; both clear. The other 4xx are
+   about this request, and asking twice gets the same no. */
+const retryable = (status) => status === 429 || status >= 500;
+
+/**
+ * A response's `Retry-After` in ms, or null when it gave none worth trusting:
+ * the header is seconds, so an HTTP date (or junk) falls back to the ladder.
+ */
+function retryAfterMs(resp) {
+  const headers = resp && resp.headers;
+  if (!headers) return null;
+  const raw = typeof headers.get === 'function'
+    ? headers.get('retry-after')
+    : headers['retry-after'] ?? headers['Retry-After'];
+  const text = String(raw ?? '').trim();
+  if (!text) return null;
+  const seconds = Number(text);
+  return Number.isFinite(seconds) && seconds >= 0
+    ? Math.min(seconds * 1000, RETRY_AFTER_CAP_MS) : null;
+}
+
 /**
  * How many whole days between `at` and `today`; Infinity when either is junk,
  * which reads as "stale, ask again".
@@ -53,36 +95,66 @@ function ageDays(at, today) {
  * The cached h for one name: a number, null (a cached "no such person"), or
  * undefined when the cache has no answer worth trusting — never asked, junk, or
  * older than its own TTL (a real answer stands `ttlDays`, a null `nullTtlDays`).
+ *
+ * A cached `error` is not an answer, so it always reads as "ask again": tonight
+ * writes no error entries, and a file from before that rule must not answer a
+ * name for three days with a failure.
  */
 function cachedH(names, key, today, ttlDays, nullTtlDays) {
   const entry = names[key];
   if (!entry || typeof entry !== 'object') return undefined;
   const h = entry.h === null ? null : (Number.isFinite(entry.h) ? entry.h : undefined);
   if (h === undefined) return undefined;
+  if (h === null && entry.why === 'error') return undefined;
   return ageDays(entry.at, today) > (h === null ? nullTtlDays : ttlDays) ? undefined : h;
 }
 
 /**
  * One name's h-index from OpenAlex, as `{ h, why }`: a number with `why` null,
- * or null with the reason. Every failure — a 429, a 5xx, a timeout, a garbled
- * body — answers `error` rather than throwing: one person OpenAlex will not
- * talk about is a blank chip, not a dead warm.
+ * or null with the reason.
+ *
+ * A 429, a 5xx, a dead socket and a timeout are tried three more times: a
+ * throttled key answers the second time. The wait is the server's `Retry-After`
+ * when it gave one (capped at 30 s), else 1 s, 2 s, 4 s, plus a little jitter
+ * so the requests in flight do not come back together. A 404 or another 4xx is
+ * a no about the request, and is not repeated. A body that is not JSON is a
+ * broken answer, not a broken socket, so it is not repeated either.
+ *
+ * Every response's status lands in `stats.status` — `'network'` for a fetch
+ * that threw — so the night's last line can say `429` instead of a bare `376`.
+ * Sleep and jitter are parameters, so the tests run the ladder without waiting.
  *
  * The h itself, not the signal, because that is what the cache keeps: a
  * saturation changed next year must not leave yesterday's answers on the old
  * scale. The `why` is kept beside it so a null night can be read from the log
  * instead of re-run.
  */
-async function fetchHIndex(fetchImpl, name, { mailto, apiKey }) {
+async function fetchHIndex(fetchImpl, name, {
+  mailto, apiKey, sleep = wait, jitter = jitterMs, stats = { status: {} },
+}) {
   const url = authorQueryUrl(name) +
     '&mailto=' + encodeURIComponent(mailto || '') +
     (apiKey ? '&api_key=' + encodeURIComponent(apiKey) : '');
-  try {
-    const resp = await fetchImpl(url);
-    if (!resp || !resp.ok) return { h: null, why: 'error' };
-    return explainHIndex(await resp.json(), name);
-  } catch (_) {
-    return { h: null, why: 'error' };
+  const count = (status) => { stats.status[status] = (stats.status[status] || 0) + 1; };
+  for (let attempt = 0; ; attempt += 1) {
+    let resp;
+    try {
+      resp = await fetchImpl(url);
+    } catch (_) {
+      resp = null;
+    }
+    count(resp ? String(resp.status) : 'network');
+    if (resp && resp.ok) {
+      try {
+        return explainHIndex(await resp.json(), name);
+      } catch (_) {
+        return { h: null, why: 'error' };
+      }
+    }
+    if (attempt >= RETRY_WAITS_MS.length || (resp && !retryable(resp.status))) {
+      return { h: null, why: 'error' };
+    }
+    await sleep((retryAfterMs(resp) ?? RETRY_WAITS_MS[attempt]) + jitter());
   }
 }
 
@@ -96,15 +168,17 @@ async function fetchHIndex(fetchImpl, name, { mailto, apiKey }) {
  *
  * `cache` is the previous `author-h-cache.json` (`{ version, names }`); the
  * returned cache is that plus tonight's answers, stamped `today` — a null with
- * the `why` that explains it, so the log can be read back. `fetch` is
- * the global one unless a test says otherwise; `ttlDays` and `nullTtlDays` are
- * 30 and 3 (see the header). Ends with one `author-signal:` line for the log.
+ * the `why` that explains it, so the log can be read back, unless that why is
+ * `error`: a lookup that never got an answer is not an answer, and tomorrow
+ * asks again. `fetch` is the global one unless a test says otherwise;
+ * `ttlDays`, `nullTtlDays`, `sleep` and `jitter` are the knobs (see the header).
+ * Ends with one `author-signal:` line for the log, statuses included.
  */
 export async function buildSignals(stones, options = {}) {
   const {
     fetch: fetchImpl = fetch, mailto = '', apiKey = '', cache = null,
     today = new Date().toISOString().slice(0, 10),
-    ttlDays = 30, nullTtlDays = 3,
+    ttlDays = 30, nullTtlDays = 3, sleep = wait, jitter = jitterMs,
   } = options;
 
   const prev = cache && cache.names && typeof cache.names === 'object' ? cache.names : {};
@@ -127,21 +201,48 @@ export async function buildSignals(stones, options = {}) {
   }
 
   /* At most MAX_IN_FLIGHT requests in the air: a shared pool, not a chunked
-     Promise.all — a slow name must not hold back the rest of its batch. */
+     Promise.all — a slow name must not hold back the rest of its batch. The
+     width can shrink: a key that throttled twenty names will throttle the next
+     four hundred, and four retrying workers only dig the hole deeper. */
+  const stats = { status: {} };
+  const answers = [];
+  let limit = MAX_IN_FLIGHT;
   let next = 0;
-  const worker = async () => {
-    while (next < queue.length) {
-      const { key, name } = queue[next++];
-      const answer = await fetchHIndex(fetchImpl, name, { mailto, apiKey });
-      h.set(key, answer.h);
+
+  const lookup = async ({ key, name }) => {
+    const answer = await fetchHIndex(fetchImpl, name,
+      { mailto, apiKey, sleep, jitter, stats });
+    h.set(key, answer.h);
+    if (answer.h === null && answer.why === 'error') {
+      /* Not an answer, so not cached — not even as a short no: tomorrow asks
+         again. A stale entry from an earlier night goes with it. */
+      delete names[key];
+    } else if (answer.h === null) {
       /* A null keeps its reason, so tomorrow's log says why; a number only the
          number, and an old entry with no `why` still reads as a plain no. */
-      names[key] = answer.h === null
-        ? { h: null, why: answer.why, at: today }
-        : { h: answer.h, at: today };
+      names[key] = { h: null, why: answer.why, at: today };
+    } else {
+      names[key] = { h: answer.h, at: today };
+    }
+    answers.push(answer);
+    /* The first twenty answers say whether the key is being throttled; the
+       rest of the night then runs one request at a time. */
+    if (answers.length === 20) {
+      const errors = answers.filter((a) => a.h === null && a.why === 'error').length;
+      if (errors > 10) limit = 1;
     }
   };
-  await Promise.all(Array.from({ length: Math.min(MAX_IN_FLIGHT, queue.length) }, worker));
+
+  /* A pool whose width is read at every pump, not fixed at spawn: dropping to
+     one leaves the air already booked to land and starts nothing behind it. */
+  const inFlight = new Set();
+  while (next < queue.length || inFlight.size) {
+    while (inFlight.size < limit && next < queue.length) {
+      const task = lookup(queue[next++]).finally(() => inFlight.delete(task));
+      inFlight.add(task);
+    }
+    if (inFlight.size) await Promise.race(inFlight);
+  }
 
   const signals = {};
   for (const stone of list) {
@@ -160,9 +261,13 @@ export async function buildSignals(stones, options = {}) {
     why[Object.hasOwn(why, reason) ? reason : 'error'] += 1;
   }
   const withSignal = Object.values(signals).filter((value) => value !== null).length;
+  /* Sorted keys, so last night's log can be diffed against tonight's. */
+  const http = Object.fromEntries(Object.keys(stats.status).sort()
+    .map((status) => [status, stats.status[status]]));
   console.log('author-signal: ' + withSignal + ' with signal, nulls: ' +
     'no-match ' + why['no-match'] + ', ambiguous ' + why.ambiguous +
-    ', no-hindex ' + why['no-hindex'] + ', error ' + why.error);
+    ', no-hindex ' + why['no-hindex'] + ', error ' + why.error +
+    '; http: ' + JSON.stringify(http));
 
   return { signals, cache: { version: 1, names } };
 }
