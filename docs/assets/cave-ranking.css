@@ -329,19 +329,23 @@
   background: var(--rock);
 }
 
-/* The range triangles: ▼ above, ▲ below, two clicks pick everything between.
+/* The range ends, drawn as the two halves of an error bar and sitting at the
+   foot of the row: two clicks pick everything between them.
    Small and quiet until a first click leaves one lit. */
 .rk-range {
   display: flex;
-  gap: 0.15rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: auto;
 }
 
 .rk-tri {
-  padding: 0 0.2rem;
+  display: block;
+  padding: 0.1rem 0.2rem;
   border: none;
   background: none;
-  font-size: 0.7rem;
-  line-height: 1.2;
+  line-height: 0;
   color: var(--text-faint);
   cursor: pointer;
 }
@@ -358,6 +362,7 @@
 
 .rk-rankcol {
   grid-area: rank;
+  align-self: stretch;
   display: flex;
   flex-direction: column;
   align-items: center;
