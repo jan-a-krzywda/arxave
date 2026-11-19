@@ -258,7 +258,7 @@ test('orderNight: the penalties sink a solo paper and a traced one, scaled by th
 
 test('orderNight: senior is a bonus on the same key, and senior 0 is today\'s order', () => {
   /* At match 50: a 87, b 74, c 30. b's last author has arrived, so at the
-     default 50 it gains 50/100 * 30 * 1 = 15 and overtakes a. */
+     default 50 it gains 50/100 * 45 * 1 = 22.5 and overtakes a. */
   const base = orderNight(NIGHT, { match: 50 });
   assert.deepEqual(idsOf(base), ['a', 'b', 'c']);
   assert.deepEqual(
@@ -268,19 +268,19 @@ test('orderNight: senior is a bonus on the same key, and senior 0 is today\'s or
 
   const boosted = orderNight(NIGHT, { match: 50, senior: 50, signals: { b: 1 } });
   assert.deepEqual(idsOf(boosted), ['b', 'a', 'c']);
-  assert.deepEqual(boosted.map((row) => row.rel), [89, 87, 30]);
+  assert.deepEqual(boosted.map((row) => row.rel), [97, 87, 30]);
 
   /* Half a signal is half the bonus; a null signal and an unlisted id none. */
   const half = orderNight(NIGHT, { match: 50, senior: 100, signals: { c: 0.5, a: null } });
   const rel = Object.fromEntries(half.map((row) => [row.id, row.rel]));
-  assert.equal(rel.c, 45);
+  assert.equal(rel.c, 53);
   assert.equal(rel.a, 87, 'a null signal adds nothing');
   assert.equal(rel.b, 74, 'an id the file does not name adds nothing');
 });
 
 test('orderNight: the senior bonus is clamped at 100, like every other part of the key', () => {
-  assert.equal(SENIOR_MAX, 30);
-  /* 90 + 30 would be 120; the bar is 0..100. */
+  assert.equal(SENIOR_MAX, 45);
+  /* 90 + 45 would be 135; the bar is 0..100. */
   const out = orderNight([item('a', 0, 0.9)], { match: 0, senior: 100, signals: { a: 1 } });
   assert.equal(out[0].rel, 100);
 });
@@ -425,13 +425,13 @@ test('the Senior author slider reads as the boost it adds, beside the penalties'
   const spec = TUNE.find((row) => row.id === 'senior');
   assert.equal(spec.label, 'Senior author');
   assert.deepEqual(spec.ends, ['any', 'senior']);
-  assert.equal(spec.text(50), '+15 max');
-  assert.equal(spec.text(100), '+30 max');
+  assert.equal(spec.text(50), '+23 max');
+  assert.equal(spec.text(100), '+45 max');
   assert.equal(spec.text(0), 'off');
   assert.equal(TUNE[TUNE.indexOf(spec) - 1].id, 'ai', 'next to the two penalties');
   const html = tuneRowHtml(spec, 50);
   assert.ok(html.includes('min="0" max="100"') && html.includes('data-tune="senior"'));
-  assert.ok(html.includes('>+15 max</output>'));
+  assert.ok(html.includes('>+23 max</output>'));
 });
 
 test('experimentText is just the number', () => {

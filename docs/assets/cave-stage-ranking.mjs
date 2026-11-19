@@ -123,7 +123,7 @@ const GATE_OFF = -Infinity;
  */
 export const SOLO_MAX = 30;
 export const AI_MAX = 40;
-export const SENIOR_MAX = 30;
+export const SENIOR_MAX = 45;
 
 /** AI-trace answers in storage: `{ id: { p, why } }`, newest last, capped. */
 export const TRACE_KEY = 'arxave-cave-aitrace-v1';

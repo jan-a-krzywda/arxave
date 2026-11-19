@@ -25,7 +25,7 @@
  */
 
 import {
-  AFFIL_PREFIX, affilKey, authorQueryUrl, authorSignal, lastAuthor, pickHIndex,
+  AFFIL_PREFIX, affilKey, authorQueryUrl, authorSignal, explainHIndex, lastAuthor,
 } from '../docs/assets/cave-affil.mjs';
 
 /** Where the signal saturates — cave-affil's default, restated in the file. */
@@ -63,13 +63,15 @@ function cachedH(names, key, today, ttlDays, nullTtlDays) {
 }
 
 /**
- * One name's h-index from OpenAlex, or null. Every failure — a 429, a 5xx, a
- * timeout, a garbled body — answers null rather than throwing: one person
- * OpenAlex will not talk about is a blank chip, not a dead warm.
+ * One name's h-index from OpenAlex, as `{ h, why }`: a number with `why` null,
+ * or null with the reason. Every failure — a 429, a 5xx, a timeout, a garbled
+ * body — answers `error` rather than throwing: one person OpenAlex will not
+ * talk about is a blank chip, not a dead warm.
  *
  * The h itself, not the signal, because that is what the cache keeps: a
  * saturation changed next year must not leave yesterday's answers on the old
- * scale.
+ * scale. The `why` is kept beside it so a null night can be read from the log
+ * instead of re-run.
  */
 async function fetchHIndex(fetchImpl, name, { mailto, apiKey }) {
   const url = authorQueryUrl(name) +
@@ -77,10 +79,10 @@ async function fetchHIndex(fetchImpl, name, { mailto, apiKey }) {
     (apiKey ? '&api_key=' + encodeURIComponent(apiKey) : '');
   try {
     const resp = await fetchImpl(url);
-    if (!resp || !resp.ok) return null;
-    return pickHIndex(await resp.json(), name);
+    if (!resp || !resp.ok) return { h: null, why: 'error' };
+    return explainHIndex(await resp.json(), name);
   } catch (_) {
-    return null;
+    return { h: null, why: 'error' };
   }
 }
 
@@ -93,9 +95,10 @@ async function fetchHIndex(fetchImpl, name, { mailto, apiKey }) {
  * bare arXiv id as the 0..1 signal, or null.
  *
  * `cache` is the previous `author-h-cache.json` (`{ version, names }`); the
- * returned cache is that plus tonight's answers, stamped `today`. `fetch` is
+ * returned cache is that plus tonight's answers, stamped `today` — a null with
+ * the `why` that explains it, so the log can be read back. `fetch` is
  * the global one unless a test says otherwise; `ttlDays` and `nullTtlDays` are
- * 30 and 3 (see the header).
+ * 30 and 3 (see the header). Ends with one `author-signal:` line for the log.
  */
 export async function buildSignals(stones, options = {}) {
   const {
@@ -130,8 +133,12 @@ export async function buildSignals(stones, options = {}) {
     while (next < queue.length) {
       const { key, name } = queue[next++];
       const answer = await fetchHIndex(fetchImpl, name, { mailto, apiKey });
-      h.set(key, answer);
-      names[key] = { h: answer, at: today };
+      h.set(key, answer.h);
+      /* A null keeps its reason, so tomorrow's log says why; a number only the
+         number, and an old entry with no `why` still reads as a plain no. */
+      names[key] = answer.h === null
+        ? { h: null, why: answer.why, at: today }
+        : { h: answer.h, at: today };
     }
   };
   await Promise.all(Array.from({ length: Math.min(MAX_IN_FLIGHT, queue.length) }, worker));
@@ -142,6 +149,21 @@ export async function buildSignals(stones, options = {}) {
     if (!id) continue;
     signals[id] = authorSignal(h.get(plainName(lastAuthor(stone.authors))));
   }
+
+  /* One line per night, for the CI log: how many papers earned a signal, and
+     why the names that did not come back empty. Nulls are counted per distinct
+     name — a reason is a fact about the name, not the paper that signed it. */
+  const why = { 'no-match': 0, ambiguous: 0, 'no-hindex': 0, error: 0 };
+  for (const key of asked) {
+    if (h.get(key) !== null) continue;
+    const reason = names[key] && names[key].why;
+    why[Object.hasOwn(why, reason) ? reason : 'error'] += 1;
+  }
+  const withSignal = Object.values(signals).filter((value) => value !== null).length;
+  console.log('author-signal: ' + withSignal + ' with signal, nulls: ' +
+    'no-match ' + why['no-match'] + ', ambiguous ' + why.ambiguous +
+    ', no-hindex ' + why['no-hindex'] + ', error ' + why.error);
+
   return { signals, cache: { version: 1, names } };
 }
 

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  AFFIL_PREFIX, TTL_DAYS, affilKey, authorQueryUrl, authorSignal, lastAuthor, nameKey,
+  AFFIL_PREFIX, TTL_DAYS, affilKey, authorQueryUrl, authorSignal, explainHIndex, lastAuthor, nameKey,
   pickAffiliation, pickHIndex, readCachedAffil, sameName, shortAffil, writeCachedAffil,
 } from '../docs/assets/cave-affil.mjs';
 
@@ -22,6 +22,47 @@ test('nameKey and sameName ignore accents, dots and middle names', () => {
   assert.ok(sameName('Jens Eisert', 'Jéns Eisert'));
   assert.ok(!sameName('Liang Jiang', 'Xingliang Jiang'));
   assert.equal(nameKey('  '), null);
+});
+
+test('nameKey reads arXiv\'s LaTeX names as the surname OpenAlex indexes', () => {
+  assert.equal(nameKey("Szyma\\'nski").surname, 'szymanski');
+  assert.equal(nameKey("Szyma{\\'n}ski").surname, 'szymanski');
+  assert.equal(nameKey("Szyma\\'{n}ski").surname, 'szymanski');
+  assert.equal(nameKey('Szymański').surname, 'szymanski');
+  assert.deepEqual(nameKey('M{\\"u}ller'), { surname: 'muller', initial: 'm' });
+  assert.equal(nameKey('Bła\\.zej Łukasiewicz').surname, 'lukasiewicz');
+  assert.equal(nameKey('Søren Kierkegaard').surname, 'kierkegaard');
+  assert.equal(nameKey('Marcus Müller').surname, 'muller');
+  assert.equal(nameKey('{\\O}rsted').surname, 'orsted', 'a whole-letter command keeps its letter');
+  assert.equal(nameKey('G{\\o}mez').surname, 'gomez');
+  assert.deepEqual(nameKey("Ren\\'e \\c{c}apa"), { surname: 'capa', initial: 'r' },
+    'an accent must not eat the space after it');
+  assert.equal(nameKey('\\c c').surname, 'c');
+  assert.equal(nameKey('John Smith Jr.').surname, 'smith');
+  assert.equal(nameKey('Anna B. Lee III').surname, 'lee');
+  assert.equal(nameKey('Jan van der Berg').surname, 'berg', 'spaces still split words');
+});
+
+test('explainHIndex names the reason a name has no h-index', () => {
+  const hit = { results: [{ display_name: 'Ada Phys', works_count: 40, ...stats(83) }] };
+  assert.deepEqual(explainHIndex(hit, 'Ada Phys'), { h: 83, why: null });
+
+  assert.deepEqual(explainHIndex(null, 'Ada Phys'), { h: null, why: 'no-match' });
+  assert.deepEqual(explainHIndex({ results: [] }, 'Ada Phys'), { h: null, why: 'no-match' });
+  assert.deepEqual(
+    explainHIndex({ results: [{ display_name: 'Xingliang Jiang', works_count: 358 }] }, 'Liang Jiang'),
+    { h: null, why: 'no-match' });
+
+  const rival = { results: [
+    { display_name: 'Wei Zhang', works_count: 724, ...stats(71), last_known_institutions: inst('Qinghai University') },
+    { display_name: 'Wei Zhang', works_count: 364, ...stats(50), last_known_institutions: inst('Henan Normal University') },
+  ] };
+  assert.deepEqual(explainHIndex(rival, 'Wei Zhang'), { h: null, why: 'ambiguous' });
+  assert.equal(pickHIndex(rival, 'Wei Zhang'), null, 'pickHIndex still answers the same');
+
+  assert.deepEqual(
+    explainHIndex({ results: [{ display_name: 'Ada Phys', works_count: 40 }] }, 'Ada Phys'),
+    { h: null, why: 'no-hindex' });
 });
 
 test('authorQueryUrl searches Physics & Astronomy and asks for little', () => {
