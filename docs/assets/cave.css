@@ -135,7 +135,7 @@
   .cave-ride {
     left: 50%;
     right: auto;
-    top: 9rem;
+    top: 16rem;
     bottom: auto;
     transform: translateX(-50%);
     width: 24rem;
@@ -176,6 +176,10 @@
 @media (min-width: 900px) {
   #cave-app.is-riding .cave-lift {
     transition: transform var(--ride-ms) ease-in-out;
+  }
+
+  #cave-app.is-riding .cave-lift-cable {
+    transition: height var(--ride-ms) ease-in-out;
   }
 }
 
@@ -704,6 +708,9 @@
     height: calc(var(--cave-lift-headroom) + var(--cave-lift-ledge)
       + var(--lift-floor) * var(--cave-lift-pitch) - var(--cave-lift-cage));
     background: var(--rock-lit);
+    /* Same clock as the cage: a cable that jumped to its final length while the
+       cage still travelled would stick out above the shaft. */
+    transition: height 700ms ease-in-out;
   }
 
   .cave-rail-name,
@@ -744,7 +751,8 @@
 
 /* The cage still moves between floors, it just arrives at once. */
 @media (prefers-reduced-motion: reduce) {
-  .cave-lift {
+  .cave-lift,
+  .cave-lift-cable {
     transition: none;
   }
 
@@ -752,7 +760,8 @@
      reader, so the ride's slow transition goes too: the cage jumps to Ranking
      and the box still says where the ranking is. The box's own fade is opacity
      only and is kept — it is what tells cave.js the element may go. */
-  #cave-app.is-riding .cave-lift {
+  #cave-app.is-riding .cave-lift,
+  #cave-app.is-riding .cave-lift-cable {
     transition: none;
   }
 }

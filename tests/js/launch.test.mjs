@@ -397,7 +397,7 @@ test('the ride parks beside the cards on a desktop, at the bottom on a phone', (
   // Six seconds of travel is exactly what this setting exists to spare a
   // reader: the cage jumps to Ranking and the box still says where it is.
   const reduce = css.slice(css.lastIndexOf('prefers-reduced-motion'));
-  assert.match(reduce, /#cave-app\.is-riding \.cave-lift\s*\{[^}]*transition:\s*none/,
+  assert.match(reduce, /#cave-app\.is-riding \.cave-lift,\s*#cave-app\.is-riding \.cave-lift-cable\s*\{[^}]*transition:\s*none/,
     'the cage still rides at a reader who asked for less motion');
 });
 
