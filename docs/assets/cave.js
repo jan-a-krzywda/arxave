@@ -165,7 +165,10 @@ function startPage() {
     /* private mode: the page works, it just forgets between visits */
   }
 
-  const flow = createFlow({ storage });
+  /* The night's papers are not stored, so a remembered flow would reopen at
+     Ranking over an empty list. The flow starts at Dig on every visit; a
+     launch link walks it forward by itself. */
+  const flow = createFlow({ storage: null });
 
   /* A shared launch link (`/ai/llms`, sent to the Cave as `?launch=ai/llms`
      by 404.html) is a request, not a starting point: put the clean address
