@@ -78,10 +78,10 @@ const LIFT_ART = '/assets/cave-art/lift.svg';
  * on, and the one lift carries the floor the cage rests at. The cage's drawing
  * is decoration: the floor's name and state are already in the link beside it.
  */
-export function stageRailHtml(snapshot, stages = STAGES) {
+export function stageRailHtml(snapshot, stages = STAGES, floor = liftFloor(snapshot, stages)) {
   return '<div class="cave-lift-shaft">' +
       '<ol class="cave-rail-list">' + stageRailStepsHtml(snapshot, stages) + '</ol>' +
-      '<div class="cave-lift" style="--lift-floor: ' + liftFloor(snapshot, stages) + '" aria-hidden="true">' +
+      '<div class="cave-lift" style="--lift-floor: ' + floor + '" aria-hidden="true">' +
         '<span class="cave-lift-cable"></span>' +
         '<img class="cave-lift-cage" src="' + LIFT_ART + '" width="48" height="48" alt="">' +
       '</div>' +
@@ -247,7 +247,7 @@ function startPage() {
        the clock, so a long wait ends the ride on its own. Ceiling: a run that
        legitimately takes longer than this loses its box, not its ranking.
        Upgrade path: a `failed` bus event from Dig and the ranking stage. */
-    rideTimer = setTimeout(endRide, RIDE_MS * 15);
+    rideTimer = setTimeout(endRide, 90000);
     return document.body.lastElementChild;
   }
 
@@ -365,7 +365,8 @@ function startPage() {
     openFloor = floor;
     const lift = rail.querySelector('.cave-lift');
     if (!lift) {
-      rail.innerHTML = stageRailHtml(snapshot, STAGES);
+      /* A ride sets out from the top floor, whatever the saved night says. */
+      rail.innerHTML = stageRailHtml(snapshot, STAGES, rideFloor !== null ? 0 : undefined);
       /* A cage built inside this markup has no previous transform to animate
          from, so a ride sets its floor a frame later: without the pause the
          descent is the jump the ride exists to avoid. */

@@ -436,6 +436,14 @@ export function rowHtml(item, parts = {}) {
         '<span class="rk-rank">' + rank + '</span>' +
         '<input type="checkbox" class="pa-pick" data-id="' + escapeHtml(id) + '"' +
           (data.picked ? ' checked' : '') + ' aria-label="Pick for the story">' +
+        '<span class="rk-range">' +
+          '<button type="button" class="rk-tri' + (parts.anchor === 'down' ? ' is-anchor' : '') +
+            '" data-range="down" data-id="' + escapeHtml(id) +
+            '" title="Start a range here and pick down to the ▲ you click next" aria-label="Pick range from here, downwards">▼</button>' +
+          '<button type="button" class="rk-tri' + (parts.anchor === 'up' ? ' is-anchor' : '') +
+            '" data-range="up" data-id="' + escapeHtml(id) +
+            '" title="End a range here, from the ▼ you click next" aria-label="Pick range up to here">▲</button>' +
+        '</span>' +
       '</span>' +
       '<div class="rk-main">' +
         '<h3 class="rk-title">' +
@@ -636,6 +644,7 @@ export function mount(body, ctx) {
     md: new Set(),      // ids whose .md download was offered
     traces: readTraces(ctx.storage), // bare id -> { p, why }, the AI-trace answers
     tracing: false,     // one AI-trace request at a time
+    anchor: null,       // { id, dir } of a range's first triangle, waiting for its partner
     affils: new Map(),  // last author's name -> short institution ('' = unknown)
     affilAsked: new Set(), // names already sent to OpenAlex this page
   };
@@ -680,6 +689,41 @@ export function mount(body, ctx) {
   }
 
   /**
+   * The ▼ above and the ▲ below: two clicks pick every paper between them.
+   *
+   * The first click only marks where the range starts (▼ on its first paper,
+   * or ▲ on its last); the second, of the other kind, closes it. Either order
+   * works, and a second click on the same triangle lets go. Both ends are
+   * picked, and a range never unpicks: it is a faster way to tick boxes.
+   * Only rows on screen count, since those are the ones both clicks came from.
+   */
+  function pickRange(id, dir) {
+    if (!id || (dir !== 'down' && dir !== 'up')) return;
+    const a = state.anchor;
+    if (!a || a.dir === dir) {
+      state.anchor = a && a.id === id ? null : { id, dir };
+      paintList();
+      return;
+    }
+    const ids = rowsOnScreen().map((item) => String(item.id));
+    const i = ids.indexOf(a.id);
+    const j = ids.indexOf(id);
+    state.anchor = null;
+    if (i < 0 || j < 0 || !ctx.picks || typeof ctx.picks.add !== 'function') {
+      paintList();
+      return;
+    }
+    const span = new Set(ids.slice(Math.min(i, j), Math.max(i, j) + 1));
+    for (const sid of span) ctx.picks.add(sid);
+    for (const item of state.ranked) {
+      if (span.has(String(item.id))) item.picked = true;
+    }
+    paintList();
+    paintFoot();
+    ctx.bus.dispatchEvent(new CustomEvent('picks', { detail: [...ctx.picks] }));
+  }
+
+  /**
    * Paint the rows, and with them tonight's verdict.
    *
    * Recomputed on every paint — a slider drag, a new embed, a thread answer
@@ -711,6 +755,7 @@ export function mount(body, ctx) {
       topic: leafLabel(ctx.topics, item.topic),
       wagon: wagons.get(item.id) || '',
       open: state.open === item.id,
+      anchor: state.anchor && state.anchor.id === String(item.id) ? state.anchor.dir : '',
       repo: repoOk() ? repo() : '',
       thread: threadCache.get(bareArxivId(item.id)),
       diamond: diamondOf(item.id),
@@ -1172,6 +1217,11 @@ export function mount(body, ctx) {
   listEl.addEventListener('click', (event) => {
     const target = event.target;
     if (!target || typeof target.closest !== 'function') return;
+    const tri = target.closest('[data-range]');
+    if (tri) {
+      pickRange(tri.getAttribute('data-id'), tri.getAttribute('data-range'));
+      return;
+    }
     const action = target.closest('[data-act]');
     if (action) {
       const id = action.getAttribute('data-id');
@@ -1186,7 +1236,7 @@ export function mount(body, ctx) {
       }
       return;
     }
-    if (target.closest('a, input, label')) return;
+    if (target.closest('a, input, label, button')) return;
     const row = target.closest('.rk-row');
     if (!row) return;
     const id = row.getAttribute('data-id');
