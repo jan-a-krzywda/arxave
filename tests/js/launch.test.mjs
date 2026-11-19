@@ -499,8 +499,9 @@ test('Priorities reads the stored phrase vector, and embeds only on a miss', () 
 test('range triangles: rows carry them and the stage picks between two clicks', async () => {
   const { rowHtml } = await import('../../docs/assets/cave-stage-ranking.mjs');
   const html = rowHtml({ id: '2511.00001', title: 't' }, { rank: 1, total: 3, anchor: 'down' });
-  assert.match(html, /data-range="down"[^>]*>▼/);
-  assert.match(html, /data-range="up"[^>]*>▲/);
+  assert.match(html, /data-range="down"[^>]*><svg/);
+  assert.match(html, /data-range="up"[^>]*><svg/);
+  assert.doesNotMatch(html, /[▼▲]/, 'the triangles are gone');
   assert.match(html, /rk-tri is-anchor" data-range="down"/);
   const src = fs.readFileSync(path.join(ROOT, 'docs/assets/cave-stage-ranking.mjs'), 'utf8');
   assert.match(src, /function pickRange/);

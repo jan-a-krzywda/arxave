@@ -226,6 +226,16 @@ export function orderNight(ranked, opts = 50) {
 }
 
 /**
+ * The two halves of an error bar: the upper end (a cap with its stem running
+ * down) starts a range, the lower end (a stem with its cap below) ends one.
+ * Drawn in `currentColor` so the buttons take the theme's colours.
+ */
+const BAR_TOP = '<svg viewBox="0 0 12 10" width="14" height="12" aria-hidden="true">' +
+  '<path d="M1 1H11M6 1V10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+const BAR_BOTTOM = '<svg viewBox="0 0 12 10" width="14" height="12" aria-hidden="true">' +
+  '<path d="M6 0V9M1 9H11" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+
+/**
  * The ranked list with a `picked` flag per item, in the same order.
  *
  * Stable across a re-rank by construction: the flag comes from the ids in the
@@ -439,10 +449,10 @@ export function rowHtml(item, parts = {}) {
         '<span class="rk-range">' +
           '<button type="button" class="rk-tri' + (parts.anchor === 'down' ? ' is-anchor' : '') +
             '" data-range="down" data-id="' + escapeHtml(id) +
-            '" title="Start a range here and pick down to the ▲ you click next" aria-label="Pick range from here, downwards">▼</button>' +
+            '" title="Start a range here, then click the lower end where it stops" aria-label="Pick range from here, downwards">' + BAR_TOP + '</button>' +
           '<button type="button" class="rk-tri' + (parts.anchor === 'up' ? ' is-anchor' : '') +
             '" data-range="up" data-id="' + escapeHtml(id) +
-            '" title="End a range here, from the ▼ you click next" aria-label="Pick range up to here">▲</button>' +
+            '" title="End a range here, then click the upper end where it starts" aria-label="Pick range up to here">' + BAR_BOTTOM + '</button>' +
         '</span>' +
       '</span>' +
       '<div class="rk-main">' +
