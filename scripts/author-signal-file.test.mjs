@@ -147,8 +147,49 @@ test('a failure is a null signal, never a thrown warm', async () => {
   assert.deepEqual(out.signals, {
     '2611.00001': null, '2611.00002': null, '2611.00003': null, '2611.00004': null,
   });
-  assert.deepEqual(out.cache.names['ada phys'], { h: null, at: '2026-11-19' },
-    'a failure is cached as a no, so tomorrow retries soon');
+  assert.deepEqual(out.cache.names['ada phys'], { h: null, why: 'error', at: '2026-11-19' },
+    'a failure is cached as a no, with its reason, so tomorrow retries soon');
+});
+
+test('a null says why, and the night ends with one log line', async () => {
+  const bodies = {
+    'Ada Phys': answer('Ada Phys', 83),
+    'Bob Stone': { results: [{ display_name: 'Xander Stone', works_count: 400, summary_stats: { h_index: 60 } }] },
+    'Wei Zhang': { results: [
+      { display_name: 'Wei Zhang', works_count: 724, summary_stats: { h_index: 71 },
+        last_known_institutions: [{ display_name: 'Qinghai University' }] },
+      { display_name: 'Wei Zhang', works_count: 364, summary_stats: { h_index: 50 },
+        last_known_institutions: [{ display_name: 'Henan Normal University' }] },
+    ] },
+    'Cyd Ray': { results: [{ display_name: 'Cyd Ray', works_count: 3 }] },
+  };
+  const fetch = async (url) => {
+    const name = askedName(url);
+    if (name === 'Dee Volt') return { ok: false, status: 429, json: async () => ({}) };
+    return ok(bodies[name]);
+  };
+  const lines = [];
+  const original = console.log;
+  console.log = (line) => lines.push(line);
+  let out;
+  try {
+    out = await buildSignals([
+      stone('2611.00001', 'Ada Phys'), stone('2611.00002', 'Bob Stone'),
+      stone('2611.00003', 'Wei Zhang'), stone('2611.00004', 'Cyd Ray'),
+      stone('2611.00005', 'Dee Volt'),
+    ], { fetch, today: '2026-11-19' });
+  } finally {
+    console.log = original;
+  }
+
+  assert.deepEqual(out.cache.names['ada phys'], { h: 83, at: '2026-11-19' });
+  assert.deepEqual(out.cache.names['bob stone'], { h: null, why: 'no-match', at: '2026-11-19' });
+  assert.deepEqual(out.cache.names['wei zhang'], { h: null, why: 'ambiguous', at: '2026-11-19' });
+  assert.deepEqual(out.cache.names['cyd ray'], { h: null, why: 'no-hindex', at: '2026-11-19' });
+  assert.deepEqual(out.cache.names['dee volt'], { h: null, why: 'error', at: '2026-11-19' });
+  assert.equal(out.signals['2611.00002'], null);
+  assert.deepEqual(lines,
+    ['author-signal: 1 with signal, nulls: no-match 1, ambiguous 1, no-hindex 1, error 1']);
 });
 
 test('a stone with no authors is null and asks nothing', async () => {
