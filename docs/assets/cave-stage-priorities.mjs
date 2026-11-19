@@ -98,7 +98,9 @@ export const CHOICE_LABEL = Object.freeze({
 /**
  * The sliders' ranges and defaults, shared by the ranking stage (which draws
  * them, beside the list they move) and the codec here (which keeps them).
- * `solo` and `ai` are penalties and start at 0: a reader turns them on.
+ * `solo` and `ai` are penalties and start at 0: a reader turns them on. The
+ * senior boost is the mirror of a penalty and starts ON at 50 — a last author
+ * with an h-index is worth a look, and the reader can dial it off.
  */
 export const SLIDERS = Object.freeze({
   match: Object.freeze({ min: 0, max: 100, value: 50 }),
@@ -106,6 +108,7 @@ export const SLIDERS = Object.freeze({
   expTheory: Object.freeze({ min: -100, max: 100, value: 0 }),
   solo: Object.freeze({ min: 0, max: 100, value: 0 }),
   ai: Object.freeze({ min: 0, max: 100, value: 0 }),
+  senior: Object.freeze({ min: 0, max: 100, value: 50 }),
 });
 
 /** The spec's four weights: equal 1, prefer 1.5, avoid 0.5, off 0. */
@@ -150,6 +153,7 @@ export function defaultPrefs(topics) {
       expTheory: SLIDERS.expTheory.value,
       solo: SLIDERS.solo.value,
       ai: SLIDERS.ai.value,
+      senior: SLIDERS.senior.value,
     },
     touchstones: [],
     text: '',
@@ -186,9 +190,9 @@ export function serialisePrefs(topics, prefs) {
   q.set('match', String(number(prefs?.sliders?.match, SLIDERS.match.value, SLIDERS.match.min, SLIDERS.match.max)));
   q.set('surprise', String(number(prefs?.sliders?.surprise, SLIDERS.surprise.value, SLIDERS.surprise.min, SLIDERS.surprise.max)));
   q.set('exp', String(number(prefs?.sliders?.expTheory, SLIDERS.expTheory.value, SLIDERS.expTheory.min, SLIDERS.expTheory.max)));
-  /* The penalties only when set, so the default string stays the short one an
-     older build wrote. */
-  for (const name of ['solo', 'ai']) {
+  /* The penalties and the boost only when moved, so the default string stays
+     the short one an older build wrote. */
+  for (const name of ['solo', 'ai', 'senior']) {
     const value = sliderValue(name, prefs?.sliders?.[name]);
     if (value !== SLIDERS[name].value) q.set(name, String(value));
   }
@@ -219,6 +223,9 @@ export function parsePrefs(topics, raw) {
   prefs.sliders.expTheory = number(q.get('exp'), SLIDERS.expTheory.value, SLIDERS.expTheory.min, SLIDERS.expTheory.max);
   prefs.sliders.solo = sliderValue('solo', q.get('solo'));
   prefs.sliders.ai = sliderValue('ai', q.get('ai'));
+  /* An older build's string carries no `senior`: `sliderValue` reads its own
+     default (50), so stored prefs from before the boost come back ON. */
+  prefs.sliders.senior = sliderValue('senior', q.get('senior'));
   prefs.ml4q = q.get('ml4q') === '1';
   return prefs;
 }

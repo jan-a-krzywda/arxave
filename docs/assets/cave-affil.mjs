@@ -12,6 +12,11 @@
  * (`RIVAL_SHARE` of the top hit's) at another institution, the row shows
  * nothing rather than a confident wrong answer.
  *
+ * THE SAME ANSWER ALSO CARRIES THE H-INDEX, for the senior-author bonus: the
+ * same search asks for `summary_stats`, and `pickHIndex` reads it off the same
+ * candidate under the same ambiguity rule. `authorSignal` turns an h into the
+ * 0..1 signal the order key wants.
+ *
  * Answers are cached per name in `ctx.storage` for `TTL_DAYS`, so a reader's
  * second visit asks about new names only. The pure half — the URL, the pick,
  * the shortening, the cache — is here; the fetch lives in the ranking stage.
@@ -68,7 +73,7 @@ export function lastAuthor(authors) {
 export function authorQueryUrl(name, base = OPENALEX_AUTHORS) {
   return base + '?search=' + encodeURIComponent(String(name || '').trim()) +
     '&filter=topics.field.id:31&per-page=5' +
-    '&select=display_name,works_count,last_known_institutions';
+    '&select=display_name,works_count,last_known_institutions,summary_stats';
 }
 
 /** An institution's name as a row can hold it: no "(United States)", no "The". */
@@ -87,22 +92,58 @@ const firstInst = (author) => {
 };
 
 /**
+ * The top same-name hit in `payload` for `name`, or null when there is none or
+ * the name is ambiguous (see RIVAL_SHARE). The candidate set and the rival rule
+ * are shared by `pickAffiliation` and `pickHIndex` so the two never disagree
+ * about who the last author is.
+ */
+function topNamesake(payload, name) {
+  const want = nameKey(name);
+  const results = payload && Array.isArray(payload.results) ? payload.results : [];
+  if (!want) return null;
+  const same = results.filter((author) => author && sameName(String(author.display_name || ''), want));
+  if (!same.length) return null;
+  const top = same[0];
+  const inst = firstInst(top);
+  const floor = RIVAL_SHARE * (Number(top.works_count) || 0);
+  const rival = same.slice(1).some((author) =>
+    (Number(author.works_count) || 0) >= floor && firstInst(author) && firstInst(author) !== inst);
+  return rival ? null : top;
+}
+
+/**
  * The short affiliation OpenAlex's answer gives for `name`, or '' when it gives
  * none or the name is ambiguous (see RIVAL_SHARE).
  */
 export function pickAffiliation(payload, name) {
-  const want = nameKey(name);
-  const results = payload && Array.isArray(payload.results) ? payload.results : [];
-  if (!want) return '';
-  const same = results.filter((author) => author && sameName(String(author.display_name || ''), want));
-  if (!same.length) return '';
-  const top = same[0];
+  const top = topNamesake(payload, name);
+  if (!top) return '';
   const inst = firstInst(top);
-  if (!inst) return '';
-  const floor = RIVAL_SHARE * (Number(top.works_count) || 0);
-  const rival = same.slice(1).some((author) =>
-    (Number(author.works_count) || 0) >= floor && firstInst(author) && firstInst(author) !== inst);
-  return rival ? '' : shortAffil(inst);
+  return inst ? shortAffil(inst) : '';
+}
+
+/**
+ * The h-index OpenAlex's answer gives for `name`, or null when it gives none or
+ * the name is ambiguous. An affiliation is not needed for an h-index, so a top
+ * hit with no known institution still answers.
+ */
+export function pickHIndex(payload, name) {
+  const top = topNamesake(payload, name);
+  if (!top) return null;
+  const h = top.summary_stats ? top.summary_stats.h_index : null;
+  return typeof h === 'number' && Number.isFinite(h) ? h : null;
+}
+
+/**
+ * An h-index as the order key's bonus scale: 0..1, saturating at
+ * `hSaturation` (60 by default). null (or junk) is "unknown" — a missing
+ * lookup never penalises.
+ */
+export function authorSignal(h, hSaturation = 60) {
+  if (h === null || h === undefined) return null;
+  const value = Number(h);
+  if (!Number.isFinite(value) || value < 0) return null;
+  return Math.min(Math.log1p(value) / Math.log1p(hSaturation), 1);
 }
 
 /* ── the cache ──────────────────────────────────────────────────────────── */

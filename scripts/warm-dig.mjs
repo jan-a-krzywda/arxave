@@ -37,6 +37,7 @@
  *   --endpoint     dig-cache URL (default: the project's deployed function)
  *   --embed        embed URL (default: the project's deployed function)
  *   --embed-local  embed with SPECTER2 on this machine, not the hosted pick
+ *   --author-signal  directory for the last-author signal files (off unless given)
  *   --dry-run      fetch and embed, write nothing
  */
 
@@ -46,6 +47,7 @@ import { pathToFileURL } from 'node:url';
 import { XMLParser } from 'fast-xml-parser';
 
 import { chooseEmbedder } from './embed-local.mjs';
+import { buildSignals, mergeLatest } from './author-signal-file.mjs';
 import { paperEmbedText, parseAnnouncementRSS, parseAtomEntries } from '../docs/assets/sieve-ui.mjs';
 
 /* Must match docs/assets/filter.js and supabase/functions/embed/hf.ts exactly —
@@ -748,6 +750,60 @@ export async function embedChunk(texts, embedUrl, fetchImpl = fetch) {
   }
 }
 
+/**
+ * Tonight's last-author signals, where the page can read them.
+ *
+ * A SEPARATE, FAILABLE STEP. It runs after the vectors are written, because the
+ * cache is what a reader waits on and an OpenAlex rate limit must not cost the
+ * night's embeddings. A failure here is one warning and an unchanged file: the
+ * page then ranks with what it already had (`cave-stage-ranking` treats a
+ * missing file as no bonus at all), so a dark lookup night is a quiet one, not
+ * a broken one.
+ *
+ * Files, all under the `--author-signal` directory except the name cache, which
+ * sits beside it as the contract's data layout has it (`docs/feeds/`):
+ *   latest.json      tonight merged over the previous file, capped
+ *   <date>.json      a dated copy of the same file
+ *   ../author-h-cache.json   the per-name answers, so a night asks only new names
+ */
+export async function writeAuthorSignals(stones) {
+  const dir = arg('author-signal');
+  if (!dir) return;
+  if (DRY_RUN) {
+    console.log('warm-dig: --dry-run, author signals not written');
+    return;
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const latestPath = path.join(dir, 'latest.json');
+  const cachePath = path.join(dir, '..', 'author-h-cache.json');
+  const read = async (file) => {
+    try { return JSON.parse(await fs.readFile(file, 'utf8')); } catch { return null; }
+  };
+  try {
+    /* `OPENALEX_MAILTO` is the polite-pool contact the rest of this script
+       already sends; `OPENALEX_API_KEY` is optional and only raises the
+       allowance. Neither is required for the job to run. */
+    const { signals, cache } = await buildSignals(stones, {
+      mailto: OPENALEX_MAILTO,
+      apiKey: process.env.OPENALEX_API_KEY || '',
+      cache: await read(cachePath),
+      today,
+    });
+    const latest = mergeLatest(await read(latestPath), signals, { date: today });
+    const body = JSON.stringify(latest) + '\n';
+    await fs.mkdir(dir, { recursive: true });
+    await fs.mkdir(path.dirname(cachePath), { recursive: true });
+    await fs.writeFile(latestPath, body);
+    await fs.writeFile(path.join(dir, `${today}.json`), body);
+    await fs.writeFile(cachePath, JSON.stringify(cache) + '\n');
+    console.log(`warm-dig: ${Object.keys(signals).length} author signals, ` +
+                `${Object.keys(cache.names).length} names cached`);
+  } catch (err) {
+    /* One line, and the warm still succeeds: the vectors are already out. */
+    console.warn(`warm-dig: author signals skipped — ${err.message}`);
+  }
+}
+
 async function main() {
   const categories = (arg('categories') ?? '')
     .split(',').map((c) => c.trim()).filter(Boolean);
@@ -931,7 +987,13 @@ async function main() {
     todo.push({ ...units[i], sha: shas[i] });
   }
   console.log(`warm-dig: ${known.size} already cached, ${todo.length} to embed`);
-  if (todo.length === 0) return;
+  /* Nothing to embed does not mean nothing to do: the signals are independent
+     of the vector cache, and a re-run is exactly when a quiet day's names are
+     still unanswered. */
+  if (todo.length === 0) {
+    await writeAuthorSignals(stones);
+    return;
+  }
 
   const items = [];
   for (let i = 0; i < todo.length; i += BATCH) {
@@ -962,6 +1024,9 @@ async function main() {
     written += (await resp.json()).written ?? 0;
   }
   console.log(`warm-dig: wrote ${written} vectors`);
+
+  /* Last, and never fatal: see writeAuthorSignals. */
+  await writeAuthorSignals(stones);
 }
 
 // Importable for tests; only the CLI invocation runs the job.

@@ -8,11 +8,22 @@
  * pass of arithmetic — no network, no re-embed, no second dig.
  *
  * THE SLIDERS LIVE HERE, beside the list they reorder: Topic match, Surprise,
- * Theory ↔ Experiment, and two penalties — Single author and AI trace. The
- * priorities stage still keeps their values (codec, storage, the one `prefs`
- * event); this card draws them and sends each change back as a `tune` event,
- * so a drag re-ranks the list live. ML for quantum is a row of that stage's
- * topic tree now, under Computing; this card only applies it.
+ * Theory ↔ Experiment, two penalties — Single author and AI trace — and the
+ * Senior author boost. The priorities stage still keeps their values (codec,
+ * storage, the one `prefs` event); this card draws them and sends each change
+ * back as a `tune` event, so a drag re-ranks the list live. ML for quantum is
+ * a row of that stage's topic tree now, under Computing; this card only
+ * applies it.
+ *
+ * A SENIOR LAST AUTHOR EARNS A BONUS, not a gate. The nightly warmer leaves a
+ * signal per paper (`feeds/author-signal/latest.json`: the last author's
+ * h-index, log-saturated at 60, so 1 is a name that has arrived) and the
+ * `senior` slider turns it into points on the same key the penalties dock,
+ * `senior/100 * SENIOR_MAX * signal`. A paper nobody looked up, or whose name
+ * the lookup could not settle, has a null signal and gains nothing — a missing
+ * lookup must never sink a paper. The file is read once for the page's life;
+ * if it will not load, the slider is greyed and the order is tonight's as it
+ * was.
  *
  * GRADES, NOT ONE NUMBER. Each row's bar is the order key; beside it sit the
  * parts a reader may want to judge separately: Match, Surprise, Impact, how
@@ -107,9 +118,12 @@ const GATE_OFF = -Infinity;
  * The two penalties at full travel, in points of the 0..100 key. A
  * single-author paper loses up to SOLO_MAX; a paper the trace calls certainly
  * machine-written loses up to AI_MAX, scaled by the trace's own percentage.
+ * The senior boost is the other direction: a paper whose last author's signal
+ * is 1 gains up to SENIOR_MAX, scaled by the slider and the signal.
  */
 export const SOLO_MAX = 30;
 export const AI_MAX = 40;
+export const SENIOR_MAX = 30;
 
 /** AI-trace answers in storage: `{ id: { p, why } }`, newest last, capped. */
 export const TRACE_KEY = 'arxave-cave-aitrace-v1';
@@ -123,6 +137,27 @@ const threadCache = new Map();
 
 /** Ids already asked about — an id answered "no thread" is not asked twice. */
 const threadAsked = new Set();
+
+/**
+ * Tonight's author signals, fetched once for the page's life:
+ * `<site base>/feeds/author-signal/latest.json`, resolved against this module
+ * rather than the site root so a build under a path prefix (a project page, a
+ * local preview) finds it — the same trick `cave-launch-vectors.mjs` uses for
+ * its file. Resolves to `bareId -> number|null`, or null when the file cannot
+ * answer (no file, offline, a body that is not JSON, no `signals` object); the
+ * caller greys the slider and ranks tonight as it was.
+ */
+let signalsFile = null;
+function loadSignalFile() {
+  if (signalsFile) return signalsFile;
+  const url = new URL('../feeds/author-signal/latest.json' + new URL(import.meta.url).search,
+    import.meta.url).href;
+  signalsFile = (typeof fetch !== 'function' ? Promise.resolve(null) : fetch(url)
+    .then((resp) => (resp.ok ? resp.json() : null))
+    .then((body) => (body && body.signals && typeof body.signals === 'object' ? body.signals : null))
+    .catch(() => null));
+  return signalsFile;
+}
 
 let styled = false;
 
@@ -186,12 +221,29 @@ export function authorCount(item) {
 }
 
 /**
+ * A paper's author signal, as `feeds/author-signal/latest.json` keys it (bare
+ * arXiv id); null when the file has no answer for it. Null adds nothing to the
+ * key — a lookup that never happened is not evidence against a paper — and a
+ * junk value reads as null so a broken file cannot reorder a night.
+ */
+function signalOf(signals, id) {
+  if (!signals || typeof signals !== 'object') return null;
+  const raw = signals[bareArxivId(id)] ?? signals[String(id)];
+  if (raw === null || raw === undefined) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
  * Tonight's list, ordered by the one key the card shows.
  *
- * `opts` is `{ match, solo, ai, traces, ref }` (a bare number is `match`, as
- * before). `solo` and `ai` are the penalty sliders, 0..100: a single-author
- * paper loses `solo/100 * SOLO_MAX` points, and a paper with an AI trace of
- * p% loses `ai/100 * p/100 * AI_MAX`. Each row also carries its `grades`.
+ * `opts` is `{ match, solo, ai, senior, signals, traces, ref }` (a bare number
+ * is `match`, as before). `solo` and `ai` are the penalty sliders, 0..100: a
+ * single-author paper loses `solo/100 * SOLO_MAX` points, and a paper with an
+ * AI trace of p% loses `ai/100 * p/100 * AI_MAX`. `senior` is the boost
+ * slider, 0..100, and `signals` the night's `bareId -> number|null`: a paper
+ * with signal s gains `senior/100 * SENIOR_MAX * s`. Each row also carries its
+ * `grades`, the signal among them as `grades.senior` (null when unknown).
  *
  * `match` is the Topic match slider (0..100) read as a weight: `w = match/100`,
  * key = `(1 - w) * promisePct + w * fitPct`. At 0 the order is pure promise; at
@@ -208,16 +260,19 @@ export function orderNight(ranked, opts = 50) {
   const w = clamp01(Number(o.match ?? 50) / 100);
   const solo = clamp01(Number(o.solo) / 100) * SOLO_MAX;
   const ai = clamp01(Number(o.ai) / 100) * AI_MAX;
+  const senior = clamp01(Number(o.senior) / 100) * SENIOR_MAX;
   const traces = o.traces || {};
   const out = list.map((item, i) => {
     const trace = traces[bareArxivId(item.id)] || traces[item.id];
     const traceP = trace && Number.isFinite(Number(trace.p)) ? clamp01(Number(trace.p) / 100) : 0;
     const penalty = (authorCount(item) === 1 ? solo : 0) + ai * traceP;
+    const signal = signalOf(o.signals, item.id);
+    const bonus = signal === null ? 0 : senior * clamp01(signal);
     return {
       ...item,
-      grades: stats[i],
+      grades: { ...stats[i], senior: signal },
       rel: Math.round(Math.min(100, Math.max(0,
-        (1 - w) * stats[i].promisePct + w * stats[i].fitPct - penalty))),
+        (1 - w) * stats[i].promisePct + w * stats[i].fitPct - penalty + bonus))),
     };
   });
   out.sort((a, b) => b.rel - a.rel ||
@@ -433,6 +488,12 @@ export function rowHtml(item, parts = {}) {
     ? '<span class="rk-chip rk-chip-topic">' + escapeHtml(parts.topic) + '</span>' : '';
   const wagon = parts.wagon && !sameLabel(parts.wagon, parts.topic)
     ? '<span class="rk-chip rk-chip-wagon">' + escapeHtml(parts.wagon) + '</span>' : '';
+  /* The signal is a grade; the row shows it only when it is worth noticing,
+     as a chip beside the topic's, not a number among the meters. */
+  const signal = Number(data.grades && data.grades.senior);
+  const senior = Number.isFinite(signal) && signal >= 0.8
+    ? '<span class="rk-chip rk-chip-senior" title="The last author is a senior name on OpenAlex">senior author</span>'
+    : '';
   const open = !!parts.open;
   const rank = Number(parts.rank) || 0;
   const total = Math.max(0, Math.round(Number(parts.total) || 0));
@@ -464,7 +525,7 @@ export function rowHtml(item, parts = {}) {
         (who ? '<p class="rk-authors">' + who + '</p>' : '') +
         '<div class="rk-line">' +
           '<div class="rk-meters">' + meterHtml(data.rel, total) + gradesHtml(data, parts.trace) + '</div>' +
-          ((topic || wagon) ? '<p class="rk-chips">' + topic + wagon + '</p>' : '') +
+          ((topic || wagon || senior) ? '<p class="rk-chips">' + topic + wagon + senior + '</p>' : '') +
         '</div>' +
       '</div>' +
       '<button type="button" class="rk-toggle" aria-expanded="' + (open ? 'true' : 'false') +
@@ -498,7 +559,8 @@ export function shownValue(spec, value) {
 /**
  * The tuning panel's sliders: id, label, the two ends, and how the value
  * reads. Ranges come from the priorities stage's `SLIDERS`, the one table the
- * codec clamps against.
+ * codec clamps against. The Senior author boost sits beside the two penalties
+ * because it is their mirror: points on the same key, added rather than taken.
  */
 export const TUNE = Object.freeze([
   { id: 'match', label: 'Topic match', ends: ['explore', 'match'], text: (v) => String(v) },
@@ -506,6 +568,7 @@ export const TUNE = Object.freeze([
   { id: 'expTheory', label: 'Theory ↔ Experiment', ends: ['theory', 'experiment'], text: experimentText, axis: 'expTheory', invert: true },
   { id: 'solo', label: 'Single author', ends: ['keep', 'sink'], text: (v) => (v ? '−' + Math.round(v * SOLO_MAX / 100) : 'off') },
   { id: 'ai', label: 'AI trace', ends: ['keep', 'sink'], text: (v) => (v ? '−' + Math.round(v * AI_MAX / 100) + ' max' : 'off') },
+  { id: 'senior', label: 'Senior author', ends: ['any', 'senior'], text: (v) => (v ? '+' + Math.round(v * SENIOR_MAX / 100) + ' max' : 'off') },
 ]);
 
 /** One small slider of the tuning panel, as markup; `value` is the stored one. */
@@ -641,10 +704,13 @@ export function mount(body, ctx) {
   const tuneEl = body.querySelector('.rk-tune');
   const traceBtn = body.querySelector('.rk-trace');
   const traceNote = body.querySelector('.rk-trace-note');
+  const seniorInput = body.querySelector('[data-tune="senior"]');
 
   const state = {
     night: null,        // the night this list was built from
     ranked: [],         // orderNight output, with the picked flags
+    scored: null,       // the caveScore pass `ranked` was ordered from
+    signals: {},        // bare id -> last author's signal; {} until the file lands
     answered: false,    // a scoring pass finished: `ranked` is tonight's answer
     shown: PAGE,        // how many rows the reader has opened up to
     open: null,         // the one row whose detail is showing, by id
@@ -1145,6 +1211,7 @@ export function mount(body, ctx) {
     const absent = missing();
     if (absent) {
       state.ranked = [];
+      state.scored = null;
       ctx.ranked = [];
       paint();
       return;
@@ -1167,7 +1234,6 @@ export function mount(body, ctx) {
     }));
 
     const sliders = prefs.sliders || {};
-    const match = Number.isFinite(Number(sliders.match)) ? Number(sliders.match) : 50;
 
     /* The nudges, resolved against tonight: a "more like" paper's vector is a
        touchstone like the box's words, a "less like" paper's is a penalty. An
@@ -1188,6 +1254,7 @@ export function mount(body, ctx) {
       });
     } catch (err) {
       state.ranked = [];
+      state.scored = null;
       ctx.ranked = [];
       noteEl.textContent = 'Could not rank tonight\'s papers: ' + ((err && err.message) || err);
       noteEl.hidden = false;
@@ -1205,17 +1272,59 @@ export function mount(body, ctx) {
     /* The dislikes last, on scores `caveScore` has already normalised. */
     scored = applyLess(scored, lessVecs, { weight: LESS_WEIGHT });
 
-    state.ranked = applyPicks(orderNight(scored, {
-      match,
-      solo: sliders.solo,
-      ai: sliders.ai,
+    state.scored = scored;
+    rankList();
+  }
+
+  /**
+   * What `orderNight` reads: the four sliders (clamped by the codec, defaulted
+   * here), the trace answers, and tonight's author signals — `{}` until the
+   * file lands, which is exactly "no bonus yet".
+   */
+  function rankOpts() {
+    return {
+      match: sliderOf('match'),
+      solo: sliderOf('solo'),
+      ai: sliderOf('ai'),
+      senior: sliderOf('senior'),
+      signals: state.signals,
       traces: state.traces,
-      ref: ctx.corpus.promiseRef,
-    }), ctx.picks);
+      ref: ctx.corpus && ctx.corpus.promiseRef,
+    };
+  }
+
+  /**
+   * Order the scored pass and publish it — the one place `refresh` and a late
+   * author-signal file agree on, so the list is never ordered two ways. Picks
+   * follow their paper through `applyPicks`, and the list's `ranked` event is
+   * what the later stages hear.
+   */
+  function rankList() {
+    state.ranked = applyPicks(orderNight(state.scored || [], rankOpts()), ctx.picks);
     state.answered = true;
     ctx.ranked = state.ranked;
     ctx.bus.dispatchEvent(new CustomEvent('ranked', { detail: state.ranked }));
     paint();
+  }
+
+  /**
+   * The author signal file, once. When it lands, the night is re-ordered from
+   * the pass already scored — a second `caveScore` would only repeat its own
+   * numbers. A file that cannot answer greys the slider and says why; the
+   * order stays tonight's, since no signal adds nothing.
+   */
+  function loadSignals() {
+    loadSignalFile().then((signals) => {
+      if (signals) {
+        state.signals = signals;
+        if (state.answered) rankList();
+        return;
+      }
+      if (seniorInput) {
+        seniorInput.disabled = true;
+        seniorInput.title = 'No author data for tonight';
+      }
+    });
   }
 
   /* ── wiring ──────────────────────────────────────────────────────────── */
@@ -1326,5 +1435,9 @@ export function mount(body, ctx) {
   });
   ctx.bus.addEventListener('picks', () => paintFoot());
 
+  /* The signal file goes out before the first paint and lands after it: a
+     cached answer re-orders at once, a slow one when it arrives, a missing
+     one leaves the night as it was with the slider greyed. */
+  loadSignals();
   refresh();
 }

@@ -108,11 +108,15 @@ jobs:
           # The pick. No token here: the function holds HF_TOKEN, and the
           # runner only ever talks to the function.
           EMBED_URL: ${{ vars.ARXAVE_EMBED_URL }}
+          # Optional, and only raises OpenAlex's allowance: the warm asks about
+          # one name per new paper's last author and caches the answers.
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
         run: |
           node warm-dig.mjs \
             --categories "${{ inputs.categories || vars.ARXAVE_WARM_CATEGORIES || 'quant-ph, cond-mat.mes-hall' }}" \
             --lookback "${{ inputs.lookback || vars.ARXAVE_WARM_LOOKBACK || '2' }}" \
             --presets ../docs/presets \
+            --author-signal ../docs/feeds/author-signal \
             --embed-local \
             ${{ inputs.dry_run && '--dry-run' || '' }}
 

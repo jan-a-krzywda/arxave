@@ -15,8 +15,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  CHOICES, ML4Q_PARENT, ml4qCount, sliderValue, clearSetting, chipsFromSetting, defaultPrefs, parsePrefs, prefsSummary,
-  removeChip, serialisePrefs, treeCounts, wagonsForLeaf, weightOf,
+  CHOICES, ML4Q_PARENT, SLIDERS, ml4qCount, sliderValue, clearSetting, chipsFromSetting, defaultPrefs, parsePrefs,
+  prefsSummary, removeChip, serialisePrefs, treeCounts, wagonsForLeaf, weightOf,
 } from '../docs/assets/cave-stage-priorities.mjs';
 import { defaultSetting, loadTopics } from '../docs/assets/sieve-core.mjs';
 
@@ -157,7 +157,7 @@ test('clear leaves no chips; removing a chip undoes exactly that choice', () => 
 test('serialise → parse round-trips a whole prefs object', () => {
   const prefs = {
     setting: { computing: 'prefer', matter: 'avoid', leaves: { qml: 'off', 'many-body': 'prefer' } },
-    sliders: { match: 73, surprise: 41, expTheory: -60, solo: 35, ai: 80 },
+    sliders: { match: 73, surprise: 41, expTheory: -60, solo: 35, ai: 80, senior: 25 },
     touchstones: [],
     text: '',
     ml4q: true,
@@ -175,12 +175,12 @@ test('the default prefs serialise short and parse back to themselves', () => {
 test('junk, missing and out-of-range values fall back instead of throwing', () => {
   const empty = parsePrefs(TOPICS, '');
   assert.deepEqual(empty.setting, defaultSetting(TOPICS));
-  assert.deepEqual(empty.sliders, { match: 50, surprise: 50, expTheory: 0, solo: 0, ai: 0 });
+  assert.deepEqual(empty.sliders, { match: 50, surprise: 50, expTheory: 0, solo: 0, ai: 0, senior: 50 });
   assert.equal(empty.ml4q, false);
 
   const junk = parsePrefs(TOPICS, 'topics=nope:sideways,qml:loud&match=900&surprise=-4&exp=nope&solo=500&ai=x');
   assert.deepEqual(junk.setting, defaultSetting(TOPICS));
-  assert.deepEqual(junk.sliders, { match: 100, surprise: 0, expTheory: 0, solo: 100, ai: 0 });
+  assert.deepEqual(junk.sliders, { match: 100, surprise: 0, expTheory: 0, solo: 100, ai: 0, senior: 50 });
 
   /* An unknown leaf id is dropped, a known one is kept. */
   const mixed = parsePrefs(TOPICS, 'topics=ghost:off,qml:avoid');
@@ -209,9 +209,30 @@ test('prefsSummary names the applied topics and whether there are words', () => 
   assert.equal(prefsSummary(TOPICS, cleared), 'topics equal');
 });
 
+test('the senior boost is mirrored like a penalty: default 50, on the URL only when moved', () => {
+  assert.equal(SLIDERS.senior.min, 0);
+  assert.equal(SLIDERS.senior.max, 100);
+  assert.equal(SLIDERS.senior.value, 50);
+  assert.equal(defaultPrefs(TOPICS).sliders.senior, 50);
+
+  /* The default string stays the short one, so no `senior=50` noise. */
+  assert.doesNotMatch(serialisePrefs(TOPICS, defaultPrefs(TOPICS)), /senior=/);
+
+  const moved = { ...defaultPrefs(TOPICS), sliders: { ...defaultPrefs(TOPICS).sliders, senior: 80 } };
+  assert.match(serialisePrefs(TOPICS, moved), /(^|&)senior=80(&|$)/);
+  assert.equal(parsePrefs(TOPICS, serialisePrefs(TOPICS, moved)).sliders.senior, 80);
+
+  /* Stored by a build from before the boost: no param, so it reads as 50. */
+  assert.equal(parsePrefs(TOPICS, 'topics=&match=50&surprise=50&exp=0&solo=0&ai=0').sliders.senior, 50);
+  assert.equal(parsePrefs(TOPICS, 'senior=900').sliders.senior, 100, 'clamped like every slider');
+  assert.equal(parsePrefs(TOPICS, 'senior=x').sliders.senior, 50, 'junk falls back to the default');
+});
+
 test('sliderValue clamps a known slider and refuses an unknown one', () => {
   assert.equal(sliderValue('solo', 140), 100);
   assert.equal(sliderValue('ai', ''), 0);
+  assert.equal(sliderValue('senior', ''), 50);
+  assert.equal(sliderValue('senior', -20), 0);
   assert.equal(sliderValue('expTheory', -300), -100);
   assert.equal(sliderValue('nope', 5), undefined);
   assert.equal(sliderValue('toString', 5), undefined);
