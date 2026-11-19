@@ -2,11 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  AFFIL_PREFIX, TTL_DAYS, affilKey, authorQueryUrl, lastAuthor, nameKey, pickAffiliation,
-  readCachedAffil, sameName, shortAffil, writeCachedAffil,
+  AFFIL_PREFIX, TTL_DAYS, affilKey, authorQueryUrl, authorSignal, lastAuthor, nameKey,
+  pickAffiliation, pickHIndex, readCachedAffil, sameName, shortAffil, writeCachedAffil,
 } from '../docs/assets/cave-affil.mjs';
 
 const inst = (...names) => names.map((display_name) => ({ display_name }));
+const stats = (h_index) => ({ summary_stats: { h_index } });
 
 test('lastAuthor takes the last name of an array or a comma list', () => {
   assert.equal(lastAuthor(['A One', 'B Two', ' C Three ']), 'C Three');
@@ -27,7 +28,8 @@ test('authorQueryUrl searches Physics & Astronomy and asks for little', () => {
   const url = authorQueryUrl('Barbara M. Terhal');
   assert.ok(url.startsWith('https://api.openalex.org/authors?search=Barbara%20M.%20Terhal'));
   assert.ok(url.includes('filter=topics.field.id:31'));
-  assert.ok(url.includes('select=display_name,works_count,last_known_institutions'));
+  assert.ok(url.includes('&per-page=5'));
+  assert.ok(url.includes('select=display_name,works_count,last_known_institutions,summary_stats'));
 });
 
 test('shortAffil drops the country and a leading "The"', () => {
@@ -74,6 +76,64 @@ test('pickAffiliation tolerates junk', () => {
   assert.equal(pickAffiliation({ results: 'no' }, 'A B'), '');
   assert.equal(pickAffiliation({ results: [{ display_name: 'A B' }] }, 'A B'), '', 'no institution');
   assert.equal(pickAffiliation({ results: [] }, ''), '');
+});
+
+test('pickHIndex reads the top namesake\'s h-index', () => {
+  const payload = { results: [
+    { display_name: 'Mikhail D. Lukin', works_count: 1092, ...stats(83),
+      last_known_institutions: inst('Harvard University', 'QuEra Computing (United States)') },
+  ] };
+  assert.equal(pickHIndex(payload, 'Mikhail Lukin'), 83);
+});
+
+test('pickHIndex answers without an institution', () => {
+  const payload = { results: [{ display_name: 'A B', works_count: 40, ...stats(12) }] };
+  assert.equal(pickHIndex(payload, 'A B'), 12, 'affiliation is not required for an h-index');
+});
+
+test('pickHIndex: no results or no h-index is null', () => {
+  assert.equal(pickHIndex(null, 'A B'), null);
+  assert.equal(pickHIndex({ results: 'no' }, 'A B'), null);
+  assert.equal(pickHIndex({ results: [] }, 'A B'), null);
+  assert.equal(pickHIndex({ results: [{ display_name: 'A B', works_count: 9 }] }, 'A B'), null, 'no summary_stats');
+  assert.equal(pickHIndex({ results: [{ display_name: 'A B', works_count: 9, ...stats(null) }] }, 'A B'), null);
+});
+
+test('pickHIndex leaves a common name blank', () => {
+  const payload = { results: [
+    { display_name: 'Wei Zhang', works_count: 724, ...stats(71), last_known_institutions: inst('Qinghai University') },
+    { display_name: 'Wei Zhang', works_count: 364, ...stats(50), last_known_institutions: inst('Henan Normal University') },
+  ] };
+  assert.equal(pickHIndex(payload, 'Wei Zhang'), null);
+});
+
+test('pickHIndex matches an initial-compatible name', () => {
+  const payload = { results: [
+    { display_name: 'J. I. Cirac', works_count: 801, ...stats(94),
+      last_known_institutions: inst('Max Planck Institute of Quantum Optics') },
+    { display_name: 'J. Ignacio Cirac', works_count: 700, ...stats(93),
+      last_known_institutions: inst('Max Planck Institute of Quantum Optics') },
+  ] };
+  assert.equal(pickHIndex(payload, 'J. Ignacio Cirac'), 94);
+});
+
+test('authorSignal maps an h-index onto 0..1 and saturates at 60', () => {
+  assert.equal(authorSignal(0), 0);
+  assert.equal(authorSignal(60), 1);
+  assert.equal(authorSignal(600), 1, 'never above 1');
+  const mid = authorSignal(10);
+  assert.ok(Math.abs(mid - Math.log1p(10) / Math.log1p(60)) < 1e-12);
+  assert.ok(mid > 0 && mid < 1);
+  assert.equal(authorSignal(5, 5), 1, 'a custom saturation');
+  assert.ok(Math.abs(authorSignal(5, 30) - Math.log1p(5) / Math.log1p(30)) < 1e-12);
+});
+
+test('authorSignal is null for an unknown h', () => {
+  assert.equal(authorSignal(null), null);
+  assert.equal(authorSignal(undefined), null);
+  assert.equal(authorSignal(NaN), null);
+  assert.equal(authorSignal(-1), null);
+  assert.equal(authorSignal('nope'), null);
 });
 
 function memoryStorage() {
