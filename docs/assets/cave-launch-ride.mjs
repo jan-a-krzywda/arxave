@@ -22,12 +22,12 @@ import { escapeHtml } from './sieve-ui.mjs';
  * How long the cage takes to reach the Ranking floor while someone else's run
  * is loading. The rail's ordinary move is 700ms (cave.css), which is right for
  * a click the reader made and far too quick for a descent nobody asked for: at
- * six seconds it reads as travel rather than a jump, and it is still over
+ * fourteen seconds it reads as travel rather than a jump, and it is still over
  * before a run that works is done. CSS cannot read this constant, so its
  * `--ride-ms` carries the same number and `tests/js/launch.test.mjs` holds the
  * two together.
  */
-export const RIDE_MS = 6000;
+export const RIDE_MS = 14000;
 
 /**
  * The box, as markup: one heading, one line, and the launch's own label.
