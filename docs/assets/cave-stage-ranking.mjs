@@ -230,9 +230,9 @@ export function orderNight(ranked, opts = 50) {
  * down) starts a range, the lower end (a stem with its cap below) ends one.
  * Drawn in `currentColor` so the buttons take the theme's colours.
  */
-const BAR_TOP = '<svg viewBox="0 0 12 10" width="14" height="12" aria-hidden="true">' +
+const BAR_TOP = '<svg viewBox="0 0 12 10" width="10" height="9" aria-hidden="true">' +
   '<path d="M1 1H11M6 1V10" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
-const BAR_BOTTOM = '<svg viewBox="0 0 12 10" width="14" height="12" aria-hidden="true">' +
+const BAR_BOTTOM = '<svg viewBox="0 0 12 10" width="10" height="9" aria-hidden="true">' +
   '<path d="M6 0V9M1 9H11" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
 
 /**
