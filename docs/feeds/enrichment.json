@@ -3870,7 +3870,7 @@
    "figure_gloss": "Physical qubit count as a function of idle noise bias for validated rectangular surface codes versus unrotated square code baselines at $p=0.004$ and $P_{L,\\mathrm{target}}=10^{-3}$.",
    "code": ""
   },
-  "seen": "2026-11-18",
+  "seen": "2026-11-19",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -3919,7 +3919,7 @@
    "figure_gloss": "Logical error rate per stabilizer round $p_{\\text{L}}$ plotted against shot retainment under increasing complementary-gap postselection thresholds (left), and peak $T$-state fidelity plotted across rounds $N$ (right). Lattice-surgery escape maintains higher fidelity and lower error rate at matched retainment than grafting variants.",
    "code": ""
   },
-  "seen": "2026-11-18",
+  "seen": "2026-11-19",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -3943,7 +3943,7 @@
    "figure_gloss": "Bar charts showing relative percentage reductions in routing SWAPs (panels a-c) and physical circuit depth (panels e-g) achieved by PRISM over Greedy across 25 benchmarks on grid, hexagonal, and heavy-hex architectures.",
    "code": "https://github.com/Yale-QCS/prism"
   },
-  "seen": "2026-11-18",
+  "seen": "2026-11-19",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -3968,7 +3968,7 @@
    "figure_gloss": "Error-corrected logical expectation values across three teleportation circuits (fully modular, partially depleted, and fully depleted) for four logical eigenstates. Depleting non-essential stabilizer rounds increases teleported output fidelity.",
    "code": ""
   },
-  "seen": "2026-11-18",
+  "seen": "2026-11-19",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -4040,7 +4040,7 @@
    "figure_gloss": "CZ gate calibration and performance: panels show coupler parameter calibrations versus threshold and guiding frequency, plus cycle-dependent cross-entropy benchmarking fidelity decay.",
    "code": ""
   },
-  "seen": "2026-11-18",
+  "seen": "2026-11-19",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -4111,7 +4111,7 @@
    "figure_gloss": "Geometric-mean ratios of two-qubit gate count and circuit depth relative to Qiskit O3 for 275 cases (55 circuits across five coupling topologies). Values below 1.0 indicate smaller gate counts or shallower depth than Qiskit O3.",
    "code": "https://github.com/QuSpect/quspect"
   },
-  "seen": "2026-11-18",
+  "seen": "2026-11-19",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -4330,7 +4330,7 @@
    "figure_gloss": "Measured voltage versus time showing a 40 Msps Gaussian pulse at 14 K, along with fitted pulse amplitude and width plotted against temperature from 14 K to 288 K.",
    "code": ""
   },
-  "seen": "2026-11-18",
+  "seen": "2026-11-19",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -4378,7 +4378,7 @@
    "figure_gloss": "Recall $P$, precision enrichment ${\\rm PE}$, and false discovery rate vs observation time $t^{\\ast}$ for a collective-spin model ($S=10$). Short-time indicators reliably predict Mpemba inversions when early trajectory crossings dominate (a), but require times past the inverse Liouvillian gap when late crossings dominate (b).",
    "code": ""
   },
-  "seen": "2026-11-18",
+  "seen": "2026-11-19",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -4409,14 +4409,15 @@
  },
  "2611.23196": {
   "fields": {
-   "kind": "new result",
-   "result": "Simulating cylinder wake dynamics to 1% relative root-mean-square field error requires estimated 1.62 h on about 560,000 physical qubits in a surface code.",
-   "question": "Can early fault-tolerant quantum algorithms achieve end-to-end feasibility for propagating nonlinear fluid ensembles under grid-dependent circuit costs?",
+   "kind": "new method",
+   "result": "Simulating cylinder wake dynamics to 1% relative root-mean-square field error takes an estimated 1.62 h on ~560,000 physical qubits. Per-step transport rotation counts scale polylogarithmically with cells per coordinate at fixed model dimension and drift degree.",
+   "question": "Can nonlinear flow dynamics be simulated with end-to-end feasibility under early fault-tolerant quantum computing resource constraints?",
    "prior": "",
-   "limits": "Polynomial reduced-order model, cylinder wake flow approaching saturation, resource estimates based on rotated surface codes, hardware run limited to radial coordinate with reference-circuit error mitigation.",
+   "limits": "Polynomial reduced-order models with small numbers of coordinates; early fault-tolerant regime assumed via surface codes; hardware tests rely on reference-circuit noise mitigation.",
    "tools": [
+    "Koopman-von Neumann (KvN) transport",
     "sparse identification of nonlinear dynamics (SINDy)",
-    "Walsh-synthesized Koopman-von Neumann (KvN) transport",
+    "Walsh-synthesized rotation circuits",
     "surface-code resource estimation",
     "IBM quantum hardware"
    ],
@@ -4426,7 +4427,7 @@
    "figure_gloss": "",
    "code": ""
   },
-  "seen": "2026-11-18",
+  "seen": "2026-11-19",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "abstract"
@@ -4671,6 +4672,805 @@
    "code": ""
   },
   "seen": "2026-11-18",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.24605": {
+  "fields": {
+   "kind": "theory",
+   "result": "Embedding off-resonant ladder quantum memory in Mach-Zehnder interferometer converts $\\sum_n a_n |n\\rangle \\to \\sum_n a_n |n\\rangle |n\\rangle$ deterministically without optical nonlinearities. Effective number-shift infidelity is $1 - F = n^2 / (4|\\alpha|^2)$ under strong coherent control.",
+   "question": "Can quantum memories mediate photon-photon interactions and deterministic number-correlated entanglement without strong optical nonlinearities?",
+   "prior": "",
+   "limits": "Requires strong coherent retrieval control field ($|\\alpha|^2 \\gg n^2$). Doppler dephasing lowers retrieval efficiency; assumes perfect balance to prevent dark-port leakage.",
+   "tools": [
+    "ladder-type quantum memory",
+    "Mach-Zehnder interferometer",
+    "phase-matched storage and retrieval",
+    "three-wave mixing interaction"
+   ],
+   "figure": "S4.F2",
+   "figure_url": "https://arxiv.org/html/2611.24605v1/QMI.png",
+   "figure_caption": "Figure 2: The Quantum Memory Interferometer (QMI). An input signal photon prepared in the $|{-}\\rangle=(|H\\rangle-|V\\rangle)/\\sqrt{2}$ polarisation state is split into two spatial paths by a Polarisation Beam Displacer (PBD), travels through the atoms, and is stored and retrieved by the quantum memory process. Counterpropagating to the signal is a control beam comprising of two pulses separated in time. The control pulses are split into two orthogonal polarisations by a 50:50 beamsplitter and a HWP. In the case when storage and retrieval has occurred in both arms, each of the control pulses will have an extra $n$ photons added. Due to the anti-symmetric nature of the signal and this addition, when these control beams interfere at the second 50:50 beamsplitter, they produce an $n$ -photon Fock state at the dark port of the MZI.",
+   "figure_gloss": "Schematic of quantum memory interferometer showing input signal split across dual rails, ladder memory storage/retrieval, and dark-port output of number-correlated states.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.24255": {
+  "fields": {
+   "kind": "new method",
+   "result": "Memory-assisted MDI-QKD protocol via in-memory matter-photon interference halves the required quantum memories and detectors, scaling secret key rate as $O(\\sqrt{\\eta})$ and surpassing memoryless benchmarks at shorter distances.",
+   "question": "Can quantum memory-assisted MDI-QKD be simplified and improved by interfering a stored matter qubit directly with a travelling photonic qubit in a single memory?",
+   "prior": "Two-memory assisted MDI-QKD requires two separate memories and double the detector count, with interference performed on a conventional beamsplitter after retrieving both photons.",
+   "limits": "Simulations assume symmetric links and asymptotic regimes without finite-size effects. Memory lifetime of telecom-ORCA must exceed several nanoseconds via rephasing or hyperfine control to beat memoryless links.",
+   "tools": [
+    "In-memory matter-photon interference",
+    "Dual-rail atomic ensemble quantum memory",
+    "Telecom-wavelength ORCA memory",
+    "Decoy-state MDI-QKD modeling"
+   ],
+   "figure": "S3.F3",
+   "figure_url": "https://arxiv.org/html/2611.24255v1/Figure3_V2.svg",
+   "figure_caption": "Figure 3: Comparison of the SKR between the memoryless, two-memory and in-memory protocols for (a) 25% (b) 50% (c) 75% and (d) 100% storage/retrieval efficiencies ( $\\eta_{s}=\\eta_{r_{0}}$ ).",
+   "figure_gloss": "Secret key rate plotted against total transmission distance for memoryless, dual-memory, and single in-memory MDI-QKD protocols across memory efficiencies of 25%, 50%, 75%, and 100%.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.24078": {
+  "fields": {
+   "kind": "new method",
+   "result": "Analytically designed six-step CCZ gate protocol operating at finite Rydberg-Rydberg interaction $|V|\\sim\\Omega$ using two Rydberg states with opposite-sign van der Waals shifts ($C_6^{rr}/2\\pi=289\\text{ GHz}\\cdot\\mu\\text{m}^6$ and $C_6^{rR}/2\\pi=-281\\text{ GHz}\\cdot\\mu\\text{m}^6$). Total gate time is $t_g=2\\pi/\\Omega_1+4\\sqrt{3}\\pi/V+2\\pi/V$.",
+   "question": "How can a native three-qubit CCZ gate be implemented on neutral atoms in optical tweezers when the Rydberg interaction strength is comparable to the driving Rabi frequency rather than in the strong-blockade regime?",
+   "prior": "Fast Rydberg-antiblockade CCZ protocol (Su et al. 2020), which drops steeply in fidelity as interatomic distance increases.",
+   "limits": "Numerical master-equation simulation for $^{87}\\text{Rb}$; assumes negligible exchange interaction ($|J_6|t_g/l^6\\ll 1$); thermal position fluctuations evaluated at $T_a=2\\,\\mu\\text{K}$ with 1000 Monte Carlo samples.",
+   "tools": [
+    "Lindblad master-equation simulation",
+    "two-level Rydberg excitation with opposite-sign interactions",
+    "Monte Carlo sampling of thermal position fluctuations",
+    "trace-preserving-operator fidelity metric"
+   ],
+   "figure": "S4.F4",
+   "figure_url": "https://arxiv.org/html/2611.24078v1/Gatetime.svg",
+   "figure_caption": "Figure 4: (a) Gate fidelity versus total gate time $t_{g}$ for both proposed paths, evaluated using the TPO and UO measures. The inset shows $t_{g}$ as a function of the interatomic separation $l$ . (b) Comparison with the CCZ gate based on RAB, showing higher fidelities for the proposed paths at larger separations. (c) Gate error $1-\\bar{F}$ versus $l$ for both paths, obtained from Monte Carlo simulations incorporating thermally induced fluctuations in the atomic positions. The trapping parameters are $\\lambda_{f}=1.064~\\mu\\mathrm{m}$ , $w_{f0}=1~\\mu\\mathrm{m}$ , $T_{a}=2~\\mu\\mathrm{K}$ , and $U_{m}=1~\\mathrm{mK}$ , with the trap depth expressed in temperature units. The Rabi frequency is fixed at $\\Omega_{1}/2\\pi=1~\\mathrm{MHz}$ throughout.",
+   "figure_gloss": "Gate fidelity against total gate time $t_g$, comparison with the Rydberg-antiblockade CCZ protocol across interatomic distances, and gate error ($1-\\bar{F}$) under thermal position fluctuations.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.24013": {
+  "fields": {
+   "kind": "theory",
+   "result": "In a Kitaev-chain quantum reservoir, protected Majorana edge modes yield retention scaling as $\\tau_{\\rm e}\\sim e^{N/\\xi}$, balanced by local write-read residue $\\mathcal{R}_{\\rm loc}\\sim\\tau_{\\rm e}^{-2}$. Interactions ($U\\neq 0$) autonomously load bulk memory into edge parities via second-order Liouvillian coupling at the expense of retention.",
+   "question": "Can a physical system hosting protected topological information perform reservoir computation via its bulk dynamics while retaining processed information in its protected boundary modes?",
+   "prior": "",
+   "limits": "Numerical reservoir task simulations performed at $N=10$, $\\Delta=t$, and $t\\tau=1.5$; analytic linear reservoir description strictly requires $U=0$; requires ensemble-averaged readout without mid-circuit back action.",
+   "tools": [
+    "One-dimensional Kitaev chain model",
+    "Majorana covariance space formulation",
+    "Liouvillian Dyson expansion",
+    "Echo-state property analysis"
+   ],
+   "figure": "S0.F4",
+   "figure_url": "https://arxiv.org/html/2611.24013v1/fig3_interacting_mode_network.png",
+   "figure_caption": "Figure 4: Interaction-induced memory consolidation and edge retention. (a) TSC and Trivial denote the topological superconducting and trivial phases, respectively. The color scale shows the bulk–edge loading $W$ from the center-derived bulk into the edge mode. Loading vanishes at $U=0$ . (b) Mean edge retention $S$ of the edge mode. Interactions enable loading at the cost of edge retention. The open circles in (a,b) mark the topological operating point used in (c–e). (c) Memory function for local and edge-augmented readouts in the topological phase, with a trivial reference using $\\mathcal{B}+P_{\\rm end}$ . (d) Target and held-out predictions for a temporal integration task with $\\tau_{\\rm tar}=100$ , using the local features $\\mathcal{B}$ and the augmented feature set $\\mathcal{B}+P_{\\rm end}$ . (e) Test $R^{2}$ as a function of the target memory timescale $\\tau_{\\rm tar}$ . Parameters are $N=10$ , $\\Delta=t$ , and $t\\tau=1.5$ , with $\\mu/t=1$ and $U/t=0.5$ for the topological phase in (c–e); the trivial reference in (c) uses $\\mu/t=3$ .",
+   "figure_gloss": "Bulk-to-edge loading $W$ and edge retention $S$ across chemical potential $\\mu/t$ and interaction $U/t$, accompanied by delayed-input memory function and temporal integration test $R^2$ showing performance gains from including the endpoint parity $P_{\\rm end}$ at long timescales $\\tau_{\\rm tar}$.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.23971": {
+  "fields": {
+   "kind": "theory",
+   "result": "Local ground-state quenches at atomic array edges or internal interfaces accelerate relaxation to steady state compared to bulk quenches, mediated by boundary-accumulated superradiant modes at early times and suppressed bulk subradiant modes at late times.",
+   "question": "How do boundary modes, directional dissipation, and internal interfaces influence the quantum Mpemba effect in driven-dissipative waveguide QED?",
+   "prior": "",
+   "limits": "Weak-excitation regime restricted to collective ground state and single-excitation manifold ($\\sum_{\\mu=1}^N |p_\\mu(t)|^2 \\ll 1$). Born-Markov approximation. Resonant driving ($\\delta=0$) perpendicular to the waveguide ($\\theta=\\pi/2$).",
+   "tools": [
+    "Lindblad master equation",
+    "non-Hermitian interaction matrix eigendecomposition",
+    "trace distance",
+    "chiral waveguide QED model"
+   ],
+   "figure": "S4.F4",
+   "figure_url": "https://arxiv.org/html/2611.23971v1/4_combined.svg",
+   "figure_caption": "Figure 4: QME in a dissimilar atomic array with physical boundaries and an internal interface. (a) Steady-state distributions of two arrays with BE phase are coupled together at $D=0.4$ , with $\\xi_{1}/\\pi=0.2$ and $\\xi_{2}/\\pi=0.3$ , respectively. Each subarray consists of $40$ atoms with a total $N=80$ . The inter-array distance between two subarrays is chosen as the average of $\\xi_{1}$ and $\\xi_{2}$ . (b) Time dynamics of $T$ after quenching certain atoms at specific sites. (c) Late time evolution of $T$ after quenching atoms in (b). Normalized spatial distributions of (d) the most subradiant and (e) the second most subradiant eigenmodes.",
+   "figure_gloss": "Trace distance $T$ vs time $\\gamma t$ and subradiant mode distributions for an $N=80$ two-segment array. A quench at interface site $j=39$ crosses the trajectory of bulk quench $j=20$ around $\\gamma t \\approx 10$, relaxing faster at late times due to low mode overlap with subradiant bulk modes.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.24640": {
+  "fields": {
+   "kind": "new method",
+   "result": "Window propagation computes first-order OTOCs in 1D Haar-random brickwork circuits at arbitrary depth in classical polynomial time with inverse-polynomial mean-squared error $\\varepsilon=1/\\mathrm{poly}(n)$. On 512-qubit Clifford circuits with 768 $T$-gates, mean-squared error drops from $1.97\\times 10^{-2}$ to $1.31\\times 10^{-4}$ as window width increases from $2\\log_2 n$ to $5\\log_2 n$.",
+   "question": "Are out-of-time-order correlators classically hard to simulate?",
+   "prior": "",
+   "limits": "Applies strictly to first-order OTOCs in 1D; does not apply to second-order OTOCs in 2D.",
+   "tools": [
+    "window propagation algorithm",
+    "Haar-random brickwork circuits",
+    "Clifford+$T$ circuits",
+    "two-copy operator space truncation"
+   ],
+   "figure": "A4.F5",
+   "figure_url": "https://arxiv.org/html/2611.24640v1/otoc-clifford-t-w2-to-w5.svg",
+   "figure_caption": "Figure 5: Accuracy of our window propagation on Clifford-plus- $T$ circuits. (a,b) Comparison of our algorithm with exact simulation for $80$ instances of Clifford-plus- $T$ circuits for $n\\in\\{256,512\\}$ . Black circles indicate exact simulation, and colored symbols show the results of our algorithm for window widths of $w\\in\\{2\\log_{2}n,\\,3\\log_{2}n,\\,4\\log_{2}n\\}$ and $w=5\\log_{2}n$ also shown at $512$ qubits. (c) Mean squared error (MSE) as a function of window width for $n\\in\\{128,256,512\\}$ . The shaded area spans the middle $95\\%$ of MSEs obtained at each window width by resampling the circuits with replacement [ 63 ] . At $128$ qubits and $w=4\\log_{2}n$ , some resamples miss the only circuit with nonzero error. The lower bound of the confidence interval is zero, though it cannot be represented on the logarithmic axis and is instead indicated by an arrow.",
+   "figure_gloss": "OTOC values per circuit instance and mean squared error against window width $w$ for 80 Clifford+$T$ circuit instances at $n \\in \\{128, 256, 512\\}$ qubits.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.23550": {
+  "fields": {
+   "kind": "new result",
+   "result": "Simulated $X$ and $Z$ logic gates achieve $>99.7\\%$ fidelity at 1.15 ns gate times in $\\text{Fe}^{2+}\\text{:forsterite}$ at temperatures up to 10 K. Natural tunnel splitting is $\\Delta = 0.19\\text{ K}$ (4.040 GHz) under zero field.",
+   "question": "Can the intrinsic zero-field splitting of a non-Kramers $\\text{Fe}^{2+}$ ion in forsterite host coherent qubit operations robust against thermal decoherence up to 10 K?",
+   "prior": "Prior non-Kramers $\\text{Fe}^{2+}$ qubits (Smoleński et al.) required deliberately engineered lattice-mismatch epitaxial strain in CdSe/ZnSe quantum dots to induce degeneracy, demonstrated only spin-state characterization and optical readout, and had no coherent gate-control mechanism.",
+   "limits": "Theoretical simulation only; spin-phonon coupling constant $G_E$ is unmeasured; Raman and Orbach relaxation rates omitted because prefactors $C_R$ and $A_O$ are unknown; readout methods require lower temperatures than 10 K.",
+   "tools": [
+    "spin Hamiltonian diagonalization",
+    "time-dependent master equation simulation",
+    "surface acoustic wave (SAW) strain driving",
+    "Qiskit cross-validation"
+   ],
+   "figure": "S6.F2",
+   "figure_url": "https://arxiv.org/html/2611.23550v1/Graph_2.png",
+   "figure_caption": "Figure 2: The strain-drive gate infidelity of the system vs decoherence rate at T = 10 K. The figure shows that at estimated decoherence rate the infidelity of the X and Z Gate logic gates are extremely low.",
+   "figure_gloss": "Gate infidelity of $X$ and $Z$ gates as a function of decoherence rate at $T = 10\\text{ K}$, showing infidelity remains below $10^{-3}$ at predicted direct-process relaxation rates.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.23383": {
+  "fields": {
+   "kind": "theory",
+   "result": "Collective coupling near half-excitation $k=N/2$ scales nearly linearly with $N$, speeding excitation transfer, but relaxation from the additional excited qubits offsets the gain. Mechanical anharmonicity of $100\\,\\mathrm{kHz}$ raises single-photon target probability from $19.6\\%$ to $99.7\\%$ for $N=4$ qubits, while pair-dependent qubit-qubit interactions degrade optical retrieval efficiency from $58\\%$ to $35\\%$.",
+   "question": "Can a collective superconducting qubit ensemble coupled to a mechanical intermediary overcome weak electromechanical coupling to improve microwave-to-optical quantum transduction?",
+   "prior": "",
+   "limits": "Theoretical model and master-equation simulations; assumes identical transmons and prescribed heating power-laws from optomechanical crystals.",
+   "tools": [
+    "Tavis-Cummings collective Dicke model",
+    "Auxiliary transmon Kerr-blockade",
+    "Input-output linear Langevin equations",
+    "Master equation simulation with disorder and noise"
+   ],
+   "figure": "S3.F4",
+   "figure_url": "https://arxiv.org/html/2611.23383v1/Auxiliary.png",
+   "figure_caption": "Figure 4: Kerr-assisted selective transfer and sensitivity to imperfections. The $N=4$ ensemble starts in $\\lvert D_{2}^{4},0_{m},0_{o}\\rangle$ . The Kerr-on calculations use the prescribed anharmonicity $\\alpha_{m}/(2\\pi)=100~\\mathrm{kHz}$ , corresponding to $K_{m}/(2\\pi)=-50~\\mathrm{kHz}$ under $\\alpha_{m}=-2K_{m}$ , with the first mechanical transition tuned to resonance. Sequential, nonoverlapping $\\sin^{2}$ coupling pulses have peak amplitudes $g_{\\mathrm{sm}}/(2\\pi)=3.81~\\mathrm{kHz}$ and $G_{\\mathrm{om}}/(2\\pi)=3.43~\\mathrm{MHz}$ . (a,b) Lossless mechanical loading without and with a prescribed Kerr nonlinearity. Blue and orange curves show mean ensemble and mechanical occupations, respectively, while purple dotted curves show $P(D_{1}^{4},1_{m},0_{o})$ . (c) Subsequent lossless optical readout with superconducting ensemble–mechanical exchange switched off. Orange/teal curves show mechanical/optical occupations and solid/dashed curves correspond to Kerr-on/Kerr-off loading. (d)–(f) Final target probability $P_{\\mathrm{tar}}=P(D_{1}^{4},0_{m},1_{o})$ versus (d) mechanical damping at $\\bar{n}_{\\mathrm{th}}=0,0.1,1$ , (e) independently varied $T_{1}$ and $T_{\\phi}$ , and (f) static frequency-disorder width $\\sigma_{\\omega}/g_{\\mathrm{sm}}$ . The disorder curve and shading give the mean and $10^{th}$ – $90^{th}$ % across realizations.",
+   "figure_gloss": "State populations over time during transfer from $|D_2^4, 0_m, 0_o\\rangle$, showing suppression of multi-phonon leakage and boost in target single-photon probability with $100\\,\\mathrm{kHz}$ mechanical anharmonicity.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.24852": {
+  "fields": {
+   "kind": "theory",
+   "result": "Harmless faults in postselected non-Clifford circuits are determined by stabilizer projection on an underlying code defined on the $t$ non-Clifford gates. Cultivation checks using GHZ folds halve fault tolerance to $d = (\\delta + 1)/2$ on distance-$\\delta$ codes, whereas verified cat checks preserve full distance $d = \\delta$, certified up to $\\delta = 9$.",
+   "question": "Which faults are harmful in magic-state cultivation circuits containing real non-Clifford gates, and how can cultivation checks maintain the full code distance?",
+   "prior": "Clifford S-proxy designs predicted fault distance equal to code distance $\\delta$, but real-$T$ simulations showed distance drops to $(\\delta+1)/2$ for $\\delta=3, 5$.",
+   "limits": "Deterministic postselected single-qubit target states ($|T\\rangle$ or $|\\mathrm{CCZ}\\rangle$) with no stabilizing Pauli operators besides identity; ideal noiseless final stabilizer decoding stage unless explicit noisy schedule is modeled.",
+   "tools": [
+    "Clifford skeleton decomposition",
+    "stabilizer code projection",
+    "verified cat checks",
+    "exhaustive fault path search"
+   ],
+   "figure": "S7.F3",
+   "figure_url": "https://arxiv.org/html/2611.24852v1/fig_fd.svg",
+   "figure_caption": "Figure 3: Fault distance with real T gates (filled) and code distance $\\delta$ (open), the most that the S proxy can reach. The proxy reaches $\\delta$ in every case where we certified it, except the distance-five circuits of Refs. [ 22 , 16 ] , whose proxies have fault distance four. The vermilion gaps are the distance lost to real T gates. (a) GHZ folds, including the circuits of Ref. [ 22 ] , and the surface-code scheme of Ref. [ 16 ] (squares). At $\\delta=11$ and $13$ the triangles are the lowest proven upper bounds over the binary folds we evaluated, from Lemma 5 and the fold tree alone, and at $\\delta=9$ the lowest of these bounds is certified for a fold without stabilizer rounds (Appendix F.1 ). (b), (c) Cat-state checks without and with verification. At $\\delta=9$ the verified cat in (c) is the check without stabilizer rounds, and at $\\delta=7$ it keeps the full distance with and without flagged stabilizer rounds around it. (d) Nearest-neighbor cat checks on a square grid. At $\\delta=9$ both (c) and (d) are certified by the integer program of Appendix E.6 .",
+   "figure_gloss": "Real-T fault distance compared to target code distance $\\delta$. Unverified GHZ folds achieve only $d=(\\delta+1)/2$, while verified cat architectures preserve full distance $d=\\delta$ up to $\\delta=9$.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.24687": {
+  "fields": {
+   "kind": "theory",
+   "result": "Any Boolean arithmetic circuit can be implemented with constant quantum depth and constant reaction depth using homogeneous $Z$- and $X$-type Pauli Product Measurements (PPMs) plus Toffoli states, at the expense of exponential space and dirty qubits.",
+   "question": "How should reaction depth be formalized, and how efficiently can coherent Boolean logic be executed using low-reaction-depth LDPC-compatible gatesets?",
+   "prior": "",
+   "limits": "Requires exponential space overhead and leaves dirty qubits; uncomputation in ripple-carry adder and schoolbook multiplier uses heterogeneous PPMs.",
+   "tools": [
+    "reaction depth formalization",
+    "homogeneous Pauli Product Measurements (PPMs)",
+    "Toffoli state injection",
+    "AutoAND circuits"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "abstract"
+ },
+ "2611.23919": {
+  "fields": {
+   "kind": "theory",
+   "result": "Universal fault-tolerant quantum computation requires only a constant number ($\\\\le 20$) of external control wires on an $n$-qubit chip, executing $n/{\\sf polylog}(n/\\epsilon)$ logical qubits with depth-3 periodic geometrically local operations.",
+   "question": "How much external control is strictly necessary to operate a fault-tolerant universal quantum processor?",
+   "prior": "",
+   "limits": "Asymptotic analysis. Assumes a noiseless global clock and physical noise on all operations below a universal positive constant. Logical gate time is $n/{\\sf polylog}(n/\\epsilon)$ without instantaneous classical wires.",
+   "tools": [
+    "spacetime unrolling into 2D tiles",
+    "concatenated quantum codes",
+    "periodic depth-3 cellular automata",
+    "fault-tolerant instruction decoding"
+   ],
+   "figure": "S4.F7",
+   "figure_url": "https://arxiv.org/html/2611.23919v1/clocked_circuit_conv.svg",
+   "figure_caption": "Figure 7 : Transformation of a brickwork-connectivity circuit into an upward propagating tile with inputs entering at the bottom and leaving at the top. Circles indicate the locations of qubits physically in a two-dimensional plane. Arrows overlaying the blue circuits indicate the direction of qubit data propagation. Shaded circles are qubit locations where two-qubit gates are applied while unshaded circles contain ancilla qubits required to implement the qubit data propagation using $\\mathsf{SWAP}$ . The circuit has period 3: Layers $i\\equiv 0\\textrm{ mod }3$ apply the indicated gate (or single qubit operations) to each pair of qubits. Layers $i\\equiv 1\\textrm{ mod }3$ swap shaded locations with their downstream neighbors while layers $i\\equiv 2\\textrm{ mod }3$ swap shaded locations with their upstream neighbors. The number adjacent to each gate indicates the layer in which it is applied. Adjacent qubits in the 1D line may be swapped without directly interacting by applying the $\\mathsf{SWAP}$ in an ‘X’ pattern in round two immediately before the gate location. Importantly, though, at each physical location in the tile where layer-2 gates are applied, whether this X $\\mathsf{SWAP}$ occurs or not is fixed, so that the circuit has period 3. This avoids certain correlated weight-2 errors stemming from a $\\mathsf{SWAP}$ failure that would otherwise be present. See also [ gottesman2000fault , Section 3] .",
+   "figure_gloss": "Unrolling of a 1D brickwork quantum circuit into a 2D tile where qubits propagate continuously upward across a physical planar lattice.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.23420": {
+  "fields": {
+   "kind": "new result",
+   "result": "Two-dimensional color codes reach optimal encoding rates of $1/3$ at distance $3$ and $1/4$ at distance $4$. In a linear ion chain model, simulated $[[20,4,4]]$ and $[[16,4,4]]$ codes hit break-even at two-qubit gate infidelities of $0.22\\%$ and $0.26\\%$.",
+   "question": "What are the optimal encoding rates for small, low-distance 2D color codes, and can they achieve break-even performance in trapped-ion chains?",
+   "prior": "Bivariate bicycle codes with weight-5 stabilizers required $[[30,4,5]]$ and $[[48,4,7]]$ implementations with Shor-style extraction (Wang et al. 2024).",
+   "limits": "Numerical simulation only. Holds strictly for color codes with only color boundaries on surfaces with Euler characteristic $\\chi \\geq 0$.",
+   "tools": [
+    "Steane-style error correction",
+    "Linear trapped-ion chain circuit-level noise model",
+    "Real-time feedback without post-selection",
+    "Tesseract / lookup-table decoding"
+   ],
+   "figure": "S0.F1",
+   "figure_url": "https://arxiv.org/html/2611.23420v1/breakeven_two-qubit_gate_infidelity_with_codes.svg",
+   "figure_caption": "Figure 1 : The break-even two-qubit gate infidelity of distance- $3$ and distance- $4$ two-dimensional color codes. Break-even is defined as the point where the logical error rate equals the physical error rate. Here, the logical error rate is the probability per logical qubit that a logical error occurs during a single quantum error correction cycle. The physical error rate refers to the probability $p$ with which errors are inserted in the ion chain noise model (see Table 1 ). The x-axis shows the total number of qubits used in the quantum error correction cycle. Plots showing the full logical error-rate curves are given in Figure 11 .",
+   "figure_gloss": "Break-even two-qubit gate infidelity plotted against total qubits required per QEC cycle across distance-3 and distance-4 2D color codes. Shows $[[16,4,4]]$ and $[[20,4,4]]$ breaking even above $2\\times 10^{-3}$ physical error rate using 36 to 46 qubits.",
+   "code": "https://github.com/peter-janderks/small_color_codes"
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.23528": {
+  "fields": {
+   "kind": "new method",
+   "result": "Using a stationary entangled singlet partner to flag bit flips on a shuttled ancilla restores circuit distance from 1-4 up to 5 or 6 on weight-8 and weight-10 codes, raising the Gross code $[[144,12,12]]$ circuit distance from 7 to 10 in both bases.",
+   "question": "Can preparing a mobile shuttling ancilla as part of an entangled spin singlet catch propagating hook errors and restore circuit distance in qLDPC syndrome extraction?",
+   "prior": "CAbLECAR mobile ancillas kept only three-eighths to three-quarters of code distance, falling to circuit distance 1 at check weight 12.",
+   "limits": "Circuit-level Pauli noise model only, shuttling routing uses heuristic schedules, and exact distances are schedule-dependent.",
+   "tools": [
+    "singlet-flag syndrome extraction",
+    "circuit-level Pauli noise simulation",
+    "exact integer-program decoding via HiGHS",
+    "BP+OSD decoding"
+   ],
+   "figure": "S6.F5",
+   "figure_url": "https://arxiv.org/html/2611.23528v1/singlet_flag_ldpc_exact.svg",
+   "figure_caption": "Figure 5: Distance-6 codes under the uniform model, in which every error source scales with $p$ and transport bit flips occur with probability $p/10$ per hop: BB72 ( $w=6$ ) and the weight-8 and weight-10 codes (instance a). Logical error rate per round over 6 rounds in the $X$ (top) and $Z$ (bottom) basis. Black squares: CAbLECAR; blue diamonds: singlet flag. Open markers, dashed lines: BP+OSD; filled markers, solid lines: exact minimum-weight decoding (Sec. VIII ). Every shot is decoded both ways. Triangles: 95% upper limits where exact decoding recorded no failure. Grey lines: the slopes $p^{2}$ and $p^{3}$ . Error bars: 95% confidence intervals.",
+   "figure_gloss": "Logical error rate per round versus physical error rate $p$ for distance-6 codes of weights 6, 8, and 10 decoded via BP+OSD and exact integer programming. Exact decoding reveals gains of up to 70x-90x over CAbLECAR that BP+OSD underreports.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.24328": {
+  "fields": {
+   "kind": "new method",
+   "result": "QuFrame closes the QEC feedback loop within a 1 µs round budget with fallback decoding in 144 ns, cutting the logical error rate by an average of 38.5% compared to a serialized blocking baseline.",
+   "question": "How can a quantum controller track the Pauli frame in real time with bounded per-instruction latency under multi-core dispatch and decoders of variable latency?",
+   "prior": "A serialized blocking controller, as modeled in XQsim (Byun et al., 2022), increased logical error rates by up to 4.1× over an ideal zero-latency controller.",
+   "limits": "Evaluated on a distance-3 rotated surface code with 17 physical qubits; IBM Heron coherence times prolonged 10× in simulations; fallback lookup table memory scales poorly for higher code distances without truncation.",
+   "tools": [
+    "QuFrameISA",
+    "Instruction Resolution Engine (IRE)",
+    "Pauli Frame Management Unit (versioned compare-and-swap)",
+    "AMD Alveo V80 FPGA",
+    "Helios simulator with IBM Heron noise model"
+   ],
+   "figure": "S1.F1",
+   "figure_url": "https://arxiv.org/html/2611.24328v1/controller_eval_heron_downscale_hw_9rounds.svg",
+   "figure_caption": "Figure 1 . Controller overhead impact on logical error rate (LER). We evaluate a rotated surface code ( $d=3$ , 9 rounds, 50,000 shots) on the V80 FPGA, prolonging IBM Heron ( AbuGhanem, 2025 ) coherence times $10\\times$ and scaling its noise rates. The ideal baseline assumes no dispatch or decode latency; the blocking baseline serializes frame access and stalls qubits during decoding.",
+   "figure_gloss": "Logical error rate versus physical error rate scaling factor for a rotated surface code (d=3, 9 rounds). QuFrame avoids stalling and tracks closest to the ideal zero-latency baseline, outperforming the serialized blocking controller across all noise levels.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.23923": {
+  "fields": {
+   "kind": "new method",
+   "result": "Generalizes pre-trajectory sampling with batched execution to state-dependent operations without approximation. Reaches up to $24\\times$ higher throughput than CUDA-Q on distance-3 topological memories with amplitude damping, and up to $83\\times$ higher throughput on 30-qubit random circuits with mid-circuit measurements.",
+   "question": "Can pre-trajectory sampling with batched execution be extended to circuits with mid-circuit measurements and general Kraus channels without approximation?",
+   "prior": "Original PTSBE required stochastic outcomes to be state-independent (mixtures of unitaries), excluding mid-circuit measurements and non-twirled amplitude damping.",
+   "limits": "Single-precision statevectors; limited by GPU memory for caching intermediate state branches (requires $8\\cdot 2^n$ bytes per cached state, e.g., 8 GiB per state at $n=30$ qubits).",
+   "tools": [
+    "generalized pre-trajectory sampling with batched execution (PTSBE)",
+    "delayed inner product algorithm",
+    "GPU statevector simulator (CUDA-Q extension)",
+    "multinomial branching and cached state reuse"
+   ],
+   "figure": "S3.F3",
+   "figure_url": "https://arxiv.org/html/2611.23923v1/figure3.svg",
+   "figure_caption": "Figure 3: Speedup of generalized PTSBE over trajectory sampling and near-Clifford simulation. (a) Speedup over trajectory sampling in CUDA-Q (top) and fraction of distinct shots, the number of distinct (trajectory, terminal bitstring) pairs per shot (bottom), against the number of shots $M$ , for three distance-3 memories run for three rounds under amplitude damping. Clifft is not shown, since it can only approximate this noise channel. (b) Speedup at $10^{6}$ shots over CUDA-Q (solid) and over Clifft (dashed), against the density $\\eta$ of non-Clifford gates in random monitored circuits of $n=16$ , 24, and 30 qubits and depth $D=8$ . Each Clifford gate is replaced with probability $\\eta$ by a non-Clifford Pauli rotation, under the same noise at every $\\eta$ . Generalized PTSBE is faster than CUDA-Q at every density and outperforms Clifft beyond a crossover density that falls from 62% at $n=16$ to 24% at $n=30$ . Clifft is faster in the shaded region, where the speedup is below 1. The points labeled AD repeat the $\\eta=100\\%$ circuits with amplitude damping in place of the Pauli gate noise, which Clifft does not support. Points are geometric means over three runs, and bars show one standard deviation of the log rate.",
+   "figure_gloss": "Throughput speedup of generalized PTSBE over CUDA-Q and Clifft as a function of non-Clifford gate fraction and total shots across surface codes, color codes, and 16-to-30-qubit random circuits.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.23762": {
+  "fields": {
+   "kind": "theory",
+   "result": "Families of qubit CSS codes achieve $X$ and $Z$ distances $D_{X}, D_{Z} \\ge c_\\varepsilon N / (\\log N)^2$ and $\\mathcal{K} \\ge N^{1-\\varepsilon}$ encoded qubits per block, supporting $\\mathbf{s} \\ge N^{1-\\varepsilon}$ disjoint matched triples of logical qubits with individually addressable logical CCZ gates selectable via a single transversal physical CCZ layer.",
+   "question": "Can quantum LDPC codes achieve nearly linear code distance while supporting an almost linear number of individually addressable, transversal non-Clifford logical CCZ gates?",
+   "prior": "was a single nontrivial transversal logical CCZ gate at distance $N/\\mathrm{polylog}(N)$ (Li et al. 2024), or almost linear addressable CCZ yield with polynomial subsystem distance (Golowich et al. 2024)",
+   "limits": "Contingent on Assumption 1.1 (uniform subfield product expansion of Reed–Solomon codes). Requires initializing all logical qubits outside the $\\mathbf{s}$ selected triples to $|0\\rangle$.",
+   "tools": [
+    "balanced products of expanding graph covers",
+    "uniform subfield product expansion of Reed–Solomon codes",
+    "cup products of cellular sheaves on cubes",
+    "evaluation functionals on group algebras"
+   ],
+   "figure": "S1.F1",
+   "figure_url": "https://arxave.com/figures/2611.23762-S1.F1.svg",
+   "figure_caption": "Figure 1: Construction of the codes and their logical gates. Complex characters establish expansion, while finite field characters supply the common codewords used to construct cocycles on the balanced product complex. Functionals that vanish on coboundaries make the resulting phase invariant under $X$ stabilizers. Recovering the sheet coefficients and evaluating on an information set makes the pairing diagonal, allowing independent selection of matched logical triples. The distance bound uses Assumption 1.1 . The gate selection uses fixed codes, logical bases, and physical gate locations, with all logical qubits outside the fixed set of matched triples initialized to $\\lvert 0\\rangle$ .",
+   "figure_gloss": "Schematic workflow: expanding covers with complex character bounds provide code distance, finite field characters give common classical codewords for cocycles, and dual cycle functionals allow independent selection of transversal CCZ gates via balanced product complexes.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.24910": {
+  "fields": {
+   "kind": "new method",
+   "result": "Multilayer ion trap with integrated 12.64 GHz spiral resonator drives bare ${}^{171}\\text{Yb}^{+}$ hyperfine transitions at $\\Omega = 1.2300(27)\\text{ MHz}$ with 10 mW input RF. Demonstrates individual addressing of two dressed-state qubits spaced by 10 $\\mu$m using amplitude modulation, achieving a dressed Rabi frequency of $3.165(24)\\text{ kHz}$ on the target ion while crosstalk excitation on the adjacent ion is unresolvable (expected $\\le 0.4\\%$).",
+   "question": "Can an on-chip integrated RF resonator produce an axial magnetic field amplitude gradient sufficient to individually address and manipulate dressed-state trapped-ion qubits without nulling the field at ion positions?",
+   "prior": "",
+   "limits": "Demonstrated on a two-ion Coulomb crystal; multi-qubit entangling gates not yet implemented; input RF line exhibited 7.4 dB losses before the chip-carrier.",
+   "tools": [
+    "Multilayer microfabricated planar surface ion trap",
+    "Integrated RF spiral resonator",
+    "Trapped ${}^{171}\\text{Yb}^{+}$ ions",
+    "RF amplitude modulation"
+   ],
+   "figure": "S4.F5",
+   "figure_url": "https://arxiv.org/html/2611.24910v1/dressedRabi7_ion1_M1_c.png",
+   "figure_caption": "Figure 5: Rabi oscillations between the dressed-states of two ions. The ions are prepared in states $\\ket{D_-}$ , then an amplitude modulated RF field drives the Rabi oscillations. Finally, the dressed states are transferred into the bare states for the state detection, so dressed state $\\ket{D_-}$ corresponds to excitation 0 and dressed state $\\ket{D_+}$ corresponds to excitation 1. The RF driving field modulation frequency is adjusted to be equal to $\\Omega_{g}$ of the first ion (top). The second ion remains not excited (bottom) as its $\\Omega_{g}$ differs by 43 kHz from the modulation frequency. The red curve is a fit with a sine function. Note that the interval from 200 $\\mu$ s to 400 $\\mu$ s was not measured.",
+   "figure_gloss": "Excitation probability versus pulse duration for two ${}^{171}\\text{Yb}^{+}$ ions separated by 10 $\\mu$m driven by a single amplitude-modulated RF field. Top panel shows resonant Rabi oscillations at $3.165(24)\\text{ kHz}$ in the addressed ion; bottom panel shows the adjacent spectator ion remaining in its ground dressed state due to a 43 kHz detuning from the axial RF gradient.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.23390": {
+  "fields": {
+   "kind": "theory",
+   "result": "Trapped odd-parity fermions in multiterminal Josephson networks induce discrete vortex chiralities that suppress $2e$ order and produce algebraically decaying composite $6e$ phase correlations below a BKT temperature $k_B T_{\\mathrm{BKT}}^0/J = \\pi\\sqrt{3}/72 \\simeq 0.0756$. In a two-trijunction device, the third harmonic of the free energy dominates below $k_B T_\\times/J \\approx 0.111$.",
+   "question": "How can microscopic fermionic parity and spin states in quantum-dot Josephson junctions engineer collective phase order and entanglement in a superconducting network?",
+   "prior": "",
+   "limits": "Neglects higher harmonics of the odd-parity junction EPR, interdot cotunneling, and self-inductance; classical phase regime assumes island charging energy $E_C \\ll J$; weak Gaussian bond disorder treated perturbatively.",
+   "tools": [
+    "XY Kagome antiferromagnet mapping",
+    "harmonic approximation with Green functions",
+    "exact diagonalization in truncated charge basis"
+   ],
+   "figure": "S3.F3",
+   "figure_url": "https://arxiv.org/html/2611.23390v1/threefold-josephson.png",
+   "figure_caption": "Figure 3: Threefold Josephson response of two frustrated trijunctions. (a) Odd-parity two-dot device and analog $\\pi$ -junction circuit highlighting the phase bias $\\delta$ , while the internal phases float. (b) Free energy of the Josephson device as a function of the imposed phase bias $\\delta$ at different temperatures. (c) Temperature dependence of the first and third-harmonic responses of the free energy. The dotted line in panel (c) indicates the numerically determined crossover temperature $T_{\\times}$ .",
+   "figure_gloss": "Free energy (b) and its first and third Fourier harmonics $A_1, A_3$ (c) as a function of phase bias $\\delta$ and temperature $T/J$. Shows the transition from a threefold periodic $6e$ potential to a conventional cosine $2e$ potential crossing at $k_B T_\\times/J \\approx 0.111$.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.23448": {
+  "fields": {
+   "kind": "new result",
+   "result": "DIRAC eliminates Nyquist-rate ADCs via analog demodulation and ping-pong integration, using 50.3 pJ per qubit per readout (31.6$\\times$ below fixed-point and 238$\\times$ below FP32). Total 4 K quantum-classical interface power drops to 0.85 mW per physical qubit, a 50.4% reduction versus fixed-point digital baseband.",
+   "question": "Can an in-cryostat readout receiver combine frequency-multiplexed qubit readout with neural network discrimination while reducing 4 K power below room-temperature cable loads?",
+   "prior": "Conventional cryo-CMOS fixed-point digital baseband with 500 MS/s ADCs consumed 1.59 nJ per qubit burst energy (1.71 mW total 4 K power per physical qubit), saving only 36.7% power over room-temperature electronics with flex cables.",
+   "limits": "Evaluated on 1.12M experimental shots via behavioral models validated against transistor-level simulations over ten mismatch-sampled chips. Requires transmitter/receiver co-design with access to baseband NCO sign bits.",
+   "tools": [
+    "passive complex mixers",
+    "ping-pong active-RC integrators",
+    "voltage-to-pulse time-to-digital converters",
+    "TX-derived local oscillator reuse",
+    "joint matched-filter and neural network training",
+    "22 nm FD-SOI cryo-CMOS at 4 K"
+   ],
+   "figure": "S7.F13",
+   "figure_url": "https://arxiv.org/html/2611.23448v1/fig13.svg",
+   "figure_caption": "Figure 13. 4 K QCI power per physical qubit: (a) breakdown for cryo-CMOS designs, and (b) comparison with RT QCIs.",
+   "figure_gloss": "Stacked bars of 4 K quantum-classical interface power per physical qubit (mW) broken down by subsystem across FP32, fixed-point, and DIRAC implementations, along with room-temperature flex and coaxial cable heat comparisons.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.24044": {
+  "fields": {
+   "kind": "new method",
+   "result": "Compiled CAMPS accelerates trajectory sampling by over an order of magnitude compared to uncompiled CAMPS and physical MPS at equal bond dimension $\\chi$, while accurately estimating surface-code logical failure rates up to $d=9$ and bivariate bicycle $[[72,12,6]]$ codes under coherent noise at modest bond dimensions.",
+   "question": "How can one mitigate entanglement growth and large qubit counts to achieve scalable trajectory sampling of quantum error correction circuits under coherent noise using tensor networks?",
+   "prior": "Uncompiled CAMPS updated Clifford disentanglers dynamically per shot without free-qubit recycling, requiring larger bond dimensions $\\chi$ and suffering from order-of-magnitude slower sampling per trajectory.",
+   "limits": "Demonstrated for rotated surface codes up to distance $d=9$ with coherent $ZZ$ rotations and a $[[72,12,6]]$ bivariate bicycle code with coherent $Y$ rotations under phenomenological depolarizing/coherent noise models, using PyMatching and BP-OSD decoders.",
+   "tools": [
+    "Clifford-Augmented Matrix Product States (CAMPS)",
+    "cross-shot Clifford compilation",
+    "qubit recycling via mid-circuit measurement release",
+    "rotation fusion and operator-span minimization",
+    "block-MPS tensor updates"
+   ],
+   "figure": "S0.F1",
+   "figure_url": "https://arxiv.org/html/2611.24044v1/fig1_main.svg",
+   "figure_caption": "Figure 1: Compiled CAMPS workflow and surface-code benchmarks. (a,b) Orange blocks show physical noise $\\mathcal{N}$ and its compiled residual action $\\widetilde{\\mathcal{N}}$ . The compiled $C(t)$ is shared by all shots; $E_{\\nu}(t)$ and the block-2 MPS tensors $A_{\\nu}^{[a]}$ vary between shots. The MPS uses $K=\\max_{t}k(t)$ positions. (c) Physical-qubit count $n$ and peak active-qubit count $K$ versus code distance $d$ for surface-code $X$ memory under coherent $ZZ$ noise, with $r=d$ rounds. (d,e) Fixed-sign $ZZ$ benchmark at $d=r=5$ , $\\theta=0.02$ , and $p=0.005$ . (d) Logical error rate $p_{L}$ versus bond dimension $\\chi$ . Gray and purple dashed lines mark the untruncated $K=17$ reference and PTA prediction. Compiled and uncompiled CAMPS and the state-vector reference each use $5\\times 10^{5}$ shots. Bars and shading show 95% confidence intervals. Inset: zoom near the untruncated reference. (e) Median sampling time per shot versus $\\chi$ . Compiled CAMPS is more than an order of magnitude faster than uncompiled CAMPS and physical MPS at equal $\\chi$ .",
+   "figure_gloss": "Logical error rate $p_L$ (left) and median sampling time per shot (right) as functions of bond dimension $\\chi$ for a $d=r=5$ surface code. Compiled CAMPS matches the untruncated state-vector reference at low bond dimension and is over an order of magnitude faster per shot than uncompiled CAMPS.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.23786": {
+  "fields": {
+   "kind": "new method",
+   "result": "End-to-end task-graph orchestration executes circuit cutting, backend dispatch, and quasi-probability reconstruction within a single runtime. Reconstructed observables $\\langle Z^{\\otimes n}\\rangle$ match ideal targets within $0.0562$ across six simulators, with compilation taking $1.11$ to $1.14$ s and reconstruction taking $0.16$ to $0.17$ s.",
+   "question": "How can the full quantum circuit-cutting pipeline—compilation and cut placement, concurrent backend execution, and post-processing reconstruction—be unified and automated into an end-to-end scheduled task graph?",
+   "prior": "",
+   "limits": "Wire cutting only (no gate cutting); evaluated mainly on structured, linear GHZ circuits and a MaxCut instance; reconstruction introduces exponential sampling overhead $O(16^{k})$ for $k$ cuts.",
+   "tools": [
+    "MLIR (quantum and qcut dialects)",
+    "Q-IRIS runtime",
+    "QIR-EE execution engine",
+    "KaHyPar hypergraph partitioning",
+    "Quasi-probability decomposition (QPD)"
+   ],
+   "figure": "S5.F6",
+   "figure_url": "https://arxiv.org/html/2611.23786v1/seed-validation.svg",
+   "figure_caption": "Figure 6: Trial-level reconstructed $\\langle ZZZZ\\rangle$ . Points are the 20 independent complete-plan trials per backend; diamonds and error bars show the mean and 95% confidence interval from 10,000 resamples. The dashed line is the ideal value one.",
+   "figure_gloss": "Reconstructed observable $\\langle ZZZZ\\rangle$ for 20 independent trials across six simulators and hardware baselines compared to the ideal value of 1.0 (dashed line). Points denote individual trials, and diamonds with error bars show means and 95% confidence intervals.",
+   "code": "https://github.com/ORNL/iris"
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.24444": {
+  "fields": {
+   "kind": "new method",
+   "result": "Direct Pauli evolution via NumPy accelerates two-layer full LiH variational evaluations 3.45-fold over elementary-gate simulation, whereas an RTX PRO 6000 GPU yields roughly 30-fold speedup over an 18-thread Aer CPU baseline for 28-qubit, four-layer TFIM in FP64.",
+   "question": "How should simulation representation, precision, and CPU/GPU resource allocation be jointly chosen to minimize the cost of repeated variational quantum circuit energy evaluations under accuracy and hardware constraints?",
+   "prior": "",
+   "limits": "Evaluations assume fixed-parameter scalar energy calls, not full optimizer convergence trajectories; unobserved vectors outside candidate comparison subsets are not certified; MPS requires low entanglement.",
+   "tools": [
+    "Qiskit Aer and Statevector",
+    "Pennylane Lightning direct Pauli evolution",
+    "CUDA-Q GPU adapter",
+    "Matrix product states (MPS)",
+    "NumPy state updates"
+   ],
+   "figure": "S3.F3",
+   "figure_url": "https://arxiv.org/html/2611.24444v1/vha_scaling.svg",
+   "figure_caption": "Figure 3: Spin VHA, four layers, FP64. CPU curves distinguish elementary gates, direct Pauli rotations and the TFIM block method, with thread counts shown. Stars are matched single-GPU timings. Points show three-seed medians and ranges of full-energy calls, excluding setup. A point is omitted when three successful seed values are unavailable.",
+   "figure_gloss": "Per-call latency of four-layer spin VHA in FP64 versus qubit count, comparing elementary gate decomposition, direct Pauli updates, specialized commuting-block updates, and single-GPU acceleration across thread counts.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.24089": {
+  "fields": {
+   "kind": "new method",
+   "result": "Expanding quantum annealing to width $W=2$ in a random quantum neural network exponentially reduces required depth $L_{min}$ under linear annealing for unstructured search. A tuned quantum perceptron of depth $L=1$ and width $W=2$ solves the search problem with exponentially small error.",
+   "question": "Can broadening the width of a quantum annealing process through a quantum neural network architecture improve annealing efficiency across quantum phase transitions?",
+   "prior": "Standard quantum annealing on unstructured search requires minimal depth scaling as $L_{min}\\propto 2^N$ with linear schedule, or $L_{min}^{(G)}\\propto \\sqrt{2^N}$ via Grover schedule.",
+   "limits": "Complexity scales exponentially with network depth as $W^L$; state reconstruction success probability falls as $1/W^L$ for orthogonal states; tested on small qubit counts or via mean-field factorized product states ($N=400$).",
+   "tools": [
+    "quantum neural network",
+    "linear annealing schedule",
+    "exact numerical simulation",
+    "mean-field Hamiltonian approximation",
+    "differential evolution"
+   ],
+   "figure": "S3.F3",
+   "figure_url": "https://arxiv.org/html/2611.24089v1/fig2.svg",
+   "figure_caption": "Figure 3: Minimal depth $L_{min}(\\delta)$ of a random quantum annealing network in the quantum search problem. Here $L_{min}(\\delta)$ is the minimum depth where the average success probability becomes greater than $1-\\delta$ . Here $\\delta=1/3$ . Panels (a) and (b) compare the performance of standard quantum annealing (QA) for linear and Grover annealing schedules with that of the quantum neural network for different width $W$ . The weights $w_{ab}^{(l)}$ of neural network are independent random variables uniformly distributed in $(0,1)$ . The phases $\\theta_{a}^{(l)}$ are independent random variables from a normal distribution of mean zero and variance $1$ .",
+   "figure_gloss": "Minimal annealing depth $L_{min}(\\delta)$ versus system size $N$ for unstructured search at threshold $\\delta=1/3$. Linear schedule depth drops exponentially from $W=1$ to $W=2,3$, while Grover schedule performance is unchanged by width.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.23956": {
+  "fields": {
+   "kind": "new method",
+   "result": "Two-step adiabatic evolution with non-overlapping clauses prepared as initial $W$ states achieves runtime scaling between roughly $N^{1/3}$ and $N^{1/4}$ for Exact Cover 3, significantly outpacing standard adiabatic Grover scaling.",
+   "question": "Can adiabatic quantum algorithms achieve faster runtimes than the standard Grover quadratic speed-up when solving NP-complete problems?",
+   "prior": "Conventional adiabatic algorithms and unstructured Grover search yield runtime scaling of $N^{1/2}$ (Grover 1997; Roland & Cerf 2002).",
+   "limits": "Neglects environment effects, losses, and decoherence. Assumes unique solution (or very few solutions) near percolation threshold $m \\approx 2n/3$, with pairs sharing at most one clause.",
+   "tools": [
+    "two-step adiabatic Hamiltonian interpolation",
+    "$W$-state initial state preparation",
+    "transverse/swap mixing Hamiltonian",
+    "two-level Landau-Zener approximation"
+   ],
+   "figure": "S0.F1",
+   "figure_url": "https://arxiv.org/html/2611.23956v1/intpolviz.svg",
+   "figure_caption": "Figure 1: Comparison between the conventional scheme ( 1 ) and the step-wise algorithm ( 6 ) proposed here for a specific example. The top panel depicts the considered Exact Cover 3 instance with 21 bits (black horizontal lines) and 14 clauses (green triangles). The $m_{1}=7$ non-overlapping clauses are arranged on the left-hand side and the remaining $m_{2}=7$ clauses to their right. The unique solution $w$ is given in the column on the right-hand side. The middle panel shows the lowest two eigenvalues (black and red curve) of the Hamiltonian ( 1 ) as a function of the interpolation parameter $f(t)$ as well as the probability overlap between the instantaneous ground state $\\left|\\psi_{0}(t)\\right>$ and the initial ground state $\\left|s\\right>=\\left|+\\ldots+\\right>$ (yellow curve) and the final ground state $\\left|w\\right>$ (green curve), respectively. In analogy, the bottom panel displays these values for the step-wise algorithm ( 6 ), where the initial ground state $\\left|\\tilde{s}\\right>$ is the reduced superposition state ( 4 ). For the latter, the minimum gap is around a factor of three larger and the Landau-Zener two-mode description ( Adiabatic Evolution ) a much better approximation.",
+   "figure_gloss": "Lowest two eigenvalues and ground-state overlaps plotted against interpolation parameter $f(t)$ for standard interpolation versus the proposed two-step scheme, showing a minimum gap roughly three times larger for the proposed method on a 21-bit, 14-clause Exact Cover 3 problem.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.23469": {
+  "fields": {
+   "kind": "new method",
+   "result": "Lean 4-verified QCCD compiler eliminates 11 defects found in prior tools, scaling to 512 qubits in 1 to 29 minutes, and enables co-design where the optimal architecture yields an average 66.4% reduction in execution time over the slowest equal-capacity design.",
+   "question": "How can quantum charge-coupled device architectures and operating rules be co-designed for specific circuits with verified target code that guarantees correctness and rule adherence?",
+   "prior": "Unverified compilers (QCCDSim, Muzzle the Shuttle, MQT IonShuttler) contained 11 bugs such as trap overfilling, junction collisions, and illegal middle-of-chain extractions, corrupting hardware comparisons.",
+   "limits": "Domain analysis rejects programs outside sound bounds; hardware rules cannot inspect arbitrary execution history, classical values, analog pulse shapes, or noise without semantic extensions.",
+   "tools": [
+    "Lean 4 interactive theorem prover",
+    "Event frame assertion language",
+    "Broadcast-primitive transport scheduler",
+    "Verified translation validation and scheduling"
+   ],
+   "figure": "S7.F10",
+   "figure_url": "https://arxave.com/figures/2611.23469-S7.F10.svg",
+   "figure_caption": "Figure 10. All 75 programs against all designs of equal capacity (540 checked compilations), one column per program, relative to its slowest design. Programs are grouped by circuit interaction graph and ordered by the reduction from the slowest to the fastest design; the mean reduction is 66.4% over all programs and is given per group. The agent’s design is faster than the fastest design on 71 of 75 programs (median reduction 15%), equal on 3 and slower on 1. Bar chart with one column for each of 75 programs, grouped by the interaction graph of the circuit. In each column the slowest equal-capacity design has height one, short ticks mark the other designs, and a filled bar marks the fastest design, whose short name is printed above the column. A narrower bar in a second colour inside each column marks the best design proposed by an AI agent for that program.",
+   "figure_gloss": "Execution times across 75 quantum programs evaluated on all equal-capacity QCCD architectures, normalized to the slowest design for each program. The fastest design achieves an average 66.4% modeled runtime reduction.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.22170": {
+  "fields": {
+   "kind": "new result",
+   "result": "Monolithic bilayer $\\mathrm{MoSe}_2$-$\\mathrm{WSe}_2$ lateral heterojunction achieves photodetection with responsivity 35 A W-1, detectivity $5 \\times 10^{13}$ Jones, noise-equivalent power $6.3 \\times 10^{-18}\\text{ W Hz}^{-1/2}$, gate-switchable spatial electroluminescence, and CMOS inverter operation at 0.25 kHz.",
+   "question": "Can carrier generation, transport, and recombination be dynamically unified in a single monolithic 2D device platform?",
+   "prior": "",
+   "limits": "CMOS inverter operation tested at 0.25 kHz.",
+   "tools": [
+    "bilayer $\\mathrm{MoSe}_2$-$\\mathrm{WSe}_2$ lateral heterojunction",
+    "electrostatic gating",
+    "electroluminescence spectroscopy",
+    "photoconductive photodetection"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "abstract"
+ },
+ "2611.24461": {
+  "fields": {
+   "kind": "new result",
+   "result": "HgCdTe APDs in linear mode ($M > 400$) achieve external PDE of 42% to 55% with unity-gain QE of 63% (internal PDE 66% to 86%). Intrinsic gain-normalized dark current reaches $I_{\\mathrm{dark}}/M = 10.9$ fA at $M = 450$, implying achievable intrinsic DCR of 150 Hz.",
+   "question": "Can linear-mode HgCdTe APDs achieve single-photon detection with low intrinsic dark count rates required for quantum optics?",
+   "prior": "",
+   "limits": "Measured at $T = 80$ K. In hybrid RTIA setup, measured DCR is 2.6 MHz to 17 MHz for detection thresholds from 2.5 to 4.5 times amplifier RMS noise; the 150 Hz DCR limit is inferred from CTIA dark current measurements rather than direct single-photon counting.",
+   "tools": [
+    "HgCdTe avalanche photodiode (APD)",
+    "hybridized resistive trans-impedance amplifier (RTIA)",
+    "deported capacitive trans-impedance amplifier (CTIA)"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "abstract"
+ },
+ "2611.24147": {
+  "fields": {
+   "kind": "new method",
+   "result": "Parallel quantum algorithm estimates multivariate traces $\\mathrm{Tr}(A_1 A_2 \\dots A_k)$ with circuit depth independent of $k$, scaling with qubit count $\\Theta(k)$ and distributable across $\\mathcal{O}(k)$ devices.",
+   "question": "Can multivariate traces $\\mathrm{Tr}(A_1 A_2 \\dots A_k)$ be estimated on near-term quantum devices with circuit depth independent of $k$?",
+   "prior": "",
+   "limits": "Requires access to matrices via vectorized state preparation oracles; qubit overhead scales as $\\Theta(k)$.",
+   "tools": [
+    "matrix vectorization",
+    "tensor network representations",
+    "parallel quantum circuits",
+    "distributed quantum computing"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "abstract"
+ },
+ "2611.23387": {
+  "fields": {
+   "kind": "theory",
+   "result": "Sparse-query complexities of guided ground-state energy estimation and preparation scale as $\\Theta(\\sqrt{s}\\log(1/\\varepsilon)/(\\gamma\\delta))$ and $\\Theta(\\sqrt{s}\\log(1/\\varepsilon)/(\\gamma\\Delta))$, respectively, settling the optimal joint parameter dependence.",
+   "question": "How does the quantum query complexity of guided ground-state energy estimation and ground-state preparation depend jointly on sparsity $s$, overlap $\\gamma$, precision $\\delta$ or gap $\\Delta$, and error probability $\\varepsilon$ in the sparse-access model?",
+   "prior": "Optimal bounds in time-evolution and block-encoding models were $\\Theta(\\log(1/\\varepsilon)/(\\gamma\\delta))$ and $\\Theta(\\log(1/\\varepsilon)/(\\gamma\\Delta))$ (Jeffery & Witteveen 2026; Jeffery, Somma, Witteveen & de Wolf 2026; Somma & de Wolf 2026), leaving sparsity dependence open.",
+   "limits": "Lower bounds allow degenerate ground spaces and rely on stoquastic Hamiltonians without geometric locality; upper bounds require reversible in-place sparse-location oracles.",
+   "tools": [
+    "Boolean query reduction (position-parity)",
+    "reversible in-place sparse-location oracles",
+    "exact Cayley transduction",
+    "quantum eigenvalue transformation"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.24592": {
+  "fields": {
+   "kind": "new method",
+   "result": "t-GQCE maps lattice dynamics to noninteracting quasiparticles on classical CPUs coupled to finite embedding models on QPUs. Adding ghost orbitals suppresses artificial undamped oscillations, yielding double occupancy $0.100$ at $t=5$ for weak quench at $B=7$ compared to DMFT value $0.104$.",
+   "question": "Can quantum embedding theories be extended to simulate real-time nonequilibrium dynamics of correlated electron lattices on hybrid quantum-classical hardware without continuous bath overheads?",
+   "prior": "Conventional time-dependent Gutzwiller approximation ($B=1$) produces artificial, undamped coherent oscillations of local observables after an interaction quench.",
+   "limits": "Embedding states propagated along classically precomputed Hamiltonian trajectories rather than fully self-consistent quantum-in-the-loop evolution; reaches $0.01$ target accuracy only when hardware noise rates are scaled down to one third.",
+   "tools": [
+    "time-dependent ghost Gutzwiller approximation",
+    "adaptive variational quantum dynamics simulation (AVQDS)",
+    "IBM quantum hardware (ibmq_quito)",
+    "trapped-ion noise models and Quantinuum H2-Emulator",
+    "orbital-basis rotation measurements with mirror-circuit mitigation"
+   ],
+   "figure": "S5.F3",
+   "figure_url": "https://arxiv.org/html/2611.24592v1/FigB35.svg",
+   "figure_caption": "Figure 3: Quench dynamics simulations of the Hubbard model using t-GQCE with $B=3,5,7$ . The upper (a–c) and lower (d–f) rows correspond to interaction quenches from $U(t U_{\\textrm{c}}$ , respectively. (a, d) Time evolution of the double occupancy $\\braket{\\uparrow\\downarrow}$ . The t-GQCE results with $B=3$ , $5$ , and $7$ are shown in blue, green, and purple, with the embedding states propagated by ED as solid lines and by AVQDS as open circles. AVQDS is driven by the time-dependent embedding Hamiltonians extracted from the ED-based t-GQCE simulations. The results are compared with the conventional time-dependent Gutzwiller results with $B=1$ , shown as orange dashed lines, and with the nonequilibrium DMFT benchmark [ 32 ] , shown as black lines, which starts from $U=0$ exactly. (b, e) Infidelity $1-\\mathcal{F}$ of the AVQDS embedding state $\\ket{\\Phi(\\boldsymbol{\\theta}[t])}$ with respect to the ED-propagated embedding state $\\ket{\\Phi_{\\mathrm{ED}}(t)}$ along the same dynamical path, with $\\mathcal{F}=|\\braket{\\Phi_{\\mathrm{ED}}(t)|\\Phi(\\boldsymbol{\\theta}[t])}|^{2}$ . Insets: entanglement entropy $S_{\\uparrow\\downarrow}$ between the spin-up and spin-down spin-orbitals of the ED-propagated embedding state, i.e., the von Neumann entropy of the reduced density matrix of the spin-up spin-orbitals, which vanishes for an uncorrelated embedding state. (c, f) Number of CNOT gates, $N_{\\textrm{cx}}$ , in the adaptively constructed AVQDS ansatz circuit as a function of time $t$ .",
+   "figure_gloss": "Double occupancy versus time for weak and strong interaction quenches in the Hubbard model, showing t-GQCE systematically matching nonequilibrium DMFT and suppressing $B=1$ oscillations as bath orbitals increase ($B=3,5,7$). Infidelities remain below $5\\times 10^{-4}$.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.24783": {
+  "fields": {
+   "kind": "new method",
+   "result": "Formulating imaginary time evolution as an environment-induced quantum operation inside FALQON achieves ground-state preparation across arbitrary initial states where standard FALQON stalls, reaching success probability $p=1$ within roughly $1000$ layers on MaxCut.",
+   "question": "Can dissipation-induced non-unitary dynamics improve the convergence and circuit depth of feedback-based quantum algorithms?",
+   "prior": "Unitary ITE-FALQON required approximations or ancilla overhead on quantum hardware to apply non-unitary exponential suppression factors; standard FALQON stalled at $r \\approx 0.86$ and $p = 0.35$ on average by layer $k=1500$ in MaxCut simulations.",
+   "limits": "Numerical simulations up to circuit depth $k=1500$; interaction with the environment is modeled phenomenologically without physical reservoir engineering or realistic gate/thermal noise.",
+   "tools": [
+    "Feedback-based Algorithm for Quantum Optimization (FALQON)",
+    "Operator-sum representation / quantum channels",
+    "Imaginary time evolution",
+    "Numerical state-vector/density-matrix simulation"
+   ],
+   "figure": "S4.F5",
+   "figure_url": "https://arxiv.org/html/2611.24783v1/maxcut-fig.svg",
+   "figure_caption": "Figure 5: CITE-FALQON (black) and FALQON (red) ground state preparation for the MaxCut problem. (a) $\\beta$ , (b) approximation ratio $r$ , (c) probability of success $p$ as functions of the layer $k$ with random initial states $\\rho_{0}$ . (d) Number of layers required to prepare a state with $p\\geq 0.5$ , with fixed initial state $\\rho_{0}=\\ket{+}^{\\otimes n}\\bra{+}^{\\otimes n}$ , and random graph weights.",
+   "figure_gloss": "Panels show the feedback parameter $\\beta$, approximation ratio $r$, and ground-state success probability $p$ versus layer count $k$ across 30 random initial states, plus layer requirements for $p \\ge 0.5$ across graph sizes $n$. CITE-FALQON reaches $r=1$ and $p=1$ smoothly, whereas FALQON plateaus below $p=0.4$.",
+   "code": "https://github.com/yuyln/data-cite-falqon"
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.24911": {
+  "fields": {
+   "kind": "new method",
+   "result": "Constructed a nonsecular Lindblad master equation satisfying time-reversal KMS detailed balance with a time-uniform microscopic trace-norm error bound $\\sup_{t\\geq 0}\\|\\rho_{\\mathrm{mic}}(t)-\\rho_K(t)\\|_1 \\leq C\\lambda^2$. Stationary state reproduces the exact mean-force Gibbs state up to $O(\\lambda^4)$.",
+   "question": "Can a completely positive nonsecular quantum master equation preserve detailed balance while maintaining a time-uniform $O(\\lambda^2)$ error bound relative to microscopic dynamics?",
+   "prior": "Davies equation gave $\\sup_{t\\ge 0}\\Delta\\rho(t)=O(1)$ when the secular approximation fails; Scandi-Alhambra equation gave $\\Delta\\rho(t)=O[\\lambda(1+t/\\tau_d)]$.",
+   "limits": "Finite-dimensional system, weak coupling $\\lambda$, bath with fast-decaying correlations, and rapid mixing on relaxation timescale $\\tau_d \\sim \\lambda^{-2}$.",
+   "tools": [
+    "Redfield equation completion",
+    "Hamiltonian of mean force reference",
+    "TR-KMS detailed balance",
+    "Resonance matching of coherent and dissipative kernels",
+    "Perturbative error bounds"
+   ],
+   "figure": "S6.F2",
+   "figure_url": "https://arxiv.org/html/2611.24911v1/two_oscillator_dynamics_with_cl_trkms.svg",
+   "figure_caption": "Figure 2: Dynamical error against the exact microscopic evolution for three regimes: (a) the secular regime with $\\Delta=\\text{const}$ (b) the intermediate regime with $\\Delta=\\lambda$ (c) the nonsecular regime with $\\Delta=\\lambda^{2}$ . TR-KMS completion and Redfield retain second-order accuracy throughout. SA has a first-order error for $\\Delta=\\lambda$ , while Davies has a finite error for $\\Delta=\\lambda^{2}$ . For fixed nonzero splitting (a), all four recover second-order scaling at sufficiently weak coupling. The high-temperature CL approximation outside its temperature regime and has a finite error. Black segments indicate the asymptotic power laws.",
+   "figure_gloss": "Normalized trace-norm error $\\Delta\\rho/\\lambda^2$ versus scaled time $\\lambda^2 t$ for secular, intermediate, and nonsecular regimes. Shows TR-KMS completion retains $O(\\lambda^2)$ accuracy across all regimes, whereas Davies and Scandi-Alhambra equations fail to maintain second-order bounds.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.24886": {
+  "fields": {
+   "kind": "new method",
+   "result": "GNN-based region scoring CREST improves mean measurement-distribution fidelity by 19.03% over the best baseline across 324 quantum circuits on the TianYan-176 processor. Reusing the trained model with updated calibration data preserves the highest mean fidelity across six dates without retraining.",
+   "question": "How can quantum compilation select execution subregions on superconducting processors to optimize circuit-specific execution fidelity while remaining robust across recalibrations without retraining?",
+   "prior": "Baseline compilation methods QSteed, SABRE, and HAQA. On the 96 held-out circuit benchmark, mean fidelity was 0.18100 (HAQA) versus 0.21347 with CREST.",
+   "limits": "Evaluated on a single superconducting device architecture (TianYan-176) across circuits up to 20 qubits; offline candidate graph precomputation required.",
+   "tools": [
+    "Graph neural network (GNN) scoring",
+    "Bidirectional cross-graph attention",
+    "TianYan-176 superconducting processor",
+    "Multiscale candidate region construction"
+   ],
+   "figure": "S4.F6",
+   "figure_url": "https://arxiv.org/html/2611.24886v1/01_main_by_dataset.svg",
+   "figure_caption": "Fig. 6: Mean measurement-distribution fidelity of the five compilation flows on the seven datasets. Every dataset uses the common set of circuits listed in Table I , with equal weight per circuit. All bars show fidelity values on TianYan-176.",
+   "figure_gloss": "Bar chart comparing the mean measurement-distribution fidelity across seven benchmark datasets for CREST and four baseline methods on TianYan-176.",
+   "code": ""
+  },
+  "seen": "2026-11-19",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
