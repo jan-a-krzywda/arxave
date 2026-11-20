@@ -21,6 +21,15 @@ name: Warm the Dig cache
 #
 # Both schedules are in the SQL file, with the reasoning for their times.
 # Changing the timing means editing that file, not this one.
+# ONE WARM AT A TIME. Two runs that overlap both commit `docs/feeds/`, and the
+# second one's `git pull --rebase` hits an add/add conflict on the generated
+# author-signal files (seen 2026-11-20: a manual run lost its 298 lookups to the
+# 04:10 pg_cron run). Queued, not cancelled: the second run then starts from the
+# first's committed cache and only asks the names that are left.
+concurrency:
+  group: warm-dig
+  cancel-in-progress: false
+
 on:
   workflow_dispatch:
     inputs:
