@@ -15,44 +15,44 @@
     },
     "qs-a": {
       "name": "Spin qubit devices and figures of merit",
-      "items": 4,
-      "paydirt": 1,
+      "items": 8,
+      "paydirt": 5,
       "updated": "2026-11-20"
     },
     "qs-b": {
       "name": "Gate and device benchmarking",
-      "items": 6,
-      "paydirt": 1,
+      "items": 8,
+      "paydirt": 4,
       "updated": "2026-11-20"
     },
     "qs-c": {
       "name": "Application benchmarks",
-      "items": 4,
-      "paydirt": 1,
+      "items": 8,
+      "paydirt": 2,
       "updated": "2026-11-20"
     },
     "qs-d": {
       "name": "Calibration, tuning and drift",
       "items": 8,
-      "paydirt": 3,
+      "paydirt": 4,
       "updated": "2026-11-20"
     },
     "qs-e": {
       "name": "Control electronics and cryogenics",
       "items": 8,
-      "paydirt": 2,
+      "paydirt": 6,
       "updated": "2026-11-20"
     },
     "qs-f": {
       "name": "Software stack: compilers and pulse level",
       "items": 8,
-      "paydirt": 2,
+      "paydirt": 8,
       "updated": "2026-11-20"
     },
     "qs-g": {
       "name": "HPC-QC integration and resource management",
       "items": 8,
-      "paydirt": 3,
+      "paydirt": 8,
       "updated": "2026-11-20"
     },
     "qs-h": {

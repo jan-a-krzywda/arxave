@@ -16,32 +16,32 @@
               "paydirt": 8
             },
             "qs-a": {
-              "items": 4,
-              "paydirt": 1
+              "items": 8,
+              "paydirt": 5
             },
             "qs-b": {
-              "items": 6,
-              "paydirt": 1
+              "items": 8,
+              "paydirt": 4
             },
             "qs-c": {
-              "items": 4,
-              "paydirt": 1
+              "items": 8,
+              "paydirt": 2
             },
             "qs-d": {
               "items": 8,
-              "paydirt": 3
+              "paydirt": 4
             },
             "qs-e": {
               "items": 8,
-              "paydirt": 2
+              "paydirt": 6
             },
             "qs-f": {
               "items": 8,
-              "paydirt": 2
+              "paydirt": 8
             },
             "qs-g": {
               "items": 8,
-              "paydirt": 3
+              "paydirt": 8
             },
             "qs-h": {
               "items": 8,

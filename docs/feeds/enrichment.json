@@ -4766,7 +4766,7 @@
    "figure_gloss": "Bulk-to-edge loading $W$ and edge retention $S$ across chemical potential $\\mu/t$ and interaction $U/t$, accompanied by delayed-input memory function and temporal integration test $R^2$ showing performance gains from including the endpoint parity $P_{\\rm end}$ at long timescales $\\tau_{\\rm tar}$.",
    "code": ""
   },
-  "seen": "2026-11-19",
+  "seen": "2026-11-20",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -4894,15 +4894,15 @@
  "2611.24687": {
   "fields": {
    "kind": "theory",
-   "result": "Any Boolean arithmetic circuit can be implemented with constant quantum depth and constant reaction depth using homogeneous $Z$- and $X$-type Pauli Product Measurements (PPMs) and Toffoli states, at the expense of exponential space overhead and dirty ancilla qubits.",
-   "question": "How should reaction depth be formally defined, and what limits does it impose on fast fault-tolerant Boolean logic using LDPC-compatible measurements?",
+   "result": "Any Boolean arithmetic circuit can be implemented with constant quantum depth and constant reaction depth using homogeneous $Z$- and $X$-type Pauli Product Measurements and Toffoli states, at the expense of exponential space overhead and dirty ancilla qubits.",
+   "question": "How to formalize reaction depth and optimize fault-tolerant Boolean logic circuits under LDPC-native measurement gatesets?",
    "prior": "",
-   "limits": "Requires exponential space overhead and leaves dirty qubits; uncomputation in practical ripple-carry adders and multipliers requires heterogeneous PPMs.",
+   "limits": "Requires exponential space overhead and leaves intermediate ancilla qubits dirty.",
    "tools": [
-    "reaction depth formalization",
-    "homogeneous Pauli Product Measurements (PPMs)",
-    "Toffoli state injection",
-    "AutoAND circuits"
+    "Reaction depth formalization",
+    "Pauli Product Measurements (PPMs)",
+    "LDPC code gateset constraints",
+    "Magic state injection"
    ],
    "figure": "",
    "figure_url": "",
@@ -5079,7 +5079,7 @@
    "figure_gloss": "Excitation probability versus pulse duration for two ${}^{171}\\text{Yb}^{+}$ ions separated by 10 $\\mu$m driven by a single amplitude-modulated RF field. Top panel shows resonant Rabi oscillations at $3.165(24)\\text{ kHz}$ in the addressed ion; bottom panel shows the adjacent spectator ion remaining in its ground dressed state due to a 43 kHz detuning from the axial RF gradient.",
    "code": ""
   },
-  "seen": "2026-11-19",
+  "seen": "2026-11-20",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -5228,7 +5228,7 @@
    "figure_gloss": "Minimal annealing depth $L_{min}(\\delta)$ versus system size $N$ for unstructured search at threshold $\\delta=1/3$. Linear schedule depth drops exponentially from $W=1$ to $W=2,3$, while Grover schedule performance is unchanged by width.",
    "code": ""
   },
-  "seen": "2026-11-19",
+  "seen": "2026-11-20",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -5469,7 +5469,7 @@
    "figure_gloss": "Bar chart comparing the mean measurement-distribution fidelity across seven benchmark datasets for CREST and four baseline methods on TianYan-176.",
    "code": ""
   },
-  "seen": "2026-11-19",
+  "seen": "2026-11-20",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -5837,12 +5837,12 @@
  "2611.26016": {
   "fields": {
    "kind": "theory",
-   "result": "Defines Symmetric Precision Quantization Reliability criterion to statistically bound likelihood of hidden internal breakdown in quantized Hall array standards purely via outer terminal measurements.",
-   "question": "Can internal quantization breakdown in multi-element quantized Hall arrays be verified without directly probing internal dissipationless edge state transport?",
+   "result": "Develops Symmetric Precision Quantization Reliability criterion to statistically bound hidden localized quantization breakdown in $C_n$-symmetric multi-element quantized Hall array resistance standards via outer terminal measurements alone.",
+   "question": "Can internal quantization breakdown in large multi-element quantum Hall arrays be verified strictly via outer terminal measurements without probing individual edge states?",
    "prior": "",
-   "limits": "Requires $C_n$-symmetric array designs.",
+   "limits": "Theoretical framework applied to $C_n$-symmetric quantum Hall array geometries.",
    "tools": [
-    "Symmetric Precision Quantization Reliability framework",
+    "Symmetric Precision Quantization Reliability criterion",
     "$C_n$-symmetric network topology",
     "outer terminal resistance measurements"
    ],
@@ -6118,6 +6118,30 @@
    "figure_url": "https://arxiv.org/html/2611.25064v1/Fig1_main_text.svg",
    "figure_caption": "Figure 1: Overview of certified discovery of quantum phase diagrams. (a) The input is a classical description of a geometrically local Hamiltonian family $H(x)=\\sum_{j}h_{j}(x)$ and reference state preparations at a few points of the parameter space. The algorithm is not told which preparations succeed, and no phase labels are supplied. (b) The output is the phase diagram to prescribed accuracy: points in the same tinted region are joined by chains of links whose endpoints are certified not to be in different phases, and each detected boundary is certified by a measured response and located to within the amber strip, where the gap is below the threshold $\\gamma_{\\mathrm{thresh}}$ . The algorithm sweeps outward from every reference by quasi-adiabatic transport (one path is shown) and, where several transported states arrive at a point, selects among them by an energy test, so failed preparations do no harm: one successful preparation seeds discovery throughout its connected component of the resolved region. Gray stars mark the successful (filled) and failed (hollow) preparations, which the algorithm is not told. (c) Gap closings are detected by tapping the transported state with a frequency-filtered local probe, the Hamiltonian gradient $\\partial_{s}H$ along the path: a filtered response witnesses a gap below the threshold $\\gamma_{\\mathrm{thresh}}$ , and for continuous transitions this response provably cannot vanish – continuous transitions cannot be dark.",
    "figure_gloss": "Schematic of certified phase discovery showing quasi-adiabatic transport from reference states, energy tests pruning failed preparations, and boundary detection via frequency-filtered Hamiltonian gradient probes.",
+   "code": ""
+  },
+  "seen": "2026-11-20",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.24448": {
+  "fields": {
+   "kind": "new method",
+   "result": "Virtual autopurification achieves virtual state purification and cooling on a single copy of a translationally invariant state, matching standard virtual purification with an error bounded by $\\mathcal{O}(e^{-d_{\\mathrm{buf}}}) + \\mathcal{O}(\\lambda^2 e^{-d_{\\mathrm{sep}}}) + \\mathcal{O}(\\lambda^3)$.",
+   "question": "Can translational symmetry and correlation clustering be harnessed to perform virtual purification without requiring multiple physical state copies?",
+   "prior": "Localized virtual purification (LVP) reduced sampling overhead from $\\exp\\mathcal{O}(nN)$ to $\\exp\\mathcal{O}(n)$ but still required $n$ physical state copies per shot.",
+   "limits": "Requires translational invariance, trace-norm clustering (satisfied in 1D at arbitrary $T$ and in higher dimensions for local effective Hamiltonians), and high temperatures ensuring quasi-locality of imaginary-time evolution.",
+   "tools": [
+    "virtual autopurification protocol",
+    "trace-norm correlation clustering",
+    "perturbative expansion in boundary couplings",
+    "imaginary-time evolution bounds"
+   ],
+   "figure": "S0.F2",
+   "figure_url": "https://arxiv.org/html/2611.24448v1/tr_dist.svg",
+   "figure_caption": "Figure 2: (a), (b) Trace distances between the effective reduced density operators of FVP, LVP, and VAP as functions of $d_{\\mathrm{buf}}$ and $d_{\\mathrm{sep}}$ , respectively. (c), (d) Corresponding space–time overheads $\\mathcal{C}_{\\mathrm{st}}$ . The subsystem configuration is shown in the inset. We set $\\beta=1$ , $|A|=1$ , and $|B|=2d_{\\mathrm{buf}}$ , with five additional boundary sites at each end of the chain, giving $N=12+4d_{\\mathrm{buf}}+d_{\\mathrm{sep}}$ .",
+   "figure_gloss": "Trace distances between effective reduced density operators of FVP, LVP, and VAP plotted against buffer length $d_{\\mathrm{buf}}$ and separation $d_{\\mathrm{sep}}$, alongside the corresponding space-time overheads.",
    "code": ""
   },
   "seen": "2026-11-20",
