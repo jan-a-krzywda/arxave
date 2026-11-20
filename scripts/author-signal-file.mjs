@@ -20,6 +20,14 @@
  * person", and 14 for a hit that carried no number: that gap is a hole in
  * OpenAlex's data, which fills in weeks, not a fact about the author.
  *
+ * A NARROW SEARCH'S NO IS ASKED AGAIN. Until 2026-11-20 the lookup filtered
+ * OpenAlex to Physics & Astronomy alone, which hid most computer-science and ML
+ * authors: of 24 cached nulls, 6 resolved under that filter and 15 once Computer
+ * Science was included. The cache now says `version: 2`, and a cached no
+ * (`no-match` or `ambiguous`) from an older or unversioned file is not trusted —
+ * it is asked again. A number is a number under any filter, and `no-hindex` is a
+ * hole in the data, so both still stand.
+ *
  * A NIGHT HAS A BUDGET. The run asks at most `maxNew` names (300), two at a
  * time, each first try `paceMs` (300 ms) after the last — because the live
  * nights could not tell a per-second limit from a daily allowance, so we ask as
@@ -150,13 +158,20 @@ function ttlFor(entry, { ttlDays, nullTtlDays, noHIndexTtlDays }) {
  * before the reasons were recorded, a throttled lookup was cached as a plain no,
  * and 448 of 530 names in the first live cache were such entries. A real no
  * always carries its reason, so a null without one is asked again.
+ *
+ * A cached `no-match` or `ambiguous` is trusted only when the file that wrote it
+ * searched the same fields we search now (`version` 2 or later): a no from the
+ * Physics-only filter says nothing about a computer-science author, so under an
+ * older or missing version it is asked again (see the header). A number, and a
+ * `no-hindex`, were not widened by the filter and stand under any version.
  */
-function cachedH(names, key, today, ttls) {
+function cachedH(names, key, today, ttls, version = 0) {
   const entry = names[key];
   if (!entry || typeof entry !== 'object') return undefined;
   const h = entry.h === null ? null : (Number.isFinite(entry.h) ? entry.h : undefined);
   if (h === undefined) return undefined;
   if (h === null && (!entry.why || entry.why === 'error')) return undefined;
+  if (h === null && entry.why !== 'no-hindex' && !(version >= 2)) return undefined;
   return ageDays(entry.at, today) > ttlFor(entry, ttls) ? undefined : h;
 }
 
@@ -227,10 +242,12 @@ async function fetchHIndex(fetchImpl, name, {
  * bare arXiv id as the 0..1 signal, or null.
  *
  * `cache` is the previous `author-h-cache.json` (`{ version, names }`); the
- * returned cache is that plus tonight's answers, stamped `today` — a null with
- * the `why` that explains it, so the log can be read back, unless that why is
- * `error`: a lookup that never got an answer is not an answer, and tomorrow
- * asks again. The knobs: `ttlDays` (120, a found h), `nullTtlDays` (60,
+ * returned cache is that plus tonight's answers, stamped `today`, and always
+ * `version: 2` — the version says the search covered Physics and Computer
+ * Science, so a no it holds is about both fields. A null carries the `why` that
+ * explains it, so the log can be read back, unless that why is `error`: a lookup
+ * that never got an answer is not an answer, and tomorrow asks again. The
+ * knobs: `ttlDays` (120, a found h), `nullTtlDays` (60,
  * no-match and ambiguous), `noHIndexTtlDays` (14), `maxNew` (300 names a
  * night), `paceMs` (300 ms between first tries), plus `fetch`, `sleep`,
  * `jitter`. A name the cap or the breaker skips is not cached: tomorrow asks it.
@@ -250,6 +267,9 @@ export async function buildSignals(stones, options = {}) {
   const pace = Number.isFinite(paceMs) ? Math.max(0, paceMs) : 300;
 
   const prev = cache && cache.names && typeof cache.names === 'object' ? cache.names : {};
+  /* The version that WROTE those entries: a no under the old Physics-only filter
+     is not a no under today's (see `cachedH`). Junk reads as 0 — ask again. */
+  const version = Number(cache && cache.version) || 0;
   /* A fresh object, so a caller's cache is not mutated under it. */
   const names = { ...prev };
   const list = Array.isArray(stones) ? stones : [];
@@ -265,7 +285,7 @@ export async function buildSignals(stones, options = {}) {
     const key = plainName(name);
     if (!key || seen.has(key)) continue;
     seen.add(key);
-    const hit = cachedH(prev, key, today, ttls);
+    const hit = cachedH(prev, key, today, ttls, version);
     if (hit !== undefined) h.set(key, hit);
     else queue.push({ key, name });
   }
@@ -354,7 +374,7 @@ export async function buildSignals(stones, options = {}) {
     '; asked ' + asked + ' new, skipped ' + (queue.length - asked) +
     ', stopped ' + (stopped ? 'yes' : 'no') + '; http: ' + JSON.stringify(http));
 
-  return { signals, cache: { version: 1, names } };
+  return { signals, cache: { version: 2, names } };
 }
 
 /**

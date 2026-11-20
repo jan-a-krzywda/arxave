@@ -5,7 +5,10 @@
  * only, and OpenAlex indexes arXiv about six days late, so a lookup by paper
  * finds nothing for tonight. The last author is usually the group's PI, with
  * years of indexed work, so this asks OpenAlex for the PERSON instead: author
- * search, Physics & Astronomy only, last known institution.
+ * search, Physics & Astronomy or Computer Science, last known institution.
+ * Both fields because the nightly warm covers the `cs.*` categories too, and a
+ * Physics-only filter hid most ML authors — a probe of 24 cached nulls resolved
+ * 6 under Physics alone and 15 once Computer Science was included.
  *
  * A COMMON NAME IS LEFT BLANK. "Wei Zhang" is a dozen physicists; when a second
  * author of the same surname and first initial has a real body of work
@@ -33,6 +36,14 @@ export const TTL_DAYS = 30;
 
 /** A namesake with this share of the top hit's works makes the name ambiguous. */
 export const RIVAL_SHARE = 0.3;
+
+/**
+ * The OpenAlex fields a last author may work in: Physics & Astronomy (31) and
+ * Computer Science (17). `|` is OpenAlex's OR, so one request covers both; the
+ * nightly warm ranks `cs.*` papers as well as `quant-ph`, and a Physics-only
+ * filter read most ML authors as no such person.
+ */
+export const AUTHOR_FIELDS = '31|17';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -90,10 +101,10 @@ export function lastAuthor(authors) {
   return list.length ? list[list.length - 1] : '';
 }
 
-/** The search for one name, Physics & Astronomy (OpenAlex field 31) only. */
+/** The search for one name, Physics & Astronomy or Computer Science (see AUTHOR_FIELDS). */
 export function authorQueryUrl(name, base = OPENALEX_AUTHORS) {
   return base + '?search=' + encodeURIComponent(String(name || '').trim()) +
-    '&filter=topics.field.id:31&per-page=5' +
+    '&filter=topics.field.id:' + AUTHOR_FIELDS + '&per-page=5' +
     '&select=display_name,works_count,last_known_institutions,summary_stats';
 }
 

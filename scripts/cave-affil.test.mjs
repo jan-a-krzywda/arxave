@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  AFFIL_PREFIX, TTL_DAYS, affilKey, authorQueryUrl, authorSignal, explainHIndex, lastAuthor, nameKey,
+  AFFIL_PREFIX, AUTHOR_FIELDS, TTL_DAYS, affilKey, authorQueryUrl, authorSignal, explainHIndex,
+  lastAuthor, nameKey,
   pickAffiliation, pickHIndex, readCachedAffil, sameName, shortAffil, writeCachedAffil,
 } from '../docs/assets/cave-affil.mjs';
 
@@ -65,10 +66,14 @@ test('explainHIndex names the reason a name has no h-index', () => {
     { h: null, why: 'no-hindex' });
 });
 
-test('authorQueryUrl searches Physics & Astronomy and asks for little', () => {
+test('authorQueryUrl searches Physics & Astronomy or Computer Science and asks for little', () => {
   const url = authorQueryUrl('Barbara M. Terhal');
+  assert.equal(AUTHOR_FIELDS, '31|17');
   assert.ok(url.startsWith('https://api.openalex.org/authors?search=Barbara%20M.%20Terhal'));
-  assert.ok(url.includes('filter=topics.field.id:31'));
+  assert.ok(url.includes('filter=topics.field.id:31|17'));
+  assert.ok(url.includes('filter=topics.field.id:' + AUTHOR_FIELDS));
+  assert.equal(new URL(url).searchParams.get('search'), 'Barbara M. Terhal',
+    'the name survives the query string');
   assert.ok(url.includes('&per-page=5'));
   assert.ok(url.includes('select=display_name,works_count,last_known_institutions,summary_stats'));
 });
