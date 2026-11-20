@@ -4,17 +4,27 @@
  *
  * THE LOOKUP IS A NIGHTLY JOB, NOT A REQUEST. The ranking page cannot ask
  * OpenAlex about ~700 last authors while a reader waits, and it should not:
- * one search per name, four in flight, a rate limit and a polite-pool delay is
- * a job with a clock. So the warmer asks once, turns each answer into the 0..1
- * signal the order key wants (`docs/assets/cave-affil.mjs`'s `authorSignal`),
- * and writes `feeds/author-signal/latest.json` — one same-origin file the page
- * fetches for free.
+ * one search per name, two in flight and a beat apart, a rate limit and a
+ * polite-pool delay is a job with a clock. So the warmer asks once, turns each
+ * answer into the 0..1 signal the order key wants
+ * (`docs/assets/cave-affil.mjs`'s `authorSignal`), and writes
+ * `feeds/author-signal/latest.json` — one same-origin file the page fetches for
+ * free.
  *
  * THE FILE ACCUMULATES, THE CACHE EXPIRES. A reader on a quiet Sunday still
  * ranks a week of stones, so new ids merge over the previous file and the
- * oldest fall off at `cap`. The per-name cache is what keeps a night's cost at
- * one request per NEW name: an h-index moves by a point a year, so thirty days
- * is generous for an answer, and three is generous for a "no".
+ * oldest fall off at `cap`. The per-name cache is what keeps a night's cost
+ * bounded: it is a database, filled once and asked only about NEW names after
+ * that. How long an answer stands depends on what it said — an h-index moves by
+ * a point a year, so 120 days is generous for a number, 60 for a "no such
+ * person", and 14 for a hit that carried no number: that gap is a hole in
+ * OpenAlex's data, which fills in weeks, not a fact about the author.
+ *
+ * A NIGHT HAS A BUDGET. The run asks at most `maxNew` names (300), two at a
+ * time, each first try `paceMs` (300 ms) after the last — because the live
+ * nights could not tell a per-second limit from a daily allowance, so we ask as
+ * if it were both. Whatever the cap leaves over is skipped, NOT cached, so
+ * tomorrow's night asks it; it is null tonight, and null adds nothing.
  *
  * NOTHING HERE THROWS. A 429, a timeout, a body that is not JSON — that name is
  * null, and null adds nothing to the order key. A lookup that never happened is
@@ -24,9 +34,12 @@
  * error for 376 of 486 names, and the log said nothing more: every status was
  * thrown away. So a throttled or wobbling answer is retried — three more tries,
  * the server's `Retry-After` when it gives one, a 1/2/4 s ladder otherwise —
- * the night counts its statuses on the last line (`http:`), and a name that is
- * still an error is not written to the cache at all: tomorrow asks again. A key
- * that throttles the first twenty names runs the rest one request at a time.
+ * the night counts its statuses on the last line (`http:`), keeps the FIRST 429
+ * response body and Retry-After (the only evidence of which limit we hit), and
+ * a name that is still an error is not written to the cache at all: tomorrow
+ * asks again. Five errors in a row say the key is shut for the night, not that
+ * these five names are bad: the run stops asking and the rest wait for
+ * tomorrow, while requests already in the air still land.
  *
  * Everything with a socket or a clock is a parameter (`fetch`, `today`, `cache`,
  * `sleep`, `jitter`), so the tests run the whole thing on hand-built payloads
@@ -40,8 +53,13 @@ import {
 /** Where the signal saturates — cave-affil's default, restated in the file. */
 export const H_SATURATION = 60;
 
-/** Requests in flight at once. OpenAlex's polite pool rewards no burst. */
-export const MAX_IN_FLIGHT = 4;
+/** Requests in flight at once. OpenAlex's polite pool rewards no burst: two,
+    with `paceMs` between the starts. */
+export const MAX_IN_FLIGHT = 2;
+
+/** Failed lookups in a row, after their retries, that end the night: five is a
+    shut key, not five unlucky names. */
+export const BREAKER_ERRORS = 5;
 
 /** The name-cache key: cave-affil's normalisation, its storage prefix cut off. */
 const plainName = (name) => affilKey(name).slice(AFFIL_PREFIX.length);
@@ -55,7 +73,7 @@ const RETRY_WAITS_MS = [1000, 2000, 4000];
 /** A server saying `Retry-After: 600` is asking for a night, not our evening. */
 const RETRY_AFTER_CAP_MS = 30_000;
 
-/** Spread concurrent retries, so the four in flight do not return in lockstep. */
+/** Spread concurrent retries, so the two in flight do not return in lockstep. */
 const jitterMs = () => Math.floor(Math.random() * 250);
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -65,20 +83,40 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const retryable = (status) => status === 429 || status >= 500;
 
 /**
+ * One response header's raw value, trimmed, or null: the `Retry-After` the
+ * night's log prints is the server's own words, not our parse of them.
+ */
+function headerValue(resp, name) {
+  const headers = resp && resp.headers;
+  if (!headers) return null;
+  const raw = typeof headers.get === 'function'
+    ? headers.get(name)
+    : headers[name] ?? headers[name.replace(/\b[a-z]/g, (c) => c.toUpperCase())];
+  const text = String(raw ?? '').trim();
+  return text || null;
+}
+
+/**
  * A response's `Retry-After` in ms, or null when it gave none worth trusting:
  * the header is seconds, so an HTTP date (or junk) falls back to the ladder.
  */
 function retryAfterMs(resp) {
-  const headers = resp && resp.headers;
-  if (!headers) return null;
-  const raw = typeof headers.get === 'function'
-    ? headers.get('retry-after')
-    : headers['retry-after'] ?? headers['Retry-After'];
-  const text = String(raw ?? '').trim();
+  const text = headerValue(resp, 'retry-after');
   if (!text) return null;
   const seconds = Number(text);
   return Number.isFinite(seconds) && seconds >= 0
     ? Math.min(seconds * 1000, RETRY_AFTER_CAP_MS) : null;
+}
+
+/** A 429's body as one log line can hold it: whitespace collapsed, 200 chars.
+    Never throws — a body is evidence, and a missing one is not a failure. */
+async function bodySnippet(resp) {
+  try {
+    if (typeof resp.text !== 'function') return '';
+    return String(await resp.text()).replace(/\s+/g, ' ').trim().slice(0, 200);
+  } catch (_) {
+    return '';
+  }
 }
 
 /**
@@ -92,21 +130,32 @@ function ageDays(at, today) {
 }
 
 /**
+ * How long one cache entry stands, by what it said: a number for `ttlDays`, a
+ * no-hindex for `noHIndexTtlDays` (a hole in OpenAlex's data fills in weeks),
+ * and any other null — no-match, ambiguous, or an old entry with no `why` — for
+ * `nullTtlDays`.
+ */
+function ttlFor(entry, { ttlDays, nullTtlDays, noHIndexTtlDays }) {
+  if (entry.h !== null) return ttlDays;
+  return entry.why === 'no-hindex' ? noHIndexTtlDays : nullTtlDays;
+}
+
+/**
  * The cached h for one name: a number, null (a cached "no such person"), or
  * undefined when the cache has no answer worth trusting — never asked, junk, or
- * older than its own TTL (a real answer stands `ttlDays`, a null `nullTtlDays`).
+ * older than the TTL its own answer earns (see `ttlFor`).
  *
  * A cached `error` is not an answer, so it always reads as "ask again": tonight
  * writes no error entries, and a file from before that rule must not answer a
- * name for three days with a failure.
+ * name with a failure.
  */
-function cachedH(names, key, today, ttlDays, nullTtlDays) {
+function cachedH(names, key, today, ttls) {
   const entry = names[key];
   if (!entry || typeof entry !== 'object') return undefined;
   const h = entry.h === null ? null : (Number.isFinite(entry.h) ? entry.h : undefined);
   if (h === undefined) return undefined;
   if (h === null && entry.why === 'error') return undefined;
-  return ageDays(entry.at, today) > (h === null ? nullTtlDays : ttlDays) ? undefined : h;
+  return ageDays(entry.at, today) > ttlFor(entry, ttls) ? undefined : h;
 }
 
 /**
@@ -122,6 +171,9 @@ function cachedH(names, key, today, ttlDays, nullTtlDays) {
  *
  * Every response's status lands in `stats.status` — `'network'` for a fetch
  * that threw — so the night's last line can say `429` instead of a bare `376`.
+ * The FIRST 429's body and Retry-After land in `stats.first429`: if the night
+ * is capped by a limit we do not understand, the server's own words are the
+ * only evidence of which one.
  * Sleep and jitter are parameters, so the tests run the ladder without waiting.
  *
  * The h itself, not the signal, because that is what the cache keeps: a
@@ -144,6 +196,12 @@ async function fetchHIndex(fetchImpl, name, {
       resp = null;
     }
     count(resp ? String(resp.status) : 'network');
+    if (resp && resp.status === 429 && !stats.first429) {
+      stats.first429 = {
+        retryAfter: headerValue(resp, 'retry-after'),
+        body: await bodySnippet(resp),
+      };
+    }
     if (resp && resp.ok) {
       try {
         return explainHIndex(await resp.json(), name);
@@ -170,43 +228,55 @@ async function fetchHIndex(fetchImpl, name, {
  * returned cache is that plus tonight's answers, stamped `today` — a null with
  * the `why` that explains it, so the log can be read back, unless that why is
  * `error`: a lookup that never got an answer is not an answer, and tomorrow
- * asks again. `fetch` is the global one unless a test says otherwise;
- * `ttlDays`, `nullTtlDays`, `sleep` and `jitter` are the knobs (see the header).
- * Ends with one `author-signal:` line for the log, statuses included.
+ * asks again. The knobs: `ttlDays` (120, a found h), `nullTtlDays` (60,
+ * no-match and ambiguous), `noHIndexTtlDays` (14), `maxNew` (300 names a
+ * night), `paceMs` (300 ms between first tries), plus `fetch`, `sleep`,
+ * `jitter`. A name the cap or the breaker skips is not cached: tomorrow asks it.
+ * Ends with one `author-signal:` line for the log, statuses included — and,
+ * when the night met a 429, the first one's Retry-After and body just above it.
  */
 export async function buildSignals(stones, options = {}) {
   const {
     fetch: fetchImpl = fetch, mailto = '', apiKey = '', cache = null,
     today = new Date().toISOString().slice(0, 10),
-    ttlDays = 30, nullTtlDays = 3, sleep = wait, jitter = jitterMs,
+    ttlDays = 120, nullTtlDays = 60, noHIndexTtlDays = 14,
+    maxNew = 300, paceMs = 300, sleep = wait, jitter = jitterMs,
   } = options;
+
+  const ttls = { ttlDays, nullTtlDays, noHIndexTtlDays };
+  const cap = Number.isFinite(maxNew) ? Math.max(0, Math.floor(maxNew)) : 300;
+  const pace = Number.isFinite(paceMs) ? Math.max(0, paceMs) : 300;
 
   const prev = cache && cache.names && typeof cache.names === 'object' ? cache.names : {};
   /* A fresh object, so a caller's cache is not mutated under it. */
   const names = { ...prev };
   const list = Array.isArray(stones) ? stones : [];
 
-  /* Cache hits settle now; only the unanswered names queue for a request. */
+  /* Cache hits settle now; only the unanswered names queue for a request, in
+     stone order — so a capped or stopped night asks the same names first
+     however often it runs, and the rest are tomorrow's turn. */
   const h = new Map();
   const queue = [];
-  const asked = new Set();
+  const seen = new Set();
   for (const stone of list) {
     const name = lastAuthor(stone && stone.authors);
     const key = plainName(name);
-    if (!key || asked.has(key)) continue;
-    asked.add(key);
-    const hit = cachedH(prev, key, today, ttlDays, nullTtlDays);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    const hit = cachedH(prev, key, today, ttls);
     if (hit !== undefined) h.set(key, hit);
     else queue.push({ key, name });
   }
 
-  /* At most MAX_IN_FLIGHT requests in the air: a shared pool, not a chunked
-     Promise.all — a slow name must not hold back the rest of its batch. The
-     width can shrink: a key that throttled twenty names will throttle the next
-     four hundred, and four retrying workers only dig the hole deeper. */
-  const stats = { status: {} };
-  const answers = [];
-  let limit = MAX_IN_FLIGHT;
+  /* At most MAX_IN_FLIGHT requests in the air — a shared pool, not a chunked
+     Promise.all, so a slow name does not hold back the rest — and first tries
+     `paceMs` apart, so the width is a ceiling and the pace is the rate. Retries
+     are not paced: the ladder and the server's Retry-After are already the
+     slower clock. */
+  const stats = { status: {}, first429: null };
+  let asked = 0;       /* names this night put on the wire */
+  let streak = 0;      /* lookups that ended in error since the last answer */
+  let stopped = false; /* the breaker tripped: the key is shut for tonight */
   let next = 0;
 
   const lookup = async ({ key, name }) => {
@@ -215,31 +285,35 @@ export async function buildSignals(stones, options = {}) {
     h.set(key, answer.h);
     if (answer.h === null && answer.why === 'error') {
       /* Not an answer, so not cached — not even as a short no: tomorrow asks
-         again. A stale entry from an earlier night goes with it. */
+         again. A stale entry from an earlier night goes with it. Five in a row
+         is not five bad names but a shut key: stop asking and keep the rest of
+         the queue for tomorrow. */
       delete names[key];
-    } else if (answer.h === null) {
-      /* A null keeps its reason, so tomorrow's log says why; a number only the
-         number, and an old entry with no `why` still reads as a plain no. */
-      names[key] = { h: null, why: answer.why, at: today };
+      streak += 1;
+      if (streak >= BREAKER_ERRORS) stopped = true;
     } else {
-      names[key] = { h: answer.h, at: today };
-    }
-    answers.push(answer);
-    /* The first twenty answers say whether the key is being throttled; the
-       rest of the night then runs one request at a time. */
-    if (answers.length === 20) {
-      const errors = answers.filter((a) => a.h === null && a.why === 'error').length;
-      if (errors > 10) limit = 1;
+      streak = 0;
+      if (answer.h === null) {
+        /* A null keeps its reason, so tomorrow's log says why; a number only
+           the number, and an old entry with no `why` still reads as a plain no. */
+        names[key] = { h: null, why: answer.why, at: today };
+      } else {
+        names[key] = { h: answer.h, at: today };
+      }
     }
   };
 
-  /* A pool whose width is read at every pump, not fixed at spawn: dropping to
-     one leaves the air already booked to land and starts nothing behind it. */
+  /* The pump: fill the pool, wait for one landing, repeat — never a third
+     request while two are out, and never one the cap or the breaker has taken
+     away. A stopped run still drains what it already booked. */
   const inFlight = new Set();
-  while (next < queue.length || inFlight.size) {
-    while (inFlight.size < limit && next < queue.length) {
+  while (inFlight.size || (!stopped && next < queue.length && asked < cap)) {
+    while (!stopped && inFlight.size < MAX_IN_FLIGHT && next < queue.length && asked < cap) {
+      if (pace && asked) await sleep(pace);
+      if (stopped) break;
       const task = lookup(queue[next++]).finally(() => inFlight.delete(task));
       inFlight.add(task);
+      asked += 1;
     }
     if (inFlight.size) await Promise.race(inFlight);
   }
@@ -251,11 +325,13 @@ export async function buildSignals(stones, options = {}) {
     signals[id] = authorSignal(h.get(plainName(lastAuthor(stone.authors))));
   }
 
-  /* One line per night, for the CI log: how many papers earned a signal, and
-     why the names that did not come back empty. Nulls are counted per distinct
-     name — a reason is a fact about the name, not the paper that signed it. */
+  /* One line per night, for the CI log: how many papers earned a signal, why
+     the names that came back empty did, and what the budget did — a name the
+     cap or the breaker skipped is null tonight and asked tomorrow. Nulls are
+     counted per distinct name — a reason is a fact about the name, not the
+     paper that signed it. */
   const why = { 'no-match': 0, ambiguous: 0, 'no-hindex': 0, error: 0 };
-  for (const key of asked) {
+  for (const key of seen) {
     if (h.get(key) !== null) continue;
     const reason = names[key] && names[key].why;
     why[Object.hasOwn(why, reason) ? reason : 'error'] += 1;
@@ -264,10 +340,17 @@ export async function buildSignals(stones, options = {}) {
   /* Sorted keys, so last night's log can be diffed against tonight's. */
   const http = Object.fromEntries(Object.keys(stats.status).sort()
     .map((status) => [status, stats.status[status]]));
+  /* The server's own words, once, when it said 429: which limit we hit is the
+     one fact the counts cannot give. */
+  if (stats.first429) {
+    console.log('author-signal: first 429: retry-after=' +
+      (stats.first429.retryAfter || 'none') + ' body=' + stats.first429.body);
+  }
   console.log('author-signal: ' + withSignal + ' with signal, nulls: ' +
     'no-match ' + why['no-match'] + ', ambiguous ' + why.ambiguous +
     ', no-hindex ' + why['no-hindex'] + ', error ' + why.error +
-    '; http: ' + JSON.stringify(http));
+    '; asked ' + asked + ' new, skipped ' + (queue.length - asked) +
+    ', stopped ' + (stopped ? 'yes' : 'no') + '; http: ' + JSON.stringify(http));
 
   return { signals, cache: { version: 1, names } };
 }
