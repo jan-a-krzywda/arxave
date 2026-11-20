@@ -10,7 +10,9 @@
  * spends its cap of new names and no more, five dead lookups in a row end the
  * night instead of pounding a shut key, and a failure is a null rather than a
  * dead warm. A throttled 429 is a null only after three retries, only a real
- * answer is cached, and the first 429's body and Retry-After reach the log.
+ * answer is cached, and the first 429's body and Retry-After reach the log. A no
+ * from the older Physics-only search is a question again, while a number it
+ * found, and a hole in the data, still stand.
  *
  * No network and no waiting: `fetch`, `sleep` and `jitter` are parameters, and
  * every payload here is hand-built.
@@ -106,7 +108,7 @@ test('the TTL comes from the answer: 120 days for an h, 60 for a no, 14 for no-h
     /* Every entry is dated for its own verdict: the two 100-day-old nulls are
        stale, the 100-day-old number is not, and a 20-day-old "no-hindex" is
        asked again while a 14-day-old one is still trusted. */
-    const cache = { version: 1, names: {
+    const cache = { version: 2, names: {
       'ada phys': { h: 83, at: '2026-08-11' },
       'bob stone': { h: null, why: 'no-match', at: '2026-08-11' },
       'cyd ray': { h: null, why: 'ambiguous', at: '2026-08-11' },
@@ -323,8 +325,10 @@ test('a cached null with no reason is a legacy failure and is asked again', asyn
   let calls = 0;
   const fetch = async () => { calls += 1; return ok({ results: [] }); };
   /* Written before the reasons existed: a throttled lookup cached as a plain no.
-     A real no-match carries `why`, so it keeps standing. */
-  const cache = { version: 1, names: {
+     A real no-match carries `why`, so it keeps standing. Version 2, because a no
+     from the older Physics-only search is re-asked for a different reason — the
+     next test. */
+  const cache = { version: 2, names: {
     'ada phys': { h: null, at: '2026-11-19' },
     'bob nomatch': { h: null, why: 'no-match', at: '2026-11-19' },
   } };
@@ -336,6 +340,78 @@ test('a cached null with no reason is a legacy failure and is asked again', asyn
 
   assert.equal(calls, 1, 'only the reasonless null is re-asked');
   assert.equal(out.cache.names['ada phys'].why, 'no-match', 'and it now says why');
+});
+test('a no from the Physics-only cache is asked again; its numbers are not', async () => {
+  const fetch = counting(33);
+  /* Version 1 searched Physics & Astronomy alone, so a no there says nothing
+     about a computer-science author (the field was widened 2026-11-20). The
+     number was not narrowed by the filter and still answers. */
+  const cache = { version: 1, names: {
+    'ada phys': { h: 83, at: '2026-11-01' },
+    'bob stone': { h: null, why: 'no-match', at: '2026-11-01' },
+    'cid ray': { h: null, why: 'ambiguous', at: '2026-11-01' },
+  } };
+  const out = await buildSignals([
+    stone('2611.00001', 'Ada Phys'), stone('2611.00002', 'Bob Stone'),
+    stone('2611.00003', 'Cid Ray'),
+  ], { fetch, cache, paceMs: 0, today: '2026-11-19' });
+
+  assert.deepEqual(fetch.seen.map(askedName).sort(), ['Bob Stone', 'Cid Ray'],
+    'both noes are asked again, the found h is not');
+  assert.equal(out.signals['2611.00001'], authorSignal(83));
+  assert.equal(out.cache.version, 2, 'tonight records which fields it searched');
+});
+
+test('a version-2 no stands; a cache with no version is asked about its noes', async () => {
+  const fresh = counting(9);
+  const widened = { version: 2, names: {
+    'bob stone': { h: null, why: 'no-match', at: '2026-11-01' },
+    'cyd ray': { h: null, why: 'no-hindex', at: '2026-11-10' },
+  } };
+  const kept = await buildSignals([stone('2611.00001', 'Bob Stone'), stone('2611.00002', 'Cyd Ray')],
+    { fetch: fresh, cache: widened, today: '2026-11-19' });
+  assert.equal(fresh.seen.length, 0, 'a no from the widened search stands');
+  assert.equal(kept.signals['2611.00001'], null);
+
+  /* No version at all reads as the old search: ask, do not believe the no. */
+  const fetch = counting(9);
+  const unversioned = { names: { 'bob stone': { h: null, why: 'no-match', at: '2026-11-01' } } };
+  await buildSignals([stone('2611.00001', 'Bob Stone')],
+    { fetch, cache: unversioned, paceMs: 0, today: '2026-11-19' });
+  assert.equal(fetch.seen.length, 1);
+});
+
+test('a no-hindex from an older cache still stands', async () => {
+  /* The widening says nothing about a hole in OpenAlex's data: the same fields
+     would find the same author and the same missing number. */
+  const fetch = counting(9);
+  const cache = { version: 1, names: {
+    'ada phys': { h: null, why: 'no-hindex', at: '2026-11-10' },
+  } };
+  const out = await buildSignals([stone('2611.00001', 'Ada Phys')],
+    { fetch, cache, today: '2026-11-19' });
+  assert.equal(fetch.seen.length, 0);
+  assert.equal(out.signals['2611.00001'], null);
+});
+
+
+
+test('an old no that the cap leaves unasked is dropped, not stamped version 2', async () => {
+  const fetch = async () => ok({ results: [] });
+  const cache = { version: 1, names: {
+    'old nomatch': { h: null, why: 'no-match', at: '2026-11-19' },
+    'old found': { h: 12, at: '2026-11-19' },
+  } };
+  let out;
+  await logged(async () => {
+    /* maxNew 0: nobody is asked, so the old no cannot be re-answered tonight. */
+    out = await buildSignals([stone('2611.00001', 'Old Nomatch')],
+      { fetch, cache, maxNew: 0, sleep: async () => {}, jitter: () => 0, paceMs: 0, today: '2026-11-19' });
+  });
+
+  assert.equal(out.cache.version, 2);
+  assert.equal(out.cache.names['old nomatch'], undefined, 'an old no is unknown, not a v2 no');
+  assert.deepEqual(out.cache.names['old found'], { h: 12, at: '2026-11-19' });
 });
 
 test('a dead socket is retried and counted as network', async () => {
