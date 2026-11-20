@@ -132,8 +132,7 @@ function ageDays(at, today) {
 /**
  * How long one cache entry stands, by what it said: a number for `ttlDays`, a
  * no-hindex for `noHIndexTtlDays` (a hole in OpenAlex's data fills in weeks),
- * and any other null — no-match, ambiguous, or an old entry with no `why` — for
- * `nullTtlDays`.
+ * and any other null — no-match or ambiguous — for `nullTtlDays`.
  */
 function ttlFor(entry, { ttlDays, nullTtlDays, noHIndexTtlDays }) {
   if (entry.h !== null) return ttlDays;
@@ -147,14 +146,17 @@ function ttlFor(entry, { ttlDays, nullTtlDays, noHIndexTtlDays }) {
  *
  * A cached `error` is not an answer, so it always reads as "ask again": tonight
  * writes no error entries, and a file from before that rule must not answer a
- * name with a failure.
+ * name with a failure. A null with NO `why` is the same thing from earlier still:
+ * before the reasons were recorded, a throttled lookup was cached as a plain no,
+ * and 448 of 530 names in the first live cache were such entries. A real no
+ * always carries its reason, so a null without one is asked again.
  */
 function cachedH(names, key, today, ttls) {
   const entry = names[key];
   if (!entry || typeof entry !== 'object') return undefined;
   const h = entry.h === null ? null : (Number.isFinite(entry.h) ? entry.h : undefined);
   if (h === undefined) return undefined;
-  if (h === null && entry.why === 'error') return undefined;
+  if (h === null && (!entry.why || entry.why === 'error')) return undefined;
   return ageDays(entry.at, today) > ttlFor(entry, ttls) ? undefined : h;
 }
 
@@ -295,7 +297,7 @@ export async function buildSignals(stones, options = {}) {
       streak = 0;
       if (answer.h === null) {
         /* A null keeps its reason, so tomorrow's log says why; a number only
-           the number, and an old entry with no `why` still reads as a plain no. */
+           the number. */
         names[key] = { h: null, why: answer.why, at: today };
       } else {
         names[key] = { h: answer.h, at: today };

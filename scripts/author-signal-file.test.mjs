@@ -319,6 +319,25 @@ test('a name that stays a 429 is not cached, and a cached error is asked again',
   assert.deepEqual(out.cache.names, {}, 'the failure is dropped: tomorrow asks again');
 });
 
+test('a cached null with no reason is a legacy failure and is asked again', async () => {
+  let calls = 0;
+  const fetch = async () => { calls += 1; return ok({ results: [] }); };
+  /* Written before the reasons existed: a throttled lookup cached as a plain no.
+     A real no-match carries `why`, so it keeps standing. */
+  const cache = { version: 1, names: {
+    'ada phys': { h: null, at: '2026-11-19' },
+    'bob nomatch': { h: null, why: 'no-match', at: '2026-11-19' },
+  } };
+  let out;
+  await logged(async () => {
+    out = await buildSignals([stone('2611.00001', 'Ada Phys'), stone('2611.00002', 'Bob Nomatch')],
+      { fetch, cache, sleep: async () => {}, jitter: () => 0, paceMs: 0, today: '2026-11-19' });
+  });
+
+  assert.equal(calls, 1, 'only the reasonless null is re-asked');
+  assert.equal(out.cache.names['ada phys'].why, 'no-match', 'and it now says why');
+});
+
 test('a dead socket is retried and counted as network', async () => {
   let calls = 0;
   const fetch = async (url) => {
