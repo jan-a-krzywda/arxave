@@ -272,6 +272,15 @@ export async function buildSignals(stones, options = {}) {
   const version = Number(cache && cache.version) || 0;
   /* A fresh object, so a caller's cache is not mutated under it. */
   const names = { ...prev };
+  /* The file goes out stamped version 2, so an old no must not ride along: one
+     the cap leaves unasked tonight would read as a Physics-and-CS no tomorrow.
+     Drop the entries `cachedH` would not trust, and they are simply unknown. */
+  if (!(version >= 2)) {
+    for (const key of Object.keys(names)) {
+      const entry = names[key];
+      if (entry && entry.h === null && entry.why !== 'no-hindex') delete names[key];
+    }
+  }
   const list = Array.isArray(stones) ? stones : [];
 
   /* Cache hits settle now; only the unanswered names queue for a request, in

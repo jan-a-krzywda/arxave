@@ -396,6 +396,24 @@ test('a no-hindex from an older cache still stands', async () => {
 
 
 
+test('an old no that the cap leaves unasked is dropped, not stamped version 2', async () => {
+  const fetch = async () => ok({ results: [] });
+  const cache = { version: 1, names: {
+    'old nomatch': { h: null, why: 'no-match', at: '2026-11-19' },
+    'old found': { h: 12, at: '2026-11-19' },
+  } };
+  let out;
+  await logged(async () => {
+    /* maxNew 0: nobody is asked, so the old no cannot be re-answered tonight. */
+    out = await buildSignals([stone('2611.00001', 'Old Nomatch')],
+      { fetch, cache, maxNew: 0, sleep: async () => {}, jitter: () => 0, paceMs: 0, today: '2026-11-19' });
+  });
+
+  assert.equal(out.cache.version, 2);
+  assert.equal(out.cache.names['old nomatch'], undefined, 'an old no is unknown, not a v2 no');
+  assert.deepEqual(out.cache.names['old found'], { h: 12, at: '2026-11-19' });
+});
+
 test('a dead socket is retried and counted as network', async () => {
   let calls = 0;
   const fetch = async (url) => {
