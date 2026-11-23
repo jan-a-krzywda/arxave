@@ -49,7 +49,7 @@ Two goal, only two:
 ## How the Cave picks papers
 
 <p align="center">
-  <img src="docs/assets/cave-categories.gif" alt="How the Cave picks papers, animated" width="720">
+  <img src="docs/assets/cave-categories.gif" alt="How the Cave picks papers, animated" width="100%">
 </p>
 
 No language model ranks anything. Every grade is a cosine, a percentile or a
