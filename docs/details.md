@@ -21,6 +21,11 @@ nav_icon: details
   with the code that computes it and the paper it comes from.
 </div>
 
+<figure class="dt-fig">
+  <img src="{{ '/assets/cave-explainer.gif' | relative_url }}" width="540" alt="How the Cave picks papers, animated.">
+  <figcaption>How the Cave picks papers, in motion.</figcaption>
+</figure>
+
 <div class="toc-card" markdown="1">
 **On this page**
 
