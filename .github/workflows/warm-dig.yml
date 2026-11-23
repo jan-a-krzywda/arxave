@@ -57,7 +57,14 @@ jobs:
   warm:
     runs-on: ubuntu-latest
     steps:
+      # `ref: github.ref` fetches the branch's tip as of THIS step. The default is
+      # the SHA the run was dispatched at, and a run that waited in the
+      # `concurrency` queue would then warm from a cache the run ahead of it has
+      # already moved on, and conflict on every generated feed when it pushed
+      # (2026-11-20: two lookups' worth of names lost that way).
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - uses: actions/setup-node@v4
         with:
