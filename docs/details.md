@@ -21,8 +21,8 @@ nav_icon: details
   with the code that computes it and the paper it comes from.
 </div>
 
-<figure class="dt-fig">
-  <img src="{{ '/assets/cave-categories.gif' | relative_url }}" width="720" alt="How the Cave picks papers, animated.">
+<figure class="dt-fig dt-fig-wide">
+  <img src="{{ '/assets/cave-categories.gif' | relative_url }}" alt="How the Cave picks papers, animated.">
   <figcaption>How the Cave picks papers, in motion.</figcaption>
 </figure>
 

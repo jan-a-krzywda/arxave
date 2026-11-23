@@ -19,6 +19,10 @@
   max-width: 380px;
 }
 
+.dt-fig-wide img {
+  max-width: none;
+}
+
 .dt-fig figcaption {
   margin-top: 0.4rem;
   font-size: 0.8rem;
