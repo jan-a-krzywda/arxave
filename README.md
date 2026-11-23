@@ -135,6 +135,10 @@ Surprise 100 (β = +0.25) still lets you ask for them.
 Dig's **first** category picks the field: `cs.AI` first gives AI, `quant-ph`
 first gives Quantum. A list holding both says so at load and offers the switch.
 
+<p align="center">
+  <img src="docs/assets/cave-categories.gif" alt="Dig's category picker, animated" width="720">
+</p>
+
 | | Quantum | AI |
 |---|---|---|
 | Categories | `quant-ph`, `cond-mat.mes-hall` | `cs.AI`, `cs.LG` |

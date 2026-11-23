@@ -112,6 +112,11 @@ Far-from-everything papers are, on average, the ones nobody cites. Surprise 100 
 
 Dig's **first** category picks the field: `cs.AI` first → AI, `quant-ph` first → Quantum. A list with both says so at load and offers the switch.
 
+<figure class="dt-fig">
+  <img src="{{ '/assets/cave-categories.gif' | relative_url }}" width="720" alt="Dig's arXiv category picker, animated.">
+  <figcaption>Dig's category picker: pick the categories, the first one sets the field.</figcaption>
+</figure>
+
 | | Quantum | AI |
 |---|---|---|
 | Categories | `quant-ph`, `cond-mat.mes-hall` | `cs.AI`, `cs.LG` |
