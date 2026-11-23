@@ -21,6 +21,11 @@ nav_icon: details
   with the code that computes it and the paper it comes from.
 </div>
 
+<figure class="dt-fig">
+  <img src="{{ '/assets/cave-explainer.gif' | relative_url }}" width="540" alt="How the Cave picks papers, animated.">
+  <figcaption>How the Cave picks papers, in motion.</figcaption>
+</figure>
+
 <div class="toc-card" markdown="1">
 **On this page**
 
@@ -106,6 +111,11 @@ Far-from-everything papers are, on average, the ones nobody cites. Surprise 100 
 ## The fields
 
 Dig's **first** category picks the field: `cs.AI` first → AI, `quant-ph` first → Quantum. A list with both says so at load and offers the switch.
+
+<figure class="dt-fig">
+  <img src="{{ '/assets/cave-categories.gif' | relative_url }}" width="720" alt="Dig's arXiv category picker, animated.">
+  <figcaption>Dig's category picker: pick the categories, the first one sets the field.</figcaption>
+</figure>
 
 | | Quantum | AI |
 |---|---|---|

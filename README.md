@@ -48,6 +48,10 @@ Two goal, only two:
 
 ## How the Cave picks papers
 
+<p align="center">
+  <img src="docs/assets/cave-explainer.gif" alt="How the Cave picks papers, animated" width="540">
+</p>
+
 No language model ranks anything. Every grade is a cosine, a percentile or a
 z-score, and each one is below with the code that computes it and the paper it
 comes from. The live version, with a stage explorer and a grade calculator, is
@@ -130,6 +134,10 @@ Surprise 100 (β = +0.25) still lets you ask for them.
 
 Dig's **first** category picks the field: `cs.AI` first gives AI, `quant-ph`
 first gives Quantum. A list holding both says so at load and offers the switch.
+
+<p align="center">
+  <img src="docs/assets/cave-categories.gif" alt="Dig's category picker, animated" width="720">
+</p>
 
 | | Quantum | AI |
 |---|---|---|
