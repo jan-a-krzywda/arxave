@@ -28,19 +28,19 @@
     "qs-c": {
       "name": "Application benchmarks",
       "items": 8,
-      "paydirt": 5,
+      "paydirt": 7,
       "updated": "2026-11-24"
     },
     "qs-d": {
       "name": "Calibration, tuning and drift",
       "items": 8,
-      "paydirt": 3,
+      "paydirt": 5,
       "updated": "2026-11-24"
     },
     "qs-e": {
       "name": "Control electronics and cryogenics",
       "items": 8,
-      "paydirt": 2,
+      "paydirt": 3,
       "updated": "2026-11-24"
     },
     "qs-f": {
@@ -58,7 +58,7 @@
     "qs-h": {
       "name": "Error correction route",
       "items": 8,
-      "paydirt": 5,
+      "paydirt": 8,
       "updated": "2026-11-24"
     },
     "qs-i": {

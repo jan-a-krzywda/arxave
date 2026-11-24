@@ -7050,15 +7050,15 @@
  "2611.28353": {
   "fields": {
    "kind": "new method",
-   "result": "CSS-T-Product (CSS-TP) codes convert transversal phase gates into multi-qubit diagonal gates. At code distance 21 with one factory per family, tailored magic factories reduce execution latency of a $GF(2^{8})$ multiplier by up to 48% and a shared-addend carry-lookahead adder by up to 38% at similar or smaller spacetime volume.",
-   "question": "Can code-theoretic constructions provide tailored magic-state distillation factories for multi-qubit diagonal non-Clifford clusters at the third and fourth levels of the Clifford hierarchy?",
-   "prior": "Joint synthillation via Clifford+T/CCZ decomposition adds scheduling and spacetime overhead in fault-tolerant implementations.",
-   "limits": "Analyzed under a surface-code-based theoretical model at code distance 21 with one factory per resource family.",
+   "result": "CSS-T-Product (CSS-TP) codes produce tailored Encode-$T$-Decode factories that reduce latency of a $GF(2^8)$ multiplier by up to 48% and a shared-addend carry-lookahead adder by up to 38% at surface code distance 21 with matching or reduced spacetime volume.",
+   "question": "Can code-theoretic tools directly construct tailored magic state factories for multi-qubit diagonal non-Clifford gates in algorithmic primitives at third and higher levels of the Clifford hierarchy?",
+   "prior": "Standard synthillation decomposes clusters into $T$ and $CCZ$ gates or synthesizes diagonal non-Clifford circuits at level 3 of the Clifford hierarchy via Reed-Muller-type or stabilizer-search constructions.",
+   "limits": "Analyzed under a surface code cost model at distance 21 with one factory per resource family; limited to multi-qubit diagonal gates at third and fourth levels of Clifford hierarchy.",
    "tools": [
     "CSS-T-Product (CSS-TP) codes",
-    "quantum LEGO",
-    "Encode-T-Decode magic state factories",
-    "surface-code spacetime overhead modeling"
+    "Quantum LEGO tensor networks",
+    "Encode-$T$-Decode magic state distillation factories",
+    "Surface code cost model"
    ],
    "figure": "",
    "figure_url": "",
@@ -7234,6 +7234,176 @@
    "figure_url": "https://arxave.com/figures/2611.30187-S1.F1.svg",
    "figure_caption": "Figure 1: One-dimensional structure of the band-wise Krylov basis.",
    "figure_gloss": "Coarse-grained one-dimensional chain geometry of the impurity model in the band-wise Krylov basis, showing the localized impurity mode at depth zero coupled to bath modes at increasing chain depths.",
+   "code": ""
+  },
+  "seen": "2026-11-24",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.30753": {
+  "fields": {
+   "kind": "theory",
+   "result": "Finite Coulomb interaction produces four resonance conditions between particle-like and hole-like dot channels, giving narrow ridges of destructive interference in interferometric visibility along $\\epsilon_q = \\epsilon_{\\bar{q}}$ and $\\epsilon_q + U_q = \\epsilon_{\\bar{q}}$. The destructive interference valley width is governed by tunnelling strength $\\Gamma$ rather than thermal width $k_{\\mathrm{B}}T$.",
+   "question": "How do finite intra-dot Coulomb interactions and broken system symmetries affect quantum coherence and Aharonov-Bohm interference in a double quantum dot ring?",
+   "prior": "Prior work assumed equal couplings and levels in linear response, restricted to non-interacting $U=0$ or infinite interaction $U=\\infty$ (where visibility $\\nu = 2/7$).",
+   "limits": "First-order perturbation in $\\Gamma$ (neglecting cotunnelling $\\mathcal{O}(\\Gamma^2)$); negligible direct inter-dot tunnelling or electrostatic coupling; wide-band limit in non-interacting leads.",
+   "tools": [
+    "Keldysh formalism",
+    "linear perturbation theory in tunnelling strength",
+    "diagrammatic real-time technique",
+    "master equation",
+    "TraSPI method"
+   ],
+   "figure": "S4.F4",
+   "figure_url": "https://arxiv.org/html/2611.30753v1/G2DPhi0.png",
+   "figure_caption": "Figure 4: Conductance $G(\\phi=0)$ (left), $G(\\phi=\\pi)$ (centre), and interferometric visibility (right) as functions of the energies $\\epsilon_{\\mathsf{a}},\\epsilon_{\\mathsf{b}}$ for an AB system with symmetric Coulomb interactions $U=50\\Gamma$ , symmetric tunnel couplings $\\Gamma_{\\ell q}=\\Gamma$ , a bias voltage of $eV=10^{-3}\\Gamma$ and a thermal energy of $k_{\\mathrm{B}}T=10\\Gamma$ . The black lines mark the resonances of QD ${\\mathsf{a}}$ (vertical lines) and QD ${\\mathsf{b}}$ (horizontal lines) for particle-like ( $\\epsilon_{q}=0$ ) and hole like ( $\\epsilon_{q}=-U_{q}$ ) excitation.",
+   "figure_gloss": "Conductance at $\\phi=0$ (left), $\\phi=\\pi$ (centre), and visibility (right) plotted against gate energies $\\epsilon_{\\mathsf{a}}$ and $\\epsilon_{\\mathsf{b}}$. It shows four conductance resonance peaks, narrow conductance suppression valleys at $\\phi=\\pi$ along level degeneracies, and sharp ridges in visibility with negative regions between them.",
+   "code": ""
+  },
+  "seen": "2026-11-24",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.30676": {
+  "fields": {
+   "kind": "new result",
+   "result": "Uncooled transport-induced heating breaks surface-code scaling, dropping $\\Lambda_{3,5}$ to 0.08. Predictive indirect phonon-averaging cooling of data ions immediately before two-qubit gates restores scaling to $\\Lambda_{3,5}=3.99$ and $\\Lambda_{5,7}=5.39$.",
+   "question": "How does transport-induced motional heating and explicit scheduling of cooling operations affect the logical error scaling of rotated surface codes in QCCD trapped-ion systems?",
+   "prior": "",
+   "limits": "Simulation of linear single-species QCCD architecture. Phonon accumulators reset at round boundaries, perfect phonon equalization across merged chains is assumed, and two-qubit gate infidelities are capped at $\\bar{n}\\le 20$.",
+   "tools": [
+    "QCCD compiler intermediate representation (IR)",
+    "heating-aware noise-injection pipeline",
+    "Stim",
+    "minimum-weight perfect matching (MWPM) decoder"
+   ],
+   "figure": "S5.F8",
+   "figure_url": "https://arxiv.org/html/2611.30676v1/lambda_vs_t_nres.png",
+   "figure_caption": "Fig. 8 : Error suppression ratios (color) of the LIZ predictive trigger ( $N_{\\max}=32$ ) with each cooling instruction assigned duration $t_{\\mathrm{cool}}$ and post-cooling residual phonon number $\\bar{n}_{\\mathrm{res}}$ . The predictive trigger fires above $\\theta=\\max(0.2,\\ \\bar{n}_{\\mathrm{res}}+0.1)$ . The solid curve is the $\\Lambda=1$ contour, hatching marks cells whose 95% intervals cross one, and white cells far beyond the boundary are not simulated. The row below the dashed line is $\\bar{n}_{\\mathrm{res}}=0$ , placed on a linear segment of the axis.",
+   "figure_gloss": "Error suppression ratios plotted over cooling instruction duration $t_{\\mathrm{cool}}$ and residual phonon number $\\bar{n}_{\\mathrm{res}}$, showing the region where logical error scaling is preserved or lost due to background heating.",
+   "code": ""
+  },
+  "seen": "2026-11-24",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.30508": {
+  "fields": {
+   "kind": "new method",
+   "result": "BT-QAOA decomposes Max-$k$-Cut into at most $2k-3$ standard MaxCut QAOA instances, reducing native CZ gate counts from $10855.2$ ($k=3$) and $9748.8$ ($k=4$) under binary encoding to $1866.4$ on 24-vertex random graphs while raising the estimated circuit success probability by over 27 orders of magnitude.",
+   "question": "Can multiway graph partitioning (Max-$k$-Cut) be solved via QAOA without direct multistate encodings that inflate qubit counts or circuit depths?",
+   "prior": "Binary encoding required $n\\lceil\\log_2 k\\rceil$ qubits and multiqubit Pauli decompositions (6 to 8 CNOTs per edge per layer for $k=3,4$), yielding an ESP of roughly $10^{-32}$ on 24-vertex random graphs at $p=2$.",
+   "limits": "Evaluated via noiseless statevector simulations on up to 24-vertex graphs and hardware compilation without experimental execution on the processor.",
+   "tools": [
+    "Binary-tree recursive partitioning",
+    "Standard MaxCut QAOA ($p=2$)",
+    "Qiskit transpilation on IBM Torino architecture"
+   ],
+   "figure": "S6.F7",
+   "figure_url": "https://arxiv.org/html/2611.30508v1/fig7.svg",
+   "figure_caption": "Figure 7: Hardware compilation comparison between the BT-QAOA root-node circuit and $k=3,4$ binary-encoded QAOA at $p=2$ on weighted complete graphs $K_{n}$ and weighted Erdős–Rényi random graphs $G(n,1/2)$ , with edge weights drawn independently from $U(0.01,1)$ . (a) Arithmetic mean of the compiled native CZ gate count. (b) Geometric mean of $\\mathrm{ESP}$ . Each data point is obtained from $5$ independent graph instances.",
+   "figure_gloss": "Compiled native CZ gate counts (left) and estimated circuit success probability (right) plotted against vertex count $n$ for $K_n$ and $G(n,1/2)$ graphs under IBM Torino calibrations.",
+   "code": ""
+  },
+  "seen": "2026-11-24",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.30427": {
+  "fields": {
+   "kind": "new method",
+   "result": "Gated InAs/InP nanowire quantum dot integrated at apex of NC-AFM cantilever achieves charge sensitivity of $425\times 10^{-6}\text{ e}/\text{Hz}^{1/2}$ at 1.25 kHz and $55\times 10^{-3}\text{ e}/\text{Hz}^{1/2}$ via rf reflectometry at 221.75 MHz while imaging topography and electrostatic potential.",
+   "question": "Can a gated quantum dot electrometer be integrated onto a force microscopy cantilever to combine non-contact AFM height control with high-bandwidth radio-frequency reflectometry?",
+   "prior": "",
+   "limits": "Measurement at 4.8 K with sample electron temperature 6.2 \u0001 1.3 K. RF sensitivity limited by parasitics and unoptimized circuit environment; ac potential maps qualitative due to capacitive crosstalk.",
+   "tools": [
+    "InAs/InP nanowire quantum dot",
+    "Non-contact atomic force microscopy (NC-AFM)",
+    "Membrane-based micromanipulator transfer",
+    "RF reflectometry (LC tank circuit)"
+   ],
+   "figure": "Sx2.F2",
+   "figure_url": "https://arxiv.org/html/2611.30427v1/Figure2.png",
+   "figure_caption": "Figure 2: Imaging the electrostatic potential of nanoscale gate electrodes. a Scanning electron micrograph of the gate structure investigated in the experiment. b NC-AFM topography image of the gates shown in a , recorded at constant frequency shift. The scale represents the relative height $\\Delta Z$ , normalized to a minimum of zero since the absolute scanning height is undetermined. c Image of electrostatic potential generated by biasing gates G1 and G3 (G2 and G4) with $-0.5\\text{\\,}\\mathrm{V}$ ( $0.5\\text{\\,}\\mathrm{V}$ ). During scanning, a slow feedback loop maintains the QD at a constant operating point by compensating the electrostatic potential generated by the underlying gates through the voltage applied to the QD gate. The recorded compensating voltage is converted to the electrostatic potential at the QD using the lever arm $\\alpha=C_{\\mathrm{G}}/C_{\\mathrm{\\Sigma}}$ . The three colored dashed lines indicate the horizontal linecuts used for comparison in e . d Electrostatic simulation of the investigated gate structure with applied voltages of $\\pm$ $0.5\\text{\\,}\\mathrm{V}$ , calculated using COMSOL. e Comparison between simulation and experiment for the three linecuts indicated in c and d . Dashed curves correspond to the simulation and solid curves to the measured data. All scale bars represent $500\\text{\\,}\\mathrm{nm}$ .",
+   "figure_gloss": "Comparison of NC-AFM topography (b) and measured electrostatic potential map (c) of a four-gate electrode layout against 3D COMSOL simulations (d, e). Gate bias is \u00010.5 V, and linecuts across the structure demonstrate quantitative agreement between measured compensating gate voltage and electrostatic modeling.",
+   "code": ""
+  },
+  "seen": "2026-11-24",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.30781": {
+  "fields": {
+   "kind": "theory",
+   "result": "In ideal BCS superconductors at $T \\to 0$, spin-to-charge conversion efficiency reaches unity ($V_{\\mathrm{det}} = V_s$) for subgap spin bias $V_s \\le \\Delta_0$, independent of spin Hall angle $\\theta$.",
+   "question": "How do superconductivity and local spectral modifications affect the inverse spin Hall voltage detected in a nonlocal spin-valve geometry?",
+   "prior": "In the normal state, conversion efficiency was limited by small spin Hall angle to $r = \\theta (L_{\\mathrm{inj}}/W)(R_s/R_b)\\tanh(\\kappa_s W/2)$, yielding $V_{\\mathrm{det}} = r V_s$ where $r \\ll 1$.",
+   "limits": "Tunnel limit ($R_b^{-1}$ expansion), weak spin Hall angle (linear in $\\theta$), and detector placed at distance $x_{\\mathrm{det}} \\gg \\xi$. Inelastic scattering (Dynes parameter $\\eta$) and finite $T$ reduce the conversion below unity.",
+   "tools": [
+    "quasiclassical Usadel equation",
+    "generalized Kupriyanov-Lukichev boundary conditions",
+    "Keldysh formalism",
+    "perturbative expansion in tunneling barrier resistance and spin Hall angle"
+   ],
+   "figure": "S0.F1",
+   "figure_url": "https://arxiv.org/html/2611.30781v1/Setup.png",
+   "figure_caption": "Figure 1: (a)–(b) Schematic illustrations of the setup considered in this work. A two-dimensional superconducting wire of width $W$ is coupled through a tunnel barrier to a normal-metal spin channel of length $L_{\\mathrm{inj}}$ ( $x\\in[-\\frac{L_{\\mathrm{inj}}}{2},\\frac{L_{\\mathrm{inj}}}{2}]$ ) at spin bias $V_{s}$ . A normal-metal voltage probe is positioned at a distance $x_{\\mathrm{det}}$ from the center of the spin channel. (c)–(d) Detector voltage $V_{\\mathrm{det}}$ as a function of the spin bias for a perfect BCS superconductor. The superconducting gap is taken to follow the temperature dependence $\\Delta=\\Delta_{0}\\tanh\\left(1.74\\sqrt{T_{c}/T-1}\\right)$ . (c) For $r=0.1$ and several values of $T$ . (d) For $T/T_{c}=0.1$ and several values of $r$ . The dashed lines show the normal state behavior $V_{\\rm det}=rV_{s}$",
+   "figure_gloss": "Detected voltage $V_{\\mathrm{det}}$ versus injected spin bias $V_s$ for varying temperatures $T$ and efficiency parameters $r$. Below $T_c$, $V_{\\mathrm{det}}$ rises from normal-state slope $r$ into an enhanced regime where $V_{\\mathrm{det}} \\approx V_s$.",
+   "code": ""
+  },
+  "seen": "2026-11-24",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.30654": {
+  "fields": {
+   "kind": "new result",
+   "result": "Cyclic XYZ codes achieve parameters $[[43, 1, 13]]$ and $[[31, 16, 5]]$, matching best-known stabilizer code distances while strictly beating linear-programming upper bounds for CSS codes ($d \\leq 11$ and $d \\leq 4$, respectively).",
+   "question": "Under what conditions do quantum cyclic stabilizer codes admit an XYZ representation with cyclic component codes, and can they surpass the minimum-distance limits of CSS codes?",
+   "prior": "Linear-programming upper bounds for arbitrary CSS codes restricted minimum distance to $d \\leq 11$ for $[[43, 1]]$ and $d \\leq 4$ for $[[31, 16]]$; underlying CSS codes achieved only $[[43, 15, 6]]$ and $[[31, 21, 3]]$.",
+   "limits": "Restricted to stabilizer codes over binary cyclic component codes of odd length $n$ whose parity-check matrices intersect pairwise trivially and whose stabilizer generators are invariant under the permutation $i \\mapsto 2i \\pmod n$.",
+   "tools": [
+    "Cyclotomic cosets",
+    "Binary cyclic codes",
+    "Stabilizer formalism with Pauli-Y checks",
+    "Decision-tree method for minimum distance",
+    "Linear programming upper bounds"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-11-24",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.30884": {
+  "fields": {
+   "kind": "new method",
+   "result": "Two syndrome-free quantum decoder architectures recover arbitrary logical states over quantum erasure channels by coupling classical or belief-propagation peeling reconstruction on an outer packing code $\\mathbb{C}_{1}$ with coherent erasure quantization on an inner covering code $\\mathbb{C}_{2}$. Quantization-based cleanup untangles the logical state from inaccessible environment branches, leaving zero residual mutual information.",
+   "question": "Can quantum erasure decoding be implemented coherently without stabilizer syndrome measurements by using nested packing and covering codes?",
+   "prior": "",
+   "limits": "Outer code reconstruction must succeed and inner code quantizer must supply valid completions. Assumes known physical erasure locations, noiseless local gates, and uncorrupted surviving qubits.",
+   "tools": [
+    "nested binary linear codes",
+    "binary erasure quantization",
+    "peeling decoding",
+    "quantum belief propagation (QBP)",
+    "reversible ternary quantum gates"
+   ],
+   "figure": "S4.F7",
+   "figure_url": "https://arxiv.org/html/2611.30884v1/figures/steane_qbp_full_iteration.drawio.png",
+   "figure_caption": "Figure 7 : First QBP–S&R iteration for the Steane example with $E=\\{1,2\\}$ . The gates $G_{c}$ compute check values, $H_{v}$ write updated values into the ancilla register $A$ , and $G_{c}^{\\dagger}$ clear $Z$ . Filled dots indicate inputs to the ternary functions, not binary controls. The gates $U_{\\mathrm{swap}}$ recover position 1, while position 2 remains erased. Each block labeled Reset returns the corresponding ancilla to $\\lvert 0\\rangle$ for reuse. Both $A$ and $Z$ finish in zero. The displayed states follow one computational-basis term within an erasure-environment branch.",
+   "figure_gloss": "Quantum circuit of one iteration of quantum belief propagation decoding on qutrits for the Steane code with erasures at positions 1 and 2. Ternary check gates $G_c$, variable update gates $H_v$, uncomputation $G_c^\\dagger$, and swap gates $U_\\mathrm{swap}$ restore erased position 1 into the variable register while clearing ancillas for reuse.",
    "code": ""
   },
   "seen": "2026-11-24",
