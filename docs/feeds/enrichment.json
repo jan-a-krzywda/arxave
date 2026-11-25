@@ -7438,14 +7438,14 @@
  "2611.31514": {
   "fields": {
    "kind": "review",
-   "result": "Proposes DOE deployment strategy targeting initial FTQCs by 2028 with $\\ge 100$ logical qubits performing $10{,}000$ to $100{,}000$ hard logical operations, scaling to production systems of $1{,}000$ to $10{,}000$ logical qubits performing $10^9$ to $10^{10}$ hard logical operations in the 2030s.",
-   "question": "What roadmap, milestones, and infrastructure does the US Department of Energy need to integrate fault-tolerant quantum supercomputers into national scientific computing?",
+   "result": "Proposes DOE deployment strategy targeting initial FTQCs with $\\ge 100$ logical qubits and $10^4$ to $10^5$ hard logical operations by 2028, scaling to $1,000$ to $10,000$ logical qubits and $10^9$ to $10^{10}$ hard logical operations in the 2030s.",
+   "question": "What strategic milestones, system requirements, and R&D directions are needed to deploy fault-tolerant quantum computers within DOE supercomputing infrastructure by 2028?",
    "prior": "",
-   "limits": "Contingent on commercial hardware roadmap progress and realization of low-overhead quantum error correction.",
+   "limits": "Strategic blueprint and roadmap; dependent on commercial hardware scaling and error-correction demonstrations meeting 2028 timelines.",
    "tools": [
-    "fault-tolerant quantum computing (FTQC)",
-    "supercomputing integration roadmap",
-    "hardware-software co-design"
+    "fault-tolerant quantum computing (FTQC) roadmap",
+    "DOE advanced scientific computing infrastructure",
+    "quantum-classical heterogeneous architectures"
    ],
    "figure": "",
    "figure_url": "",
@@ -7509,14 +7509,14 @@
  "2611.32759": {
   "fields": {
    "kind": "new result",
-   "result": "Demonstrated fully programmable multipartite nonseparable classical electromagnetic wave states up to five-partite order, realizing complete Bell-like and Greenberger-Horne-Zeilinger-like families across polarization, frequency, orbital angular momentum, wavevector direction, and orthogonal envelope modes.",
-   "question": "Can classical nonseparable electromagnetic wave analogues dynamically configure both the identity and number of coherently linked state spaces across multiple degrees of freedom?",
-   "prior": "Existing classical entanglement analogues rely on architectures with fixed participating degrees of freedom and lower multipartite order.",
-   "limits": "Classical wave implementation; does not possess quantum nonlocality or quantum entanglement.",
+   "result": "Realized complete Bell-like and Greenberger-Horne-Zeilinger-like state families spanning bipartite to five-partite order in classical electromagnetic fields using a programmable spatiotemporal metasurface.",
+   "question": "Can classical electromagnetic nonseparability be programmed to reconfigure the number and identity of entangled degrees of freedom up to high multipartite orders?",
+   "prior": "Existing classical nonseparable wave implementations largely fix participating degrees of freedom via static generating architectures; classical five-partite nonseparable states were not previously realized.",
+   "limits": "Classical analogues only; lacks true quantum entanglement, quantum nonlocality, and multi-particle quantum measurement correlations.",
    "tools": [
-    "spatiotemporal metasurface",
-    "electromagnetic field state synthesis",
-    "multimodal classical nonseparability characterization"
+    "programmable spatiotemporal metasurface",
+    "electromagnetic state spaces (polarization, frequency, orbital angular momentum, wavevector direction, envelope modes)",
+    "GHZ-like and Bell-like state synthesis"
    ],
    "figure": "",
    "figure_url": "",
