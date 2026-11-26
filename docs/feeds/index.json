@@ -1,89 +1,89 @@
 {
-  "built": "2026-11-25",
+  "built": "2026-11-26",
   "feeds": {
     "atoms-ions-photons": {
       "name": "Atoms, ions and photons",
-      "items": 8,
+      "items": 7,
       "paydirt": 2,
-      "updated": "2026-11-25"
+      "updated": "2026-11-26"
     },
     "fault-tolerant-architecture": {
       "name": "Fault-tolerant architecture",
       "items": 8,
-      "paydirt": 6,
-      "updated": "2026-11-25"
+      "paydirt": 8,
+      "updated": "2026-11-26"
     },
     "qs-a": {
       "name": "Spin qubit devices and figures of merit",
       "items": 8,
-      "paydirt": 3,
-      "updated": "2026-11-25"
+      "paydirt": 6,
+      "updated": "2026-11-26"
     },
     "qs-b": {
       "name": "Gate and device benchmarking",
       "items": 8,
       "paydirt": 8,
-      "updated": "2026-11-25"
+      "updated": "2026-11-26"
     },
     "qs-c": {
       "name": "Application benchmarks",
       "items": 8,
-      "paydirt": 7,
-      "updated": "2026-11-25"
+      "paydirt": 4,
+      "updated": "2026-11-26"
     },
     "qs-d": {
       "name": "Calibration, tuning and drift",
       "items": 8,
-      "paydirt": 8,
-      "updated": "2026-11-25"
+      "paydirt": 6,
+      "updated": "2026-11-26"
     },
     "qs-e": {
       "name": "Control electronics and cryogenics",
       "items": 8,
-      "paydirt": 7,
-      "updated": "2026-11-25"
+      "paydirt": 8,
+      "updated": "2026-11-26"
     },
     "qs-f": {
       "name": "Software stack: compilers and pulse level",
       "items": 8,
       "paydirt": 8,
-      "updated": "2026-11-25"
+      "updated": "2026-11-26"
     },
     "qs-g": {
       "name": "HPC-QC integration and resource management",
       "items": 8,
       "paydirt": 8,
-      "updated": "2026-11-25"
+      "updated": "2026-11-26"
     },
     "qs-h": {
       "name": "Error correction route",
       "items": 8,
-      "paydirt": 6,
-      "updated": "2026-11-25"
+      "paydirt": 8,
+      "updated": "2026-11-26"
     },
     "qs-i": {
       "name": "NISQ algorithms",
       "items": 8,
       "paydirt": 8,
-      "updated": "2026-11-25"
+      "updated": "2026-11-26"
     },
     "quantum-algorithms": {
       "name": "Quantum algorithms",
-      "items": 8,
-      "paydirt": 5,
-      "updated": "2026-11-25"
+      "items": 4,
+      "paydirt": 0,
+      "updated": "2026-11-26"
     },
     "quantum-simulation": {
       "name": "Quantum simulation and many-body",
       "items": 8,
       "paydirt": 7,
-      "updated": "2026-11-25"
+      "updated": "2026-11-26"
     },
     "solid-state-qubits": {
       "name": "Solid-state qubits",
-      "items": 3,
-      "paydirt": 0,
-      "updated": "2026-11-25"
+      "items": 8,
+      "paydirt": 2,
+      "updated": "2026-11-26"
     }
   }
 }
