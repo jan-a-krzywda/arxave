@@ -8284,16 +8284,16 @@
  },
  "2611.33590": {
   "fields": {
-   "kind": "theory",
-   "result": "Code distance $d \\ge 21$ achieves logical error rates below $10^{-10}$ per syndrome cycle. Proposed dense architecture integrates over 120,000 logical qubits on a 100 mm $\\times$ 100 mm chip using CMOS multiplexing.",
-   "question": "How to design a scalable dense silicon spin qubit architecture that simultaneously supports rotated surface codes, coherent spin shuttling, routing, transversal logical gates, and realistic wiring constraints?",
+   "kind": "new method",
+   "result": "Proposed architecture integrates over 120,000 logical qubits on 100 mm $\\times$ 100 mm chip with rotated surface code distance $\\ge 21$, reaching logical error rate below $10^{-10}$ per syndrome cycle.",
+   "question": "How to design a scalable silicon spin qubit architecture integrating quantum error correction, spin shuttling, wiring, and transversal logical operations on a single chip?",
    "prior": "",
-   "limits": "Numerical and analytical estimates based on experimentally demonstrated physical silicon spin qubit parameters; assumes idealized routing and CMOS multiplexing yield.",
+   "limits": "Numerical estimates based on experimentally demonstrated physical parameters; assumes CMOS multiplexing and idealized routing overheads without hardware-in-the-loop validation.",
    "tools": [
     "rotated surface code",
-    "1D spin shuttling lanes",
-    "cross junctions for transversal CNOT",
-    "CMOS-compatible multiplexed control analysis"
+    "silicon spin qubit shuttling",
+    "CMOS-compatible multiplexed control",
+    "transversal logical CNOT routing"
    ],
    "figure": "",
    "figure_url": "",
