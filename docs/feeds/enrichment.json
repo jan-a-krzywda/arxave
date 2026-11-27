@@ -8179,7 +8179,7 @@
    "figure_gloss": "Plots (a)-(d) show estimation errors, $N^{-2/3}$ finite-size scaling, noise/signal decompositions, and the $N^{2/3}$ energy gap opening versus spin number $N$ for the Ising ground state.",
    "code": ""
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8284,16 +8284,16 @@
  },
  "2611.33590": {
   "fields": {
-   "kind": "new method",
-   "result": "Proposed architecture integrates over 120,000 logical qubits on 100 mm $\\times$ 100 mm chip with rotated surface code distance $\\ge 21$, reaching logical error rate below $10^{-10}$ per syndrome cycle.",
-   "question": "How to design a scalable silicon spin qubit architecture integrating quantum error correction, spin shuttling, wiring, and transversal logical operations on a single chip?",
+   "kind": "new result",
+   "result": "Proposed dense silicon spin qubit architecture integrates $> 120,000$ logical qubits on 100 mm $\\times$ 100 mm chip. Code distance $d \\ge 21$ reaches logical error rate $< 10^{-10}$ per syndrome cycle.",
+   "question": "How to design a scalable dense silicon spin qubit architecture supporting quantum error correction, spin shuttling, logical gates, and wiring constraints?",
    "prior": "",
-   "limits": "Numerical estimates based on experimentally demonstrated physical parameters; assumes CMOS multiplexing and idealized routing overheads without hardware-in-the-loop validation.",
+   "limits": "Numerical modeling and design based on experimentally demonstrated physical parameters; assumes CMOS multiplexing and 1D coherent spin shuttling.",
    "tools": [
-    "rotated surface code",
-    "silicon spin qubit shuttling",
-    "CMOS-compatible multiplexed control",
-    "transversal logical CNOT routing"
+    "Rotated surface code",
+    "1D spin shuttling lanes",
+    "Cross junctions for transversal CNOT",
+    "CMOS-compatible multiplexed control"
    ],
    "figure": "",
    "figure_url": "",
@@ -8301,7 +8301,7 @@
    "figure_gloss": "",
    "code": ""
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "abstract"
@@ -8325,7 +8325,7 @@
    "figure_gloss": "Logical error rate versus physical error rate for code distances $d=5$ to $21$ showing a threshold of 0.72%, scaling of logical error rate with growth period $K$, and violin plots of decoding time distribution per round up to $d=25$.",
    "code": ""
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8349,7 +8349,7 @@
    "figure_gloss": "Logical error rate per round per logical qubit $\\tilde{p}_L$ versus physical error rate $p$ for the walking Gross code across loss fractions $\\lambda \\in [0, 1]$, contrasting CNN decoding with the baseline Uniform Mixture decoder.",
    "code": ""
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8399,7 +8399,7 @@
    "figure_gloss": "Architecture diagram of the GPU execution pipeline, showing persistent worker thread blocks that independently process overlapping A windows and resolve B gaps directly in shared memory without host round trips.",
    "code": ""
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8447,7 +8447,7 @@
    "figure_gloss": "Win rates and margins across benchmarks on ibm_fez. Panels show Mermin-Peres magic square progression compared to Willow, GHZ parity game win rates versus classical ceilings up to 50 qubits, and non-Clifford $\\mathrm{CCZ}$ and degree-3/4 parity witness advantages.",
    "code": ""
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8471,7 +8471,7 @@
    "figure_gloss": "Quality factor spectra, CDFs, and percentile drift across 8 sweeps repeated every 9 hours over 3 days for zero bandwidth, 50 MHz bandwidth, and 2.7 GHz bandwidth. Only broadband sweeps achieve tightly overlapping CDFs and a median spread of 0.07 M (6%).",
    "code": ""
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8495,7 +8495,7 @@
    "figure_gloss": "Spatial candidate positions and dipole moments matching experimental constraints; combining gate-referred shifts with 5 gate-TLF detuning lever arms isolates the defect to a 1 nm $\\times$ 31 nm $\\times$ 4 nm volume in the gate oxide.",
    "code": ""
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8519,7 +8519,7 @@
    "figure_gloss": "Final memory fidelity as a function of nuclear-spin storage time up to $25\\,\\mu\\mathrm{s}$ for four values of spin-phonon coupling $g_{ph}$. Fidelity exhibits $1\\,\\mu\\mathrm{s}$ periodic revivals matching the phonon-mode period, with lower envelope dropping as $g_{ph}$ increases.",
    "code": "https://github.com/manjithbc/nv-quantum-memory"
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8542,7 +8542,7 @@
    "figure_gloss": "Count rate and its derivative plotted against laser clock delay alongside rising-edge delay from a TDC, showing distinct single-photon and multi-photon timing plateaus preserved by the cryo-CMOS filter.",
    "code": ""
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8566,7 +8566,7 @@
    "figure_gloss": "The certification setup. Spatially separated parties share an uncharacterised two-qubit state $\\rho_{AB}$ and perform fixed local measurements $M_A$ and $M_B$ without input settings, generating joint statistics $P(a,b)$.",
    "code": ""
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8613,7 +8613,7 @@
    "figure_gloss": "Overview of hybrid workflow: quantum circuit runs a modified Hadamard test with $H(\\lambda)$ and $H(\\lambda+\\delta\\lambda)$ evolutions, feeding measurement statistics to classical processing to output $\\Delta E$.",
    "code": ""
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8638,7 +8638,7 @@
    "figure_gloss": "Mean relative operator error on unseen chips as a function of fabrication variability $\\eta$. MC-ENS achieves the lowest error across all variability scales compared to per-device training, SAT, and covariance-informed SAT.",
    "code": ""
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8661,7 +8661,7 @@
    "figure_gloss": "Relative deviation of Hall resistance from $R_{\\mathrm{K}}/2$ versus temperature up to 100 K at $B=12$ T and $I=10\\,\\mu\\mathrm{A}$, showing 23 ppb uncertainty at 50 K and parts-per-million deviation past liquid nitrogen temperature.",
    "code": ""
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8686,7 +8686,7 @@
    "figure_gloss": "Architecture of the four multiscale workflow hand-offs (H1–H4), illustrating how classical molecular mechanics, conventional electronic structure, active-space quantum solvers, and classical trajectory consumers interact through unified interfaces.",
    "code": "https://github.com/QureGenAI-Biotech/TyxonQ"
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8735,7 +8735,7 @@
    "figure_gloss": "Determinant counts, classical runtimes and costs, time-parity concurrency thresholds $\\alpha_{\\mathrm{eq}}$, and break-even QPU prices $\\pi_{\\mathrm{QPU}}^{\\star}$ for seven molecular benchmarks compared to quantum resource estimates.",
    "code": ""
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8807,7 +8807,7 @@
    "figure_gloss": "",
    "code": ""
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8856,7 +8856,7 @@
    "figure_gloss": "Population difference $\\langle\\sigma_z(t)\\rangle$ as a function of time $t$ across four temperatures $\\beta \\in \\{5, 2, 1, 0.5\\}$, comparing FRODS and PIFFE for $r=0,1,2,3$ against benchmark QuAPI.",
    "code": ""
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8881,7 +8881,7 @@
    "figure_gloss": "Energy variance $\\Delta E^{2}/J^{2}$ versus system size $M$ for the algorithm output and ideal states of the spin-1 XY model, alongside time-dependent self-overlap fidelity under depolarizing gate noise.",
    "code": ""
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
@@ -8929,7 +8929,177 @@
    "figure_gloss": "Heat map of the total duration ratio $(\\tau^{(2)}_6 + \\tau_{\\text{C}})/\\tau^{(1)}_6$ across target and ancilla detunings $\\Delta_1$ and $\\Delta_2$. Values below 1 indicate measurement speed-up using the two-transmon scheme over the standard single-transmon readout.",
    "code": "https://github.com/custal/ancilla-assisted-accelerated-readout-of-transmon-qubits"
   },
-  "seen": "2026-11-26",
+  "seen": "2026-11-27",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.34116": {
+  "fields": {
+   "kind": "theory",
+   "result": "Uniaxial strain breaking $C_{3z}$ activates a quantum-metric-driven nonlinear valley Hall response in centrosymmetric, $\\mathcal{P,T}$-symmetric 4-layer MoS$_2$, reversibly switchable via ABBA $\\leftrightarrow$ BAAB interlayer sliding over a $17.7\\text{ meV/unit cell}$ barrier.",
+   "question": "Can quantum metric dipole transport be accessed and reversibly switched in nonmagnetic, inversion-symmetric systems without breaking global inversion symmetry?",
+   "prior": "Bilayer 2H-MoS$_2$ generated strain-enabled quantum metric dipole nonlinear valley Hall signals under centrosymmetry, but lacked reversible control knobs.",
+   "limits": "Zero-temperature DFT-relaxed structures; calculated response evaluated at $T = 40\\text{ K}$ under $5\\%$ uniaxial zigzag strain and $E_y = 1\\text{ V}/\\mu\\text{m}$.",
+   "tools": [
+    "Density functional theory (VASP, PBE-GGA)",
+    "Maximally localized Wannier functions (MLWFs)",
+    "88-band tight-binding model",
+    "DFT-D3 van der Waals correction"
+   ],
+   "figure": "S3.F4",
+   "figure_url": "https://arxiv.org/html/2611.34116v1/Fig4.png",
+   "figure_caption": "Figure 4: Momentum-space distribution of the EOMM, $m_{z}^{E}(\\mathbf{k})$ , for the lowest conduction band of strained four-layer MoS 2 under an in-plane electric field $E_{y}=1~\\mathrm{V/\\mu m}$ . Panels (a,b) and (c,d) show $m_{z}^{E}(\\mathbf{k})$ near the $K$ and $K^{\\prime}$ valleys for ABBA and BAAB stacking configurations, respectively. The color scale denotes $m_{z}^{E}(\\mathbf{k})$ in units of $(e/\\hbar)\\,\\text{\\AA}^{2}\\,\\mathrm{meV}$ . The dashed contours mark the Fermi level, defining the integration region for the valley-resolved field-induced orbital magnetization $M^{E}$ (units of $(e/\\hbar)\\,\\mathrm{meV}$ ). The resulting magnetization exhibits clear valley contrasting: for ABBA (at $\\mu=0.37$ eV), $M_{K}^{E}=3.96\\,(e/\\hbar)\\,\\mathrm{meV}$ and $M_{K^{\\prime}}^{E}=-4.05\\,(e/\\hbar)\\,\\mathrm{meV}$ ; for BAAB (at $\\mu=0.39$ eV), $M_{K}^{E}=-0.04\\,(e/\\hbar)\\,\\mathrm{meV}$ and $M_{K^{\\prime}}^{E}=0.04\\,(e/\\hbar)\\,\\mathrm{meV}$ . These opposite-sign, valley‑locked orbital moments provide a direct microscopic link between quantum‑metric geometry and the nonlinear valley Hall effect.",
+   "figure_gloss": "Momentum-space distribution of the electric-field-induced orbital magnetic moment $m_z^E(\\mathbf{k})$ around $K$ and $K'$ valleys under $E_y = 1\\text{ V}/\\mu\\text{m}$. Oppositely signed orbital magnetizations emerge between valleys: $M_K^E = 3.96\\,(e/\\hbar)\\,\\mathrm{meV}$ versus $M_{K'}^E = -4.05\\,(e/\\hbar)\\,\\mathrm{meV}$ in ABBA, collapsing to $\\mp 0.04\\,(e/\\hbar)\\,\\mathrm{meV}$ upon sliding into BAAB.",
+   "code": ""
+  },
+  "seen": "2026-11-27",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.34668": {
+  "fields": {
+   "kind": "new method",
+   "result": "Discrete Wigner moments certify magic states without tomography: for pure qudit states, the single condition $D^{2}w_{3} \\leq 1$ holds with equality if and only if the state is a stabilizer state, making $D^{2}w_{3} > 1$ necessary and sufficient for magic. Higher moments provide a hierarchy for mixed states.",
+   "question": "Can nonstabilizerness be certified and quantified from limited measurement data without full state tomography or optimization over the stabilizer polytope?",
+   "prior": "Full discrete Wigner function tomography requires $O(d^{2n}\\epsilon^{-2}\\ln(d^{2n}/\\delta))$ copies across $n$ qudits.",
+   "limits": "Restricted to qudit systems of odd prime local dimension $d$. Moment orders cannot be multiples of $d$ for bounded two-outcome multicopy estimators.",
+   "tools": [
+    "Discrete Wigner function moments",
+    "Discrete Hudson theorem",
+    "Constant-depth Clifford multicopy circuits",
+    "Two-outcome observable measurement"
+   ],
+   "figure": "S2.F1",
+   "figure_url": "https://arxiv.org/html/2611.34668v1/fig_mixed.svg",
+   "figure_caption": "Figure 1: Analytical graphs of $(w_{2}^{2}-w_{3})$ as a function of the mixing parameter $p$ for (a) the qutrit state $\\rho_{1}$ ( $d=3$ ) and (b) the ququint state $\\rho_{2}$ ( $d=5$ ). The blue curves represent the corresponding analytical expressions. Light blue and light pink shading indicate positive and negative values, respectively, with positive values certifying magic according to the criterion. The black dashed lines represent zero. The insets magnify the regions near $p=0$ . In (a), the magenta dotted line marks $p=1/4$ , where both the criterion and the Wigner function change sign. In (b), the purple dash-dotted line marks $p=1/\\sqrt{5}$ , above which the Wigner function becomes negative, while the magenta dotted line marks $p=(3+\\sqrt{409})/40$ , above which the criterion is violated.",
+   "figure_gloss": "Magic witness $w_{2}^{2}-w_{3}$ plotted against noise mixing parameter $p$ for qutrit and ququint Werner-type states, crossing into the certified magic region ($>0$) at $p = 1/4$ and $p \\approx 0.58056$.",
+   "code": ""
+  },
+  "seen": "2026-11-27",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.34429": {
+  "fields": {
+   "kind": "new result",
+   "result": "Entropy quantum computer Dirac-3S runs cubic and quartic optimization problems natively without quadratization, yielding best samples within 0.32% of reference for portfolio optimization and 15% for budget allocation, though no sample hits certified reference optima.",
+   "question": "How do native higher-order industrial optimization instances perform on an entropy quantum computer compared to certified optima and resource requirements on quadratic annealers or gate-based processors?",
+   "prior": "",
+   "limits": "30 samples per instance; evaluated instances do not show solution-quality advantage over classical local search or random starts; time-to-solution scaling at larger sizes untested.",
+   "tools": [
+    "Dirac-3S entropy quantum computer",
+    "SLSQP",
+    "Simulated annealing"
+   ],
+   "figure": "S5.F2",
+   "figure_url": "https://arxiv.org/html/2611.34429v1/fig_samples.svg",
+   "figure_caption": "Figure 2: Figure of merit of every returned sample (lower is better) on Dirac-3S, 30 samples per instance, for (a) 3-XORSAT, (b)–(d) LABS, (e) MVSK and (f) budget. The solid line is the reference, the dashed line the median, and the best sample is labeled. The upper axis gives the merit factor $F=N^{2}/2E$ for LABS and the relative gap to the best-known value for MVSK and budget.",
+   "figure_gloss": "Figure of merit (objective energy) for 30 Dirac-3S samples across six cubic and quartic instances, comparing sample distributions and best values against certified optima or classical best-known reference lines.",
+   "code": ""
+  },
+  "seen": "2026-11-27",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.34168": {
+  "fields": {
+   "kind": "new result",
+   "result": "On a signed 8-bit coherent Ising machine, interaction extension peaks at an intermediate budget of $B=2000$ auxiliary spins ($40\\%$ expansion) on Max-Cut instance p5000_5, while augmented Lagrangian perturbation raises quadratic assignment feasibility from $0.53\\%$ to $6.88\\%$ at weak penalty $\\lambda=15$.",
+   "question": "Do coefficient-range mitigation techniques developed for quantum annealers improve end-to-end combinatorial optimization outcomes on a signed 8-bit coherent Ising machine lacking minor embedding?",
+   "prior": "Evaluated against unmitigated, 8-bit quantized baseline models across the same problem instances; prior quantum-annealing study by Ohno and Togawa (2024) tested these methods under minor-embedding constraints on D-Wave Advantage.",
+   "limits": "Fixed hardware-call budget; auxiliary spins reduce parallel packed candidate instances per call by up to $32\\%$; profit terms negligible after rounding in knapsack instances due to large penalty.",
+   "tools": [
+    "measurement-feedback Coherent Ising Machine (CIM)",
+    "interaction-extension method (IEM)",
+    "bounded-coefficient encoding (BCE)",
+    "augmented Lagrangian penalty method (ALM)",
+    "signed 8-bit simulated annealing control"
+   ],
+   "figure": "S6.F5",
+   "figure_url": "https://arxiv.org/html/2611.34168v1/iem2.svg",
+   "figure_caption": "Figure 5: Mean best Max-Cut objective obtained with the CIM for p5000_5 over $30$ repetitions, Eq. 35 as a function of the auxiliary-spin budget $B$ , Eq. 32 . Error bars show the sample standard deviation, Eq. 36 . The solid horizontal line and shaded region indicate the baseline mean and sample standard deviation at $B=0$ , and the dotted line indicates the best-known objective value $12\\,731\\,803$ , Table 1 . Means and standard deviations include the anomalous jobs described in the text.",
+   "figure_gloss": "Mean best Max-Cut objective on instance p5000_5 plotted against auxiliary-spin budget $B$. Performance peaks around $B=2000$ before falling below baseline for larger variable budgets.",
+   "code": ""
+  },
+  "seen": "2026-11-27",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.34871": {
+  "fields": {
+   "kind": "new method",
+   "result": "A single double-bracket flow unitary generated on a weighted rank-$r$ reference state simultaneously rotates $r$ orthonormal states into the $r$ lowest Hamiltonian eigenstates, requiring only that the initial subspace overlap each target eigenstate ($\\|P_r |\\lambda_i\\rangle\\|^2 > 0$). Adaptive scheduling of the flow steps converges to the targets without prior spectral gap information.",
+   "question": "Can multiple excited states be computed simultaneously via dynamical flows without prior knowledge of the spectrum or lower-energy eigenstates?",
+   "prior": "",
+   "limits": "Product-formula truncation errors can destabilize long Chebyshev periods; initial state subspace must strictly overlap all target eigenstates; tested numerically on 10-qubit transverse-field Ising models.",
+   "tools": [
+    "double-bracket flow (DBF)",
+    "product formulas (Lie-Trotter / group-commutator)",
+    "Chebyshev step scheduling",
+    "adaptive step and weight updates"
+   ],
+   "figure": "S5.F4",
+   "figure_url": "https://arxiv.org/html/2611.34871v1/blind_scaled.svg",
+   "figure_caption": "Figure 4: Adaptive strategy retrieves target states without prior knowledge of the spectrum. Adaptive (solid) and full-knowledge (dashed) strategies for the 10-qubit transverse-field Ising chain with an unknown scale factor $c$ tracking the $r=10$ lowest eigenstates. The adaptive strategy estimates the weights and step sizes from the measured energies; the full-knowledge run uses the exact spectrum. We use Chebyshev scheduling with $m=1$ and $8$ (blue and pink, respectively) and order 4 product formulas. Lines are medians and bands interquartile ranges over 21 sets of Haar-random initial states.",
+   "figure_gloss": "Normalized energy error versus iteration count tracking the 10 lowest eigenstates of a 10-qubit transverse-field Ising chain with an unknown spectral scale. Adaptive scheduling without gap knowledge closely matches full-knowledge Chebyshev schedules across Haar-random starts.",
+   "code": ""
+  },
+  "seen": "2026-11-27",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.34636": {
+  "fields": {
+   "kind": "new method",
+   "result": "Pretraining RBM and RNN guiding wavefunctions on quantum simulator projective measurements reduces walker-population requirements and accelerates convergence in self-learning PQMC for 2D Rydberg arrays. Finite-size scaling yields critical detuning $\\Delta_{c}/\\Omega\\approx 1.151(1)$ and exponent $\\nu\\approx 0.641(5)$.",
+   "question": "Can imperfect projective measurements from programmable quantum simulators provide an effective initialization for neural-network-guided self-learning projective quantum Monte Carlo?",
+   "prior": "",
+   "limits": "Demonstrated for stoquastic Hamiltonians after a local unitary rotation; tested on a 2D square lattice of Rydberg atoms up to $16\\times 16$ sites.",
+   "tools": [
+    "projective quantum Monte Carlo (PQMC)",
+    "neural quantum states (RBM and RNN)",
+    "programmable neutral-atom quantum simulator measurements",
+    "continuous-time stochastic projection",
+    "finite-size scaling"
+   ],
+   "figure": "S3.F2",
+   "figure_url": "https://arxiv.org/html/2611.34636v1/rel_err_nw_scaling.svg",
+   "figure_caption": "Figure 2: Relative ground-state energy versus walker population. Signed relative energy $e_{\\rm rel}$ between the ground state energies obtained from self-learning PQMC (sPQMC) and data-enhanced self-learning PQMC (sPQMC+Data) using RBM and RNN guiding wave functions, compared to the SSE reference energy, as a function of the walker population $N_{\\rm w}$ . The simulations are performed on a $16\\times 16$ lattice close to the phase transition at a detuning $\\Delta/\\Omega=1.051$ . The horizontal dashed lines indicate the positive and negative bounds of the SSE statistical uncertainty.",
+   "figure_gloss": "Signed relative ground-state energy error $e_{\\rm rel}$ as a function of the random walker population $N_w$. Shows data pretraining systematically reduces finite-population error relative to standard self-learning PQMC for both RBM and RNN ansätze.",
+   "code": ""
+  },
+  "seen": "2026-11-27",
+  "model": "gemini-3.7-flash",
+  "shape": 5,
+  "depth": "full"
+ },
+ "2611.34803": {
+  "fields": {
+   "kind": "new result",
+   "result": "Separates $\\mathsf{AC}^0 \\not\\subseteq \\mathsf{BQAC}^0/\\mathsf{qpoly}$ using an explicit family of linear-size monotone depth-2 CNFs, for which depth-$d$ width-$(n+1)^{c_0}$ $\\mathsf{QAC}^0$ circuits with quantum advice achieve at most $1/2 + O_d(n^{-\\gamma_d})$ success probability.",
+   "question": "Can constant-depth quantum circuits with polynomial width and arbitrary quantum advice compute all functions in classical $\\mathsf{AC}^0$ in the single-copy, single-output setting?",
+   "prior": "Total-width Pauli approximations (DOY25) bounded degree by $\\widetilde{O}(N^{1-2^{-d}})$, which exceeds $m$ when width $N = m^{\\Omega(1)}$; Fourier concentration (OAI26) established $\\mathrm{PARITY} \\notin \\mathsf{BQAC}^0/\\mathsf{qpoly}$ but yielded no pointwise bounds.",
+   "limits": "Single-copy, single-output decision circuits; circuit width bounded by $m^{\\kappa_{\\mathrm{w}}}$; does not resolve $\\mathrm{INDEX} \\in \\mathsf{BQAC}^0$ since restricting data inputs yields exponential auxiliary width.",
+   "tools": [
+    "Asymmetric Pauli degree approximation",
+    "Product-projection localization",
+    "Pauli twirling over designated register",
+    "Chebyshev filter on mismatch counter",
+    "Sherstov near-linear approximate degree bounds"
+   ],
+   "figure": "",
+   "figure_url": "",
+   "figure_caption": "",
+   "figure_gloss": "",
+   "code": ""
+  },
+  "seen": "2026-11-27",
   "model": "gemini-3.7-flash",
   "shape": 5,
   "depth": "full"
