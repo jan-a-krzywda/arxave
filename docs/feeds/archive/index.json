@@ -29,19 +29,19 @@
             },
             "qs-f": {
               "items": 8,
-              "paydirt": 6
+              "paydirt": 4
             },
             "qs-g": {
               "items": 8,
-              "paydirt": 5
+              "paydirt": 7
             },
             "qs-h": {
               "items": 8,
-              "paydirt": 7
+              "paydirt": 5
             },
             "qs-i": {
-              "items": 7,
-              "paydirt": 3
+              "items": 6,
+              "paydirt": 1
             }
           }
         },

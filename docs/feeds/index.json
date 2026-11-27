@@ -46,25 +46,25 @@
     "qs-f": {
       "name": "Software stack: compilers and pulse level",
       "items": 8,
-      "paydirt": 6,
+      "paydirt": 4,
       "updated": "2026-11-27"
     },
     "qs-g": {
       "name": "HPC-QC integration and resource management",
       "items": 8,
-      "paydirt": 5,
+      "paydirt": 7,
       "updated": "2026-11-27"
     },
     "qs-h": {
       "name": "Error correction route",
       "items": 8,
-      "paydirt": 7,
+      "paydirt": 5,
       "updated": "2026-11-27"
     },
     "qs-i": {
       "name": "NISQ algorithms",
-      "items": 7,
-      "paydirt": 3,
+      "items": 6,
+      "paydirt": 1,
       "updated": "2026-11-27"
     },
     "quantum-algorithms": {
